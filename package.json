@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "description": "Full lifecycle Co-Working & Startup Incubation Management System",
   "scripts": {
-    "start": "node server.js"
+    "dev": "node server.js",
+    "serve": "node server.js"
   },
   "keywords": [
     "coworking",
