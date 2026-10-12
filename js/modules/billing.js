@@ -3,6 +3,8 @@
 const BillingModule = {
   activeRentStatusFilter: 'all',
   invoiceFilter: 'all',
+  selectedStartupId: null,
+  selectedStartupName: null,
 
   render() {
     const container = document.getElementById('view-billing');
@@ -218,20 +220,30 @@ const BillingModule = {
       </div>
 
       <!-- Tax Invoices Ledger Section -->
-      <div class="card">
+      <div class="card" id="tax-invoices-ledger-card">
         <div class="card-header">
           <div>
-            <div class="card-title">
+            <div class="card-title" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
               <span>🧾 Formal Tax Invoices Ledger</span>
+              ${this.selectedStartupId ? `
+                <span class="badge" style="background: rgba(11, 8, 38, 0.08); color: #0B0826; border: 1px solid rgba(11, 8, 38, 0.22); font-size: 11px; font-weight: 700;">
+                  Filtered: ${this.selectedStartupName}
+                </span>
+              ` : ''}
             </div>
             <span style="font-size: 12px; color: var(--text-muted);">
               Itemized GST invoices compliant with Ministry of Corporate Affairs standards.
             </span>
           </div>
 
-          <div style="display: flex; gap: 6px;">
+          <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+            ${this.selectedStartupId ? `
+              <button class="btn btn-sm btn-outline" onclick="BillingModule.clearStartupSelection()" style="font-size: 11px; font-weight: 700;">
+                ✕ Show All Startups
+              </button>
+            ` : ''}
             <button class="btn btn-sm ${this.invoiceFilter === 'all' ? 'btn-primary' : 'btn-secondary'}" onclick="BillingModule.setInvoiceFilter('all')">
-              All Invoices (${invoices.length})
+              All (${this.getStartupScopedInvoices(invoices).length})
             </button>
             <button class="btn btn-sm ${this.invoiceFilter === 'issued' ? 'btn-primary' : 'btn-secondary'}" onclick="BillingModule.setInvoiceFilter('issued')">
               Issued
@@ -244,6 +256,23 @@ const BillingModule = {
             </button>
           </div>
         </div>
+
+        ${this.selectedStartupId ? `
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; margin: 0 18px 16px; background: rgba(11, 8, 38, 0.05); border: 1px solid rgba(11, 8, 38, 0.18); border-radius: var(--radius-md); flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 16px;">🔍</span>
+              <span style="font-size: 13px; font-weight: 700; color: #0B0826;">
+                Showing complete invoice history for: <u>${this.selectedStartupName}</u>
+              </span>
+              <span class="badge" style="background: #0B0826; color: #fff; font-size: 11px; font-weight: 700; padding: 2px 8px;">
+                ${this.getFilteredInvoices(invoices).length} Invoice${this.getFilteredInvoices(invoices).length === 1 ? '' : 's'}
+              </span>
+            </div>
+            <button class="btn btn-sm btn-outline" onclick="BillingModule.clearStartupSelection()" style="font-size: 11px; font-weight: 700;">
+              ✕ Reset (View All Startups)
+            </button>
+          </div>
+        ` : ''}
 
         <div class="table-wrapper">
           <table class="nexus-table">
@@ -259,8 +288,8 @@ const BillingModule = {
               </tr>
             </thead>
             <tbody>
-              ${this.getFilteredInvoices(invoices).map(inv => `
-                <tr>
+              ${this.getFilteredInvoices(invoices).length > 0 ? this.getFilteredInvoices(invoices).map(inv => `
+                <tr style="${this.selectedStartupId ? 'background: rgba(11, 8, 38, 0.02);' : ''}">
                   <td><strong style="font-family: var(--font-mono); color: var(--accent-primary);">${inv.id}</strong></td>
                   <td><strong>${inv.startupName}</strong></td>
                   <td>${inv.billingPeriod}</td>
@@ -288,7 +317,28 @@ const BillingModule = {
                     </div>
                   </td>
                 </tr>
-              `).join('')}
+              `).join('') : `
+                <tr>
+                  <td colspan="7" style="text-align: center; padding: 36px 20px; color: var(--text-muted);">
+                    <div style="font-size: 26px; margin-bottom: 8px;">📄</div>
+                    <div style="font-weight: 700; font-size: 14px; color: var(--text-primary);">
+                      No invoices found ${this.selectedStartupName ? `for "${this.selectedStartupName}"` : ''} under status "${this.invoiceFilter}".
+                    </div>
+                    <div style="margin-top: 12px; display: flex; gap: 8px; justify-content: center;">
+                      ${this.selectedStartupId ? `
+                        <button class="btn btn-sm btn-outline" onclick="BillingModule.clearStartupSelection()">
+                          Clear Startup Filter
+                        </button>
+                      ` : ''}
+                      ${this.invoiceFilter !== 'all' ? `
+                        <button class="btn btn-sm btn-secondary" onclick="BillingModule.setInvoiceFilter('all')">
+                          Show All Statuses
+                        </button>
+                      ` : ''}
+                    </div>
+                  </td>
+                </tr>
+              `}
             </tbody>
           </table>
         </div>
@@ -358,6 +408,31 @@ const BillingModule = {
     }
   },
 
+  selectStartup(startupId, startupName) {
+    if (this.selectedStartupId === startupId) {
+      this.selectedStartupId = null;
+      this.selectedStartupName = null;
+    } else {
+      this.selectedStartupId = startupId;
+      this.selectedStartupName = startupName;
+    }
+    this.render();
+    if (this.selectedStartupId) {
+      setTimeout(() => {
+        const card = document.getElementById('tax-invoices-ledger-card');
+        if (card) {
+          card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 50);
+    }
+  },
+
+  clearStartupSelection() {
+    this.selectedStartupId = null;
+    this.selectedStartupName = null;
+    this.render();
+  },
+
   setRentFilter(filter) {
     this.activeRentStatusFilter = filter;
     this.render();
@@ -368,12 +443,35 @@ const BillingModule = {
     this.render();
   },
 
+  getStartupScopedInvoices(invoices) {
+    if (!this.selectedStartupId) return invoices;
+    const cleanName = (this.selectedStartupName || '').replace(/Startup\s+[A-Z]\s*\((.*?)\)/i, '$1').trim().toLowerCase();
+    return invoices.filter(inv => {
+      if (inv.startupId && inv.startupId === this.selectedStartupId) return true;
+      if (cleanName && inv.startupName && inv.startupName.toLowerCase().includes(cleanName)) return true;
+      return false;
+    });
+  },
+
   getFilteredInvoices(invoices) {
-    if (this.invoiceFilter === 'all') return invoices;
-    return invoices.filter(inv => inv.status.toLowerCase() === this.invoiceFilter.toLowerCase());
+    let list = this.getStartupScopedInvoices(invoices);
+    if (this.invoiceFilter && this.invoiceFilter !== 'all') {
+      list = list.filter(inv => inv.status.toLowerCase() === this.invoiceFilter.toLowerCase());
+    }
+    return list;
   },
 
   renderRentRow(r) {
+    const isSelected = this.selectedStartupId === r.startupId;
+    const allInvoices = window.store.getAccessibleInvoices();
+    const cleanName = (r.startupName || '').replace(/Startup\s+[A-Z]\s*\((.*?)\)/i, '$1').trim().toLowerCase();
+    const startupInvoices = allInvoices.filter(inv => {
+      if (inv.startupId && inv.startupId === r.startupId) return true;
+      if (cleanName && inv.startupName && inv.startupName.toLowerCase().includes(cleanName)) return true;
+      return false;
+    });
+    const invCount = startupInvoices.length;
+
     const statusBadgeClass = r.status === 'Paid' 
       ? 'badge-success' 
       : r.status === 'Overdue' 
@@ -381,12 +479,15 @@ const BillingModule = {
       : 'badge-warning';
 
     return `
-      <tr>
+      <tr style="${isSelected ? 'background: rgba(11, 8, 38, 0.05); outline: 2px solid #0B0826;' : ''} transition: all 0.2s ease;">
         <td>
-          <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="cursor: pointer; display: flex; align-items: center; gap: 10px;" onclick="BillingModule.selectStartup('${r.startupId}', '${(r.startupName || '').replace(/'/g, "\\'")}')" title="Click to view full invoice history for ${r.startupName}">
             <span style="font-size: 20px;">${r.logoEmoji || '🚀'}</span>
             <div>
-              <strong style="color: var(--text-primary); font-size: 13.5px;">${r.startupName}</strong>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <strong style="color: var(--text-primary); font-size: 13.5px; ${isSelected ? 'color: #0B0826; font-weight: 800;' : ''}">${r.startupName}</strong>
+                ${isSelected ? `<span class="badge" style="background: #0B0826; color: #fff; font-size: 9.5px; font-weight: 700; padding: 2px 6px;">● Active</span>` : ''}
+              </div>
               <div style="font-size: 11px; color: var(--accent-secondary); font-weight: 600;">${r.category || 'Tech Startup'}</div>
             </div>
           </div>
@@ -418,7 +519,12 @@ const BillingModule = {
         </td>
 
         <td>
-          <div style="display: flex; gap: 6px; align-items: center;">
+          <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+            <!-- Filter Invoice History -->
+            <button class="btn btn-sm ${isSelected ? 'btn-primary' : 'btn-outline'}" style="font-size: 11px; padding: 4px 9px; font-weight: 700;" onclick="BillingModule.selectStartup('${r.startupId}', '${(r.startupName || '').replace(/'/g, "\\'")}')" title="Filter invoice ledger below for ${r.startupName}">
+              📜 Invoices (${invCount})
+            </button>
+
             <!-- View Invoice -->
             <button class="btn btn-secondary btn-sm" onclick="BillingModule.handleRentInvoiceClick('${r.id}')" title="View Itemized Invoice">
               🧾 Invoice
