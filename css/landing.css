@@ -923,11 +923,11 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 }
 .nx-fn-form input::placeholder { color: rgba(255, 255, 255, 0.45); }
 
-/* 2. Grid (6 columns) */
+/* 2. Grid (5 columns) */
 .nx-footer-grid {
   display: grid;
-  grid-template-columns: 1.6fr 1fr 1fr 1.1fr 1fr 1.5fr;
-  gap: 32px;
+  grid-template-columns: 1.8fr 1fr 1fr 1.1fr 1fr;
+  gap: 36px;
   margin-bottom: 50px;
 }
 .nx-footer-brand p {
