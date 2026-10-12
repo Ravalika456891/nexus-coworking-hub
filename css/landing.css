@@ -16,8 +16,9 @@
   --line-light: rgba(255, 255, 255, 0.12);
   --radius: 20px;
   --ease: cubic-bezier(.22, 1, .36, 1);
-  --font: 'Poppins', system-ui, sans-serif;
-  --serif: 'Playfair Display', Georgia, serif;
+  --font: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --display: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --serif: 'Plus Jakarta Sans', system-ui, sans-serif;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -260,7 +261,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--flame); box-shadow: 0 0 0 0 rgba(237,68,27,.7); animation: pulse 2s infinite; }
 @keyframes pulse { 70% { box-shadow: 0 0 0 10px rgba(237,68,27,0); } 100% { box-shadow: 0 0 0 0 rgba(237,68,27,0); } }
 
-.nx-hero-title { font-family: var(--serif); font-weight: 800; font-size: clamp(64px, 11vw, 160px); line-height: .95; letter-spacing: -.02em; }
+.nx-hero-title { font-family: var(--display); font-weight: 800; font-size: clamp(56px, 10.5vw, 150px); line-height: .95; letter-spacing: -.035em; }
 .word-rotator { position: relative; display: inline-grid; }
 .word-rotator .word { grid-area: 1 / 1; opacity: 0; transform: translateY(40%); filter: blur(8px); transition: all .8s var(--ease); background: linear-gradient(100deg, #fff 30%, #ffd2c2 60%, var(--flame-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .word-rotator .word.active { opacity: 1; transform: none; filter: none; }
@@ -322,11 +323,11 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
   max-width: 1080px;
 }
 .nx-manifesto-p {
-  font-family: var(--serif);
-  font-size: clamp(32px, 4.4vw, 56px);
-  line-height: 1.28;
-  letter-spacing: -.01em;
-  font-weight: 600;
+  font-family: var(--display);
+  font-size: clamp(28px, 3.8vw, 48px);
+  line-height: 1.25;
+  letter-spacing: -.025em;
+  font-weight: 700;
 }
 .m-word {
   display: inline-block;
@@ -360,10 +361,12 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 }
 .nx-m-stat .m-num {
   font-size: clamp(28px, 3.2vw, 44px);
-  font-weight: 700;
+  font-weight: 800;
   color: #fff;
   display: block;
-  font-family: var(--serif);
+  font-family: var(--display);
+  letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums;
   background: linear-gradient(135deg, #ffffff 40%, var(--flame-2));
   -webkit-background-clip: text;
   background-clip: text;
@@ -582,11 +585,12 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 .nx-journey-card h3 {
-  font-size: 22px;
+  font-size: 21px;
   font-weight: 700;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   color: #fff;
-  font-family: var(--serif);
+  font-family: var(--display);
+  letter-spacing: -.015em;
 }
 .nx-journey-card p {
   color: rgba(255, 255, 255, 0.7);
@@ -635,7 +639,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 @keyframes marquee { to { transform: translateX(-50%); } }
 .nx-wordmark { padding: 22px 36px; background: var(--ink); color: #fff; border-radius: 16px; font-weight: 600; font-size: 20px; letter-spacing: -.01em; transition: background .3s; }
 .nx-wordmark:hover { background: var(--flame); }
-.nx-partner { padding: 18px 30px; background: #fff; border: 1px solid var(--line); border-radius: 16px; font-family: var(--serif); font-weight: 600; font-size: 18px; color: #444; }
+.nx-partner { padding: 18px 30px; background: #fff; border: 1px solid var(--line); border-radius: 16px; font-family: var(--display); font-weight: 700; font-size: 17px; color: #333; letter-spacing: -.01em; }
 
 /* ---------- Ecosystem ---------- */
 .nx-ecosystem { background: #fff; }
@@ -695,7 +699,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 
 .nx-fac-content { padding: 44px 40px; display: flex; flex-direction: column; justify-content: center; }
 .nx-fac-icon { width: 52px; height: 52px; border-radius: 14px; background: #fff; box-shadow: 0 8px 20px -8px rgba(0,0,0,.15); display: grid; place-items: center; font-size: 24px; margin-bottom: 20px; }
-.nx-fac-content h3 { font-size: clamp(22px, 2.4vw, 30px); font-weight: 700; margin-bottom: 14px; font-family: var(--serif); line-height: 1.25; }
+.nx-fac-content h3 { font-size: clamp(22px, 2.4vw, 30px); font-weight: 700; margin-bottom: 12px; font-family: var(--display); line-height: 1.25; letter-spacing: -.02em; }
 .nx-fac-content p { color: var(--muted); font-size: 15.5px; line-height: 1.65; margin-bottom: 24px; }
 .nx-fac-specs { display: flex; flex-wrap: wrap; gap: 24px; padding-top: 20px; border-top: 1px solid var(--line); }
 .nx-fac-specs span { font-size: 13.5px; color: var(--text); }
@@ -810,7 +814,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .nx-voice-stage { position: relative; max-width: 900px; margin: 0 auto; min-height: 260px; }
 .nx-voice { position: absolute; inset: 0; text-align: center; opacity: 0; transform: translateY(20px); transition: all .6s var(--ease); pointer-events: none; }
 .nx-voice.active { opacity: 1; transform: none; pointer-events: auto; }
-.nx-voice p { font-family: var(--serif); font-size: clamp(22px, 2.6vw, 34px); line-height: 1.4; font-style: italic; font-weight: 600; }
+.nx-voice p { font-family: var(--display); font-size: clamp(20px, 2.4vw, 30px); line-height: 1.45; font-style: normal; font-weight: 600; letter-spacing: -.015em; }
 .nx-voice footer { margin-top: 28px; display: flex; flex-direction: column; gap: 2px; }
 .nx-voice footer b { font-weight: 600; }
 .nx-voice footer span { color: var(--muted); font-size: 14px; }
@@ -834,7 +838,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .nx-cta-box { position: relative; overflow: hidden; padding: 90px 40px; border-radius: 32px; text-align: center; color: #fff; background: linear-gradient(135deg, #1a0d08 0%, var(--ink) 50%, #1d0c06 100%); }
 .nx-cta-glow { position: absolute; width: 700px; height: 700px; left: 50%; top: -60%; transform: translateX(-50%); background: radial-gradient(circle, rgba(237,68,27,.5), transparent 60%); filter: blur(30px); animation: glow 9s ease-in-out infinite alternate; }
 .nx-cta-box > *:not(.nx-cta-glow) { position: relative; }
-.nx-cta-box h2 { font-family: var(--serif); font-size: clamp(34px, 5vw, 62px); font-weight: 700; line-height: 1.1; }
+.nx-cta-box h2 { font-family: var(--display); font-size: clamp(34px, 5vw, 60px); font-weight: 800; line-height: 1.1; letter-spacing: -.03em; }
 .nx-cta-box > p { color: rgba(255,255,255,.75); max-width: 540px; margin: 18px auto 36px; font-size: 17px; }
 .nx-cta-form { display: flex; gap: 10px; max-width: 520px; margin: 0 auto; padding: 6px; background: rgba(255,255,255,.08); border: 1px solid var(--line-light); border-radius: 999px; backdrop-filter: blur(10px); }
 .nx-cta-form input { flex: 1; min-width: 0; padding: 0 20px; background: transparent; border: none; outline: none; color: #fff; font: inherit; font-size: 15px; }
@@ -877,12 +881,13 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .nx-fn-text { max-width: 580px; position: relative; z-index: 2; }
 .nx-badge.sm { font-size: 10.5px; padding: 2px 8px; margin-bottom: 10px; }
 .nx-fn-text h3 {
-  font-family: var(--serif);
+  font-family: var(--display);
   font-size: clamp(23px, 2.4vw, 32px);
   color: #fff;
   font-weight: 700;
   line-height: 1.25;
   margin-bottom: 6px;
+  letter-spacing: -.02em;
 }
 .nx-fn-text p {
   color: rgba(255, 255, 255, 0.7);
