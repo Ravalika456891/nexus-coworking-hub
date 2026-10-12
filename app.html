@@ -116,6 +116,12 @@
           <span class="nav-item-badge" style="background: rgba(237, 68, 27, 0.12); color: #ed441b; font-weight: 700;">Ecosystem</span>
         </a>
 
+        <a class="nav-item" data-tab="leads" id="nav-item-leads">
+          <span class="nav-item-icon">📥</span>
+          <span class="nav-item-text">Leads & Inbound</span>
+          <span class="nav-item-badge" style="background: rgba(34, 197, 94, 0.16); color: #16a34a; font-weight: 700;">Live DB</span>
+        </a>
+
         <a href="index.html" class="nav-item" style="margin-top: 8px; border: 1px solid rgba(237, 68, 27, 0.3); background: rgba(237, 68, 27, 0.06); border-radius: 8px;">
           <span class="nav-item-icon">🌐</span>
           <span class="nav-item-text" style="color: #ed441b; font-weight: 600;">Public Website</span>
@@ -245,6 +251,12 @@
             </div>
           </div>
 
+          <!-- MongoDB Atlas Live Connection Pill -->
+          <div id="mongo-status-header" style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.35); border-radius: 999px; font-size: 11.5px; font-weight: 700; color: #16a34a; white-space: nowrap; flex-shrink: 0;" title="Connected to MongoDB Atlas cluster h-hub.uyc1vpr.mongodb.net">
+            <span style="width: 7px; height: 7px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 6px #22c55e;"></span>
+            <span>MongoDB Atlas</span>
+          </div>
+
           <!-- RBAC Quick Matrix Button -->
           <button class="btn btn-outline btn-sm" id="header-rbac-btn" onclick="App.openRbacMatrixModal()" style="font-size: 11.5px; padding: 6px 12px; gap: 5px; white-space: nowrap; flex-shrink: 0;" title="View Role-Based Access Control Permission Matrix">
             🛡️ RBAC
@@ -276,6 +288,7 @@
       <div class="view-container" id="view-milestones"></div>
       <div class="view-container" id="view-reports"></div>
       <div class="view-container" id="view-contact"></div>
+      <div class="view-container" id="view-leads"></div>
     </main>
   </div>
 
@@ -297,6 +310,7 @@
   <script src="js/modules/milestones.js"></script>
   <script src="js/modules/reports.js"></script>
   <script src="js/modules/contact.js"></script>
+  <script src="js/modules/leads.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>

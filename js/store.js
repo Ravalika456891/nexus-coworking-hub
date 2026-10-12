@@ -384,7 +384,7 @@ class NexusStore {
   }
 
   isTabAllowed(tabId, role = null) {
-    if (tabId === 'contact') return true;
+    if (tabId === 'contact' || tabId === 'leads') return true;
     const r = role ? this.normalizeRole(role) : this.normalizeRole(this.currentRole);
     if (r === 'super_admin') return true;
     const roleInfo = this.getRoles()[r];

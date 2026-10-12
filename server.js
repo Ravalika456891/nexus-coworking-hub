@@ -69,16 +69,46 @@ async function handleApi(req, res, reqUrl) {
       }
     }
 
-    if (reqUrl === '/api/leads' && req.method === 'POST') {
-      const body = await parseJsonBody(req);
-      const success = await db.saveLead(body);
-      return sendJson(res, success ? 201 : 503, { ok: success });
+    if (reqUrl === '/api/leads') {
+      if (req.method === 'GET') {
+        const leads = await db.getLeads();
+        return sendJson(res, 200, { ok: true, leads });
+      }
+      if (req.method === 'POST') {
+        const body = await parseJsonBody(req);
+        const success = await db.saveLead(body);
+        return sendJson(res, success ? 201 : 503, { ok: success });
+      }
     }
 
-    if (reqUrl === '/api/inquiries' && req.method === 'POST') {
+    if (reqUrl === '/api/leads/update' && req.method === 'POST') {
       const body = await parseJsonBody(req);
-      const success = await db.saveInquiry(body);
-      return sendJson(res, success ? 201 : 503, { ok: success });
+      const success = await db.updateLead(body.id, body.updates);
+      return sendJson(res, success ? 200 : 400, { ok: success });
+    }
+
+    if (reqUrl === '/api/leads/delete' && req.method === 'POST') {
+      const body = await parseJsonBody(req);
+      const success = await db.deleteLead(body.id);
+      return sendJson(res, success ? 200 : 400, { ok: success });
+    }
+
+    if (reqUrl === '/api/inquiries') {
+      if (req.method === 'GET') {
+        const inquiries = await db.getInquiries();
+        return sendJson(res, 200, { ok: true, inquiries });
+      }
+      if (req.method === 'POST') {
+        const body = await parseJsonBody(req);
+        const success = await db.saveInquiry(body);
+        return sendJson(res, success ? 201 : 503, { ok: success });
+      }
+    }
+
+    if (reqUrl === '/api/inquiries/update' && req.method === 'POST') {
+      const body = await parseJsonBody(req);
+      const success = await db.updateInquiry(body.id, body.updates);
+      return sendJson(res, success ? 200 : 400, { ok: success });
     }
 
     return sendJson(res, 404, { ok: false, error: 'Endpoint not found' });

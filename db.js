@@ -9,7 +9,7 @@ try {
   // Ignore if custom DNS cannot be set
 }
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 let client = null;
 let db = null;
@@ -85,16 +85,65 @@ async function saveLead(lead) {
   const database = await connectDB();
   if (!database) return false;
   const col = database.collection('leads');
-  await col.insertOne({ ...lead, createdAt: new Date() });
+  await col.insertOne({
+    ...lead,
+    status: lead.status || 'New',
+    createdAt: lead.createdAt ? new Date(lead.createdAt) : new Date()
+  });
   return true;
+}
+
+async function getLeads() {
+  const database = await connectDB();
+  if (!database) return [];
+  const col = database.collection('leads');
+  return col.find({}).sort({ createdAt: -1 }).toArray();
+}
+
+async function updateLead(id, updates) {
+  const database = await connectDB();
+  if (!database) return false;
+  const col = database.collection('leads');
+  const query = ObjectId.isValid(id) ? { _id: new ObjectId(id) } : { _id: id };
+  const res = await col.updateOne(query, { $set: { ...updates, updatedAt: new Date() } });
+  return res.matchedCount > 0;
+}
+
+async function deleteLead(id) {
+  const database = await connectDB();
+  if (!database) return false;
+  const col = database.collection('leads');
+  const query = ObjectId.isValid(id) ? { _id: new ObjectId(id) } : { _id: id };
+  const res = await col.deleteOne(query);
+  return res.deletedCount > 0;
 }
 
 async function saveInquiry(inquiry) {
   const database = await connectDB();
   if (!database) return false;
   const col = database.collection('inquiries');
-  await col.insertOne({ ...inquiry, createdAt: new Date() });
+  await col.insertOne({
+    ...inquiry,
+    status: inquiry.status || 'New',
+    createdAt: inquiry.createdAt ? new Date(inquiry.createdAt) : new Date()
+  });
   return true;
+}
+
+async function getInquiries() {
+  const database = await connectDB();
+  if (!database) return [];
+  const col = database.collection('inquiries');
+  return col.find({}).sort({ createdAt: -1 }).toArray();
+}
+
+async function updateInquiry(id, updates) {
+  const database = await connectDB();
+  if (!database) return false;
+  const col = database.collection('inquiries');
+  const query = ObjectId.isValid(id) ? { _id: new ObjectId(id) } : { _id: id };
+  const res = await col.updateOne(query, { $set: { ...updates, updatedAt: new Date() } });
+  return res.matchedCount > 0;
 }
 
 module.exports = {
@@ -103,5 +152,10 @@ module.exports = {
   getAppState,
   saveAppState,
   saveLead,
-  saveInquiry
+  getLeads,
+  updateLead,
+  deleteLead,
+  saveInquiry,
+  getInquiries,
+  updateInquiry
 };

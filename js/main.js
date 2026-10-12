@@ -89,7 +89,8 @@ const App = {
       incubation: '🌱 Incubation Journey',
       milestones: '🎯 Milestones',
       reports: '📊 Analytics',
-      contact: '📍 T-Hub Ecosystem'
+      contact: '📍 T-Hub Ecosystem',
+      leads: '📥 Inbound Leads & Applications'
     };
     if (titleEl) titleEl.innerText = titles[tabId] || 'Command Center';
 
@@ -200,6 +201,9 @@ const App = {
         break;
       case 'contact':
         ContactModule.render();
+        break;
+      case 'leads':
+        LeadsModule.render();
         break;
     }
   },
