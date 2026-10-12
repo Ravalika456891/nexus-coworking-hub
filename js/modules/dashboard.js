@@ -664,7 +664,7 @@ const DashboardModule = {
         <!-- ─── Showcase Header Deck ─────────────────────────────────── -->
         <div class="showcase-title-banner">
           <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
-            <div style="width: 44px; height: 44px; border-radius: var(--radius-md); background: rgba(99, 102, 241, 0.2); border: 1px solid rgba(99, 102, 241, 0.4); display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 0 20px rgba(99, 102, 241, 0.25);">
+            <div class="showcase-icon-box">
               🏛️
             </div>
             <div>
@@ -683,14 +683,14 @@ const DashboardModule = {
 
           <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
             <!-- Live Time Pill -->
-            <div style="padding: 6px 14px; border-radius: var(--radius-full); background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); font-family: var(--font-mono); font-size: 11.5px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
-              <span style="color: #10b981;">●</span>
+            <div class="showcase-time-pill">
+              <span class="showcase-dot-green">●</span>
               <span>OCT 2026 • 15:15 IST</span>
             </div>
 
             <!-- Mode Switcher & Layout Return -->
             <div style="display: flex; align-items: center; gap: 8px;">
-              <div style="display: flex; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(99, 102, 241, 0.35); border-radius: var(--radius-full); padding: 3px;">
+              <div class="showcase-mode-switcher-wrap">
                 <button class="btn btn-sm ${this.isDemoMode ? 'btn-primary' : 'btn-ghost'}" onclick="DashboardModule.toggleDemoMode(true)" style="font-size: 11px; padding: 4px 12px; border-radius: var(--radius-full); font-weight: 700;">
                   ✨ Showcase Mode (48 / ₹8.4L)
                 </button>
@@ -699,7 +699,7 @@ const DashboardModule = {
                 </button>
               </div>
 
-              <button class="btn btn-ghost btn-sm" onclick="DashboardModule.setViewStyle('classic')" title="Return to Before / Classic Operational Dashboard" style="font-size: 11px; padding: 5px 12px; border-radius: var(--radius-full); border: 1px solid rgba(255, 255, 255, 0.15); color: var(--text-secondary);">
+              <button class="btn btn-ghost btn-sm showcase-classic-btn" onclick="DashboardModule.setViewStyle('classic')" title="Return to Before / Classic Operational Dashboard" style="font-size: 11px; padding: 5px 12px; border-radius: var(--radius-full);">
                 ↩ Classic Layout
               </button>
             </div>
