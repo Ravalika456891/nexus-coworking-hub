@@ -60,9 +60,10 @@
                 <a href="#network" class="nx-mega-link"><span class="ico">🤝</span><span><b>Partners</b><small>Cloud &amp; legal credits</small></span></a>
               </div>
               <div class="nx-mega-col">
-                <p class="nx-mega-title">Campus</p>
+                <p class="nx-mega-title">Campus &amp; Management</p>
                 <a href="#facilities" class="nx-mega-link"><span class="ico">🔬</span><span><b>Labs &amp; Arena</b><small>Prototyping &amp; 500-seat arena</small></span></a>
-                <a href="#cowork" class="nx-mega-link"><span class="ico">🪑</span><span><b>Co-Working</b><small>Desks, cabins &amp; suites</small></span></a>
+                <a href="#cowork" class="nx-mega-link"><span class="ico">🪑</span><span><b>Co-Working Space</b><small>Desks, cabins &amp; suites</small></span></a>
+                <a href="app.html" class="nx-mega-link" style="background: rgba(237, 68, 27, 0.08); border: 1px solid rgba(237, 68, 27, 0.25); border-radius: 8px;"><span class="ico" style="background: var(--flame); color: #fff;">🏢</span><span><b style="color: var(--flame);">Co-Working Portal</b><small>Workspaces &amp; tenant ops</small></span></a>
                 <a href="#events" class="nx-mega-link"><span class="ico">📅</span><span><b>Events Calendar</b><small>Workshops &amp; summits</small></span></a>
               </div>
             </div>
@@ -70,12 +71,14 @@
         </div>
 
         <a href="#facilities" class="nx-nav-link" id="nav-facilities" data-target="facilities">Facilities</a>
+        <a href="#cowork" class="nx-nav-link" id="nav-cowork" data-target="cowork">Co-Working</a>
         <a href="#programs" class="nx-nav-link" id="nav-programs" data-target="programs">Programs</a>
         <a href="#events" class="nx-nav-link" id="nav-events" data-target="events">Events</a>
         <a href="#faq" class="nx-nav-link" id="nav-faq" data-target="faq">FAQ</a>
       </nav>
 
       <div class="nx-header-actions">
+        <a href="app.html" class="nx-btn nx-btn-outline-flame sm" id="nav-portal-btn"><span>🏢</span> Co-Working Portal</a>
         <a href="#cta" class="nx-btn nx-btn-flame sm" id="nav-apply-btn">Apply Now</a>
         <button class="nx-burger" id="nx-burger" aria-label="Toggle menu"><span></span><span></span><span></span></button>
       </div>
@@ -503,10 +506,10 @@
       <div class="nx-container nx-cowork-grid">
         <div class="nx-cowork-img reveal">
           <img src="assets/landing/cowork.jpg" alt="Bright co-working floor at NEXUS HUB" loading="lazy">
-          <div class="nx-floating-card">
+          <a href="app.html" class="nx-floating-card" id="cowork-badge-link" title="Open Co-Working Management Portal">
             <span class="dot"></span>
-            <div><b>84% occupied</b><small>Book a tour today</small></div>
-          </div>
+            <div><b>84% occupied</b><small>Open Management Portal →</small></div>
+          </a>
         </div>
         <div class="nx-cowork-text reveal">
           <span class="nx-kicker">Co-Working</span>
@@ -518,7 +521,12 @@
             <li>High-speed internet, 24/7 secure access</li>
             <li>Transparent billing &amp; GST-ready invoices</li>
           </ul>
-          <a href="#cta" class="nx-btn nx-btn-dark" id="cowork-cta-btn">Book Workspace Tour <span class="arrow">→</span></a>
+          <div style="display: flex; gap: 14px; flex-wrap: wrap; margin-top: 24px;">
+            <a href="app.html" class="nx-btn nx-btn-flame" id="cowork-portal-btn">
+              <span>🏢</span> Open Co-Working Portal <span class="arrow">→</span>
+            </a>
+            <a href="#cta" class="nx-btn nx-btn-dark" id="cowork-cta-btn">Book Workspace Tour <span class="arrow">→</span></a>
+          </div>
         </div>
       </div>
     </section>
@@ -811,6 +819,7 @@
           <a href="#facilities">4K Podcast Studio</a>
           <a href="#cowork">Private Founder Cabins</a>
           <a href="#cowork">Hot &amp; Dedicated Desks</a>
+          <a href="app.html" style="color: var(--flame); font-weight: 600;">🏢 Co-Working Management Portal →</a>
           <a href="#cta">Book Campus Tour</a>
         </div>
 
@@ -853,10 +862,10 @@
         <!-- Col 6: Resident Portal Card -->
         <div class="nx-footer-portal-col">
           <div class="nx-portal-badge"><span class="pulse sm"></span> LIVE SYSTEM</div>
-          <h4>Resident Portal</h4>
-          <p>Active cohort founders, corporate challenge leads, and mentors can manage spaces, access labs, and review invoices.</p>
-          <a href="app.html" class="nx-btn nx-btn-outline-light sm nx-footer-login" id="footer-login-btn">
-            <span>🔐</span> Member Portal Login →
+          <h4>Co-Working Management Portal</h4>
+          <p>Active cohort founders, resident members, and space managers can allocate desks, book meeting suites, and manage invoices.</p>
+          <a href="app.html" class="nx-btn nx-btn-flame sm nx-footer-login" id="footer-login-btn">
+            <span>🏢</span> Open Co-Working Portal →
           </a>
           <div class="nx-portal-features">
             <span>✓ Desk &amp; Cabin Allocations</span>
@@ -905,7 +914,7 @@
           <span class="nx-reg-badge">Section 8 Non-Profit Technology Incubator</span>
         </div>
         <div class="nx-fb-links">
-          <a href="app.html">Member Portal</a>
+          <a href="app.html" style="color: var(--flame); font-weight: 600;">🏢 Co-Working Management Portal</a>
           <a href="#faq">FAQ</a>
           <a href="#">Privacy Policy</a>
           <a href="#">Terms of Service</a>
