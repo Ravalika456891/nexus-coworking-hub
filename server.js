@@ -14,8 +14,87 @@ const MIME_TYPES = {
   '.ico': 'image/x-icon'
 };
 
-function handler(req, res) {
+const db = require('./db');
+
+function parseJsonBody(req) {
+  return new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        resolve(body ? JSON.parse(body) : {});
+      } catch (err) {
+        reject(err);
+      }
+    });
+    req.on('error', reject);
+  });
+}
+
+function sendJson(res, statusCode, data) {
+  res.writeHead(statusCode, {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type'
+  });
+  res.end(JSON.stringify(data));
+}
+
+async function handleApi(req, res, reqUrl) {
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204, {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type'
+    });
+    return res.end();
+  }
+
+  try {
+    if (reqUrl === '/api/health') {
+      const status = db.getStatus();
+      return sendJson(res, 200, { ok: true, mongo: status });
+    }
+
+    if (reqUrl === '/api/state') {
+      if (req.method === 'GET') {
+        const state = await db.getAppState();
+        return sendJson(res, 200, { ok: true, state: state || null });
+      }
+      if (req.method === 'POST') {
+        const body = await parseJsonBody(req);
+        const success = await db.saveAppState(body.state);
+        return sendJson(res, success ? 200 : 503, { ok: success });
+      }
+    }
+
+    if (reqUrl === '/api/leads' && req.method === 'POST') {
+      const body = await parseJsonBody(req);
+      const success = await db.saveLead(body);
+      return sendJson(res, success ? 201 : 503, { ok: success });
+    }
+
+    if (reqUrl === '/api/inquiries' && req.method === 'POST') {
+      const body = await parseJsonBody(req);
+      const success = await db.saveInquiry(body);
+      return sendJson(res, success ? 201 : 503, { ok: success });
+    }
+
+    return sendJson(res, 404, { ok: false, error: 'Endpoint not found' });
+  } catch (err) {
+    console.error('API Error:', err);
+    return sendJson(res, 500, { ok: false, error: err.message });
+  }
+}
+
+async function handler(req, res) {
   let reqUrl = req.url.split('?')[0];
+
+  if (reqUrl.startsWith('/api/')) {
+    return handleApi(req, res, reqUrl);
+  }
+
   if (reqUrl === '/' || reqUrl === '') reqUrl = '/index.html';
   if (reqUrl === '/app' || reqUrl === '/app/') reqUrl = '/app.html';
 
@@ -46,16 +125,20 @@ function handler(req, res) {
   });
 }
 
-const server = http.createServer(handler);
+let currentServer = null;
 
 if (!process.env.VERCEL) {
   function startServer(portToTry) {
-    server.on('error', (err) => {
+    const s = http.createServer(handler);
+    s.on('error', (err) => {
       if (err.code === 'EADDRINUSE') {
         startServer(portToTry + 1);
+      } else {
+        console.error('Server error:', err);
       }
     });
-    server.listen(portToTry, () => {
+    s.listen(portToTry, () => {
+      currentServer = s;
       console.log(`\n⚡ NEXUS Hub Operating System Server Started!`);
       console.log(`👉 Access URL: http://localhost:${portToTry}/\n`);
     });
@@ -63,4 +146,4 @@ if (!process.env.VERCEL) {
   startServer(PORT);
 }
 
-module.exports = server;
+module.exports = handler;

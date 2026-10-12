@@ -30,6 +30,7 @@ class NexusStore {
     // Ensure XYZ Technologies, John Smith, and sequential milestones exist
     this.syncIncubationData();
     this.save();
+    this.syncFromCloud();
   }
 
   syncIncubationData() {
@@ -145,6 +146,36 @@ class NexusStore {
       console.error("Storage save failed:", e);
     }
     this.notify();
+    this.debouncedCloudSync();
+  }
+
+  debouncedCloudSync() {
+    if (this._syncTimer) clearTimeout(this._syncTimer);
+    this._syncTimer = setTimeout(async () => {
+      try {
+        await fetch('/api/state', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ state: this.state })
+        });
+      } catch (e) {
+        // Fallback to local storage if offline
+      }
+    }, 1200);
+  }
+
+  async syncFromCloud() {
+    try {
+      const res = await fetch('/api/state');
+      const data = await res.json();
+      if (data && data.ok && data.state) {
+        this.state = data.state;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
+        this.notify();
+      }
+    } catch (e) {
+      // Fallback to local storage
+    }
   }
 
   resetToDefault() {

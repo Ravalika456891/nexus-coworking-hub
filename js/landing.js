@@ -463,9 +463,15 @@
       const email = document.getElementById('cta-email');
       const note = document.getElementById('cta-note');
       if (note && email) {
-        note.textContent = `🎉 Welcome aboard! We'll reach out to ${email.value} within 48 hours.`;
+        const val = email.value;
+        note.textContent = `🎉 Welcome aboard! We'll reach out to ${val} within 48 hours.`;
         note.style.color = '#ffb39a';
         email.value = '';
+        fetch('/api/leads', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: val, source: 'cta_application', timestamp: new Date() })
+        }).catch(() => {});
       }
     });
   }
@@ -485,6 +491,11 @@
         input.value = '';
         input.placeholder = `Subscribed as ${email}!`;
         input.disabled = true;
+        fetch('/api/leads', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, source: 'weekly_dispatch', timestamp: new Date() })
+        }).catch(() => {});
       }
     });
   }
