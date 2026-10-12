@@ -14,23 +14,26 @@ const MIME_TYPES = {
   '.ico': 'image/x-icon'
 };
 
-function startServer(portToTry) {
-const server = http.createServer((req, res) => {
+function handler(req, res) {
   let reqUrl = req.url.split('?')[0];
-  if (reqUrl === '/') reqUrl = '/index.html';
+  if (reqUrl === '/' || reqUrl === '') reqUrl = '/index.html';
+  if (reqUrl === '/app' || reqUrl === '/app/') reqUrl = '/app.html';
 
   let filePath = path.join(__dirname, reqUrl);
   let ext = path.extname(filePath).toLowerCase();
-  if (!ext && fs.existsSync(filePath + '.html')) {
-    filePath = filePath + '.html';
-    ext = '.html';
+  if (!ext) {
+    if (fs.existsSync(filePath + '.html')) {
+      filePath = filePath + '.html';
+      ext = '.html';
+    }
   }
+
   const contentType = MIME_TYPES[ext] || 'application/octet-stream';
 
   fs.readFile(filePath, (err, content) => {
     if (err) {
       if (err.code === 'ENOENT') {
-        res.writeHead(404, { 'Content-Type': 'text/html' });
+        res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end('<h1>404 Not Found</h1>', 'utf-8');
       } else {
         res.writeHead(500);
@@ -38,26 +41,26 @@ const server = http.createServer((req, res) => {
       }
     } else {
       res.writeHead(200, { 'Content-Type': contentType });
-      res.end(content, 'utf-8');
+      res.end(content);
     }
   });
-});
-
-  server.on('error', (err) => {
-    if (err.code === 'EADDRINUSE') {
-      console.log(`Port ${portToTry} in use, trying ${portToTry + 1}...`);
-      startServer(portToTry + 1);
-    } else {
-      console.error('Server error:', err);
-    }
-  });
-
-  server.listen(portToTry, () => {
-    console.log(`\n======================================================`);
-    console.log(`⚡ NEXUS Hub Operating System Server Started!`);
-    console.log(`👉 Access URL: http://localhost:${portToTry}/`);
-    console.log(`======================================================\n`);
-});
 }
 
-startServer(PORT);
+const server = http.createServer(handler);
+
+if (!process.env.VERCEL) {
+  function startServer(portToTry) {
+    server.on('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        startServer(portToTry + 1);
+      }
+    });
+    server.listen(portToTry, () => {
+      console.log(`\n⚡ NEXUS Hub Operating System Server Started!`);
+      console.log(`👉 Access URL: http://localhost:${portToTry}/\n`);
+    });
+  }
+  startServer(PORT);
+}
+
+module.exports = server;

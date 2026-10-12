@@ -2,9 +2,10 @@
   "name": "coworking-startup-incubation-system",
   "version": "1.0.0",
   "description": "Full lifecycle Co-Working & Startup Incubation Management System",
+  "main": "server.js",
   "scripts": {
-    "dev": "node local-server.js",
-    "serve": "node local-server.js"
+    "start": "node server.js",
+    "dev": "node server.js"
   },
   "keywords": [
     "coworking",
