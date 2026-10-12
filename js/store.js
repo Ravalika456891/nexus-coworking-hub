@@ -69,6 +69,16 @@ class NexusStore {
     // Normalize all startups
     this.state.startups = this.state.startups.map(s => this.normalizeStartupIncubation(s));
 
+    // Ensure seed payments exist and merge any missing seed payments
+    if (!this.state.payments) this.state.payments = [];
+    if (window.INITIAL_DATA && window.INITIAL_DATA.payments) {
+      window.INITIAL_DATA.payments.forEach(seedPay => {
+        if (!this.state.payments.some(p => p.id === seedPay.id)) {
+          this.state.payments.push(JSON.parse(JSON.stringify(seedPay)));
+        }
+      });
+    }
+
     // Ensure T-Hub Contact Inquiries seed data
     if (!this.state.contactInquiries || this.state.contactInquiries.length === 0) {
       this.state.contactInquiries = [

@@ -3,6 +3,7 @@
 const BillingModule = {
   activeRentStatusFilter: 'all',
   invoiceFilter: 'all',
+  paymentFilter: 'all',
   selectedStartupId: null,
   selectedStartupName: null,
 
@@ -13,6 +14,7 @@ const BillingModule = {
     const role = window.store.normalizeRole(window.store.currentRole);
     let rentRecords = window.store.getRentRecords();
     const invoices = window.store.getAccessibleInvoices();
+    const payments = window.store.getAccessiblePayments();
     if (role === 'startup') {
       rentRecords = rentRecords.filter(r => r.startupId === (window.store.activeFounderId || 'STP-XYZ'));
     }
@@ -169,8 +171,21 @@ const BillingModule = {
         </div>
       </div>
 
+      <!-- 3-Table Financial Lifecycle Navigator Quick Bar -->
+      <div style="display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap;">
+        <button class="btn btn-sm btn-outline" onclick="BillingModule.scrollToSection('rent-register-table-card')" style="font-size: 11.5px; font-weight: 700; background: var(--bg-surface);">
+          🏢 Monthly Rent Register (${rentRecords.length})
+        </button>
+        <button class="btn btn-sm btn-outline" onclick="BillingModule.scrollToSection('tax-invoices-ledger-card')" style="font-size: 11.5px; font-weight: 700; background: var(--bg-surface);">
+          🧾 Tax Invoices Ledger (${invoices.length})
+        </button>
+        <button class="btn btn-sm btn-outline" onclick="BillingModule.scrollToSection('payment-history-ledger-card')" style="font-size: 11.5px; font-weight: 700; background: var(--bg-surface);">
+          💳 Payment History & Receipts (${payments.length})
+        </button>
+      </div>
+
       <!-- Prominent Rent Management Table (Exact Format as requested) -->
-      <div class="card" style="margin-bottom: 26px;">
+      <div class="card" id="rent-register-table-card" style="margin-bottom: 26px;">
         <div class="card-header">
           <div>
             <div class="card-title" style="display: flex; align-items: center; gap: 8px;">
@@ -343,6 +358,177 @@ const BillingModule = {
           </table>
         </div>
       </div>
+
+      <!-- 💳 Reconciled Payment History & Receipts Ledger Section -->
+      <div class="card" id="payment-history-ledger-card" style="margin-top: 22px;">
+        <div class="card-header">
+          <div>
+            <div class="card-title" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <span>💳 Reconciled Payment History & Receipts</span>
+              ${this.selectedStartupId ? `
+                <span class="badge" style="background: rgba(11, 8, 38, 0.08); color: #0B0826; border: 1px solid rgba(11, 8, 38, 0.22); font-size: 11px; font-weight: 700;">
+                  Filtered: ${this.selectedStartupName}
+                </span>
+              ` : ''}
+            </div>
+            <span style="font-size: 12px; color: var(--text-muted);">
+              Immutable ledger of successful settlements, partial installments, and verified tax receipts.
+            </span>
+          </div>
+
+          <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+            ${this.selectedStartupId ? `
+              <button class="btn btn-sm btn-outline" onclick="BillingModule.clearStartupSelection()" style="font-size: 11px; font-weight: 700;">
+                ✕ Show All Startups
+              </button>
+            ` : ''}
+            <button class="btn btn-sm ${this.paymentFilter === 'all' ? 'btn-primary' : 'btn-secondary'}" onclick="BillingModule.setPaymentFilter('all')">
+              All (${this.getStartupScopedPayments(payments).length})
+            </button>
+            <button class="btn btn-sm ${this.paymentFilter === 'full' ? 'btn-primary' : 'btn-secondary'}" onclick="BillingModule.setPaymentFilter('full')">
+              Full Settlements
+            </button>
+            <button class="btn btn-sm ${this.paymentFilter === 'partial' ? 'btn-primary' : 'btn-secondary'}" onclick="BillingModule.setPaymentFilter('partial')">
+              Partial Installments
+            </button>
+          </div>
+        </div>
+
+        ${this.selectedStartupId ? `
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; margin: 0 18px 16px; background: rgba(11, 8, 38, 0.05); border: 1px solid rgba(11, 8, 38, 0.18); border-radius: var(--radius-md); flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 16px;">💳</span>
+              <span style="font-size: 13px; font-weight: 700; color: #0B0826;">
+                Showing complete payment history for: <u>${this.selectedStartupName}</u>
+              </span>
+              <span class="badge" style="background: #0B0826; color: #fff; font-size: 11px; font-weight: 700; padding: 2px 8px;">
+                ${this.getFilteredPayments(payments).length} Payment${this.getFilteredPayments(payments).length === 1 ? '' : 's'}
+              </span>
+            </div>
+            <button class="btn btn-sm btn-outline" onclick="BillingModule.clearStartupSelection()" style="font-size: 11px; font-weight: 700;">
+              ✕ Reset (View All Startups)
+            </button>
+          </div>
+        ` : ''}
+
+        <div class="table-wrapper">
+          <table class="nexus-table">
+            <thead>
+              <tr>
+                <th>Payment ID</th>
+                <th>Receipt #</th>
+                <th>Startup Name</th>
+                <th>Linked Invoice</th>
+                <th>Amount Paid</th>
+                <th>Gateway & Mode</th>
+                <th>Transaction Ref / UTR</th>
+                <th>Payment Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${this.getFilteredPayments(payments).length > 0 ? this.getFilteredPayments(payments).map(p => {
+                const startup = window.store.getStartupById(p.startupId);
+                const emoji = startup ? startup.logoEmoji : '🚀';
+                const gwClass = p.gateway === 'Razorpay' ? 'badge-info' : p.gateway === 'Stripe' ? '' : 'badge-success';
+                const gwStyle = p.gateway === 'Stripe' ? 'background: rgba(99,91,255,0.15); color: #635bff;' : '';
+                return `
+                  <tr style="${this.selectedStartupId ? 'background: rgba(11, 8, 38, 0.02);' : ''}">
+                    <td>
+                      <strong style="font-family: var(--font-mono); color: var(--accent-primary);">${p.id}</strong>
+                    </td>
+                    <td>
+                      <span class="badge badge-success" style="font-family: var(--font-mono); font-size: 11px; font-weight: 700;">
+                        ${p.receiptNo || 'REC-SETTLED'}
+                      </span>
+                    </td>
+                    <td>
+                      <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 18px;">${emoji}</span>
+                        <div>
+                          <strong>${p.startupName}</strong>
+                          <div style="font-size: 11px; color: var(--text-muted);">${startup ? startup.category : (p.notes || '')}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <button class="btn btn-link btn-sm" style="font-family: var(--font-mono); font-weight: 700; padding: 0; color: #0B0826; text-decoration: underline;" onclick="BillingModule.viewInvoice('${p.invoiceId}')" title="View Invoice #${p.invoiceId}">
+                        ${p.invoiceId || '—'}
+                      </button>
+                    </td>
+                    <td>
+                      <div style="font-family: var(--font-mono); font-weight: 800; color: var(--status-success); font-size: 13.5px;">
+                        ₹${(p.amount || 0).toLocaleString('en-IN')}
+                      </div>
+                      ${p.isPartial ? `
+                        <div style="font-size: 10px; color: #8b5cf6; font-weight: 700;">
+                          🔸 Partial (₹${(p.remainingBalance || 0).toLocaleString('en-IN')} due)
+                        </div>
+                      ` : `
+                        <div style="font-size: 10px; color: var(--status-success); font-weight: 600;">
+                          ✓ 100% Settled
+                        </div>
+                      `}
+                    </td>
+                    <td>
+                      <span class="badge ${gwClass}" style="${gwStyle} font-size: 11px; font-weight: 700;">
+                        ${p.gateway || p.method}
+                      </span>
+                    </td>
+                    <td>
+                      <code style="font-size: 11px; font-family: var(--font-mono); color: var(--text-muted); background: var(--bg-surface-elevated); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border-subtle);">
+                        ${p.transactionRef || '—'}
+                      </code>
+                    </td>
+                    <td style="font-size: 11.5px; color: var(--text-muted); white-space: nowrap;">
+                      ${p.paymentDate || '—'}
+                    </td>
+                    <td>
+                      <span class="badge ${p.status === 'Successful' ? 'badge-success' : 'badge-warning'}">
+                        ${p.status || 'Successful'}
+                      </span>
+                    </td>
+                    <td>
+                      <div style="display: flex; gap: 5px;">
+                        <button class="btn btn-outline btn-sm" style="color: var(--status-success); border-color: var(--status-success); font-size: 11px; padding: 4px 8px;" onclick="PaymentsModule.viewReceipt('${p.id}')" title="View Formal Tax Receipt Voucher">
+                          📄 Receipt
+                        </button>
+                        ${p.invoiceId ? `
+                          <button class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 4px 7px;" onclick="BillingModule.viewInvoice('${p.invoiceId}')" title="View Itemized Invoice">
+                            🧾
+                          </button>
+                        ` : ''}
+                      </div>
+                    </td>
+                  </tr>
+                `;
+              }).join('') : `
+                <tr>
+                  <td colspan="10" style="text-align: center; padding: 36px 20px; color: var(--text-muted);">
+                    <div style="font-size: 26px; margin-bottom: 8px;">💳</div>
+                    <div style="font-weight: 700; font-size: 14px; color: var(--text-primary);">
+                      No payment transactions found ${this.selectedStartupName ? `for "${this.selectedStartupName}"` : ''} under filter "${this.paymentFilter}".
+                    </div>
+                    <div style="margin-top: 12px; display: flex; gap: 8px; justify-content: center;">
+                      ${this.selectedStartupId ? `
+                        <button class="btn btn-sm btn-outline" onclick="BillingModule.clearStartupSelection()">
+                          Clear Startup Filter
+                        </button>
+                      ` : ''}
+                      ${this.paymentFilter !== 'all' ? `
+                        <button class="btn btn-sm btn-secondary" onclick="BillingModule.setPaymentFilter('all')">
+                          Show All Payment Types
+                        </button>
+                      ` : ''}
+                    </div>
+                  </td>
+                </tr>
+              `}
+            </tbody>
+          </table>
+        </div>
+      </div>
     `;
   },
 
@@ -408,8 +594,8 @@ const BillingModule = {
     }
   },
 
-  selectStartup(startupId, startupName) {
-    if (this.selectedStartupId === startupId) {
+  selectStartup(startupId, startupName, targetTable = 'invoices') {
+    if (this.selectedStartupId === startupId && !targetTable) {
       this.selectedStartupId = null;
       this.selectedStartupName = null;
     } else {
@@ -419,11 +605,19 @@ const BillingModule = {
     this.render();
     if (this.selectedStartupId) {
       setTimeout(() => {
-        const card = document.getElementById('tax-invoices-ledger-card');
+        const targetId = targetTable === 'payments' ? 'payment-history-ledger-card' : 'tax-invoices-ledger-card';
+        const card = document.getElementById(targetId);
         if (card) {
           card.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
       }, 50);
+    }
+  },
+
+  scrollToSection(sectionId) {
+    const el = document.getElementById(sectionId);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   },
 
@@ -440,6 +634,11 @@ const BillingModule = {
 
   setInvoiceFilter(filter) {
     this.invoiceFilter = filter;
+    this.render();
+  },
+
+  setPaymentFilter(filter) {
+    this.paymentFilter = filter;
     this.render();
   },
 
@@ -461,16 +660,45 @@ const BillingModule = {
     return list;
   },
 
+  getStartupScopedPayments(payments) {
+    if (!this.selectedStartupId) return payments;
+    const cleanName = (this.selectedStartupName || '').replace(/Startup\s+[A-Z]\s*\((.*?)\)/i, '$1').trim().toLowerCase();
+    return payments.filter(p => {
+      if (p.startupId && p.startupId === this.selectedStartupId) return true;
+      if (cleanName && p.startupName && p.startupName.toLowerCase().includes(cleanName)) return true;
+      return false;
+    });
+  },
+
+  getFilteredPayments(payments) {
+    let list = this.getStartupScopedPayments(payments);
+    if (this.paymentFilter === 'full') {
+      list = list.filter(p => !p.isPartial);
+    } else if (this.paymentFilter === 'partial') {
+      list = list.filter(p => p.isPartial);
+    }
+    return list;
+  },
+
   renderRentRow(r) {
     const isSelected = this.selectedStartupId === r.startupId;
     const allInvoices = window.store.getAccessibleInvoices();
+    const allPayments = window.store.getAccessiblePayments();
     const cleanName = (r.startupName || '').replace(/Startup\s+[A-Z]\s*\((.*?)\)/i, '$1').trim().toLowerCase();
+    
     const startupInvoices = allInvoices.filter(inv => {
       if (inv.startupId && inv.startupId === r.startupId) return true;
       if (cleanName && inv.startupName && inv.startupName.toLowerCase().includes(cleanName)) return true;
       return false;
     });
     const invCount = startupInvoices.length;
+
+    const startupPayments = allPayments.filter(p => {
+      if (p.startupId && p.startupId === r.startupId) return true;
+      if (cleanName && p.startupName && p.startupName.toLowerCase().includes(cleanName)) return true;
+      return false;
+    });
+    const payCount = startupPayments.length;
 
     const statusBadgeClass = r.status === 'Paid' 
       ? 'badge-success' 
@@ -481,7 +709,7 @@ const BillingModule = {
     return `
       <tr style="${isSelected ? 'background: rgba(11, 8, 38, 0.05); outline: 2px solid #0B0826;' : ''} transition: all 0.2s ease;">
         <td>
-          <div style="cursor: pointer; display: flex; align-items: center; gap: 10px;" onclick="BillingModule.selectStartup('${r.startupId}', '${(r.startupName || '').replace(/'/g, "\\'")}')" title="Click to view full invoice history for ${r.startupName}">
+          <div style="cursor: pointer; display: flex; align-items: center; gap: 10px;" onclick="BillingModule.selectStartup('${r.startupId}', '${(r.startupName || '').replace(/'/g, "\\'")}', 'invoices')" title="Click to view full invoice & payment history for ${r.startupName}">
             <span style="font-size: 20px;">${r.logoEmoji || '🚀'}</span>
             <div>
               <div style="display: flex; align-items: center; gap: 6px;">
@@ -521,8 +749,13 @@ const BillingModule = {
         <td>
           <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
             <!-- Filter Invoice History -->
-            <button class="btn btn-sm ${isSelected ? 'btn-primary' : 'btn-outline'}" style="font-size: 11px; padding: 4px 9px; font-weight: 700;" onclick="BillingModule.selectStartup('${r.startupId}', '${(r.startupName || '').replace(/'/g, "\\'")}')" title="Filter invoice ledger below for ${r.startupName}">
+            <button class="btn btn-sm ${isSelected ? 'btn-primary' : 'btn-outline'}" style="font-size: 11px; padding: 4px 8px; font-weight: 700;" onclick="BillingModule.selectStartup('${r.startupId}', '${(r.startupName || '').replace(/'/g, "\\'")}', 'invoices')" title="Filter invoice ledger below for ${r.startupName}">
               📜 Invoices (${invCount})
+            </button>
+
+            <!-- Filter Payment History -->
+            <button class="btn btn-sm ${isSelected ? 'btn-primary' : 'btn-outline'}" style="font-size: 11px; padding: 4px 8px; font-weight: 700;" onclick="BillingModule.selectStartup('${r.startupId}', '${(r.startupName || '').replace(/'/g, "\\'")}', 'payments')" title="Filter payment history below for ${r.startupName}">
+              💳 Payments (${payCount})
             </button>
 
             <!-- View Invoice -->

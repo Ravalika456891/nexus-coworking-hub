@@ -547,6 +547,127 @@ const PaymentsModule = {
         </div>
       </div>
 
+      <!-- ── SETTLED PAYMENT TRANSACTIONS & RECEIPTS LOG (PAYMENT HISTORY) ── -->
+      <div class="card" id="payments-history-transactions-card" style="margin-bottom: 22px;">
+        <div class="card-header" style="padding: 14px 20px; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <div class="card-title" style="display: flex; align-items: center; gap: 8px;">
+              <span>💳 Settled Payment History & Reconciled Receipts Log</span>
+              <span class="badge badge-success" style="font-size: 11px; font-weight: 700;">${payments.length} Transactions</span>
+            </div>
+            <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">
+              Immutable audit journal of gateway receipts, settlement timestamps, and UTR transaction codes.
+            </div>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="App.showToast('Exporting GST Payment History CSV...', 'info'); setTimeout(() => App.showToast('Payment history exported successfully!', 'success'), 800);">
+            📥 Export Payment CSV
+          </button>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="nexus-table">
+            <thead>
+              <tr>
+                <th>Payment ID</th>
+                <th>Receipt #</th>
+                <th>Startup Name</th>
+                <th>Linked Invoice</th>
+                <th>Amount Paid</th>
+                <th>Gateway & Mode</th>
+                <th>Transaction Ref / UTR</th>
+                <th>Settlement Timestamp</th>
+                <th>Status</th>
+                <th style="text-align: right;">Receipt Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${payments.length > 0 ? payments.map(p => {
+                const startup = window.store.getStartupById(p.startupId);
+                const emoji = startup ? startup.logoEmoji : '🚀';
+                const gwClass = p.gateway === 'Razorpay' ? 'badge-info' : p.gateway === 'Stripe' ? '' : 'badge-success';
+                const gwStyle = p.gateway === 'Stripe' ? 'background: rgba(99,91,255,0.15); color: #635bff;' : '';
+                return `
+                  <tr>
+                    <td>
+                      <strong style="font-family: var(--font-mono); color: var(--accent-primary);">${p.id}</strong>
+                    </td>
+                    <td>
+                      <span class="badge badge-success" style="font-family: var(--font-mono); font-size: 11px; font-weight: 700;">
+                        ${p.receiptNo || 'REC-SETTLED'}
+                      </span>
+                    </td>
+                    <td>
+                      <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 18px;">${emoji}</span>
+                        <div>
+                          <strong>${p.startupName}</strong>
+                          <div style="font-size: 11px; color: var(--text-muted);">${startup ? startup.category : (p.notes || '')}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <button class="btn btn-link btn-sm" style="font-family: var(--font-mono); font-weight: 700; padding: 0; color: #0B0826; text-decoration: underline;" onclick="typeof InvoiceModule !== 'undefined' ? InvoiceModule.viewInvoice('${p.invoiceId}') : null" title="View Invoice #${p.invoiceId}">
+                        ${p.invoiceId || '—'}
+                      </button>
+                    </td>
+                    <td>
+                      <div style="font-family: var(--font-mono); font-weight: 800; color: var(--status-success); font-size: 13.5px;">
+                        ₹${(p.amount || 0).toLocaleString('en-IN')}
+                      </div>
+                      ${p.isPartial ? `
+                        <div style="font-size: 10px; color: #8b5cf6; font-weight: 700;">
+                          🔸 Partial (₹${(p.remainingBalance || 0).toLocaleString('en-IN')} remaining)
+                        </div>
+                      ` : `
+                        <div style="font-size: 10px; color: var(--status-success); font-weight: 600;">
+                          ✓ Full Settlement
+                        </div>
+                      `}
+                    </td>
+                    <td>
+                      <span class="badge ${gwClass}" style="${gwStyle} font-size: 11px; font-weight: 700;">
+                        ${p.gateway || p.method}
+                      </span>
+                    </td>
+                    <td>
+                      <code style="font-size: 11px; font-family: var(--font-mono); color: var(--text-muted); background: var(--bg-surface-elevated); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border-subtle);">
+                        ${p.transactionRef || '—'}
+                      </code>
+                    </td>
+                    <td style="font-size: 11.5px; color: var(--text-muted); white-space: nowrap;">
+                      ${p.paymentDate || '—'}
+                    </td>
+                    <td>
+                      <span class="badge ${p.status === 'Successful' ? 'badge-success' : 'badge-warning'}">
+                        ${p.status || 'Successful'}
+                      </span>
+                    </td>
+                    <td style="text-align: right;">
+                      <div style="display: inline-flex; gap: 5px;">
+                        <button class="btn btn-outline btn-sm" style="color: var(--status-success); border-color: var(--status-success); font-size: 11px; padding: 4px 8px;" onclick="PaymentsModule.viewReceipt('${p.id}')" title="View Tax Receipt Voucher">
+                          📄 Receipt
+                        </button>
+                        ${p.invoiceId ? `
+                          <button class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 4px 7px;" onclick="PaymentsModule.openLifecycleModal('${p.invoiceId}')" title="Track 3-Stage Lifecycle">
+                            🔄 Track
+                          </button>
+                        ` : ''}
+                      </div>
+                    </td>
+                  </tr>
+                `;
+              }).join('') : `
+                <tr>
+                  <td colspan="10" style="text-align: center; padding: 36px; color: var(--text-muted);">
+                    No payment history records found in this billing period.
+                  </td>
+                </tr>
+              `}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- ── GATEWAY INTEGRATION HUB & SDK PREVIEW ── -->
       <div class="card">
         <div class="card-header" style="padding: 14px 20px;">
