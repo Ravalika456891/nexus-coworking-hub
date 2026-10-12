@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NEXUS | Co-Working & Startup Incubation Operating System</title>
+  <meta name="description" content="Comprehensive Co-Working & Startup Incubation Management System managing the entire lifecycle: Onboarding, Workspace Allocation, Meeting Rooms, Rent Calculation, Invoicing, Payments, Incubation Milestones, and Analytics.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/design-system.css">
+  <link rel="stylesheet" href="css/components.css">
+  <style>
+    /* Invoice type selector buttons */
+    .inv-type-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 8px;
+      border-radius: var(--radius-md);
+      background: var(--bg-surface-elevated);
+      border: 2px solid var(--border-subtle);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.18s ease;
+      min-height: 68px;
+    }
+    .inv-type-btn:hover {
+      border-color: var(--accent-primary);
+      color: var(--accent-primary);
+      background: rgba(99, 102, 241, 0.07);
+    }
+    .inv-type-btn.active {
+      border-color: var(--accent-primary);
+      background: rgba(99, 102, 241, 0.12);
+      color: var(--accent-primary);
+    }
+    /* Print: hide app chrome, show only invoice */
+    @media print {
+      body > * { display: none !important; }
+      #print-invoice-target { display: block !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="app-sidebar">
+      <!-- macOS Window Traffic Lights -->
+      <div class="apple-window-dots" aria-hidden="true">
+        <span class="apple-dot dot-red" title="Close"></span>
+        <span class="apple-dot dot-yellow" title="Minimize"></span>
+        <span class="apple-dot dot-green" title="Zoom"></span>
+      </div>
+
+      <div class="sidebar-brand">
+        <div class="brand-icon">⚡</div>
+        <div class="brand-info">
+          <h1>NEXUS HUB</h1>
+          <span>Incubation OS</span>
+        </div>
+      </div>
+
+      <div class="nav-section-title">Lifecycle Stages</div>
+
+      <nav class="sidebar-nav">
+        <a class="nav-item active" data-tab="dashboard">
+          <span class="nav-item-icon">📊</span>
+          <span class="nav-item-text">Admin Dashboard</span>
+        </a>
+
+        <a class="nav-item" data-tab="onboarding">
+          <span class="nav-item-icon">🚀</span>
+          <span class="nav-item-text">Startup Onboarding</span>
+        </a>
+
+        <a class="nav-item" data-tab="workspace">
+          <span class="nav-item-icon">🏢</span>
+          <span class="nav-item-text">Workspaces & Desks</span>
+        </a>
+
+        <a class="nav-item" data-tab="meetingRooms">
+          <span class="nav-item-icon">📅</span>
+          <span class="nav-item-text">Meeting Rooms</span>
+        </a>
+
+        <a class="nav-item" data-tab="billing">
+          <span class="nav-item-icon">🧾</span>
+          <span class="nav-item-text">Rent & Invoices</span>
+        </a>
+
+        <a class="nav-item" data-tab="payments">
+          <span class="nav-item-icon">💳</span>
+          <span class="nav-item-text">Payments & Ledger</span>
+        </a>
+
+        <a class="nav-item" data-tab="incubation">
+          <span class="nav-item-icon">🌱</span>
+          <span class="nav-item-text">Incubation Journey</span>
+        </a>
+
+        <a class="nav-item" data-tab="milestones">
+          <span class="nav-item-icon">🎯</span>
+          <span class="nav-item-text">Milestones</span>
+        </a>
+
+        <a class="nav-item" data-tab="reports">
+          <span class="nav-item-icon">📈</span>
+          <span class="nav-item-text">Reports & Analytics</span>
+        </a>
+
+        <a class="nav-item" data-tab="contact">
+          <span class="nav-item-icon">📍</span>
+          <span class="nav-item-text">Contact Hub</span>
+          <span class="nav-item-badge" style="background: rgba(237, 68, 27, 0.12); color: #ed441b; font-weight: 700;">Ecosystem</span>
+        </a>
+
+        <a href="index.html" class="nav-item" style="margin-top: 8px; border: 1px solid rgba(237, 68, 27, 0.3); background: rgba(237, 68, 27, 0.06); border-radius: 8px;">
+          <span class="nav-item-icon">🌐</span>
+          <span class="nav-item-text" style="color: #ed441b; font-weight: 600;">Public Website</span>
+        </a>
+      </nav>
+
+      <!-- Sidebar Mini Lifecycle Journey Progress -->
+      <div class="sidebar-lifecycle-pill">
+        <div class="lifecycle-pill-header">
+          <span>Lifecycle Progress</span>
+          <span>9 Stages</span>
+        </div>
+        <div class="lifecycle-steps-row">
+          <div class="step-indicator active"></div>
+          <div class="step-indicator active"></div>
+          <div class="step-indicator active"></div>
+          <div class="step-indicator active"></div>
+          <div class="step-indicator active"></div>
+          <div class="step-indicator active"></div>
+          <div class="step-indicator active"></div>
+          <div class="step-indicator active"></div>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="founder-switcher-badge">
+          <div class="founder-switcher-avatar">🧠</div>
+          <div class="founder-switcher-text" style="line-height: 1.3;">
+            <div style="font-weight: 700; color: var(--text-primary);">Cyber City Hub</div>
+            <div style="color: var(--text-muted); font-size: 11px;">Bengaluru, India</div>
+          </div>
+        </div>
+
+        <button class="btn btn-outline btn-sm" style="width: 100%; font-size: 11px; padding: 6px;" onclick="App.confirmResetDemo()">
+          🔄 Reset Demo Data
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Shell -->
+    <main class="app-main">
+      <!-- Top Application Header -->
+      <header class="app-header">
+        <div class="header-left">
+          <h2 class="page-title" id="header-page-title">Command Center</h2>
+
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" class="search-input" id="global-search-input" placeholder="Search startups, desks, milestones (e.g. XYZ Technologies, MVP)...">
+          </div>
+        </div>
+
+        <div class="header-right">
+          <!-- Quick Stat Badge -->
+          <div class="header-stat-badge" id="header-stat-pill">
+            <span style="color: var(--status-success); font-weight: 700;">● 84% Occupied</span>
+            <span style="color: var(--border-medium);">•</span>
+            <span style="color: var(--accent-primary); font-weight: 700;">₹3.6L MRR</span>
+          </div>
+
+          <!-- Super Admin Portal Login Button -->
+          <button class="btn btn-outline btn-sm" id="header-admin-login-btn" onclick="App.openAdminLoginModal()" style="font-size: 11.5px; font-weight: 700; padding: 5px 10px; gap: 4px; border-radius: var(--radius-md); border-color: #f59e0b; color: #f59e0b; white-space: nowrap; flex-shrink: 0;" title="Super Admin Authentication Portal">
+            <span>👑</span>
+            <span id="header-admin-login-btn-text">Admin</span>
+          </button>
+
+          <!-- Startup Portal Login Button -->
+          <button class="btn btn-outline btn-sm" id="header-startup-login-btn" onclick="App.openStartupLoginModal()" style="font-size: 11.5px; font-weight: 700; padding: 5px 10px; gap: 4px; border-radius: var(--radius-md); border-color: var(--accent-primary); color: var(--accent-primary); white-space: nowrap; flex-shrink: 0;" title="Startup Founder Portal Login">
+            <span>🚀</span>
+            <span id="header-startup-login-btn-text">Startup</span>
+          </button>
+
+          <!-- Role Perspective Dropdown Selector -->
+          <div class="role-dropdown-wrapper" id="role-dropdown-wrapper">
+            <button class="role-selector-pill" id="role-selector-pill" onclick="App.toggleRoleDropdown(event)" title="Switch User Role Perspective">
+              <span class="role-pill-avatar" id="header-role-avatar">👑</span>
+              <span class="role-pill-text" id="header-role-text">Super Admin</span>
+              <span class="role-pill-arrow">▾</span>
+            </button>
+            <div class="role-dropdown-panel" id="role-dropdown-panel">
+              <div class="role-panel-header">Switch Perspective</div>
+              <div class="role-panel-list">
+                <button class="role-panel-item active" id="role-opt-super_admin" onclick="App.setRole('super_admin'); App.closeRoleDropdown();">
+                  <span class="role-item-icon">👑</span>
+                  <div class="role-item-details">
+                    <div class="role-item-title">Super Admin</div>
+                    <div class="role-item-desc">Full access to all 9 modules</div>
+                  </div>
+                </button>
+                <button class="role-panel-item" id="role-opt-incubator_admin" onclick="App.setRole('incubator_admin'); App.closeRoleDropdown();">
+                  <span class="role-item-icon">🌱</span>
+                  <div class="role-item-details">
+                    <div class="role-item-title">Incubator Admin</div>
+                    <div class="role-item-desc">Startups, Mentors, Workspaces</div>
+                  </div>
+                </button>
+                <button class="role-panel-item" id="role-opt-finance_admin" onclick="App.setRole('finance_admin'); App.closeRoleDropdown();">
+                  <span class="role-item-icon">💰</span>
+                  <div class="role-item-details">
+                    <div class="role-item-title">Finance Admin</div>
+                    <div class="role-item-desc">Invoices, Rent, GST Ledgers</div>
+                  </div>
+                </button>
+                <button class="role-panel-item" id="role-opt-startup" onclick="App.setRole('startup'); App.closeRoleDropdown();">
+                  <span class="role-item-icon">🚀</span>
+                  <div class="role-item-details">
+                    <div class="role-item-title">Startup Founder</div>
+                    <div class="role-item-desc">Cabin, Bookings, Milestones</div>
+                  </div>
+                </button>
+                <button class="role-panel-item" id="role-opt-mentor" onclick="App.setRole('mentor'); App.closeRoleDropdown();">
+                  <span class="role-item-icon">🧠</span>
+                  <div class="role-item-details">
+                    <div class="role-item-title">Lead Mentor</div>
+                    <div class="role-item-desc">Mentees, Sessions, Feedback</div>
+                  </div>
+                </button>
+              </div>
+              <div class="role-panel-footer">
+                <button class="btn btn-primary btn-sm" onclick="App.openStartupLoginModal(); App.closeRoleDropdown();" style="width: 100%; justify-content: center; font-size: 11px; margin-bottom: 6px;">
+                  🚀 Sign In as Specific Startup
+                </button>
+                <button class="btn btn-outline btn-sm" onclick="App.openRbacMatrixModal(); App.closeRoleDropdown();" style="width: 100%; justify-content: center; font-size: 11px;">
+                  🛡️ Full RBAC Permission Matrix
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- RBAC Quick Matrix Button -->
+          <button class="btn btn-outline btn-sm" id="header-rbac-btn" onclick="App.openRbacMatrixModal()" style="font-size: 11.5px; padding: 6px 12px; gap: 5px; white-space: nowrap; flex-shrink: 0;" title="View Role-Based Access Control Permission Matrix">
+            🛡️ RBAC
+          </button>
+
+          <!-- T-Hub Theme Toggle (Compact Icon) -->
+          <button class="btn-icon" id="thub-theme-toggle-btn" onclick="App.toggleThubTheme()" title="Toggle T-Hub Flame Theme (#ED441B)">
+            <span>🔥</span>
+          </button>
+
+          <!-- Theme Toggle -->
+          <button class="btn-icon" id="theme-toggle-btn" title="Toggle Theme">
+            <span id="theme-toggle-icon">🌙</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Dynamic RBAC Persona & Scope Banner -->
+      <div id="dynamic-persona-banner" class="persona-banner-bar"></div>
+
+      <!-- Lifecycle Views Containers -->
+      <div class="view-container active" id="view-dashboard"></div>
+      <div class="view-container" id="view-onboarding"></div>
+      <div class="view-container" id="view-workspace"></div>
+      <div class="view-container" id="view-meetingRooms"></div>
+      <div class="view-container" id="view-billing"></div>
+      <div class="view-container" id="view-payments"></div>
+      <div class="view-container" id="view-incubation"></div>
+      <div class="view-container" id="view-milestones"></div>
+      <div class="view-container" id="view-reports"></div>
+      <div class="view-container" id="view-contact"></div>
+    </main>
+  </div>
+
+  <!-- Dynamic Modal & Toast Mounts -->
+  <div id="modal-mount"></div>
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="js/initialData.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/modules/dashboard.js"></script>
+  <script src="js/modules/onboarding.js"></script>
+  <script src="js/modules/workspace.js"></script>
+  <script src="js/modules/meetingRooms.js"></script>
+  <script src="js/modules/invoice.js"></script>
+  <script src="js/modules/billing.js"></script>
+  <script src="js/modules/payments.js"></script>
+  <script src="js/modules/incubation.js"></script>
+  <script src="js/modules/milestones.js"></script>
+  <script src="js/modules/reports.js"></script>
+  <script src="js/modules/contact.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
