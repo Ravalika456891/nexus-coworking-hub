@@ -470,6 +470,25 @@
     });
   }
 
+  /* ---------- Newsletter Form Submit Feedback ---------- */
+  const newsletterForm = document.getElementById('newsletter-form');
+  if (newsletterForm) {
+    newsletterForm.addEventListener('submit', e => {
+      e.preventDefault();
+      const input = document.getElementById('fn-email');
+      const submitBtn = document.getElementById('fn-submit-btn');
+      if (input && submitBtn) {
+        const email = input.value;
+        submitBtn.innerHTML = '✓ Subscribed!';
+        submitBtn.style.background = '#15803d';
+        submitBtn.style.borderColor = '#15803d';
+        input.value = '';
+        input.placeholder = `Subscribed as ${email}!`;
+        input.disabled = true;
+      }
+    });
+  }
+
   /* ---------- Footer Year ---------- */
   const yearEl = document.getElementById('year');
   if (yearEl) {

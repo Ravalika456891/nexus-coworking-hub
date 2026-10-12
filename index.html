@@ -768,34 +768,155 @@
     </section>
   </main>
 
-  <!-- ============ FOOTER WITH RESIDENT MEMBER PORTAL ACCESS ============ -->
+  <!-- ============ EXPANDED MEGA FOOTER ============ -->
   <footer class="nx-footer">
     <div class="nx-container">
+      <!-- 1. Top Newsletter & Dispatch Banner -->
+      <div class="nx-footer-newsletter reveal">
+        <div class="nx-fn-text">
+          <span class="nx-badge sm"><span class="pulse sm"></span> WEEKLY DISPATCH</span>
+          <h3>Stay ahead of India's innovation frontier</h3>
+          <p>Get weekly updates on funding rounds, enterprise pilot openings, campus masterclasses, and founder playbooks.</p>
+        </div>
+        <form class="nx-fn-form" id="newsletter-form">
+          <input type="email" id="fn-email" placeholder="Enter your work email" required aria-label="Email for newsletter">
+          <button type="submit" class="nx-btn nx-btn-flame sm" id="fn-submit-btn">Subscribe Free <span class="arrow">→</span></button>
+        </form>
+      </div>
+
+      <!-- 2. Main Mega Directory Grid -->
       <div class="nx-footer-grid">
+        <!-- Col 1: Brand & Contact -->
         <div class="nx-footer-brand">
           <a href="#top" class="nx-logo"><span class="nx-logo-mark">N</span><span class="nx-logo-text">NEXUS<b>HUB</b></span></a>
-          <p>An innovation campus for founders, corporates, investors and academia to build world-class companies together.</p>
+          <p>India's premier startup innovation campus connecting visionary founders with space, deep capital, enterprise sandboxes, and global markets.</p>
+          <div class="nx-footer-contact-info">
+            <p><strong>Campus Desk:</strong> +91 (80) 4920-8800</p>
+            <p><strong>Inquiries:</strong> <a href="mailto:hello@nexushub.in">hello@nexushub.in</a></p>
+          </div>
           <div class="nx-socials">
-            <a href="#" aria-label="LinkedIn">in</a><a href="#" aria-label="X">𝕏</a><a href="#" aria-label="Instagram">◎</a><a href="#" aria-label="YouTube">▶</a>
+            <a href="#" aria-label="LinkedIn" title="LinkedIn">in</a>
+            <a href="#" aria-label="X (Twitter)" title="X">𝕏</a>
+            <a href="#" aria-label="Instagram" title="Instagram">◎</a>
+            <a href="#" aria-label="YouTube" title="YouTube">▶</a>
+            <a href="#" aria-label="GitHub" title="GitHub">⌥</a>
           </div>
         </div>
-        <div><h4>Ecosystem</h4><a href="#ecosystem">Startups</a><a href="#ecosystem">Corporates</a><a href="#network">Investors</a><a href="#network">Mentors</a></div>
-        <div><h4>Campus</h4><a href="#facilities">Facilities &amp; Labs</a><a href="#programs">Programs</a><a href="#events">Events Calendar</a><a href="#faq">FAQ</a></div>
-        
-        <!-- Member Portal Login Dedicated Card in Footer -->
+
+        <!-- Col 2: Campus & Facilities -->
+        <div class="nx-footer-col">
+          <h4>Campus &amp; Labs</h4>
+          <a href="#facilities">Prototyping Bay 04</a>
+          <a href="#facilities">NVIDIA H100 AI Pod</a>
+          <a href="#facilities">500-Seat Demo Arena</a>
+          <a href="#facilities">4K Podcast Studio</a>
+          <a href="#cowork">Private Founder Cabins</a>
+          <a href="#cowork">Hot &amp; Dedicated Desks</a>
+          <a href="#cta">Book Campus Tour</a>
+        </div>
+
+        <!-- Col 3: Programs & Funding -->
+        <div class="nx-footer-col">
+          <h4>Programs</h4>
+          <a href="#programs">Launchpad (0 to 1)</a>
+          <a href="#programs">AI Studio Residency</a>
+          <a href="#programs">DeepTech Foundry</a>
+          <a href="#programs">GreenScale Climate</a>
+          <a href="#programs">Bank of Tomorrow Sprint</a>
+          <a href="#programs">Future Mobility Lab</a>
+          <a href="#journey">The Founder Journey</a>
+        </div>
+
+        <!-- Col 4: Ecosystem & Partners -->
+        <div class="nx-footer-col">
+          <h4>Ecosystem</h4>
+          <a href="#ecosystem">For Startups (Cohort 07)</a>
+          <a href="#ecosystem">For Enterprise Corporates</a>
+          <a href="#network">Investor Syndicate Network</a>
+          <a href="#network">Operator Mentors</a>
+          <a href="#ecosystem">Government Innovation</a>
+          <a href="#ecosystem">University &amp; Labs Alliance</a>
+          <a href="#faq">Frequently Asked Questions</a>
+        </div>
+
+        <!-- Col 5: Knowledge & Community -->
+        <div class="nx-footer-col">
+          <h4>Knowledge Hub</h4>
+          <a href="#manifesto">The NEXUS Manifesto</a>
+          <a href="#events">Events Calendar</a>
+          <a href="#voices">Founder Testimonials</a>
+          <a href="#cta">Grant &amp; Equity Terms</a>
+          <a href="#cta">Cap Table Playbooks</a>
+          <a href="#cta">Press &amp; Media Kit</a>
+          <a href="#cta">Annual Impact Report</a>
+        </div>
+
+        <!-- Col 6: Resident Portal Card -->
         <div class="nx-footer-portal-col">
-          <h4>Resident Access</h4>
-          <p>Already an active resident founder, team member or corporate partner?</p>
+          <div class="nx-portal-badge"><span class="pulse sm"></span> LIVE SYSTEM</div>
+          <h4>Resident Portal</h4>
+          <p>Active cohort founders, corporate challenge leads, and mentors can manage spaces, access labs, and review invoices.</p>
           <a href="app.html" class="nx-btn nx-btn-outline-light sm nx-footer-login" id="footer-login-btn">
             <span>🔐</span> Member Portal Login →
           </a>
-          <p class="nx-portal-note">Book desks, reserve labs &amp; manage billing.</p>
+          <div class="nx-portal-features">
+            <span>✓ Desk &amp; Cabin Allocations</span>
+            <span>✓ Instant Meeting Room Passes</span>
+            <span>✓ GST Invoicing &amp; Ledgers</span>
+          </div>
         </div>
       </div>
 
+      <!-- 3. Campus Physical Locations Strip -->
+      <div class="nx-footer-locations reveal">
+        <div class="nx-loc-card">
+          <div class="loc-head"><span class="loc-pin">📍</span> <b>Bengaluru Campus (HQ)</b></div>
+          <p>Survey No. 42, Cyber City Hub, Outer Ring Road, Bellandur, Bengaluru, Karnataka 560103</p>
+          <small>Open 24/7 for Resident Founders · Visitor Desk: 8 AM – 8 PM</small>
+        </div>
+        <div class="nx-loc-card">
+          <div class="loc-head"><span class="loc-pin">📍</span> <b>Hyderabad DeepTech Hub</b></div>
+          <p>Innovation Way, Knowledge City, Raidurg, Hyderabad, Telangana 500081</p>
+          <small>Robotics Labs &amp; Hardware Assembly Sandbox</small>
+        </div>
+        <div class="nx-loc-card">
+          <div class="loc-head"><span class="loc-pin">📍</span> <b>Global Gateway Hub</b></div>
+          <p>Level 24, DIFC Gate Precinct 4, Dubai, United Arab Emirates</p>
+          <small>Cross-Border Soft Landing &amp; Middle East Investor Desk</small>
+        </div>
+      </div>
+
+      <!-- 4. Accreditations & Alliance Banner -->
+      <div class="nx-footer-alliances">
+        <span class="nx-alliance-title">ECOSYSTEM PARTNERS &amp; RECOGNITIONS:</span>
+        <div class="nx-alliance-badges">
+          <span>🏛️ Startup India Recognized</span>
+          <span>🔬 Dept. of Science &amp; Technology (DST)</span>
+          <span>🌍 Global Innovation Alliance</span>
+          <span>⚡ NVIDIA Inception Partner</span>
+          <span>☁️ AWS Activate Hub</span>
+          <span>🌿 Climate Collective India</span>
+        </div>
+      </div>
+
+      <!-- 5. Bottom Copyright & Legal Links -->
       <div class="nx-footer-bottom">
-        <span>© <span id="year"></span> NEXUS HUB. All rights reserved.</span>
-        <span><a href="app.html">Member Portal</a> · <a href="#">Privacy Policy</a> · <a href="#">Terms of Service</a></span>
+        <div class="nx-fb-left">
+          <span>© <span id="year"></span> NEXUS HUB Technologies Foundation. All rights reserved.</span>
+          <span class="nx-reg-badge">Section 8 Non-Profit Technology Incubator</span>
+        </div>
+        <div class="nx-fb-links">
+          <a href="app.html">Member Portal</a>
+          <a href="#faq">FAQ</a>
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms of Service</a>
+          <a href="#">Security &amp; Compliance</a>
+          <a href="#">Code of Conduct</a>
+          <a href="#">System Status</a>
+        </div>
+        <div class="nx-fb-region">
+          <span>🌐 India (English) · Global Campus</span>
+        </div>
       </div>
     </div>
   </footer>

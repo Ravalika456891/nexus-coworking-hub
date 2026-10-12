@@ -841,34 +841,236 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .nx-cta-form input::placeholder { color: rgba(255,255,255,.5); }
 .nx-cta-note { margin-top: 16px; font-size: 13px; color: rgba(255,255,255,.5); }
 
-/* ---------- Footer with Resident Portal ---------- */
-.nx-footer { background: var(--ink); color: rgba(255,255,255,.7); padding: 80px 0 30px; }
-.nx-footer-grid { display: grid; grid-template-columns: 1.8fr 1fr 1fr 1.3fr; gap: 40px; }
-.nx-footer-brand p { margin: 18px 0 22px; max-width: 320px; font-size: 14.5px; }
-.nx-footer h4 { color: #fff; font-weight: 600; font-size: 15px; margin-bottom: 18px; }
-.nx-footer-grid > div > a { display: block; font-size: 14.5px; padding: 5px 0; transition: color .25s; }
-.nx-footer-grid > div > a:hover { color: var(--flame); }
-.nx-footer-grid > div > p { font-size: 14.5px; margin-bottom: 10px; }
-.nx-socials { display: flex; gap: 10px; }
-.nx-socials a { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--line-light); color: #fff; font-size: 14px; transition: all .3s var(--ease); }
-.nx-socials a:hover { background: var(--flame); border-color: var(--flame); transform: translateY(-3px); }
+/* ---------- Expanded Mega Footer ---------- */
+.nx-footer {
+  background: #08080b;
+  color: rgba(255, 255, 255, 0.7);
+  padding: 85px 0 35px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
 
+/* 1. Newsletter Banner */
+.nx-footer-newsletter {
+  background: linear-gradient(135deg, rgba(28, 14, 9, 0.92) 0%, rgba(18, 18, 23, 0.96) 100%);
+  border: 1px solid rgba(237, 68, 27, 0.35);
+  border-radius: 26px;
+  padding: 38px 46px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 36px;
+  margin-bottom: 65px;
+  box-shadow: 0 25px 60px -20px rgba(0, 0, 0, 0.65);
+  position: relative;
+  overflow: hidden;
+}
+.nx-footer-newsletter::after {
+  content: "";
+  position: absolute;
+  right: -50px;
+  bottom: -50px;
+  width: 260px;
+  height: 260px;
+  background: radial-gradient(circle, rgba(237, 68, 27, 0.22), transparent 70%);
+  pointer-events: none;
+}
+.nx-fn-text { max-width: 580px; position: relative; z-index: 2; }
+.nx-badge.sm { font-size: 10.5px; padding: 2px 8px; margin-bottom: 10px; }
+.nx-fn-text h3 {
+  font-family: var(--serif);
+  font-size: clamp(23px, 2.4vw, 32px);
+  color: #fff;
+  font-weight: 700;
+  line-height: 1.25;
+  margin-bottom: 6px;
+}
+.nx-fn-text p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  line-height: 1.55;
+}
+.nx-fn-form {
+  display: flex;
+  gap: 10px;
+  flex: 1;
+  max-width: 440px;
+  position: relative;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 6px 8px 6px 18px;
+  border-radius: 999px;
+  backdrop-filter: blur(10px);
+}
+.nx-fn-form input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+}
+.nx-fn-form input::placeholder { color: rgba(255, 255, 255, 0.45); }
+
+/* 2. Grid (6 columns) */
+.nx-footer-grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 1fr 1.1fr 1fr 1.5fr;
+  gap: 32px;
+  margin-bottom: 50px;
+}
+.nx-footer-brand p {
+  margin: 16px 0 16px;
+  max-width: 290px;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+.nx-footer-contact-info {
+  margin-bottom: 18px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+}
+.nx-footer-contact-info p { margin: 3px 0 !important; }
+.nx-footer-contact-info a { color: var(--flame-2); text-decoration: underline; }
+
+.nx-footer-col h4 {
+  color: #fff;
+  font-weight: 600;
+  font-size: 14.5px;
+  letter-spacing: .02em;
+  margin-bottom: 16px;
+}
+.nx-footer-col a {
+  display: block;
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.65);
+  padding: 5px 0;
+  transition: color .2s, transform .2s;
+}
+.nx-footer-col a:hover {
+  color: var(--flame-2);
+  transform: translateX(3px);
+}
+
+/* Resident Portal Card */
 .nx-footer-portal-col {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-  padding: 24px 22px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 22px;
+  padding: 22px 20px;
   display: flex;
   flex-direction: column;
+  position: relative;
+  overflow: hidden;
 }
-.nx-footer-portal-col h4 { margin-bottom: 8px; }
-.nx-footer-portal-col p { font-size: 13.5px; color: rgba(255, 255, 255, 0.7); margin-bottom: 16px; }
-.nx-footer-login { width: 100%; justify-content: center; font-weight: 600; margin-bottom: 8px; border-color: rgba(255,255,255,.2); }
-.nx-footer-login:hover { background: var(--flame); border-color: var(--flame); color: #fff; }
-.nx-portal-note { font-size: 12px !important; color: rgba(255, 255, 255, 0.45) !important; margin-bottom: 0 !important; }
+.nx-portal-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  color: #4ade80;
+  margin-bottom: 10px;
+}
+.nx-portal-badge .pulse { background: #4ade80; box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); }
+.nx-footer-portal-col h4 { color: #fff; font-size: 15.5px; margin-bottom: 6px; }
+.nx-footer-portal-col p { font-size: 12.5px; color: rgba(255, 255, 255, 0.65); line-height: 1.5; margin-bottom: 14px; }
+.nx-footer-login { width: 100%; justify-content: center; font-weight: 600; margin-bottom: 12px; }
+.nx-portal-features {
+  display: grid;
+  gap: 5px;
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.55);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 12px;
+}
 
-.nx-footer-bottom { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-top: 60px; padding-top: 26px; border-top: 1px solid var(--line-light); font-size: 13.5px; }
-.nx-footer-bottom a:hover { color: var(--flame); }
+/* 3. Physical Locations */
+.nx-footer-locations {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  padding: 28px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 26px;
+}
+.nx-loc-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 16px 18px;
+}
+.loc-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 13.5px; color: #fff; }
+.loc-pin { font-size: 15px; }
+.nx-loc-card p { font-size: 12px; color: rgba(255, 255, 255, 0.65); line-height: 1.5; margin-bottom: 4px; }
+.nx-loc-card small { display: block; font-size: 11px; color: rgba(255, 255, 255, 0.4); }
+
+/* 4. Alliances Banner */
+.nx-footer-alliances {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.nx-alliance-title {
+  font-size: 11px;
+  letter-spacing: .12em;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.4);
+}
+.nx-alliance-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.nx-alliance-badges span {
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* 5. Bottom Copyright Bar */
+.nx-footer-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.5);
+  flex-wrap: wrap;
+  padding-top: 4px;
+}
+.nx-fb-left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.nx-reg-badge {
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.55);
+}
+.nx-fb-links {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.nx-fb-links a {
+  color: rgba(255, 255, 255, 0.6);
+  transition: color .2s;
+}
+.nx-fb-links a:hover { color: var(--flame); }
+.nx-fb-region { font-size: 11.5px; color: rgba(255, 255, 255, 0.45); }
 
 /* ---------- Floating Back to Top Button with Circular Progress ---------- */
 .nx-back-to-top {
@@ -949,7 +1151,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
   .nx-manifesto-stats { grid-template-columns: repeat(2, 1fr); gap: 20px; }
   .nx-journey-head { flex-direction: column; align-items: flex-start; }
   .nx-journey-progress { align-items: flex-start; }
-  .nx-footer-grid { grid-template-columns: repeat(2, 1fr); gap: 30px; }
+  .nx-footer-grid { grid-template-columns: repeat(3, 1fr); gap: 32px; }
 }
 
 @media (max-width: 991px) {
@@ -1018,6 +1220,13 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
   .nx-cowork-grid { grid-template-columns: 1fr; gap: 50px; }
   .nx-floating-card { right: 16px; }
   .nx-journey-card { width: 340px; }
+
+  /* Footer tablet adaptations */
+  .nx-footer-newsletter { flex-direction: column; align-items: flex-start; padding: 34px 28px; gap: 24px; }
+  .nx-fn-form { max-width: 100%; width: 100%; }
+  .nx-footer-grid { grid-template-columns: repeat(2, 1fr); gap: 32px; }
+  .nx-footer-locations { grid-template-columns: 1fr; gap: 14px; }
+  .nx-footer-bottom { flex-direction: column; align-items: flex-start; gap: 14px; }
 }
 
 @media (max-width: 680px) {
@@ -1043,9 +1252,19 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
   .nx-cta-form { flex-direction: column; border-radius: 22px; }
   .nx-cta-form input { padding: 14px 16px; }
   .nx-cta-form .nx-btn { justify-content: center; }
-  .nx-footer-grid { grid-template-columns: 1fr; gap: 36px; }
   .nx-voice-stage { min-height: 340px; }
   .nx-back-to-top { right: 18px; bottom: 18px; width: 44px; height: 44px; }
+
+  /* Footer mobile adaptations */
+  .nx-footer { padding: 60px 0 30px; }
+  .nx-footer-newsletter { padding: 26px 18px; margin-bottom: 45px; }
+  .nx-fn-form { flex-direction: column; border-radius: 18px; padding: 8px; }
+  .nx-fn-form input { padding: 10px 12px; }
+  .nx-fn-form .nx-btn { width: 100%; justify-content: center; }
+  .nx-footer-grid { grid-template-columns: 1fr; gap: 28px; margin-bottom: 35px; }
+  .nx-footer-alliances { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .nx-alliance-badges { gap: 8px; }
+  .nx-fb-links { gap: 10px 14px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
