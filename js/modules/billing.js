@@ -411,20 +411,17 @@ const BillingModule = {
           </div>
         ` : ''}
 
-        <div class="table-wrapper">
-          <table class="nexus-table">
+        <div class="table-wrapper" style="overflow-x: auto;">
+          <table class="nexus-table" style="width: 100%; table-layout: auto;">
             <thead>
               <tr>
-                <th>Payment ID</th>
-                <th>Receipt #</th>
-                <th>Startup Name</th>
-                <th>Linked Invoice</th>
-                <th>Amount Paid</th>
-                <th>Gateway & Mode</th>
-                <th>Transaction Ref / UTR</th>
-                <th>Payment Date</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th style="min-width: 130px;">Payment &amp; Receipt</th>
+                <th style="min-width: 160px;">Startup</th>
+                <th style="min-width: 125px;">Linked Invoice</th>
+                <th style="min-width: 115px;">Amount Paid</th>
+                <th style="min-width: 130px;">Gateway &amp; Ref</th>
+                <th style="min-width: 120px;">Date &amp; Status</th>
+                <th style="min-width: 160px; text-align: right;">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -432,71 +429,103 @@ const BillingModule = {
                 const startup = window.store.getStartupById(p.startupId);
                 const emoji = startup ? startup.logoEmoji : '🚀';
                 const gwClass = p.gateway === 'Razorpay' ? 'badge-info' : p.gateway === 'Stripe' ? '' : 'badge-success';
-                const gwStyle = p.gateway === 'Stripe' ? 'background: rgba(99,91,255,0.15); color: #635bff;' : '';
+                const gwStyle = p.gateway === 'Stripe' ? 'background: rgba(99,91,255,0.12); color: #635bff; border: 1px solid rgba(99,91,255,0.25);' : '';
                 return `
                   <tr style="${this.selectedStartupId ? 'background: rgba(11, 8, 38, 0.02);' : ''}">
+                    <!-- 1. Payment ID & Receipt Badge -->
                     <td>
-                      <strong style="font-family: var(--font-mono); color: var(--accent-primary);">${p.id}</strong>
+                      <div style="font-family: var(--font-mono); font-weight: 700; color: var(--accent-primary); font-size: 13px; line-height: 1.2;">
+                        ${p.id}
+                      </div>
+                      <div style="margin-top: 4px;">
+                        <span class="badge badge-success" style="font-family: var(--font-mono); font-size: 10.5px; font-weight: 700; padding: 2px 8px; white-space: nowrap;">
+                          🧾 ${p.receiptNo || 'REC-SETTLED'}
+                        </span>
+                      </div>
                     </td>
+
+                    <!-- 2. Startup Name & Sector -->
                     <td>
-                      <span class="badge badge-success" style="font-family: var(--font-mono); font-size: 11px; font-weight: 700;">
-                        ${p.receiptNo || 'REC-SETTLED'}
-                      </span>
-                    </td>
-                    <td>
-                      <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="font-size: 18px;">${emoji}</span>
-                        <div>
-                          <strong>${p.startupName}</strong>
-                          <div style="font-size: 11px; color: var(--text-muted);">${startup ? startup.category : (p.notes || '')}</div>
+                      <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 20px; line-height: 1; flex-shrink: 0;">${emoji}</span>
+                        <div style="min-width: 0;">
+                          <div style="font-weight: 700; color: var(--text-primary); font-size: 13px; line-height: 1.3;">
+                            ${p.startupName}
+                          </div>
+                          <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+                            ${startup ? startup.category : (p.notes || 'Incubation Member')}
+                          </div>
                         </div>
                       </div>
                     </td>
+
+                    <!-- 3. Linked Invoice Column -->
                     <td>
-                      <button class="btn btn-link btn-sm" style="font-family: var(--font-mono); font-weight: 700; padding: 0; color: #0B0826; text-decoration: underline;" onclick="BillingModule.viewInvoice('${p.invoiceId}')" title="View Invoice #${p.invoiceId}">
-                        ${p.invoiceId || '—'}
-                      </button>
-                    </td>
-                    <td>
-                      <div style="font-family: var(--font-mono); font-weight: 800; color: var(--status-success); font-size: 13.5px;">
-                        ₹${(p.amount || 0).toLocaleString('en-IN')}
-                      </div>
-                      ${p.isPartial ? `
-                        <div style="font-size: 10px; color: #8b5cf6; font-weight: 700;">
-                          🔸 Partial (₹${(p.remainingBalance || 0).toLocaleString('en-IN')} due)
-                        </div>
+                      ${p.invoiceId ? `
+                        <button class="btn btn-outline btn-sm" onclick="BillingModule.viewInvoice('${p.invoiceId}')" style="font-family: var(--font-mono); font-weight: 700; font-size: 11px; color: #4338ca; border-color: #c7d2fe; background: rgba(99, 102, 241, 0.08); padding: 4px 9px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; cursor: pointer;" title="View Itemized Invoice #${p.invoiceId}">
+                          <span>🧾</span>
+                          <span>#${p.invoiceId}</span>
+                        </button>
                       ` : `
-                        <div style="font-size: 10px; color: var(--status-success); font-weight: 600;">
-                          ✓ 100% Settled
-                        </div>
+                        <span style="color: var(--text-muted); font-size: 11px; font-family: var(--font-mono);">—</span>
                       `}
                     </td>
+
+                    <!-- 4. Amount Paid & Settlement Status -->
                     <td>
-                      <span class="badge ${gwClass}" style="${gwStyle} font-size: 11px; font-weight: 700;">
-                        ${p.gateway || p.method}
-                      </span>
+                      <div style="font-family: var(--font-mono); font-weight: 800; color: #16a34a; font-size: 14px;">
+                        ₹${(p.amount || 0).toLocaleString('en-IN')}
+                      </div>
+                      <div style="margin-top: 2px;">
+                        ${p.isPartial ? `
+                          <span style="font-size: 10.5px; color: #7c3aed; font-weight: 700; white-space: nowrap;">
+                            🔸 Partial (₹${(p.remainingBalance || 0).toLocaleString('en-IN')} due)
+                          </span>
+                        ` : `
+                          <span style="font-size: 10.5px; color: #16a34a; font-weight: 600; white-space: nowrap;">
+                            ✓ 100% Settled
+                          </span>
+                        `}
+                      </div>
                     </td>
+
+                    <!-- 5. Gateway & Reference UTR -->
                     <td>
-                      <code style="font-size: 11px; font-family: var(--font-mono); color: var(--text-muted); background: var(--bg-surface-elevated); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border-subtle);">
-                        ${p.transactionRef || '—'}
-                      </code>
+                      <div>
+                        <span class="badge ${gwClass}" style="${gwStyle} font-size: 11px; font-weight: 700; white-space: nowrap;">
+                          ${p.gateway || p.method}
+                        </span>
+                      </div>
+                      <div style="margin-top: 4px;">
+                        <code style="font-size: 10.5px; font-family: var(--font-mono); color: var(--text-muted); background: var(--bg-surface-elevated); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border-subtle); display: inline-block; max-width: 150px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="${p.transactionRef || 'N/A'}">
+                          ${p.transactionRef || '—'}
+                        </code>
+                      </div>
                     </td>
-                    <td style="font-size: 11.5px; color: var(--text-muted); white-space: nowrap;">
-                      ${p.paymentDate || '—'}
-                    </td>
+
+                    <!-- 6. Payment Date & Status -->
                     <td>
-                      <span class="badge ${p.status === 'Successful' ? 'badge-success' : 'badge-warning'}">
-                        ${p.status || 'Successful'}
-                      </span>
+                      <div style="line-height: 1.3;">
+                        ${this.formatPaymentDate(p.paymentDate)}
+                      </div>
+                      <div style="margin-top: 4px;">
+                        <span class="badge ${p.status === 'Successful' ? 'badge-success' : 'badge-warning'}" style="font-size: 10px; padding: 2px 7px; white-space: nowrap;">
+                          ● ${p.status || 'Successful'}
+                        </span>
+                      </div>
                     </td>
-                    <td>
-                      <div style="display: flex; gap: 5px;">
-                        <button class="btn btn-outline btn-sm" style="color: var(--status-success); border-color: var(--status-success); font-size: 11px; padding: 4px 8px;" onclick="PaymentsModule.viewReceipt('${p.id}')" title="View Formal Tax Receipt Voucher">
-                          📄 Receipt
+
+                    <!-- 7. Actions -->
+                    <td style="text-align: right;">
+                      <div style="display: inline-flex; gap: 6px; align-items: center; justify-content: flex-end;">
+                        <button class="btn btn-outline btn-sm" style="color: #15803d; border-color: #86efac; background: rgba(34, 197, 94, 0.08); font-size: 11.5px; font-weight: 600; padding: 5px 9px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;" onclick="PaymentsModule.viewReceipt('${p.id}')" title="View Formal Tax Receipt Voucher">
+                          <span>📄</span>
+                          <span>Receipt</span>
                         </button>
                         ${p.invoiceId ? `
-                          <button class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 4px 7px;" onclick="BillingModule.viewInvoice('${p.invoiceId}')" title="View Itemized Invoice">
-                            🧾
+                          <button class="btn btn-secondary btn-sm" style="font-size: 11.5px; font-weight: 600; padding: 5px 9px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;" onclick="BillingModule.viewInvoice('${p.invoiceId}')" title="View Itemized Invoice #${p.invoiceId}">
+                            <span>🧾</span>
+                            <span>Invoice</span>
                           </button>
                         ` : ''}
                       </div>
@@ -505,7 +534,7 @@ const BillingModule = {
                 `;
               }).join('') : `
                 <tr>
-                  <td colspan="10" style="text-align: center; padding: 36px 20px; color: var(--text-muted);">
+                  <td colspan="7" style="text-align: center; padding: 36px 20px; color: var(--text-muted);">
                     <div style="font-size: 26px; margin-bottom: 8px;">💳</div>
                     <div style="font-weight: 700; font-size: 14px; color: var(--text-primary);">
                       No payment transactions found ${this.selectedStartupName ? `for "${this.selectedStartupName}"` : ''} under filter "${this.paymentFilter}".
@@ -530,6 +559,26 @@ const BillingModule = {
         </div>
       </div>
     `;
+  },
+
+  formatPaymentDate(dateStr) {
+    if (!dateStr || dateStr === '—') return '—';
+    try {
+      const clean = dateStr.replace(' ', 'T');
+      const d = new Date(clean);
+      if (!isNaN(d.getTime())) {
+        const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        const day = d.getDate().toString().padStart(2, '0');
+        const m = months[d.getMonth()];
+        const y = d.getFullYear();
+        let hours = d.getHours();
+        const mins = d.getMinutes().toString().padStart(2, '0');
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12 || 12;
+        return `<span style="font-weight: 600; color: var(--text-primary); font-size: 12px;">${day} ${m} ${y}</span><br><span style="font-size: 11px; color: var(--text-muted);">${hours}:${mins} ${ampm}</span>`;
+      }
+    } catch (e) {}
+    return dateStr;
   },
 
   // Re-route to InvoiceModule for rich viewing
@@ -756,6 +805,11 @@ const BillingModule = {
             <!-- Filter Payment History -->
             <button class="btn btn-sm ${isSelected ? 'btn-primary' : 'btn-outline'}" style="font-size: 11px; padding: 4px 8px; font-weight: 700;" onclick="BillingModule.selectStartup('${r.startupId}', '${(r.startupName || '').replace(/'/g, "\\'")}', 'payments')" title="Filter payment history below for ${r.startupName}">
               💳 Payments (${payCount})
+            </button>
+
+            <!-- Complete Payment History Dossier Modal -->
+            <button class="btn btn-sm btn-outline" style="font-size: 11px; padding: 4px 8px; color: #8b5cf6; border-color: rgba(139,92,246,0.4);" onclick="BillingModule.openStartupPaymentHistoryModal('${r.startupId}')" title="Open complete payment ledger dossier for ${r.startupName}">
+              📊 History Dossier
             </button>
 
             <!-- View Invoice -->
@@ -1163,6 +1217,16 @@ const BillingModule = {
     `;
 
     document.getElementById('modal-mount').innerHTML = html;
+  },
+
+  openStartupPaymentHistoryModal(startupId) {
+    if (typeof PaymentsModule !== 'undefined' && PaymentsModule.openStartupPaymentHistoryModal) {
+      PaymentsModule.openStartupPaymentHistoryModal(startupId);
+    } else {
+      if (window.App && window.App.switchTab) {
+        window.App.switchTab('payments');
+      }
+    }
   },
 
   closeModal(id) {

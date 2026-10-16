@@ -3,6 +3,7 @@
 const OnboardingModule = {
   activeStatusFilter: 'all',
   activeCategoryFilter: 'all',
+  activeView: 'table',
 
   render() {
     const container = document.getElementById('view-onboarding');
@@ -38,7 +39,15 @@ const OnboardingModule = {
             End-to-end incubator onboarding: Registration ➔ Company ➔ Founder ➔ Documents ➔ Verification ➔ Approval ➔ Workspace.
           </p>
         </div>
-        <div style="display: flex; gap: 10px;">
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <div style="display: flex; gap: 4px; background: var(--bg-surface-elevated); padding: 4px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+            <button class="btn btn-sm ${this.activeView === 'table' ? 'btn-primary' : 'btn-outline'}" onclick="OnboardingModule.switchView('table')" style="font-size: 11.5px; padding: 4px 10px;">
+              📋 Startup Table
+            </button>
+            <button class="btn btn-sm ${this.activeView === 'cards' ? 'btn-primary' : 'btn-outline'}" onclick="OnboardingModule.switchView('cards')" style="font-size: 11.5px; padding: 4px 10px;">
+              🎴 Cards View
+            </button>
+          </div>
           <button class="btn btn-primary" onclick="OnboardingModule.openRegistrationWizard()">
             + Register New Startup
           </button>
@@ -133,11 +142,151 @@ const OnboardingModule = {
         </div>
       </div>
 
-      <!-- Startups Grid -->
-      <div class="grid-3col">
-        ${startups.map(s => this.renderStartupCard(s)).join('')}
+      <!-- Startups Content: Table or Grid -->
+      ${this.activeView === 'table' ? this.renderStartupTable(startups) : `
+        <div class="grid-3col">
+          ${startups.map(s => this.renderStartupCard(s)).join('')}
+        </div>
+      `}
+    `;
+  },
+
+  switchView(view) {
+    this.activeView = view;
+    this.render();
+  },
+
+  renderStartupTable(startups) {
+    if (startups.length === 0) {
+      return `
+        <div class="card" style="padding: 48px 20px; text-align: center; color: var(--text-muted);">
+          <div style="font-size: 40px; margin-bottom: 8px;">🏢</div>
+          <h4 style="font-size: 15px; font-weight: 700; color: var(--text-primary);">No Startups Found</h4>
+          <p style="font-size: 13px;">No venture matching current status/category filter.</p>
+        </div>
+      `;
+    }
+
+    const spaces = window.store.getSpaces();
+
+    return `
+      <div class="card" style="padding: 0; overflow: hidden; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); background: var(--bg-surface);">
+        <div style="overflow-x: auto;">
+          <table class="table" style="width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 0;">
+            <thead>
+              <tr style="background: var(--bg-surface-elevated); border-bottom: 1px solid var(--border-subtle); color: var(--text-muted); text-align: left;">
+                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Startup Name & ID</th>
+                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Founder & Contact</th>
+                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Sector / Category</th>
+                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Stage & Funnel</th>
+                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Workspace / Seats</th>
+                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Financials / Ask</th>
+                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Docs</th>
+                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Status</th>
+                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; text-align: right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${startups.map(s => {
+                const statusBadgeClass = this.getStatusBadgeClass(s.status);
+                const docs = s.documents || [];
+                const verifiedDocsCount = docs.filter(d => d.status === 'Verified').length;
+                const totalDocsCount = docs.length;
+                const allocatedLabels = (s.allocatedSeats || []).map(id => {
+                  const sp = spaces.find(x => x.id === id);
+                  return sp ? sp.label : id;
+                });
+
+                return `
+                  <tr style="border-bottom: 1px solid var(--border-subtle); transition: background 0.15s ease;" onmouseover="this.style.background='var(--bg-surface-elevated)'" onmouseout="this.style.background='transparent'">
+                    <td style="padding: 12px 16px; white-space: nowrap;">
+                      <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 20px; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; background: var(--bg-surface-elevated); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">${s.logoEmoji || '🚀'}</span>
+                        <div>
+                          <div style="font-weight: 700; color: var(--text-primary); font-size: 13px;">${s.name}</div>
+                          <div style="font-family: var(--font-mono); font-size: 11px; color: var(--accent-primary);">${s.id}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td style="padding: 12px 16px; white-space: nowrap;">
+                      <div style="font-weight: 600; color: var(--text-primary); font-size: 12px;">👤 ${s.founders ? s.founders.name : 'Founder'}</div>
+                      <div style="font-size: 11px; color: var(--text-muted);">${s.founders ? s.founders.email : ''}</div>
+                    </td>
+                    <td style="padding: 12px 16px; white-space: nowrap;">
+                      <span class="badge badge-subtle" style="font-size: 11px;">${s.category || s.sector || 'DeepTech'}</span>
+                    </td>
+                    <td style="padding: 12px 16px; white-space: nowrap;">
+                      <div style="font-weight: 600; font-size: 11.5px; color: var(--text-primary);">${s.currentStage || s.incubationJourneyStage || 'MVP Dev'}</div>
+                      <div style="font-size: 10.5px; color: var(--accent-secondary); font-family: var(--font-mono);">${s.progressPercent || 25}% Progress</div>
+                    </td>
+                    <td style="padding: 12px 16px; white-space: nowrap;">
+                      ${allocatedLabels.length > 0 
+                        ? allocatedLabels.map(l => `<span class="badge badge-info" style="font-family: var(--font-mono); font-size: 10px; margin-right: 3px;">${l}</span>`).join('') 
+                        : `<span style="font-size: 11px; color: var(--text-muted); font-style: italic;">Pending Allocation</span>`
+                      }
+                    </td>
+                    <td style="padding: 12px 16px; white-space: nowrap;">
+                      <div style="font-weight: 700; font-size: 12px; color: var(--text-primary);">₹${(s.targetFundingAsk || 2500000).toLocaleString('en-IN')}</div>
+                      <div style="font-size: 10.5px; color: var(--text-muted);">MRR: ₹${(s.monthlyRecurringRevenue || 150000).toLocaleString('en-IN')}</div>
+                    </td>
+                    <td style="padding: 12px 16px; white-space: nowrap;">
+                      <span class="badge ${verifiedDocsCount === totalDocsCount && totalDocsCount > 0 ? 'badge-success' : 'badge-warning'}" style="font-size: 10.5px; cursor: pointer;" onclick="OnboardingModule.openVerificationModal('${s.id}')">
+                        📄 ${verifiedDocsCount}/${totalDocsCount} Verified
+                      </span>
+                    </td>
+                    <td style="padding: 12px 16px; white-space: nowrap;">
+                      <span class="badge ${statusBadgeClass}" style="font-size: 11px; font-weight: 700;">
+                        ${s.status}
+                      </span>
+                    </td>
+                    <td style="padding: 12px 16px; text-align: right; white-space: nowrap;">
+                      <button class="btn btn-outline btn-sm" style="padding: 4px 8px; font-size: 11px; margin-right: 4px;" onclick="OnboardingModule.openVerificationModal('${s.id}')" title="View Documents & Verify">
+                        🔍 View
+                      </button>
+                      <button class="btn btn-primary btn-sm" style="padding: 4px 8px; font-size: 11px;" onclick="IncubationModule.viewStartupJourneyModal('${s.id}')" title="View Incubation Journey">
+                        ⚡ Journey
+                      </button>
+                    </td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+        <div style="padding: 12px 18px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; background: var(--bg-surface-elevated); font-size: 12px; color: var(--text-muted);">
+          <span>Showing <strong>${startups.length}</strong> registered startups in database</span>
+          <button class="btn btn-outline btn-sm" style="font-size: 11px;" onclick="OnboardingModule.exportCSV()">
+            📥 Export Startups CSV
+          </button>
+        </div>
       </div>
     `;
+  },
+
+  exportCSV() {
+    const startups = window.store.getStartups();
+    const headers = ['ID', 'Name', 'Founder', 'Email', 'Phone', 'Category', 'Stage', 'Status', 'MRR', 'FundingAsk'];
+    const rows = startups.map(s => [
+      `"${s.id || ''}"`,
+      `"${s.name || ''}"`,
+      `"${s.founders ? s.founders.name : ''}"`,
+      `"${s.founders ? s.founders.email : ''}"`,
+      `"${s.founders ? (s.founders.phone || s.founders.mobile) : ''}"`,
+      `"${s.category || s.sector || ''}"`,
+      `"${s.currentStage || ''}"`,
+      `"${s.status || ''}"`,
+      `"${s.monthlyRecurringRevenue || 0}"`,
+      `"${s.targetFundingAsk || 0}"`
+    ].join(','));
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'nexus_startups_table.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+    App.showToast('📥 Startups table exported as CSV!', 'success');
   },
 
   setStatusFilter(status) {
@@ -236,7 +385,7 @@ const OnboardingModule = {
               📄 Documents: ${verifiedDocsCount}/${totalDocsCount} Verified
             </span>
             <span style="font-size: 10.5px; color: var(--text-muted); cursor: pointer; text-decoration: underline;" onclick="OnboardingModule.openVerificationModal('${s.id}')">
-              Inspect Docs
+              View Docs
             </span>
           </div>
 
@@ -259,7 +408,7 @@ const OnboardingModule = {
           ${s.status === 'Applied' ? `
             <div style="display: flex; gap: 6px;">
               <button class="btn btn-secondary btn-sm" style="flex: 1;" onclick="OnboardingModule.openVerificationModal('${s.id}')">
-                Inspect Docs
+                View Docs
               </button>
               <button class="btn btn-primary btn-sm" style="flex: 1;" onclick="OnboardingModule.moveStatus('${s.id}', 'Under Review')">
                 🔍 Start Review
@@ -444,7 +593,7 @@ const OnboardingModule = {
                 <!-- Wizard Footer Bar (Step 1) -->
                 <div class="wizard-footer-bar">
                   <div class="wizard-footer-actions">
-                    <button type="button" class="btn-save-pill" onclick="OnboardingModule.saveDraft()">Save</button>
+                    <button type="button" class="btn-save-pill" onclick="OnboardingModule.saveDraft()">Save and Draft</button>
                     <button type="button" class="btn-next-step" onclick="OnboardingModule.goToNextStep(1)">Next</button>
                   </div>
                   <div class="wizard-step-counter">1/7</div>
@@ -600,7 +749,7 @@ const OnboardingModule = {
                 <div class="wizard-footer-bar">
                   <div class="wizard-footer-actions">
                     <button type="button" class="btn-back-step" onclick="OnboardingModule.goToPrevStep(2)">Back</button>
-                    <button type="button" class="btn-save-pill" onclick="OnboardingModule.saveDraft()">Save</button>
+                    <button type="button" class="btn-save-pill" onclick="OnboardingModule.saveDraft()">Save and Draft</button>
                     <button type="button" class="btn-next-step" onclick="OnboardingModule.goToNextStep(2)">Next</button>
                   </div>
                   <div class="wizard-step-counter">2/7</div>
@@ -672,7 +821,7 @@ const OnboardingModule = {
                 <div class="wizard-footer-bar">
                   <div class="wizard-footer-actions">
                     <button type="button" class="btn-back-step" onclick="OnboardingModule.goToPrevStep(3)">Back</button>
-                    <button type="button" class="btn-save-pill" onclick="OnboardingModule.saveDraft()">Save</button>
+                    <button type="button" class="btn-save-pill" onclick="OnboardingModule.saveDraft()">Save and Draft</button>
                     <button type="button" class="btn-next-step" onclick="OnboardingModule.goToNextStep(3)">Next</button>
                   </div>
                   <div class="wizard-step-counter">3/7</div>
@@ -745,7 +894,7 @@ const OnboardingModule = {
                 <div class="wizard-footer-bar">
                   <div class="wizard-footer-actions">
                     <button type="button" class="btn-back-step" onclick="OnboardingModule.goToPrevStep(4)">Back</button>
-                    <button type="button" class="btn-save-pill" onclick="OnboardingModule.saveDraft()">Save</button>
+                    <button type="button" class="btn-save-pill" onclick="OnboardingModule.saveDraft()">Save and Draft</button>
                     <button type="button" class="btn-next-step" onclick="OnboardingModule.goToNextStep(4)">Next</button>
                   </div>
                   <div class="wizard-step-counter">4/7</div>
@@ -793,7 +942,7 @@ const OnboardingModule = {
                 <div class="wizard-footer-bar">
                   <div class="wizard-footer-actions">
                     <button type="button" class="btn-back-step" onclick="OnboardingModule.goToPrevStep(5)">Back</button>
-                    <button type="button" class="btn-save-pill" onclick="OnboardingModule.saveDraft()">Save</button>
+                    <button type="button" class="btn-save-pill" onclick="OnboardingModule.saveDraft()">Save and Draft</button>
                     <button type="button" class="btn-next-step" onclick="OnboardingModule.goToNextStep(5)">Next</button>
                   </div>
                   <div class="wizard-step-counter">5/7</div>
@@ -912,7 +1061,7 @@ const OnboardingModule = {
                 <div class="wizard-footer-bar">
                   <div class="wizard-footer-actions">
                     <button type="button" class="btn-back-step" onclick="OnboardingModule.goToPrevStep(6)">Back</button>
-                    <button type="button" class="btn-save-pill" onclick="OnboardingModule.saveDraft()">Save</button>
+                    <button type="button" class="btn-save-pill" onclick="OnboardingModule.saveDraft()">Save and Draft</button>
                     <button type="button" class="btn-next-step" onclick="OnboardingModule.goToNextStep(6)">Next</button>
                   </div>
                   <div class="wizard-step-counter">6/7</div>
@@ -1009,7 +1158,7 @@ const OnboardingModule = {
                 <div class="wizard-footer-bar">
                   <div class="wizard-footer-actions">
                     <button type="button" class="btn-back-step" onclick="OnboardingModule.goToPrevStep(7)">Back</button>
-                    <button type="button" class="btn-save-pill" onclick="OnboardingModule.saveDraft()">Save</button>
+                    <button type="button" class="btn-save-pill" onclick="OnboardingModule.saveDraft()">Save and Draft</button>
                     <button type="submit" class="btn-next-step" style="background: var(--status-success); color: #ffffff; padding: 9px 28px;">
                       Submit Application (Status: Applied) 🚀
                     </button>
@@ -1026,6 +1175,212 @@ const OnboardingModule = {
 
     document.getElementById('modal-mount').innerHTML = html;
     this.restoreDraftIfExists();
+    this.setupRealtimeValidation();
+  },
+
+  setupRealtimeValidation() {
+    const form = document.getElementById('form-onboard-wizard');
+    if (!form) return;
+
+    const clearFieldErrors = (target) => {
+      if (!target) return;
+      const group = target.closest('.form-group') || target.parentElement;
+      if (!group) return;
+
+      if (target.classList.contains('field-invalid')) {
+        target.classList.remove('field-invalid');
+      }
+      const iconWrap = target.closest('.input-with-icon');
+      if (iconWrap) iconWrap.classList.remove('field-invalid-wrap');
+
+      // Check if all fields in this group are now valid
+      const remainingInvalid = group.querySelectorAll('.field-invalid, .field-group-invalid');
+      if (remainingInvalid.length === 0) {
+        group.classList.remove('has-field-error', 'field-shake-animate');
+        const notices = group.querySelectorAll('.field-error-notice');
+        notices.forEach(n => n.remove());
+      }
+    };
+
+    form.addEventListener('input', (e) => clearFieldErrors(e.target));
+    form.addEventListener('change', (e) => {
+      clearFieldErrors(e.target);
+      const group = e.target.closest('.form-group');
+      if (group) {
+        const groupInvalid = group.querySelectorAll('.field-group-invalid');
+        groupInvalid.forEach(el => el.classList.remove('field-group-invalid'));
+        group.classList.remove('has-field-error', 'field-shake-animate');
+        const notices = group.querySelectorAll('.field-error-notice');
+        notices.forEach(n => n.remove());
+      }
+    });
+  },
+
+  clearStepErrors(panel) {
+    if (!panel) return;
+    panel.querySelectorAll('.field-invalid').forEach(el => el.classList.remove('field-invalid'));
+    panel.querySelectorAll('.field-invalid-wrap').forEach(el => el.classList.remove('field-invalid-wrap'));
+    panel.querySelectorAll('.field-group-invalid').forEach(el => el.classList.remove('field-group-invalid'));
+    panel.querySelectorAll('.has-field-error').forEach(el => el.classList.remove('has-field-error'));
+    panel.querySelectorAll('.field-shake-animate').forEach(el => el.classList.remove('field-shake-animate'));
+    panel.querySelectorAll('.field-error-notice').forEach(el => el.remove());
+  },
+
+  validateStep(stepNumber) {
+    const panel = document.getElementById(`wizard-step-${stepNumber}`);
+    if (!panel) return true;
+
+    this.clearStepErrors(panel);
+
+    let isValid = true;
+    let firstInvalidElement = null;
+
+    const markInvalid = (elementOrGroup, message, scrollTarget) => {
+      isValid = false;
+      if (!firstInvalidElement) {
+        firstInvalidElement = scrollTarget || elementOrGroup;
+      }
+
+      const formGroup = elementOrGroup.closest('.form-group') || elementOrGroup.parentElement;
+      if (formGroup) {
+        formGroup.classList.add('has-field-error');
+      }
+
+      if (elementOrGroup.tagName === 'INPUT' || elementOrGroup.tagName === 'SELECT' || elementOrGroup.tagName === 'TEXTAREA') {
+        elementOrGroup.classList.add('field-invalid');
+        const iconWrap = elementOrGroup.closest('.input-with-icon');
+        if (iconWrap) iconWrap.classList.add('field-invalid-wrap');
+      } else {
+        elementOrGroup.classList.add('field-group-invalid');
+      }
+
+      if (formGroup && !formGroup.querySelector('.field-error-notice')) {
+        const notice = document.createElement('div');
+        notice.className = 'field-error-notice';
+        notice.innerHTML = `
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <span>${message || 'This field is required.'}</span>
+        `;
+        formGroup.appendChild(notice);
+      }
+    };
+
+    const formGroups = panel.querySelectorAll('.form-group');
+
+    formGroups.forEach(group => {
+      // Check if group is marked with red star or has [required] attribute
+      const hasRedStar = group.querySelector('.required-star') !== null ||
+                         group.querySelector('span[style*="red"]') !== null ||
+                         Array.from(group.querySelectorAll('label')).some(l => l.textContent.includes('*'));
+      const hasRequiredAttr = group.querySelector('[required]') !== null;
+
+      if (!hasRedStar && !hasRequiredAttr) {
+        return; // Optional field
+      }
+
+      // 1. Radio button group
+      const radios = group.querySelectorAll('input[type="radio"]');
+      if (radios.length > 0) {
+        const isChecked = Array.from(radios).some(r => r.checked);
+        if (!isChecked) {
+          const container = group.querySelector('.radio-group-row') || group.querySelector('div') || radios[0].parentElement;
+          markInvalid(container, 'Please select one option to continue.', radios[0]);
+        }
+        return;
+      }
+
+      // 2. Checkboxes (group or single)
+      const checkboxes = group.querySelectorAll('input[type="checkbox"]');
+      if (checkboxes.length > 0) {
+        if (checkboxes.length === 1) {
+          if (checkboxes[0].required && !checkboxes[0].checked) {
+            markInvalid(checkboxes[0], 'You must accept to proceed.', checkboxes[0]);
+          }
+        } else {
+          // Checkbox group (e.g. businessModel)
+          const isChecked = Array.from(checkboxes).some(cb => cb.checked);
+          if (!isChecked) {
+            const container = checkboxes[0].closest('div') || checkboxes[0].parentElement;
+            markInvalid(container, 'Please select at least one option to continue.', checkboxes[0]);
+          }
+        }
+        return;
+      }
+
+      // 3. Select element
+      const select = group.querySelector('select');
+      if (select) {
+        if (!select.value || select.value.trim() === '') {
+          markInvalid(select, 'Please select an option to continue.', select);
+        } else if (select.name === 'category' && select.value === 'Others') {
+          const otherInput = document.getElementById('input-other-category');
+          if (otherInput && (!otherInput.value || otherInput.value.trim() === '')) {
+            markInvalid(otherInput, 'Please specify your custom startup category.', otherInput);
+          }
+        }
+        return;
+      }
+
+      // 4. Textarea
+      const textarea = group.querySelector('textarea');
+      if (textarea) {
+        if (!textarea.value || textarea.value.trim() === '') {
+          markInvalid(textarea, 'Please fill in this detail to continue.', textarea);
+        }
+        return;
+      }
+
+      // 5. Regular inputs (text, email, tel, url, number)
+      const input = group.querySelector('input:not([type="hidden"]):not([type="file"])');
+      if (input) {
+        const val = input.value ? input.value.trim() : '';
+        if (val === '') {
+          markInvalid(input, 'Please fill in this field to continue.', input);
+        } else if (input.type === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
+          markInvalid(input, 'Please enter a valid email address.', input);
+        } else if (input.type === 'number' && isNaN(Number(val))) {
+          markInvalid(input, 'Please enter a valid number.', input);
+        }
+        return;
+      }
+
+      // 6. Pitch deck upload box
+      const pitchDeckName = group.querySelector('#reg-pitch-deck-name');
+      if (pitchDeckName) {
+        if (!pitchDeckName.value || pitchDeckName.value.trim() === '') {
+          const uploadBox = group.querySelector('.pitch-deck-upload-box');
+          markInvalid(uploadBox || pitchDeckName, 'Please attach your pitch deck presentation.', uploadBox);
+        }
+        return;
+      }
+    });
+
+    // Special check for Step 7 consent declaration
+    const consent = panel.querySelector('#reg-consent-check');
+    if (consent && !consent.checked) {
+      markInvalid(consent, 'Please certify the application declaration before submitting.', consent);
+    }
+
+    if (!isValid && firstInvalidElement) {
+      try {
+        firstInvalidElement.focus({ preventScroll: true });
+      } catch (err) {}
+
+      firstInvalidElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+      const targetGroup = firstInvalidElement.closest('.form-group') || firstInvalidElement;
+      targetGroup.classList.remove('field-shake-animate');
+      void targetGroup.offsetWidth;
+      targetGroup.classList.add('field-shake-animate');
+
+      App.showToast('⚠️ Please fill in all required fields marked with a red star (*) before continuing.', 'warning');
+    }
+
+    return isValid;
   },
 
   handleCategoryChange(val) {
@@ -1069,6 +1424,9 @@ const OnboardingModule = {
   },
 
   goToNextStep(currentStep) {
+    if (!this.validateStep(currentStep)) {
+      return; // Do not go to next page if required options are not filled!
+    }
     if (currentStep < 7) {
       this.goToStep(currentStep + 1);
     }
@@ -1082,6 +1440,18 @@ const OnboardingModule = {
 
   goToStep(step) {
     if (step < 1 || step > 7) return;
+    if (step > this.wizardStep) {
+      for (let s = this.wizardStep; s < step; s++) {
+        if (!this.validateStep(s)) {
+          if (s !== this.wizardStep) {
+            this.wizardStep = s;
+            this.updateWizardStepView();
+            this.validateStep(s);
+          }
+          return;
+        }
+      }
+    }
     this.wizardStep = step;
     this.updateWizardStepView();
     // Scroll modal content to top on step change
@@ -1247,24 +1617,23 @@ const OnboardingModule = {
 
   handleRegistrationSubmit(e) {
     e.preventDefault();
+
+    // Validate all steps 1 to 7 sequentially
+    for (let s = 1; s <= 7; s++) {
+      if (!this.validateStep(s)) {
+        if (s !== this.wizardStep) {
+          this.wizardStep = s;
+          this.updateWizardStepView();
+          this.validateStep(s);
+        }
+        App.showToast(`⚠️ Please complete all required fields marked with * in Step ${s} before submitting.`, 'warning');
+        return;
+      }
+    }
+
     const fd = new FormData(e.target);
     const data = Object.fromEntries(fd.entries());
     const selectedBusinessModels = fd.getAll('businessModel');
-
-    const consent = document.getElementById('reg-consent-check');
-    if (consent && !consent.checked) {
-      App.showToast('Please certify the application declaration before submitting.', 'warning');
-      consent.focus();
-      return;
-    }
-
-    if (!data.name || !data.name.trim()) {
-      App.showToast('Please provide your Startup Name in Step 2.', 'warning');
-      this.goToStep(2);
-      const nameInput = document.getElementById('reg-startup-name');
-      if (nameInput) nameInput.focus();
-      return;
-    }
 
     // Resolve category if Others
     const resolvedCategory = (data.category === 'Others' && data.otherCategory && data.otherCategory.trim())
@@ -1551,6 +1920,72 @@ const OnboardingModule = {
                   <strong>Net Due: ₹${billingCalc.total.toLocaleString('en-IN')}/mo</strong>
                 </div>
               ` : ''}
+            </div>
+
+            <!-- 💳 Payment & Invoicing History -->
+            <div style="background: var(--bg-surface-elevated); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); margin-bottom: 16px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h4 style="font-size: 12.5px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                  <span>💳 Payment & Billing History</span>
+                  <span class="badge badge-success" style="font-size: 10.5px;">${(window.store.getPaymentsByStartupId(s.id) || []).length} Settlements</span>
+                </h4>
+                <button class="btn btn-outline btn-sm" onclick="OnboardingModule.closeModal('modal-dossier'); if (typeof PaymentsModule !== 'undefined') PaymentsModule.openStartupPaymentHistoryModal('${s.id}')">
+                  📜 Full Payment Ledger
+                </button>
+              </div>
+
+              ${(() => {
+                const paySummary = window.store.getPaymentSummaryForStartup(s.id);
+                const sPayments = (paySummary.payments || []).slice(0, 3);
+                return `
+                  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; font-size: 11px;">
+                    <div style="background: var(--bg-surface); padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-subtle);">
+                      <div style="color: var(--text-muted); font-size: 10px;">Lifetime Paid</div>
+                      <div style="font-weight: 800; color: var(--status-success); font-family: var(--font-mono); font-size: 13px;">
+                        ₹${paySummary.totalPaid.toLocaleString('en-IN')}
+                      </div>
+                    </div>
+                    <div style="background: var(--bg-surface); padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-subtle);">
+                      <div style="color: var(--text-muted); font-size: 10px;">Total Invoiced</div>
+                      <div style="font-weight: 800; color: var(--accent-primary); font-family: var(--font-mono); font-size: 13px;">
+                        ₹${paySummary.totalInvoiced.toLocaleString('en-IN')}
+                      </div>
+                    </div>
+                    <div style="background: var(--bg-surface); padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-subtle);">
+                      <div style="color: var(--text-muted); font-size: 10px;">Balance Due</div>
+                      <div style="font-weight: 800; color: ${paySummary.balanceDue > 0 ? 'var(--status-danger)' : 'var(--status-success)'}; font-family: var(--font-mono); font-size: 13px;">
+                        ₹${paySummary.balanceDue.toLocaleString('en-IN')}
+                      </div>
+                    </div>
+                  </div>
+
+                  ${sPayments.length > 0 ? `
+                    <div style="display: flex; flex-direction: column; gap: 6px;">
+                      ${sPayments.map(p => `
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-radius: 6px; background: var(--bg-surface); border: 1px solid var(--border-subtle); font-size: 11px;">
+                          <div>
+                            <strong style="color: var(--text-primary);">${p.receiptNo || p.id}</strong>
+                            <span style="color: var(--text-muted); font-size: 10px; margin-left: 6px;">${p.paymentDate} via ${p.gateway || p.method}</span>
+                          </div>
+                          <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-weight: 700; color: var(--status-success); font-family: var(--font-mono);">
+                              ₹${Number(p.amount || 0).toLocaleString('en-IN')}
+                            </span>
+                            <button class="btn btn-outline btn-sm" style="font-size: 10px; padding: 2px 6px; color: var(--status-success); border-color: var(--status-success);"
+                              onclick="OnboardingModule.closeModal('modal-dossier'); if (typeof PaymentsModule !== 'undefined') PaymentsModule.viewReceipt('${p.id}');">
+                              📄 Receipt
+                            </button>
+                          </div>
+                        </div>
+                      `).join('')}
+                    </div>
+                  ` : `
+                    <div style="font-size: 11px; color: var(--text-muted); font-style: italic;">
+                      No payment settlements recorded yet for this venture.
+                    </div>
+                  `}
+                `;
+              })()}
             </div>
 
             <!-- Assigned Mentor -->

@@ -863,18 +863,18 @@ const IncubationModule = {
             <form onsubmit="IncubationModule.handleUpdateProgressSubmit(event, '${s.id}')">
               <!-- Incubation Period -->
               <div class="form-group">
-                <label class="form-label">Incubation Period (e.g. 01 Jan 2026 → 31 Dec 2026) *</label>
+                <label class="form-label">Incubation Period (e.g. 01 Jan 2026 → 31 Dec 2026) <span class="required-star">*</span></label>
                 <input type="text" name="incubationPeriod" class="form-control" value="${s.incubationPeriod || '01 Jan 2026 → 31 Dec 2026'}" required>
               </div>
 
               <!-- Current Stage -->
               <div class="form-row-2">
                 <div class="form-group">
-                  <label class="form-label">Current Stage (Title) *</label>
+                  <label class="form-label">Current Stage (Title) <span class="required-star">*</span></label>
                   <input type="text" name="currentStage" class="form-control" value="${s.currentStage || s.stage || 'MVP Development'}" required>
                 </div>
                 <div class="form-group">
-                  <label class="form-label">Journey Pipeline Step *</label>
+                  <label class="form-label">Journey Pipeline Step <span class="required-star">*</span></label>
                   <select name="incubationJourneyStage" class="form-control">
                     ${stages.map(st => `
                       <option value="${st.id}" ${(s.incubationJourneyStage || '').toLowerCase() === st.id.toLowerCase() ? 'selected' : ''}>
@@ -899,7 +899,7 @@ const IncubationModule = {
 
               <!-- Assigned Mentor -->
               <div class="form-group">
-                <label class="form-label">Assigned Mentor *</label>
+                <label class="form-label">Assigned Mentor <span class="required-star">*</span></label>
                 <select name="mentorId" class="form-control">
                   ${mentors.map(m => `
                     <option value="${m.id}" ${s.mentorId === m.id ? 'selected' : ''}>
@@ -912,7 +912,7 @@ const IncubationModule = {
               <!-- Next Milestone -->
               <div class="form-row-2">
                 <div class="form-group">
-                  <label class="form-label">Next Milestone Goal *</label>
+                  <label class="form-label">Next Milestone Goal <span class="required-star">*</span></label>
                   <input type="text" name="nextMilestone" class="form-control" value="${s.nextMilestone || 'Product Launch'}" required>
                 </div>
                 <div class="form-group">
@@ -970,7 +970,7 @@ const IncubationModule = {
           <div class="modal-body">
             <form onsubmit="IncubationModule.handleMentorSessionSubmit(event)">
               <div class="form-group">
-                <label class="form-label">Select Startup *</label>
+                <label class="form-label">Select Startup <span class="required-star">*</span></label>
                 <select name="startupId" class="form-control" required>
                   ${startups.map(s => `<option value="${s.id}" ${s.id === startupId ? 'selected' : ''}>${s.name} (${s.category})</option>`).join('')}
                 </select>
@@ -978,24 +978,24 @@ const IncubationModule = {
 
               <div class="form-row-2">
                 <div class="form-group">
-                  <label class="form-label">Mentor *</label>
+                  <label class="form-label">Mentor <span class="required-star">*</span></label>
                   <select name="mentorId" class="form-control" required>
                     ${mentors.map(m => `<option value="${m.id}" ${m.id === mentorId ? 'selected' : ''}>${m.name} (${m.role})</option>`).join('')}
                   </select>
                 </div>
                 <div class="form-group">
-                  <label class="form-label">Session Date *</label>
+                  <label class="form-label">Session Date <span class="required-star">*</span></label>
                   <input type="date" name="date" class="form-control" value="${new Date().toISOString().split('T')[0]}" required>
                 </div>
               </div>
 
               <div class="form-group">
-                <label class="form-label">Review Topics & Key Questions *</label>
+                <label class="form-label">Review Topics & Key Questions <span class="required-star">*</span></label>
                 <input type="text" name="topics" class="form-control" placeholder="e.g. Unit Economics, GTM Pilot Review, Series A Deck" required>
               </div>
 
               <div class="form-group">
-                <label class="form-label">Mentor Feedback & Agreed Action Items *</label>
+                <label class="form-label">Mentor Feedback & Agreed Action Items <span class="required-star">*</span></label>
                 <textarea name="feedback" class="form-control" rows="3" placeholder="Concrete feedback, next milestone checkpoints, intros..." required></textarea>
               </div>
 
@@ -1047,20 +1047,20 @@ const IncubationModule = {
           <div class="modal-body">
             <form id="form-new-milestone" onsubmit="IncubationModule.handleNewMilestoneSubmit(event)">
               <div class="form-group">
-                <label class="form-label">Startup *</label>
+                <label class="form-label">Startup <span class="required-star">*</span></label>
                 <select name="startupId" class="form-control" required>
                   ${startups.map(s => `<option value="${s.id}">${s.name} (${s.cohort || 'Cohort 2026-A'})</option>`).join('')}
                 </select>
               </div>
 
               <div class="form-group">
-                <label class="form-label">Milestone Title *</label>
+                <label class="form-label">Milestone Title <span class="required-star">*</span></label>
                 <input type="text" name="title" class="form-control" placeholder="e.g. Public Product Launch & Enterprise GA" required>
               </div>
 
               <div class="form-row-2">
                 <div class="form-group">
-                  <label class="form-label">Target Completion Date *</label>
+                  <label class="form-label">Target Completion Date <span class="required-star">*</span></label>
                   <input type="date" name="targetDate" class="form-control" value="2026-11-20" required>
                 </div>
                 <div class="form-group">

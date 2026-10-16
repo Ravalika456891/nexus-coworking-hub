@@ -38,6 +38,7 @@ const DashboardModule = {
     const activities = window.store.state.activityLog || [];
     const invoices = window.store.getInvoices();
     const milestones = window.store.getMilestones();
+    const payments = window.store.getAccessiblePayments ? window.store.getAccessiblePayments() : (window.store.getPayments ? window.store.getPayments() : []);
 
     // Count for lifecycle pipeline nodes
     const onboardingCount = startups.filter(s => s.status === 'Applied' || s.status === 'Under Review').length;
@@ -585,6 +586,9 @@ const DashboardModule = {
         </div>
       </div>
 
+      <!-- 4. Reconciled Payment History & Financial Settlements Section -->
+      ${this.renderDashboardPaymentHistory(role, payments)}
+
       <!-- Role-Specific Bottom Action Bar -->
       ${(role === 'super_admin' || role === 'finance_admin') ? `
         <div style="display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; background: var(--accent-gradient-subtle); border: 1px solid var(--border-medium); border-radius: var(--radius-lg); margin-top: 20px;">
@@ -601,6 +605,207 @@ const DashboardModule = {
           </button>
         </div>
       ` : ''}
+    `;
+  },
+
+  renderDashboardPaymentHistory(role, payments) {
+    if (role === 'startup') {
+      const activeStartupId = window.store.activeFounderId || 'STP-XYZ';
+      const summary = window.store.getPaymentSummaryForStartup ? window.store.getPaymentSummaryForStartup(activeStartupId) : null;
+      const startupPayments = window.store.getPaymentsByStartupId ? window.store.getPaymentsByStartupId(activeStartupId) : payments;
+      const myStartup = window.store.getStartupById ? window.store.getStartupById(activeStartupId) : null;
+      const sName = myStartup ? myStartup.name : 'My Venture';
+
+      return `
+        <div class="card" style="margin-top: 20px;">
+          <div class="card-header" style="padding: 16px 20px; flex-wrap: wrap; gap: 12px; background: var(--bg-surface);">
+            <div>
+              <div class="card-title" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <span>💳 My Payment History & Reconciled Receipts</span>
+                <span class="badge badge-success" style="font-size: 11px;">${startupPayments.length} Settlements</span>
+                ${summary ? `
+                  <span class="badge" style="background: rgba(16,185,129,0.12); color: var(--status-success); font-family: var(--font-mono); font-weight: 700;">
+                    ₹${Math.round(summary.totalPaid).toLocaleString('en-IN')} Paid
+                  </span>
+                  ${summary.balanceDue > 0 ? `
+                    <span class="badge" style="background: rgba(239,68,68,0.12); color: var(--status-danger); font-family: var(--font-mono); font-weight: 700;">
+                      ₹${Math.round(summary.balanceDue).toLocaleString('en-IN')} Balance Due
+                    </span>
+                  ` : ''}
+                ` : ''}
+              </div>
+              <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 3px;">
+                Verified tax payments, official receipts, and settlement statements for ${sName}.
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+              <button class="btn btn-outline btn-sm" onclick="PaymentsModule.openStartupPaymentHistoryModal('${activeStartupId}')" title="Open complete payment ledger dossier">
+                📊 Open Full Payment Dossier
+              </button>
+              <button class="btn btn-primary btn-sm" onclick="window.store.exportPaymentsCSV('${activeStartupId}')" title="Download official CSV payment statement">
+                📥 Export Statement (CSV)
+              </button>
+            </div>
+          </div>
+
+          <div class="table-wrapper">
+            <table class="nexus-table">
+              <thead>
+                <tr>
+                  <th>Receipt #</th>
+                  <th>Date</th>
+                  <th>Linked Invoice</th>
+                  <th>Gateway / Method</th>
+                  <th>Transaction Ref / UTR</th>
+                  <th>Amount Paid</th>
+                  <th style="text-align: right;">Receipt</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${startupPayments.length > 0 ? startupPayments.slice(0, 5).map(p => `
+                  <tr>
+                    <td>
+                      <span class="badge badge-subtle" style="font-family: var(--font-mono); font-size: 11px;">
+                        ${p.receiptNo || p.id}
+                      </span>
+                    </td>
+                    <td style="font-size: 12px; color: var(--text-secondary);">${p.paymentDate || '—'}</td>
+                    <td>
+                      <button class="btn btn-ghost btn-sm" style="font-family: var(--font-mono); font-size: 11px; padding: 2px 6px;"
+                        onclick="InvoiceModule.viewInvoice('${p.invoiceId}')">
+                        🧾 ${p.invoiceId || '—'}
+                      </button>
+                    </td>
+                    <td>
+                      <span class="badge ${p.gateway === 'Razorpay' ? 'badge-info' : p.gateway === 'Stripe' ? '' : 'badge-success'}"
+                        style="${p.gateway === 'Stripe' ? 'background: rgba(99,91,255,0.15); color: #635bff;' : ''} font-size: 10.5px;">
+                        ${p.gateway || p.method || 'Online'}
+                      </span>
+                    </td>
+                    <td>
+                      <code style="font-size: 11px; font-family: var(--font-mono); color: var(--text-muted);">
+                        ${p.transactionRef || '—'}
+                      </code>
+                    </td>
+                    <td>
+                      <strong style="font-family: var(--font-mono); font-size: 12.5px; color: var(--status-success);">
+                        ₹${Number(p.amount || 0).toLocaleString('en-IN')}
+                      </strong>
+                    </td>
+                    <td style="text-align: right;">
+                      <button class="btn btn-outline btn-sm" style="font-size: 11px; padding: 3px 8px; color: var(--status-success); border-color: var(--status-success);"
+                        onclick="PaymentsModule.viewReceipt('${p.id}')">
+                        📄 Receipt
+                      </button>
+                    </td>
+                  </tr>
+                `).join('') : `
+                  <tr>
+                    <td colspan="7" style="text-align: center; padding: 30px; color: var(--text-muted);">
+                      No payment settlements recorded yet for this venture.
+                    </td>
+                  </tr>
+                `}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    // Super Admin & Management Overview
+    const recentPayments = payments.slice(0, 5);
+    const totalCollected = payments.reduce((s, p) => s + (p.amount || 0), 0);
+
+    return `
+      <div class="card" style="margin-top: 20px;">
+        <div class="card-header" style="padding: 16px 20px; flex-wrap: wrap; gap: 12px; background: var(--bg-surface);">
+          <div>
+            <div class="card-title" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <span>💳 Recent Hub Payment Settlements (Stage 6)</span>
+              <span class="badge badge-success" style="font-size: 11px;">${payments.length} Reconciled</span>
+              <span class="badge" style="background: rgba(16,185,129,0.12); color: var(--status-success); font-family: var(--font-mono); font-weight: 700;">
+                ₹${Math.round(totalCollected).toLocaleString('en-IN')} Total Collected
+              </span>
+            </div>
+            <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 3px;">
+              Live settlement audit trail from Razorpay, Stripe, UPI, and Bank Wire collections.
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <button class="btn btn-outline btn-sm" onclick="App.switchTab('payments')" title="Open Stage 6 Payments Ledger">
+              📋 View Full Ledger
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="window.store.exportPaymentsCSV()" title="Export all payments to CSV">
+              📥 Export Payments (CSV)
+            </button>
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="nexus-table">
+            <thead>
+              <tr>
+                <th>Payment / Receipt</th>
+                <th>Startup</th>
+                <th>Settlement Date</th>
+                <th>Gateway</th>
+                <th>Amount</th>
+                <th style="text-align: right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${recentPayments.length > 0 ? recentPayments.map(p => `
+                <tr>
+                  <td>
+                    <div style="font-family: var(--font-mono); font-weight: 700; font-size: 12px; color: var(--text-primary);">${p.receiptNo || p.id}</div>
+                    <code style="font-size: 10.5px; font-family: var(--font-mono); color: var(--text-muted);">${p.transactionRef || ''}</code>
+                  </td>
+                  <td>
+                    <div style="font-weight: 600; font-size: 12.5px; color: var(--text-primary);">${p.startupName || '—'}</div>
+                    <span style="font-size: 10.5px; color: var(--text-muted);">${p.startupId || ''}</span>
+                  </td>
+                  <td style="font-size: 12px; color: var(--text-secondary);">${p.paymentDate || '—'}</td>
+                  <td>
+                    <span class="badge ${p.gateway === 'Razorpay' ? 'badge-info' : p.gateway === 'Stripe' ? '' : 'badge-success'}"
+                      style="${p.gateway === 'Stripe' ? 'background: rgba(99,91,255,0.15); color: #635bff;' : ''} font-size: 10.5px;">
+                      ${p.gateway || p.method || 'Online'}
+                    </span>
+                  </td>
+                  <td>
+                    <strong style="font-family: var(--font-mono); font-size: 13px; color: var(--status-success);">
+                      ₹${Number(p.amount || 0).toLocaleString('en-IN')}
+                    </strong>
+                    ${p.isPartial ? '<span class="badge badge-subtle" style="font-size: 9.5px; margin-left: 4px;">Partial</span>' : ''}
+                  </td>
+                  <td style="text-align: right;">
+                    <div style="display: inline-flex; gap: 6px;">
+                      <button class="btn btn-outline btn-sm" style="font-size: 11px; padding: 3px 8px; color: var(--status-success); border-color: var(--status-success);"
+                        onclick="PaymentsModule.viewReceipt('${p.id}')" title="View Reconciled Receipt">
+                        📄 Receipt
+                      </button>
+                      ${p.startupId ? `
+                        <button class="btn btn-ghost btn-sm" style="font-size: 11px; padding: 3px 6px;"
+                          onclick="PaymentsModule.openStartupPaymentHistoryModal('${p.startupId}')" title="View Startup History Dossier">
+                          📊 History
+                        </button>
+                      ` : ''}
+                    </div>
+                  </td>
+                </tr>
+              `).join('') : `
+                <tr>
+                  <td colspan="6" style="text-align: center; padding: 30px; color: var(--text-muted);">
+                    No payment transactions recorded yet.
+                  </td>
+                </tr>
+              `}
+            </tbody>
+          </table>
+        </div>
+      </div>
     `;
   },
 

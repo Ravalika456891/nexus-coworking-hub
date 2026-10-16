@@ -6,6 +6,10 @@ const PaymentsModule = {
   activePayMethod: 'razorpay', // 'razorpay' | 'stripe' | 'upi' | 'wire'
   activeFilter: 'all',          // 'all' | 'pending' | 'paid' | 'partial' | 'overdue' | 'cancelled'
   searchQuery: '',
+  historySearchQuery: '',
+  historyGatewayFilter: 'all', // 'all' | 'Razorpay' | 'Stripe' | 'UPI' | 'Wire'
+  historyTypeFilter: 'all',    // 'all' | 'full' | 'partial'
+  historyStartupFilter: 'all', // 'all' | 'STP-...'
 
   // ─── Main View Renderer ───────────────────────────────────────────────────
 
@@ -62,6 +66,35 @@ const PaymentsModule = {
       );
     }
 
+    // ── Filter payments for Payment History section ────────────────────────
+    let historyPayments = [...payments];
+    if (this.historyStartupFilter && this.historyStartupFilter !== 'all') {
+      historyPayments = historyPayments.filter(p => p.startupId === this.historyStartupFilter);
+    }
+    if (this.historyGatewayFilter && this.historyGatewayFilter !== 'all') {
+      const gwFilter = this.historyGatewayFilter.toLowerCase();
+      historyPayments = historyPayments.filter(p => {
+        const gw = (p.gateway || p.method || '').toLowerCase();
+        return gw.includes(gwFilter);
+      });
+    }
+    if (this.historyTypeFilter === 'full') {
+      historyPayments = historyPayments.filter(p => !p.isPartial);
+    } else if (this.historyTypeFilter === 'partial') {
+      historyPayments = historyPayments.filter(p => p.isPartial);
+    }
+    if (this.historySearchQuery.trim()) {
+      const q = this.historySearchQuery.toLowerCase().trim();
+      historyPayments = historyPayments.filter(p =>
+        (p.id && p.id.toLowerCase().includes(q)) ||
+        (p.receiptNo && p.receiptNo.toLowerCase().includes(q)) ||
+        (p.startupName && p.startupName.toLowerCase().includes(q)) ||
+        (p.invoiceId && p.invoiceId.toLowerCase().includes(q)) ||
+        (p.transactionRef && p.transactionRef.toLowerCase().includes(q))
+      );
+    }
+    const historyCollected = historyPayments.reduce((s, p) => s + (p.amount || 0), 0);
+
     container.innerHTML = `
       <!-- ── PAGE HEADER ── -->
       <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 22px; flex-wrap: wrap; gap: 14px;">
@@ -82,7 +115,10 @@ const PaymentsModule = {
             </div>
           </div>
         </div>
-        <div style="display: flex; gap: 10px; align-items: center;">
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <button class="btn btn-outline btn-sm" onclick="PaymentsModule.scrollToPaymentHistory()" title="Jump to Settled Payment History & Receipts Log">
+            📜 Payment History
+          </button>
           <button class="btn btn-outline btn-sm" onclick="PaymentsModule.openGatewayConfig()">
             ⚙️ Gateway Config
           </button>
@@ -155,7 +191,7 @@ const PaymentsModule = {
           </div>
 
           <!-- Stage 3: Receipt -->
-          <div onclick="PaymentsModule.setFilter('paid')"
+          <div onclick="PaymentsModule.setFilter('paid'); PaymentsModule.scrollToPaymentHistory();"
             style="cursor: pointer; padding: 14px 16px; border-radius: var(--radius-md); background: rgba(16,185,129,0.08); border: 1.5px solid rgba(16,185,129,0.3); transition: transform 0.15s, box-shadow 0.15s;">
             <div style="display: flex; align-items: center; justify-content: space-between;">
               <span style="font-size: 24px;">📄</span>
@@ -549,19 +585,91 @@ const PaymentsModule = {
 
       <!-- ── SETTLED PAYMENT TRANSACTIONS & RECEIPTS LOG (PAYMENT HISTORY) ── -->
       <div class="card" id="payments-history-transactions-card" style="margin-bottom: 22px;">
-        <div class="card-header" style="padding: 14px 20px; flex-wrap: wrap; gap: 10px;">
+        <div class="card-header" style="padding: 16px 20px; flex-wrap: wrap; gap: 12px; background: var(--bg-surface);">
           <div>
-            <div class="card-title" style="display: flex; align-items: center; gap: 8px;">
+            <div class="card-title" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
               <span>💳 Settled Payment History & Reconciled Receipts Log</span>
-              <span class="badge badge-success" style="font-size: 11px; font-weight: 700;">${payments.length} Transactions</span>
+              <span class="badge badge-success" style="font-size: 11px; font-weight: 700;">${historyPayments.length} of ${payments.length} Records</span>
+              ${historyCollected > 0 ? `
+                <span class="badge" style="background: rgba(16,185,129,0.12); color: var(--status-success); font-family: var(--font-mono); font-weight: 700;">
+                  ₹${Math.round(historyCollected).toLocaleString('en-IN')} Filtered Total
+                </span>
+              ` : ''}
             </div>
-            <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">
+            <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 3px;">
               Immutable audit journal of gateway receipts, settlement timestamps, and UTR transaction codes.
             </div>
           </div>
-          <button class="btn btn-outline btn-sm" onclick="App.showToast('Exporting GST Payment History CSV...', 'info'); setTimeout(() => App.showToast('Payment history exported successfully!', 'success'), 800);">
-            📥 Export Payment CSV
-          </button>
+
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <button class="btn btn-outline btn-sm" onclick="PaymentsModule.openStartupHistoryPickerModal()" title="View full payment history dossier for any startup">
+              🔍 Startup History Dossier
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="PaymentsModule.exportPaymentHistoryCSV()" title="Export current payment history to downloadable CSV">
+              📥 Export Payment CSV
+            </button>
+          </div>
+        </div>
+
+        <!-- Payment History Filters Bar -->
+        <div style="padding: 12px 20px; background: var(--bg-surface-elevated); border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <!-- Live Search -->
+            <input type="text" placeholder="🔍 Search payment, receipt, UTR..."
+              value="${this.historySearchQuery}"
+              oninput="PaymentsModule.handleHistorySearch(this.value)"
+              style="padding: 6px 12px; font-size: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-medium); background: var(--bg-surface); color: var(--text-primary); width: 220px;">
+
+            <!-- Startup Filter Dropdown -->
+            <select style="padding: 6px 10px; font-size: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-medium); background: var(--bg-surface); color: var(--text-primary);"
+              onchange="PaymentsModule.setHistoryStartupFilter(this.value)">
+              <option value="all" ${this.historyStartupFilter === 'all' ? 'selected' : ''}>All Startups (${startups.length})</option>
+              ${startups.map(s => `
+                <option value="${s.id}" ${this.historyStartupFilter === s.id ? 'selected' : ''}>
+                  ${s.name} (${s.id})
+                </option>
+              `).join('')}
+            </select>
+
+            <!-- Gateway Filter -->
+            <div style="display: flex; gap: 3px; background: var(--bg-surface); padding: 3px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+              ${[
+                { id: 'all', label: 'All Gateways' },
+                { id: 'razorpay', label: 'Razorpay' },
+                { id: 'stripe', label: 'Stripe' },
+                { id: 'upi', label: 'UPI' },
+                { id: 'wire', label: 'Wire' }
+              ].map(g => `
+                <button class="btn btn-sm ${this.historyGatewayFilter === g.id ? 'btn-primary' : 'btn-ghost'}"
+                  style="padding: 3px 8px; font-size: 10.5px; border-radius: 4px;"
+                  onclick="PaymentsModule.setHistoryGatewayFilter('${g.id}')">
+                  ${g.label}
+                </button>
+              `).join('')}
+            </div>
+
+            <!-- Type Filter -->
+            <div style="display: flex; gap: 3px; background: var(--bg-surface); padding: 3px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+              ${[
+                { id: 'all', label: 'All Types' },
+                { id: 'full', label: 'Full Settlement' },
+                { id: 'partial', label: 'Partial Installment' }
+              ].map(t => `
+                <button class="btn btn-sm ${this.historyTypeFilter === t.id ? 'btn-primary' : 'btn-ghost'}"
+                  style="padding: 3px 8px; font-size: 10.5px; border-radius: 4px;"
+                  onclick="PaymentsModule.setHistoryTypeFilter('${t.id}')">
+                  ${t.label}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+
+          ${(this.historySearchQuery || this.historyGatewayFilter !== 'all' || this.historyTypeFilter !== 'all' || this.historyStartupFilter !== 'all') ? `
+            <button class="btn btn-outline btn-sm" style="font-size: 11px; padding: 4px 10px;"
+              onclick="PaymentsModule.resetHistoryFilters()">
+              ✕ Reset Filters
+            </button>
+          ` : ''}
         </div>
 
         <div class="table-wrapper">
@@ -577,11 +685,11 @@ const PaymentsModule = {
                 <th>Transaction Ref / UTR</th>
                 <th>Settlement Timestamp</th>
                 <th>Status</th>
-                <th style="text-align: right;">Receipt Actions</th>
+                <th style="text-align: right;">History & Receipts</th>
               </tr>
             </thead>
             <tbody>
-              ${payments.length > 0 ? payments.map(p => {
+              ${historyPayments.length > 0 ? historyPayments.map(p => {
                 const startup = window.store.getStartupById(p.startupId);
                 const emoji = startup ? startup.logoEmoji : '🚀';
                 const gwClass = p.gateway === 'Razorpay' ? 'badge-info' : p.gateway === 'Stripe' ? '' : 'badge-success';
@@ -598,9 +706,11 @@ const PaymentsModule = {
                     </td>
                     <td>
                       <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="font-size: 18px;">${emoji}</span>
+                        <span style="font-size: 18px; cursor: pointer;" onclick="PaymentsModule.openStartupPaymentHistoryModal('${p.startupId}')">${emoji}</span>
                         <div>
-                          <strong>${p.startupName}</strong>
+                          <strong style="cursor: pointer; color: var(--text-primary);" onclick="PaymentsModule.openStartupPaymentHistoryModal('${p.startupId}')" title="Click to view full payment history for ${p.startupName}">
+                            ${p.startupName} 🔍
+                          </strong>
                           <div style="font-size: 11px; color: var(--text-muted);">${startup ? startup.category : (p.notes || '')}</div>
                         </div>
                       </div>
@@ -647,9 +757,12 @@ const PaymentsModule = {
                         <button class="btn btn-outline btn-sm" style="color: var(--status-success); border-color: var(--status-success); font-size: 11px; padding: 4px 8px;" onclick="PaymentsModule.viewReceipt('${p.id}')" title="View Tax Receipt Voucher">
                           📄 Receipt
                         </button>
+                        <button class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 4px 7px;" onclick="PaymentsModule.openStartupPaymentHistoryModal('${p.startupId}')" title="View All Payments for ${p.startupName}">
+                          📜 History
+                        </button>
                         ${p.invoiceId ? `
                           <button class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 4px 7px;" onclick="PaymentsModule.openLifecycleModal('${p.invoiceId}')" title="Track 3-Stage Lifecycle">
-                            🔄 Track
+                            🔄
                           </button>
                         ` : ''}
                       </div>
@@ -659,7 +772,13 @@ const PaymentsModule = {
               }).join('') : `
                 <tr>
                   <td colspan="10" style="text-align: center; padding: 36px; color: var(--text-muted);">
-                    No payment history records found in this billing period.
+                    <div style="font-size: 26px; margin-bottom: 8px;">💳</div>
+                    <div style="font-weight: 700; font-size: 14px; color: var(--text-primary);">
+                      No payment history records matching the active filters.
+                    </div>
+                    <button class="btn btn-sm btn-outline" style="margin-top: 10px;" onclick="PaymentsModule.resetHistoryFilters()">
+                      Reset Filter Criteria
+                    </button>
                   </td>
                 </tr>
               `}
@@ -791,6 +910,301 @@ const PaymentsModule = {
   handleSearch(val) {
     this.searchQuery = val;
     this.render();
+  },
+
+  setHistoryGatewayFilter(gw) {
+    this.historyGatewayFilter = gw;
+    this.render();
+  },
+
+  setHistoryTypeFilter(type) {
+    this.historyTypeFilter = type;
+    this.render();
+  },
+
+  setHistoryStartupFilter(startupId) {
+    this.historyStartupFilter = startupId;
+    this.render();
+  },
+
+  handleHistorySearch(val) {
+    this.historySearchQuery = val;
+    this.render();
+  },
+
+  resetHistoryFilters() {
+    this.historySearchQuery = '';
+    this.historyGatewayFilter = 'all';
+    this.historyTypeFilter = 'all';
+    this.historyStartupFilter = 'all';
+    this.render();
+  },
+
+  exportPaymentHistoryCSV() {
+    const startupId = (this.historyStartupFilter && this.historyStartupFilter !== 'all') ? this.historyStartupFilter : null;
+    const ok = window.store.exportPaymentsCSV(startupId);
+    if (ok) {
+      App.showToast('📥 Payment history exported to CSV successfully!', 'success');
+    }
+  },
+
+  openStartupHistoryPickerModal() {
+    const startups = window.store.getAccessibleStartups();
+    const html = `
+      <div class="modal-overlay active" id="modal-history-picker">
+        <div class="modal-content" style="max-width: 480px;">
+          <div class="modal-header">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 24px;">💳</span>
+              <h3 class="modal-title">Select Startup for Payment History</h3>
+            </div>
+            <button class="modal-close-btn" onclick="PaymentsModule.closeModal('modal-history-picker')">×</button>
+          </div>
+          <div class="modal-body">
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">
+              Select a startup to view complete financial statement, lifetime payments, and verified tax receipts:
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 8px; max-height: 380px; overflow-y: auto;">
+              ${startups.map(s => {
+                const summary = window.store.getPaymentSummaryForStartup(s.id);
+                return `
+                  <div onclick="PaymentsModule.closeModal('modal-history-picker'); PaymentsModule.openStartupPaymentHistoryModal('${s.id}')"
+                    style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: var(--radius-md); background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); transition: all 0.15s ease;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                      <span style="font-size: 24px;">${s.logoEmoji || '🚀'}</span>
+                      <div>
+                        <strong style="color: var(--text-primary); font-size: 13.5px;">${s.name}</strong>
+                        <div style="font-size: 11px; color: var(--text-muted);">${s.category || ''} • ${summary.paymentCount} payments</div>
+                      </div>
+                    </div>
+                    <div style="text-align: right;">
+                      <div style="font-family: var(--font-mono); font-weight: 800; color: var(--status-success); font-size: 13px;">
+                        ₹${summary.totalPaid.toLocaleString('en-IN')}
+                      </div>
+                      ${summary.balanceDue > 0 ? `
+                        <div style="font-size: 10px; color: var(--status-danger); font-weight: 700;">
+                          ₹${summary.balanceDue.toLocaleString('en-IN')} due
+                        </div>
+                      ` : `
+                        <div style="font-size: 10px; color: var(--status-success); font-weight: 600;">
+                          ✓ Settled
+                        </div>
+                      `}
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="PaymentsModule.closeModal('modal-history-picker')">Close</button>
+          </div>
+        </div>
+      </div>
+    `;
+    document.getElementById('modal-mount').innerHTML = html;
+  },
+
+  openStartupPaymentHistoryModal(startupId) {
+    const startup = window.store.getStartupById(startupId);
+    if (!startup) {
+      App.showToast('Startup not found.', 'danger');
+      return;
+    }
+
+    const summary = window.store.getPaymentSummaryForStartup(startupId);
+    const payments = summary.payments || [];
+    const invoices = summary.invoices || [];
+
+    const spaces = window.store.getSpaces ? window.store.getSpaces() : [];
+    const allocatedLabels = (startup.allocatedSeats || []).map(id => {
+      const sp = spaces.find(x => x.id === id);
+      return sp ? sp.label : id;
+    }).join(', ');
+
+    const html = `
+      <div class="modal-overlay active" id="modal-startup-payment-history">
+        <div class="modal-content modal-wide" style="max-width: 880px;">
+          <div class="modal-header">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 32px;">${startup.logoEmoji || '🚀'}</span>
+              <div>
+                <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+                  <span>${startup.name} — Payment History Dossier</span>
+                  <span class="badge badge-info" style="font-size: 11px;">${startup.category || 'Tech'}</span>
+                </h3>
+                <span style="font-size: 12px; color: var(--text-muted);">
+                  GSTIN: <strong style="font-family: var(--font-mono); color: var(--text-primary);">${startup.gstin || 'N/A'}</strong> •
+                  CIN: <strong style="font-family: var(--font-mono);">${startup.registrationNumber || 'N/A'}</strong> •
+                  Space: <strong>${allocatedLabels || 'Dedicated Bay'}</strong>
+                </span>
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <button class="btn btn-outline btn-sm" onclick="window.store.exportPaymentsCSV('${startup.id}')" title="Download CSV statement for this startup">
+                📥 Export CSV
+              </button>
+              <button class="modal-close-btn" onclick="PaymentsModule.closeModal('modal-startup-payment-history')">×</button>
+            </div>
+          </div>
+
+          <div class="modal-body" style="padding: 22px;">
+            <!-- 4 Financial Summary KPI Cards -->
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 22px;">
+              <div style="padding: 14px; border-radius: var(--radius-md); background: rgba(16,185,129,0.08); border: 1.5px solid rgba(16,185,129,0.3); text-align: center;">
+                <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Total Lifetime Paid</div>
+                <div style="font-size: 22px; font-weight: 900; color: var(--status-success); font-family: var(--font-mono); margin-top: 4px;">
+                  ₹${summary.totalPaid.toLocaleString('en-IN')}
+                </div>
+                <div style="font-size: 10.5px; color: var(--status-success); font-weight: 600; margin-top: 2px;">
+                  ${payments.length} Transactions Settled
+                </div>
+              </div>
+
+              <div style="padding: 14px; border-radius: var(--radius-md); background: rgba(99,102,241,0.08); border: 1.5px solid rgba(99,102,241,0.3); text-align: center;">
+                <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Total Invoiced</div>
+                <div style="font-size: 22px; font-weight: 900; color: var(--accent-primary); font-family: var(--font-mono); margin-top: 4px;">
+                  ₹${summary.totalInvoiced.toLocaleString('en-IN')}
+                </div>
+                <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 2px;">
+                  ${invoices.length} Invoices Generated
+                </div>
+              </div>
+
+              <div style="padding: 14px; border-radius: var(--radius-md); background: ${summary.balanceDue > 0 ? 'rgba(239,68,68,0.08)' : 'rgba(16,185,129,0.08)'}; border: 1.5px solid ${summary.balanceDue > 0 ? 'rgba(239,68,68,0.3)' : 'rgba(16,185,129,0.3)'}; text-align: center;">
+                <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Balance Outstanding</div>
+                <div style="font-size: 22px; font-weight: 900; color: ${summary.balanceDue > 0 ? 'var(--status-danger)' : 'var(--status-success)'}; font-family: var(--font-mono); margin-top: 4px;">
+                  ₹${summary.balanceDue.toLocaleString('en-IN')}
+                </div>
+                <div style="font-size: 10.5px; color: ${summary.balanceDue > 0 ? 'var(--status-danger)' : 'var(--status-success)'}; font-weight: 700; margin-top: 2px;">
+                  ${summary.balanceDue > 0 ? 'Action Required' : '✓ Zero Balance'}
+                </div>
+              </div>
+
+              <div style="padding: 14px; border-radius: var(--radius-md); background: rgba(14,165,233,0.08); border: 1.5px solid rgba(14,165,233,0.3); text-align: center;">
+                <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Reconciled Receipts</div>
+                <div style="font-size: 22px; font-weight: 900; color: #0284c7; font-family: var(--font-mono); margin-top: 4px;">
+                  ${payments.filter(p => p.receiptNo).length}
+                </div>
+                <div style="font-size: 10.5px; color: #0284c7; font-weight: 600; margin-top: 2px;">
+                  100% Tax Compliant
+                </div>
+              </div>
+            </div>
+
+            <!-- Payment History Audit Ledger -->
+            <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <h4 style="font-size: 14px; font-weight: 800; color: var(--text-primary); margin: 0;">
+                  📜 Comprehensive Transaction & Settlement Log (${payments.length})
+                </h4>
+                <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">
+                  Complete chronological ledger of gateway payments, partial installments, and receipt numbers.
+                </div>
+              </div>
+            </div>
+
+            <div class="table-wrapper" style="border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+              <table class="nexus-table">
+                <thead>
+                  <tr>
+                    <th>Payment ID</th>
+                    <th>Receipt #</th>
+                    <th>Settlement Date</th>
+                    <th>Linked Invoice</th>
+                    <th>Amount Paid</th>
+                    <th>Gateway & Mode</th>
+                    <th>Transaction Ref / UTR</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Receipt</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${payments.length > 0 ? payments.map(p => {
+                    const gwClass = p.gateway === 'Razorpay' ? 'badge-info' : p.gateway === 'Stripe' ? '' : 'badge-success';
+                    const gwStyle = p.gateway === 'Stripe' ? 'background: rgba(99,91,255,0.15); color: #635bff;' : '';
+                    return `
+                      <tr>
+                        <td><strong style="font-family: var(--font-mono); color: var(--accent-primary);">${p.id}</strong></td>
+                        <td>
+                          <span class="badge badge-success" style="font-family: var(--font-mono); font-size: 10.5px; font-weight: 700;">
+                            ${p.receiptNo || 'REC-SETTLED'}
+                          </span>
+                        </td>
+                        <td style="font-size: 11.5px; color: var(--text-secondary); white-space: nowrap;">${p.paymentDate || '—'}</td>
+                        <td>
+                          <button class="btn btn-link btn-sm" style="font-family: var(--font-mono); font-weight: 700; padding: 0; color: #0B0826; text-decoration: underline;"
+                            onclick="PaymentsModule.closeModal('modal-startup-payment-history'); if (typeof InvoiceModule !== 'undefined') InvoiceModule.viewInvoice('${p.invoiceId}');">
+                            ${p.invoiceId || '—'}
+                          </button>
+                        </td>
+                        <td>
+                          <div style="font-family: var(--font-mono); font-weight: 800; color: var(--status-success); font-size: 13.5px;">
+                            ₹${(p.amount || 0).toLocaleString('en-IN')}
+                          </div>
+                          ${p.isPartial ? `
+                            <div style="font-size: 9.5px; color: #8b5cf6; font-weight: 700;">
+                              🔸 Partial (₹${(p.remainingBalance || 0).toLocaleString('en-IN')} rem.)
+                            </div>
+                          ` : `
+                            <div style="font-size: 9.5px; color: var(--status-success); font-weight: 600;">
+                              ✓ Full Settlement
+                            </div>
+                          `}
+                        </td>
+                        <td>
+                          <span class="badge ${gwClass}" style="${gwStyle} font-size: 10.5px; font-weight: 700;">
+                            ${p.gateway || p.method}
+                          </span>
+                        </td>
+                        <td>
+                          <code style="font-size: 10.5px; font-family: var(--font-mono); color: var(--text-muted); background: var(--bg-surface-elevated); padding: 2px 5px; border-radius: 4px;">
+                            ${p.transactionRef || '—'}
+                          </code>
+                        </td>
+                        <td>
+                          <span class="badge ${p.status === 'Successful' ? 'badge-success' : 'badge-warning'}" style="font-size: 10px;">
+                            ${p.status || 'Successful'}
+                          </span>
+                        </td>
+                        <td style="text-align: right;">
+                          <button class="btn btn-outline btn-sm" style="color: var(--status-success); border-color: var(--status-success); font-size: 10.5px; padding: 3px 7px;"
+                            onclick="PaymentsModule.viewReceipt('${p.id}')" title="View Formal Tax Receipt">
+                            📄 Receipt
+                          </button>
+                        </td>
+                      </tr>
+                    `;
+                  }).join('') : `
+                    <tr>
+                      <td colspan="9" style="text-align: center; padding: 32px; color: var(--text-muted);">
+                        No payment transactions recorded for this startup yet.
+                      </td>
+                    </tr>
+                  `}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+            <button class="btn btn-secondary" onclick="PaymentsModule.closeModal('modal-startup-payment-history')">Close Dossier</button>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-outline" onclick="window.store.exportPaymentsCSV('${startup.id}')">
+                📥 Download Statement (.CSV)
+              </button>
+              ${summary.balanceDue > 0 ? `
+                <button class="btn btn-primary" onclick="PaymentsModule.closeModal('modal-startup-payment-history'); PaymentsModule.openQuickPay();">
+                  💳 Pay Remaining Balance (₹${summary.balanceDue.toLocaleString('en-IN')})
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('modal-mount').innerHTML = html;
   },
 
   _renderStatusBadge(status) {
@@ -1387,7 +1801,7 @@ if (paymentIntent.status === 'succeeded') {
         </div>
 
         <div class="form-group" style="margin-bottom: 0;">
-          <label class="form-label" style="font-size: 11px;">Bank UTR / Transaction Reference *</label>
+          <label class="form-label" style="font-size: 11px;">Bank UTR / Transaction Reference <span class="required-star">*</span></label>
           <input type="text" id="wire-utr-input" class="form-control" value="${wireRef}" placeholder="Enter Bank UTR">
         </div>
       </div>
@@ -1531,7 +1945,7 @@ if (paymentIntent.status === 'succeeded') {
             </div>
 
             <div class="form-group">
-              <label class="form-label">Installment Amount to Pay Now (₹) *</label>
+              <label class="form-label">Installment Amount to Pay Now (₹) <span class="required-star">*</span></label>
               <input type="number" id="partial-amount-input" class="form-control" min="1" max="${balanceDue}"
                 value="${halfAmt}" placeholder="Enter amount">
               <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
@@ -2061,6 +2475,13 @@ if (paymentIntent.status === 'succeeded') {
     const win = window.open('', '_blank', 'width=620,height=720');
     win.document.write(html);
     win.document.close();
+  },
+
+  scrollToPaymentHistory() {
+    const card = document.getElementById('payments-history-transactions-card');
+    if (card) {
+      card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   },
 
   closeModal(id) {

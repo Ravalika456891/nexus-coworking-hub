@@ -8,7 +8,7 @@ const MeetingRoomsModule = {
     if (!container) return;
 
     const rooms = window.store.getMeetingRooms();
-    const startups = window.store.getStartups().filter(s => s.status === 'Incubated' || s.status === 'Approved');
+    const startups = window.store.getStartups();
 
     container.innerHTML = `
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; flex-wrap: wrap; gap: 14px;">
@@ -167,9 +167,44 @@ const MeetingRoomsModule = {
     `;
   },
 
-  openBookModal(preselectedRoomId = null, preselectedTime = null) {
+  generateTimeSlots() {
+    const slots = [];
+    for (let hour = 8; hour <= 21; hour++) {
+      for (let min of [0, 30]) {
+        if (hour === 21 && min === 30) continue;
+        const hStr = hour < 10 ? `0${hour}` : `${hour}`;
+        const mStr = min < 10 ? `0${min}` : `${min}`;
+        const timeVal = `${hStr}:${mStr}`;
+        const period = hour >= 12 ? 'PM' : 'AM';
+        const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+        const displayStr = `${displayHour}:${mStr} ${period}`;
+        slots.push({ value: timeVal, label: `${timeVal} (${displayStr})` });
+      }
+    }
+    return slots;
+  },
+
+  syncEndTime(startTimeVal) {
+    const endSelect = document.getElementById('book-end-time');
+    if (!endSelect || !startTimeVal) return;
+    const parts = startTimeVal.split(':');
+    const startH = parseInt(parts[0], 10);
+    const startM = parseInt(parts[1] || '0', 10);
+    let endH = startH + 1;
+    let endM = startM;
+    if (endH > 21 || (endH === 21 && endM > 0)) {
+      endH = 21;
+      endM = 0;
+    }
+    const endVal = `${endH < 10 ? '0' : ''}${endH}:${endM < 10 ? '0' : ''}${endM}`;
+    endSelect.value = endVal;
+  },
+
+  openBookModal(preselectedRoomId = null, preselectedTime = null, preselectedStartupId = null) {
     const rooms = window.store.getMeetingRooms();
-    const startups = window.store.getStartups().filter(s => s.status === 'Incubated' || s.status === 'Approved');
+    const startups = window.store.getStartups();
+    const activeFounderId = window.store.activeFounderId;
+    const timeSlots = this.generateTimeSlots();
 
     const defaultStartTime = preselectedTime || '11:00';
     const endHour = parseInt(defaultStartTime.split(':')[0]) + 1;
@@ -185,7 +220,7 @@ const MeetingRoomsModule = {
           <div class="modal-body">
             <form id="form-book-room" onsubmit="MeetingRoomsModule.handleBookSubmit(event)">
               <div class="form-group">
-                <label class="form-label">Meeting Room *</label>
+                <label class="form-label">Meeting Room <span class="required-star">*</span></label>
                 <select name="roomId" class="form-control" required>
                   ${rooms.map(r => `
                     <option value="${r.id}" ${preselectedRoomId === r.id ? 'selected' : ''}>
@@ -196,40 +231,61 @@ const MeetingRoomsModule = {
               </div>
 
               <div class="form-group">
-                <label class="form-label">Reserving Startup *</label>
+                <label class="form-label">Reserving Startup <span class="required-star">*</span></label>
                 <select name="startupId" class="form-control" required>
-                  ${startups.map(s => `
-                    <option value="${s.id}">
+                  ${startups.map(s => {
+                    const isSelected = preselectedStartupId ? (s.id === preselectedStartupId) : (activeFounderId ? s.id === activeFounderId : false);
+                    return `
+                    <option value="${s.id}" ${isSelected ? 'selected' : ''}>
                       ${s.name} (Remaining Credits: ${Math.max(0, (s.includedMeetingHours||12) - (s.usedMeetingHours||0))} hrs)
                     </option>
-                  `).join('')}
+                    `;
+                  }).join('')}
                 </select>
               </div>
 
               <div class="form-group">
-                <label class="form-label">Meeting Title / Objective *</label>
-                <input type="text" name="title" class="form-control" placeholder="e.g. Investor Demo & Product Review" required>
+                <label class="form-label">Meeting Title / Objective <span class="required-star">*</span></label>
+                <input type="text" name="title" id="book-meeting-title" class="form-control" value="Investor Demo & Product Review" placeholder="e.g. Investor Demo & Product Review" required>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px;">
+                  <button type="button" class="btn btn-outline btn-sm" style="font-size: 11px; padding: 2px 8px;" onclick="document.getElementById('book-meeting-title').value = 'Investor Demo & Product Review'">⚡ Investor Demo</button>
+                  <button type="button" class="btn btn-outline btn-sm" style="font-size: 11px; padding: 2px 8px;" onclick="document.getElementById('book-meeting-title').value = 'Sprint Planning & Tech Sync'">🚀 Sprint Planning</button>
+                  <button type="button" class="btn btn-outline btn-sm" style="font-size: 11px; padding: 2px 8px;" onclick="document.getElementById('book-meeting-title').value = 'Board Advisory Session'">🏢 Board Advisory</button>
+                  <button type="button" class="btn btn-outline btn-sm" style="font-size: 11px; padding: 2px 8px;" onclick="document.getElementById('book-meeting-title').value = 'Client Discovery Call'">🤝 Client Discovery</button>
+                </div>
               </div>
 
               <div class="form-row-2">
                 <div class="form-group">
-                  <label class="form-label">Date *</label>
+                  <label class="form-label">Date <span class="required-star">*</span></label>
                   <input type="date" name="date" class="form-control" value="${this.selectedDate}" required>
                 </div>
                 <div class="form-group">
-                  <label class="form-label">Attendees *</label>
+                  <label class="form-label">Attendees <span class="required-star">*</span></label>
                   <input type="number" name="attendees" class="form-control" value="6" min="1" max="50" required>
                 </div>
               </div>
 
               <div class="form-row-2">
                 <div class="form-group">
-                  <label class="form-label">Start Time *</label>
-                  <input type="time" name="startTime" class="form-control" value="${defaultStartTime}" required>
+                  <label class="form-label">Start Time <span class="required-star">*</span></label>
+                  <select name="startTime" id="book-start-time" class="form-control" onchange="MeetingRoomsModule.syncEndTime(this.value)" required>
+                    ${timeSlots.map(t => `
+                      <option value="${t.value}" ${t.value === defaultStartTime ? 'selected' : ''}>
+                        ${t.label}
+                      </option>
+                    `).join('')}
+                  </select>
                 </div>
                 <div class="form-group">
-                  <label class="form-label">End Time *</label>
-                  <input type="time" name="endTime" class="form-control" value="${defaultEndTime}" required>
+                  <label class="form-label">End Time <span class="required-star">*</span></label>
+                  <select name="endTime" id="book-end-time" class="form-control" required>
+                    ${timeSlots.map(t => `
+                      <option value="${t.value}" ${t.value === defaultEndTime ? 'selected' : ''}>
+                        ${t.label}
+                      </option>
+                    `).join('')}
+                  </select>
                 </div>
               </div>
 
@@ -281,3 +337,6 @@ const MeetingRoomsModule = {
     if (el) el.remove();
   }
 };
+
+window.MeetingRoomsModule = MeetingRoomsModule;
+

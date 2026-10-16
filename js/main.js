@@ -11,6 +11,10 @@ const App = {
     this.applyTheme(initialTheme);
     this.updateRoleIndicator();
 
+    if (window.AuthGate) {
+      window.AuthGate.checkAuthGate();
+    }
+
     // Subscribe to state updates
     window.store.subscribe(() => {
       this.refreshCurrentView();
@@ -82,6 +86,8 @@ const App = {
     const titles = {
       dashboard: '⚡ Command Center',
       onboarding: '🚀 Startup Onboarding',
+      startupTables: '📋 List of Startups & Live Database',
+      database: '🗄️ Database Tables (10 Collections)',
       workspace: '🏢 Workspaces',
       meetingRooms: '📅 Meeting Rooms',
       billing: '🧾 Invoices & Rent',
@@ -204,6 +210,16 @@ const App = {
         break;
       case 'leads':
         LeadsModule.render();
+        break;
+      case 'startupTables':
+        if (typeof StartupTablesModule !== 'undefined' && StartupTablesModule.render) {
+          StartupTablesModule.render();
+        }
+        break;
+      case 'database':
+        if (typeof DatabaseModule !== 'undefined' && DatabaseModule.render) {
+          DatabaseModule.render();
+        }
         break;
     }
   },
@@ -658,20 +674,20 @@ const App = {
 
             <!-- TAB 2: CREDENTIALS LOGIN -->
             <div id="startup-login-tab-cred" style="display: none;">
-              <form id="form-startup-cred-login" onsubmit="App.handleStartupLoginForm(event)">
+              <form id="form-startup-cred-login" onsubmit="App.handleStartupLoginForm(event)" novalidate>
                 <div class="form-group" style="margin-bottom: 14px;">
-                  <label class="form-label">Founder Email, Startup Name, or Startup ID <span class="required-star">*</span></label>
-                  <input type="text" id="input-startup-identifier" class="form-control" placeholder="e.g. alex@xyztechnologies.io, STP-XYZ, or NeuroPulse AI" required>
+                  <label class="form-label">Registered 10-Digit Mobile Number, Email, or Startup ID <span class="required-star">*</span></label>
+                  <input type="text" id="input-startup-identifier" class="form-control" value="9880012345" placeholder="e.g. 9880012345, +91 98800 12345, or STP-XYZ" required>
                   <span style="font-size: 11px; color: var(--text-muted); margin-top: 4px; display: block;">
-                    Tip: Any registered founder email, startup name, or ID works.
+                    Mobile numbers must be strictly 10 digits. (+91 prefix accepted)
                   </span>
                 </div>
 
                 <div class="form-group" style="margin-bottom: 16px;">
-                  <label class="form-label">Password <span class="required-star">*</span></label>
-                  <input type="password" id="input-startup-password" class="form-control" value="password123" placeholder="Enter password" required>
+                  <label class="form-label">Password (10 to 16 positions) <span class="required-star">*</span></label>
+                  <input type="password" id="input-startup-password" class="form-control" value="password123" placeholder="Enter password (10-16 characters)" required>
                   <span style="font-size: 11px; color: var(--text-muted); margin-top: 4px; display: block;">
-                    Demo password: <code>password123</code> (any password accepted for demo).
+                    Must be 10–16 characters only. Demo password: <code>password123</code> (11 chars).
                   </span>
                 </div>
 
@@ -690,9 +706,9 @@ const App = {
             <div style="font-size: 12px; color: var(--text-secondary);">
               New venture applying for incubation?
             </div>
-            <button class="btn btn-outline btn-sm" onclick="App.closeModal('modal-startup-login'); OnboardingModule.openRegistrationWizard();" style="font-size: 12px; font-weight: 600;">
-              + Register New Startup Application
-            </button>
+            <a href="index.html#cta" class="btn btn-outline btn-sm" onclick="App.closeModal('modal-startup-login')" style="font-size: 12px; font-weight: 600; text-decoration: none;">
+              + Apply &amp; Register on Website ➔
+            </a>
           </div>
 
         </div>
@@ -748,9 +764,55 @@ const App = {
     const errBox = document.getElementById('startup-login-error');
     if (!idInput) return;
 
-    const res = window.store.loginAsStartup(idInput.value, passInput ? passInput.value : '');
+    const idVal = (idInput.value || '').trim();
+    const passVal = passInput ? passInput.value : '';
+
+    // 1. Mobile number validation if digits are present & not email
+    let digits = idVal.replace(/\D/g, '');
+    if (digits.length === 12 && digits.startsWith('91')) digits = digits.slice(2);
+    else if (digits.length === 11 && digits.startsWith('0')) digits = digits.slice(1);
+
+    const isDirectId = idVal.toUpperCase().startsWith('STP-');
+    if (!idVal.includes('@') && !isDirectId) {
+      if (digits.length !== 10) {
+        if (errBox) {
+          errBox.innerText = `⚠️ Mobile number must be exactly 10 digits. More or fewer digits are not allowed (you entered ${digits.length} digits: "${idVal}").`;
+          errBox.style.display = 'block';
+          idInput.focus();
+        }
+        return;
+      }
+    }
+
+    // 2. Password validation (10 to 16 positions only)
+    if (passVal.length < 10) {
+      if (errBox) {
+        errBox.innerText = `⚠️ Password must be between 10 and 16 characters only. (You entered ${passVal.length} characters, minimum 10 required).`;
+        errBox.style.display = 'block';
+        if (passInput) passInput.focus();
+      }
+      return;
+    }
+    if (passVal.length > 16) {
+      if (errBox) {
+        errBox.innerText = `⚠️ Password must be between 10 and 16 characters only. More than 16 characters is not allowed (you entered ${passVal.length} characters).`;
+        errBox.style.display = 'block';
+        if (passInput) passInput.focus();
+      }
+      return;
+    }
+
+    const res = window.store.loginAsStartup(idVal, passVal);
     if (res.success) {
       if (errBox) errBox.style.display = 'none';
+      sessionStorage.setItem('nexus_auth_session', JSON.stringify({
+        role: 'startup',
+        startupId: res.startup.id,
+        startupName: res.startup.name,
+        founderName: res.startup.founders?.name || 'Founder',
+        timestamp: Date.now()
+      }));
+      document.documentElement.classList.remove('auth-locked');
       this.closeModal('modal-startup-login');
       this.updateRoleIndicator();
       this.showToast(`🎉 Welcome back, ${res.startup.founders?.name || 'Founder'}! Signed into ${res.startup.name} Founder Portal.`, 'success');
@@ -770,6 +832,14 @@ const App = {
       return;
     }
     window.store.loginAsStartup(s.id);
+    sessionStorage.setItem('nexus_auth_session', JSON.stringify({
+      role: 'startup',
+      startupId: s.id,
+      startupName: s.name,
+      founderName: s.founders?.name || 'Founder',
+      timestamp: Date.now()
+    }));
+    document.documentElement.classList.remove('auth-locked');
     this.closeModal('modal-startup-login');
     this.updateRoleIndicator();
     this.showToast(`🎉 Welcome back, ${s.founders?.name || 'Founder'}! Signed into ${s.name} Founder Portal.`, 'success');
@@ -846,24 +916,24 @@ const App = {
             <!-- Login Form -->
             <form id="form-super-admin-login" onsubmit="App.handleAdminLoginForm(event)">
               <div class="form-group" style="margin-bottom: 12px;">
-                <label class="form-label" style="font-weight: 600; font-size: 12.5px;">Super Admin Identifier / Email <span class="required-star">*</span></label>
+                <label class="form-label" style="font-weight: 600; font-size: 12.5px;">Super Admin 10-Digit Mobile or Email <span class="required-star">*</span></label>
                 <div class="input-with-icon">
                   <span class="input-icon">👑</span>
-                  <input type="text" id="input-admin-identifier" class="form-control" value="dev.sharma@nexusincubation.io" placeholder="admin or dev.sharma@nexusincubation.io" required>
+                  <input type="text" id="input-admin-identifier" class="form-control" value="9800011111" placeholder="9800011111 or dev.sharma@nexusincubation.io" required>
                 </div>
                 <span style="font-size: 11px; color: var(--text-muted); margin-top: 3px; display: block;">
-                  Executive credential: <code>dev.sharma@nexusincubation.io</code> or <code>admin</code>
+                  Mobile: <code>9800011111</code> (10 digits) or <code>dev.sharma@nexusincubation.io</code>
                 </span>
               </div>
 
               <div class="form-group" style="margin-bottom: 12px;">
-                <label class="form-label" style="font-weight: 600; font-size: 12.5px;">Master Security Password <span class="required-star">*</span></label>
+                <label class="form-label" style="font-weight: 600; font-size: 12.5px;">Master Security Password (10 to 16 positions) <span class="required-star">*</span></label>
                 <div class="input-with-icon">
                   <span class="input-icon">🔒</span>
-                  <input type="password" id="input-admin-password" class="form-control" value="admin123" placeholder="Enter master password" required>
+                  <input type="password" id="input-admin-password" class="form-control" value="admin12345" placeholder="Master password (10-16 characters)" required>
                 </div>
                 <span style="font-size: 11px; color: var(--text-muted); margin-top: 3px; display: block;">
-                  Demo master password: <code>admin123</code> (any password accepted for demo)
+                  Must be 10–16 characters only. Master password: <code>admin12345</code> (10 chars).
                 </span>
               </div>
 
@@ -879,12 +949,9 @@ const App = {
 
               <div id="admin-login-error" style="display: none; padding: 10px 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--status-danger); border-radius: var(--radius-md); color: var(--status-danger); font-size: 12.5px; margin-bottom: 12px;"></div>
 
-              <div style="display: flex; gap: 10px; margin-bottom: 16px;">
-                <button type="submit" class="btn btn-primary" style="flex: 1; justify-content: center; padding: 10px 16px; font-size: 13px; font-weight: 700; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);">
+              <div style="margin-bottom: 16px;">
+                <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 10px 16px; font-size: 13px; font-weight: 700; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);">
                   Authenticate Super Admin 👑
-                </button>
-                <button type="button" class="btn btn-outline" onclick="App.loginAsSuperAdminQuick()" style="white-space: nowrap; font-size: 12px; border-color: #f59e0b; color: #f59e0b; padding: 9px 14px;" title="Instant 1-Click Authentication">
-                  ⚡ 1-Click Instant Login
                 </button>
               </div>
             </form>
@@ -938,9 +1005,52 @@ const App = {
     const errBox = document.getElementById('admin-login-error');
     if (!idInput) return;
 
-    const res = window.store.loginAsSuperAdmin(idInput.value, passInput ? passInput.value : '', pinInput ? pinInput.value : '');
+    const idVal = (idInput.value || '').trim();
+    const passVal = passInput ? passInput.value : '';
+
+    // Mobile number validation if digits are present & not email
+    let digits = idVal.replace(/\D/g, '');
+    if (digits.length === 12 && digits.startsWith('91')) digits = digits.slice(2);
+    else if (digits.length === 11 && digits.startsWith('0')) digits = digits.slice(1);
+
+    if (!idVal.includes('@') && idVal.toLowerCase() !== 'admin' && idVal.toLowerCase() !== 'superadmin' && idVal.toLowerCase() !== 'dev') {
+      if (digits.length !== 10) {
+        if (errBox) {
+          errBox.innerText = `⚠️ Mobile number must be exactly 10 digits. More or fewer digits are not allowed (you entered ${digits.length} digits: "${idVal}").`;
+          errBox.style.display = 'block';
+          idInput.focus();
+        }
+        return;
+      }
+    }
+
+    // Password validation (10 to 16 positions only)
+    if (passVal.length < 10) {
+      if (errBox) {
+        errBox.innerText = `⚠️ Password must be between 10 and 16 characters only. (You entered ${passVal.length} characters, minimum 10 required).`;
+        errBox.style.display = 'block';
+        if (passInput) passInput.focus();
+      }
+      return;
+    }
+    if (passVal.length > 16) {
+      if (errBox) {
+        errBox.innerText = `⚠️ Password must be between 10 and 16 characters only. More than 16 characters is not allowed (you entered ${passVal.length} characters).`;
+        errBox.style.display = 'block';
+        if (passInput) passInput.focus();
+      }
+      return;
+    }
+
+    const res = window.store.loginAsSuperAdmin(idVal, passVal, pinInput ? pinInput.value : '');
     if (res.success) {
       if (errBox) errBox.style.display = 'none';
+      sessionStorage.setItem('nexus_auth_session', JSON.stringify({
+        role: 'super_admin',
+        userName: 'Dev Sharma',
+        timestamp: Date.now()
+      }));
+      document.documentElement.classList.remove('auth-locked');
       this.closeModal('modal-admin-login');
       this.updateRoleIndicator();
       this.showToast('👑 Welcome, Dev Sharma! Super Admin privileges verified. Full 9-module unrestricted access active.', 'success');
@@ -954,7 +1064,13 @@ const App = {
   },
 
   loginAsSuperAdminQuick() {
-    window.store.loginAsSuperAdmin('admin');
+    window.store.loginAsSuperAdmin('admin', 'admin12345');
+    sessionStorage.setItem('nexus_auth_session', JSON.stringify({
+      role: 'super_admin',
+      userName: 'Dev Sharma',
+      timestamp: Date.now()
+    }));
+    document.documentElement.classList.remove('auth-locked');
     this.closeModal('modal-admin-login');
     this.updateRoleIndicator();
     this.showToast('👑 Welcome, Dev Sharma! Authenticated as Super Admin.', 'success');
@@ -1009,6 +1125,63 @@ const App = {
     }
   },
 
+  // --- Auth Gate & Lock Screen Methods ---
+  checkAuthGate() {
+    if (window.AuthGate && window.AuthGate.checkAuthGate) {
+      window.AuthGate.checkAuthGate();
+    }
+  },
+
+  switchGateTab(tab) {
+    if (window.AuthGate && window.AuthGate.switchGateTab) {
+      window.AuthGate.switchGateTab(tab);
+    }
+  },
+
+  quickFillGateStartup(phone, pass = 'password123') {
+    if (window.AuthGate && window.AuthGate.quickFillGateStartup) {
+      window.AuthGate.quickFillGateStartup(phone, pass);
+    }
+  },
+
+  togglePasswordVisibility(inputId, btn) {
+    if (window.AuthGate && window.AuthGate.togglePasswordVisibility) {
+      window.AuthGate.togglePasswordVisibility(inputId, btn);
+    }
+  },
+
+  handleGateStartupLogin(e) {
+    if (window.AuthGate && window.AuthGate.handleGateStartupLogin) {
+      window.AuthGate.handleGateStartupLogin(e);
+    }
+  },
+
+  handleGateAdminLogin(e) {
+    if (window.AuthGate && window.AuthGate.handleGateAdminLogin) {
+      window.AuthGate.handleGateAdminLogin(e);
+    }
+  },
+
+  quickLoginGateAdmin() {
+    if (window.AuthGate && window.AuthGate.quickLoginGateAdmin) {
+      window.AuthGate.quickLoginGateAdmin();
+    }
+  },
+
+  lockSessionAndLogout() {
+    if (window.AuthGate && window.AuthGate.lockSessionAndLogout) {
+      window.AuthGate.lockSessionAndLogout();
+    }
+  },
+
+  openRegistrationFromGate() {
+    if (window.AuthGate && window.AuthGate.openRegistrationFromGate) {
+      window.AuthGate.openRegistrationFromGate();
+    } else {
+      window.location.href = 'index.html#cta';
+    }
+  },
+
   showToast(message, type = 'info') {
     const container = document.getElementById('toast-container');
     if (!container) return;
@@ -1036,3 +1209,4 @@ const App = {
 
 window.App = App;
 document.addEventListener('DOMContentLoaded', () => App.init());
+

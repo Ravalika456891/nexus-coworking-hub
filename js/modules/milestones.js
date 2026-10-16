@@ -229,6 +229,26 @@ const MilestonesModule = {
         <div class="sequential-milestones-track">
           ${milestones.map((m, idx) => this.renderSequentialMilestoneCard(m, idx, milestones.length)).join('')}
         </div>
+
+        <!-- Next Stage Lifecycle Navigation -->
+        <div style="margin-top: 28px; padding: 18px 22px; background: var(--bg-surface-elevated); border: 1px solid var(--border-medium); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; box-shadow: var(--shadow-sm);">
+          <div>
+            <div style="font-weight: 700; font-size: 14px; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+              <span>🏁</span> Lifecycle Stage 7 of 8: Milestones Execution
+            </div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">
+              Completed milestone targets advance cohort readiness. Proceed to Stage 8: Intelligence &amp; Performance Reports.
+            </div>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="App.switchTab('incubation')" style="font-size: 12px; font-weight: 600;">
+              ← Previous: Incubation Journey
+            </button>
+            <button type="button" class="btn btn-primary btn-sm" onclick="App.switchTab('reports')" style="font-size: 12.5px; font-weight: 700; padding: 8px 16px;">
+              Next Page: Reports &amp; Analytics ➔
+            </button>
+          </div>
+        </div>
       </div>
     `;
   },
@@ -428,7 +448,7 @@ const MilestonesModule = {
             <form onsubmit="MilestonesModule.handleCreateSubmit(event)">
               <!-- Startup Selection -->
               <div class="form-group">
-                <label class="form-label">Target Startup *</label>
+                <label class="form-label">Target Startup <span class="required-star">*</span></label>
                 <select name="startupId" class="form-control" required onchange="MilestonesModule.updateSuggestedSeq(this.value)">
                   ${startups.map(s => `
                     <option value="${s.id}" ${s.id === presetStartupId ? 'selected' : ''}>
@@ -441,7 +461,7 @@ const MilestonesModule = {
               <!-- Milestone Sequence Number & Label -->
               <div class="form-row-2">
                 <div class="form-group">
-                  <label class="form-label">Milestone Sequence Number *</label>
+                  <label class="form-label">Milestone Sequence Number <span class="required-star">*</span></label>
                   <input type="number" name="sequenceNumber" id="form-seq-num" class="form-control" value="${nextSeq}" min="1" max="20" required oninput="
                     document.getElementById('form-milestone-label').value = 'Milestone ' + this.value;
                   ">
@@ -454,7 +474,7 @@ const MilestonesModule = {
 
               <!-- Milestone Title with Quick Suggestions -->
               <div class="form-group">
-                <label class="form-label">Milestone Title *</label>
+                <label class="form-label">Milestone Title <span class="required-star">*</span></label>
                 <input type="text" name="title" id="form-milestone-title" class="form-control" placeholder="e.g. Business Registration, MVP Development, Beta Launch, Revenue Generation" required>
                 <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px;">
                   <button type="button" class="btn btn-outline btn-sm" style="font-size: 10.5px; padding: 2px 7px;" onclick="document.getElementById('form-milestone-title').value='Business Registration'">Business Registration</button>
@@ -468,7 +488,7 @@ const MilestonesModule = {
               <!-- Status & Progress -->
               <div class="form-row-2">
                 <div class="form-group">
-                  <label class="form-label">Initial Status *</label>
+                  <label class="form-label">Initial Status <span class="required-star">*</span></label>
                   <select name="status" class="form-control" id="form-status-select" onchange="
                     const isDone = this.value === 'Completed';
                     document.getElementById('form-prog-val').value = isDone ? 100 : (this.value === 'Planned' ? 0 : 50);
@@ -488,12 +508,12 @@ const MilestonesModule = {
               <!-- Target Date & Mentor Verification Sign-off -->
               <div class="form-row-2">
                 <div class="form-group">
-                  <label class="form-label">Target Completion Date *</label>
+                  <label class="form-label">Target Completion Date <span class="required-star">*</span></label>
                   <input type="date" name="targetDate" class="form-control" value="2026-11-20" required>
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label">Mentor Verifier Sign-Off *</label>
+                  <label class="form-label">Mentor Verifier Sign-Off <span class="required-star">*</span></label>
                   <select name="verifiedBy" class="form-control">
                     ${mentors.map(m => `
                       <option value="${m.name} (Mentor)" ${m.id === 'MEN-05' ? 'selected' : ''}>
@@ -544,6 +564,11 @@ const MilestonesModule = {
     const fd = new FormData(e.target);
     const data = Object.fromEntries(fd.entries());
 
+    if (!data.startupId || !data.title || !data.title.trim() || !data.targetDate) {
+      App.showToast('⚠️ Please fill in all required fields marked with a red star (*) before submitting.', 'warning');
+      return;
+    }
+
     window.store.createMilestone(data);
     this.closeModal('modal-create-milestone');
     App.showToast(`🎯 Created ${data.milestoneLabel}: "${data.title}" successfully!`, 'success');
@@ -572,13 +597,13 @@ const MilestonesModule = {
           <div class="modal-body">
             <form onsubmit="MilestonesModule.handleEditSubmit(event, '${m.id}')">
               <div class="form-group">
-                <label class="form-label">Milestone Title *</label>
+                <label class="form-label">Milestone Title <span class="required-star">*</span></label>
                 <input type="text" name="title" class="form-control" value="${m.title}" required>
               </div>
 
               <div class="form-row-2">
                 <div class="form-group">
-                  <label class="form-label">Status *</label>
+                  <label class="form-label">Status <span class="required-star">*</span></label>
                   <select name="status" class="form-control" onchange="
                     if (this.value === 'Completed') document.getElementById('edit-prog-val').value = 100;
                   ">
@@ -641,6 +666,11 @@ const MilestonesModule = {
       kpiImpact: fd.get('kpiImpact'),
       mentorNotes: fd.get('mentorNotes')
     };
+
+    if (!updates.title || !updates.title.trim()) {
+      App.showToast('⚠️ Please fill in all required fields marked with a red star (*) before saving.', 'warning');
+      return;
+    }
 
     window.store.updateMilestone(id, updates);
     this.closeModal('modal-edit-milestone');

@@ -376,7 +376,7 @@ const LeadsModule = {
           </div>
           <form onsubmit="LeadsModule.handleManualLeadSubmit(event)" style="padding: 20px;">
             <div class="form-group" style="margin-bottom: 14px;">
-              <label class="label">Work Email *</label>
+              <label class="label">Work Email <span class="required-star">*</span></label>
               <input type="email" id="manual-lead-email" class="input" required placeholder="founder@venture.io">
             </div>
             <div class="form-group" style="margin-bottom: 14px;">

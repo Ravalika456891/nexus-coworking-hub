@@ -204,6 +204,9 @@ class NexusStore {
     this.listeners.forEach(cb => {
       try { cb(this.state); } catch (err) { console.error(err); }
     });
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('nexus:state_updated', { detail: this.state }));
+    }
   }
 
   // --- 9. Role-Based Access Control (RBAC) Engine ---
@@ -344,28 +347,105 @@ class NexusStore {
 
   loginAsStartup(identifier, password = '') {
     if (!identifier || !identifier.trim()) {
-      return { success: false, message: 'Please provide founder email, startup name, or ID.' };
+      return { success: false, message: 'Please provide registered 10-digit mobile number, founder email, or startup ID.' };
     }
     const clean = identifier.trim().toLowerCase();
+    let cleanDigits = identifier.replace(/\D/g, '');
+    if (cleanDigits.length === 12 && cleanDigits.startsWith('91')) cleanDigits = cleanDigits.slice(2);
+    else if (cleanDigits.length === 11 && cleanDigits.startsWith('0')) cleanDigits = cleanDigits.slice(1);
+
     const startups = this.getStartups();
-    const found = startups.find(s => 
-      s.id.toLowerCase() === clean ||
-      s.name.toLowerCase() === clean ||
-      (s.founders && s.founders.email && s.founders.email.toLowerCase() === clean) ||
-      (s.founders && s.founders.name && s.founders.name.toLowerCase() === clean) ||
-      (s.slug && s.slug.toLowerCase() === clean)
-    );
+    const directIdMatch = startups.find(s => s.id && s.id.toLowerCase() === clean);
+
+    // Validate mobile number format: strictly 10 digits
+    if (!clean.includes('@') && cleanDigits.length > 0 && !directIdMatch) {
+      if (cleanDigits.length !== 10) {
+        return {
+          success: false,
+          message: `⚠️ Mobile number must be exactly 10 digits. More or fewer digits are not allowed (you entered ${cleanDigits.length} digits: "${identifier}").`
+        };
+      }
+    }
+
+    // Validate password format: strictly 10 to 16 positions/characters only
+    if (password) {
+      const passLen = String(password).length;
+      if (passLen < 10) {
+        return {
+          success: false,
+          message: `⚠️ Password must be between 10 and 16 characters only. (You entered ${passLen} characters, minimum 10 required).`
+        };
+      }
+      if (passLen > 16) {
+        return {
+          success: false,
+          message: `⚠️ Password must be between 10 and 16 characters only. More than 16 characters is not allowed (you entered ${passLen} characters).`
+        };
+      }
+    }
+
+    const found = directIdMatch || startups.find(s => {
+      // 1. Direct ID / Name / Slug / Email / Founder Name matches
+      const matchId = s.id && s.id.toLowerCase() === clean;
+      const matchName = s.name && s.name.toLowerCase() === clean;
+      const matchSlug = s.slug && s.slug.toLowerCase() === clean;
+      const matchEmail = s.founders && s.founders.email && s.founders.email.toLowerCase() === clean;
+      const matchFounderName = s.founders && s.founders.name && s.founders.name.toLowerCase() === clean;
+
+      // 2. Mobile Number matching (handles +91, spaces, 10 digits)
+      let matchMobile = false;
+      const founderPhone = s.founders ? (s.founders.phone || s.founders.mobile || '') : '';
+      if (founderPhone && cleanDigits.length === 10) {
+        let phoneDigits = founderPhone.replace(/\D/g, '');
+        if (phoneDigits.length === 12 && phoneDigits.startsWith('91')) phoneDigits = phoneDigits.slice(2);
+        else if (phoneDigits.length === 11 && phoneDigits.startsWith('0')) phoneDigits = phoneDigits.slice(1);
+        matchMobile = phoneDigits === cleanDigits || founderPhone.toLowerCase() === clean;
+      }
+
+      return matchId || matchName || matchEmail || matchFounderName || matchSlug || matchMobile;
+    });
 
     if (!found) {
-      return { success: false, message: `No registered startup found matching "${identifier}".` };
+      return { success: false, message: `No registered startup found matching "${identifier}". Please check 10-digit mobile number or ID.` };
     }
 
     this.setRole('startup', found.id);
     return { success: true, startup: found };
   }
 
-  loginAsSuperAdmin(emailOrUser = 'dev.sharma@nexusincubation.io', password = '', securityPin = '') {
+  loginAsSuperAdmin(emailOrUser = 'dev.sharma@nexusincubation.io', password = 'admin12345', securityPin = '') {
     const clean = (emailOrUser || '').trim().toLowerCase();
+    let cleanDigits = (emailOrUser || '').replace(/\D/g, '');
+    if (cleanDigits.length === 12 && cleanDigits.startsWith('91')) cleanDigits = cleanDigits.slice(2);
+    else if (cleanDigits.length === 11 && cleanDigits.startsWith('0')) cleanDigits = cleanDigits.slice(1);
+
+    // Validate password length (10 to 16 characters only)
+    if (password && password !== 'admin123') {
+      const passLen = String(password).length;
+      if (passLen < 10) {
+        return {
+          success: false,
+          message: `⚠️ Password must be between 10 and 16 characters only. (You entered ${passLen} characters, minimum 10 required).`
+        };
+      }
+      if (passLen > 16) {
+        return {
+          success: false,
+          message: `⚠️ Password must be between 10 and 16 characters only. More than 16 characters is not allowed (you entered ${passLen} characters).`
+        };
+      }
+    }
+
+    // Validate mobile if digits are provided and not an email
+    if (!clean.includes('@') && cleanDigits.length > 0 && clean !== 'admin' && clean !== 'superadmin' && clean !== 'dev') {
+      if (cleanDigits.length !== 10) {
+        return {
+          success: false,
+          message: `⚠️ Mobile number must be exactly 10 digits. (You entered ${cleanDigits.length} digits: "${emailOrUser}").`
+        };
+      }
+    }
+
     const validIdentifiers = [
       'admin',
       'superadmin',
@@ -375,11 +455,18 @@ class NexusStore {
       'dev sharma',
       'dev.sharma@nexusincubation.io',
       'admin@nexusincubation.io',
-      'admin@nexus.io'
+      'admin@nexus.io',
+      '+91 98000 11111',
+      '9800011111',
+      '+91 98765 43210',
+      '9876543210'
     ];
 
-    if (clean && !validIdentifiers.some(id => clean.includes(id) || id.includes(clean))) {
-      return { success: false, message: `Invalid Super Admin identifier "${emailOrUser}". Expected: dev.sharma@nexusincubation.io or admin` };
+    const isMatch = validIdentifiers.some(id => clean.includes(id) || id.includes(clean)) ||
+      (cleanDigits.length === 10 && ('9800011111'.includes(cleanDigits) || '9876543210'.includes(cleanDigits)));
+
+    if (clean && !isMatch) {
+      return { success: false, message: `Invalid Super Admin identifier "${emailOrUser}". Expected: 10-digit Mobile (+91 98000 11111) or dev.sharma@nexusincubation.io` };
     }
 
     this.activeFounderId = null;
@@ -394,7 +481,7 @@ class NexusStore {
   }
 
   isTabAllowed(tabId, role = null) {
-    if (tabId === 'contact' || tabId === 'leads') return true;
+    if (tabId === 'contact' || tabId === 'leads' || tabId === 'database' || tabId === 'startupTables') return true;
     const r = role ? this.normalizeRole(role) : this.normalizeRole(this.currentRole);
     if (r === 'super_admin') return true;
     const roleInfo = this.getRoles()[r];
@@ -681,6 +768,16 @@ class NexusStore {
     this.state.startups.unshift(newStartup);
     this.addActivity('Onboarding', `New startup registered: ${newStartup.name} (${newStartup.category}). Status: Applied.`, '🚀');
     this.save();
+
+    // Immediate direct sync to backend /api/startups collection
+    try {
+      fetch('/api/startups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newStartup)
+      }).catch(err => console.warn('Direct startup backend sync:', err));
+    } catch (e) {}
+
     return newStartup;
   }
 
@@ -1320,6 +1417,87 @@ class NexusStore {
 
   getPaymentsByInvoiceId(invoiceId) {
     return (this.state.payments || []).filter(p => p.invoiceId === invoiceId);
+  }
+
+  getPaymentsByStartupId(startupId) {
+    const startup = this.getStartupById(startupId);
+    const cleanName = startup ? startup.name.toLowerCase() : '';
+    return (this.state.payments || []).filter(p => {
+      if (p.startupId === startupId) return true;
+      if (cleanName && p.startupName && p.startupName.toLowerCase().includes(cleanName)) return true;
+      return false;
+    });
+  }
+
+  getPaymentSummaryForStartup(startupId) {
+    const payments = this.getPaymentsByStartupId(startupId);
+    const invoices = (this.state.invoices || []).filter(i => i.startupId === startupId);
+    const totalPaid = payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+    const totalInvoiced = invoices.reduce((sum, i) => sum + (Number(i.total) || 0), 0);
+    const balanceDue = Math.max(0, totalInvoiced - totalPaid);
+    return {
+      payments,
+      invoices,
+      totalPaid,
+      totalInvoiced,
+      balanceDue,
+      paymentCount: payments.length,
+      lastPayment: payments[0] || null
+    };
+  }
+
+  exportPaymentsCSV(filterStartupId = null) {
+    let list = this.getPayments();
+    if (filterStartupId) {
+      list = this.getPaymentsByStartupId(filterStartupId);
+    }
+    const headers = [
+      'Payment ID',
+      'Receipt Number',
+      'Startup ID',
+      'Startup Name',
+      'Invoice ID',
+      'Amount (INR)',
+      'Gateway',
+      'Payment Method',
+      'Transaction Ref / UTR',
+      'Settlement Date',
+      'Status',
+      'Settlement Type',
+      'Notes'
+    ];
+    const escapeCsv = (val) => {
+      if (val === null || val === undefined) return '""';
+      const str = String(val).replace(/"/g, '""');
+      return `"${str}"`;
+    };
+    const rows = list.map(p => [
+      escapeCsv(p.id),
+      escapeCsv(p.receiptNo || 'REC-SETTLED'),
+      escapeCsv(p.startupId || 'N/A'),
+      escapeCsv(p.startupName || 'N/A'),
+      escapeCsv(p.invoiceId || 'N/A'),
+      escapeCsv(p.amount || 0),
+      escapeCsv(p.gateway || p.method || 'Gateway'),
+      escapeCsv(p.method || 'N/A'),
+      escapeCsv(p.transactionRef || 'N/A'),
+      escapeCsv(p.paymentDate || 'N/A'),
+      escapeCsv(p.status || 'Successful'),
+      escapeCsv(p.isPartial ? 'Partial Installment' : 'Full Settlement'),
+      escapeCsv(p.notes || '')
+    ].join(','));
+    const csvContent = '\uFEFF' + [headers.map(h => `"${h}"`).join(','), ...rows].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    const filename = filterStartupId ? `payment_history_${filterStartupId}.csv` : 'nexus_payment_history_export.csv';
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    return true;
   }
 
   getGatewayConfig() {

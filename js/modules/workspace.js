@@ -37,8 +37,8 @@ const WorkspaceModule = {
 
     container.innerHTML = `
       <!-- Workspace Management Header -->
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; flex-wrap: wrap; gap: 14px;">
-        <div>
+      <div style="margin-bottom: 22px;">
+        <div style="margin-bottom: 14px;">
           <h2 style="font-size: 20px; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 10px;">
             <span>🏢 Workspace Management</span>
             <span class="badge badge-info" style="font-size: 12px;">Stage 2 of Lifecycle</span>
@@ -48,9 +48,9 @@ const WorkspaceModule = {
           </p>
         </div>
 
-        <div style="display: flex; gap: 10px; align-items: center;">
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 12px;">
           <!-- View Toggle -->
-          <div class="role-badge-toggle" style="margin-right: 4px;">
+          <div class="role-badge-toggle">
             <button class="role-btn ${this.activeViewMode === 'cards' ? 'active' : ''}" onclick="WorkspaceModule.setViewMode('cards')">
               🗂️ Cards View
             </button>
@@ -59,7 +59,7 @@ const WorkspaceModule = {
             </button>
           </div>
 
-          <button class="btn btn-primary" onclick="WorkspaceModule.openAddWorkspaceModal()">
+          <button class="btn btn-primary" onclick="WorkspaceModule.openAddWorkspaceModal()" style="margin-left: auto;">
             + Add New Workspace
           </button>
         </div>
@@ -440,7 +440,7 @@ const WorkspaceModule = {
             <form onsubmit="WorkspaceModule.handleAddWorkspaceSubmit(event)">
               <div class="form-row-2">
                 <div class="form-group">
-                  <label class="form-label">Workspace Category *</label>
+                  <label class="form-label">Workspace Category <span class="required-star">*</span></label>
                   <select name="type" class="form-control" id="ws-type-select" onchange="WorkspaceModule.handleTypeSelectChange(this.value)" required>
                     <option value="Private Cabin">Private Cabin</option>
                     <option value="Dedicated Desk">Dedicated Desk</option>
@@ -452,18 +452,18 @@ const WorkspaceModule = {
                   </select>
                 </div>
                 <div class="form-group">
-                  <label class="form-label">Identifier / Code *</label>
+                  <label class="form-label">Identifier / Code <span class="required-star">*</span></label>
                   <input type="text" name="code" class="form-control" placeholder="e.g. Cabin A-103 or Room M-03" required>
                 </div>
               </div>
 
               <div class="form-row-2">
                 <div class="form-group">
-                  <label class="form-label">Seating Capacity (Pax) *</label>
+                  <label class="form-label">Seating Capacity (Pax) <span class="required-star">*</span></label>
                   <input type="number" name="capacity" class="form-control" min="1" max="500" value="10" required>
                 </div>
                 <div class="form-group">
-                  <label class="form-label">Pricing Type *</label>
+                  <label class="form-label">Pricing Type <span class="required-star">*</span></label>
                   <select name="pricingType" id="ws-pricing-type" class="form-control" required>
                     <option value="monthly">Monthly Rent (₹/month)</option>
                     <option value="hourly">Hourly Rate (₹/hour)</option>
@@ -473,7 +473,7 @@ const WorkspaceModule = {
 
               <div class="form-row-2">
                 <div class="form-group">
-                  <label class="form-label">Rate / Rent (₹) *</label>
+                  <label class="form-label">Rate / Rent (₹) <span class="required-star">*</span></label>
                   <input type="number" name="rate" class="form-control" min="0" step="50" placeholder="e.g. 25000" required>
                 </div>
                 <div class="form-group">
@@ -543,7 +543,7 @@ const WorkspaceModule = {
                   <input type="text" class="form-control" value="${ws.type}" disabled>
                 </div>
                 <div class="form-group">
-                  <label class="form-label">Capacity (Pax) *</label>
+                  <label class="form-label">Capacity (Pax) <span class="required-star">*</span></label>
                   <input type="number" name="capacity" class="form-control" value="${ws.capacity}" min="1" required>
                 </div>
               </div>
@@ -557,7 +557,7 @@ const WorkspaceModule = {
                   </select>
                 </div>
                 <div class="form-group">
-                  <label class="form-label">Rate / Rent (₹) *</label>
+                  <label class="form-label">Rate / Rent (₹) <span class="required-star">*</span></label>
                   <input type="number" name="rate" class="form-control" value="${ws.rate}" required>
                 </div>
               </div>
@@ -649,7 +649,7 @@ const WorkspaceModule = {
 
             <form onsubmit="WorkspaceModule.handleAllocateSubmit(event, '${ws.id}')">
               <div class="form-group">
-                <label class="form-label">Select Incubated / Approved Startup *</label>
+                <label class="form-label">Select Incubated / Approved Startup <span class="required-star">*</span></label>
                 <select name="startupId" class="form-control" required>
                   <option value="">-- Choose Startup to Allocate --</option>
                   ${startups.map(s => `

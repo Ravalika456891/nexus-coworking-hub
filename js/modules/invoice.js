@@ -754,6 +754,9 @@ const InvoiceModule = {
 
     const today = new Date(inv.issueDate || Date.now()).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' });
     const dueFmt = inv.dueDate ? new Date(inv.dueDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }) : '5 Oct 2026';
+    const invPayments = window.store.getPaymentsByInvoiceId ? window.store.getPaymentsByInvoiceId(inv.id) : [];
+    const totalPaidSoFar = invPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+    const balanceRemaining = Math.max(0, Number(inv.total || 0) - totalPaidSoFar);
 
     const html = `
       <div class="modal-overlay active" id="modal-invoice-full-view">
@@ -908,6 +911,73 @@ const InvoiceModule = {
                     <strong style="font-family: var(--font-sans); font-variant-numeric: tabular-nums; font-size: 18px; color: white; letter-spacing: -0.02em;">₹${Number(inv.total || 0).toLocaleString('en-IN')}</strong>
                   </div>
                 </div>
+              </div>
+
+              <!-- Payment History & Settlements for this Invoice -->
+              <div style="border-top: 2px solid #e2e8f0; padding: 18px 22px; background: #f8fafc;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 16px;">💳</span>
+                    <strong style="font-size: 13px; color: #0f172a;">Payment History & Reconciled Settlements</strong>
+                    <span class="badge ${inv.status === 'Paid' ? 'badge-success' : inv.status === 'Partially Paid' ? '' : 'badge-warning'}"
+                      style="${inv.status === 'Partially Paid' ? 'background: rgba(139,92,246,0.15); color: #8b5cf6;' : ''} font-size: 10.5px;">
+                      ${invPayments.length} Payment${invPayments.length === 1 ? '' : 's'}
+                    </span>
+                  </div>
+                  ${totalPaidSoFar > 0 ? `
+                    <div style="font-size: 11.5px; font-family: var(--font-mono); font-weight: 700; color: #16a34a;">
+                      Settled: ₹${totalPaidSoFar.toLocaleString('en-IN')} ${balanceRemaining > 0 ? `<span style="color: #dc2626;">(₹${balanceRemaining.toLocaleString('en-IN')} due)</span>` : '✓ Fully Cleared'}
+                    </div>
+                  ` : ''}
+                </div>
+
+                ${invPayments.length > 0 ? `
+                  <div style="overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                      <thead>
+                        <tr style="background: #f1f5f9; text-align: left; color: #64748b; font-size: 9.5px; text-transform: uppercase;">
+                          <th style="padding: 7px 10px; border-bottom: 1px solid #e2e8f0;">Payment ID</th>
+                          <th style="padding: 7px 10px; border-bottom: 1px solid #e2e8f0;">Receipt #</th>
+                          <th style="padding: 7px 10px; border-bottom: 1px solid #e2e8f0;">Date & Time</th>
+                          <th style="padding: 7px 10px; border-bottom: 1px solid #e2e8f0;">Amount Paid</th>
+                          <th style="padding: 7px 10px; border-bottom: 1px solid #e2e8f0;">Gateway</th>
+                          <th style="padding: 7px 10px; border-bottom: 1px solid #e2e8f0;">UTR / Ref</th>
+                          <th style="padding: 7px 10px; border-bottom: 1px solid #e2e8f0; text-align: right;">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${invPayments.map((p, idx) => `
+                          <tr style="background: ${idx % 2 === 1 ? '#f8fafc' : '#fff'}; border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 7px 10px; font-family: var(--font-mono); font-weight: 700; color: #4338ca;">${p.id}</td>
+                            <td style="padding: 7px 10px;">
+                              <span style="font-family: var(--font-mono); font-size: 10px; font-weight: 700; color: #16a34a; background: #ecfdf5; padding: 2px 6px; border-radius: 4px; border: 1px solid #a7f3d0;">
+                                ${p.receiptNo || 'REC-OK'}
+                              </span>
+                            </td>
+                            <td style="padding: 7px 10px; color: #475569; white-space: nowrap;">${p.paymentDate || '—'}</td>
+                            <td style="padding: 7px 10px; font-family: var(--font-mono); font-weight: 700; color: #16a34a;">₹${Number(p.amount || 0).toLocaleString('en-IN')}</td>
+                            <td style="padding: 7px 10px; color: #1e293b; font-weight: 600;">${p.gateway || p.method}</td>
+                            <td style="padding: 7px 10px;"><code style="font-family: var(--font-mono); font-size: 10px; color: #64748b;">${p.transactionRef || '—'}</code></td>
+                            <td style="padding: 7px 10px; text-align: right;">
+                              <button class="btn btn-outline btn-sm" style="font-size: 10px; padding: 2px 8px; color: #16a34a; border-color: #16a34a;"
+                                onclick="InvoiceModule.closeModal('modal-invoice-full-view'); if (typeof PaymentsModule !== 'undefined') PaymentsModule.viewReceipt('${p.id}');">
+                                📄 Receipt
+                              </button>
+                            </td>
+                          </tr>
+                        `).join('')}
+                      </tbody>
+                    </table>
+                  </div>
+                ` : `
+                  <div style="padding: 12px 14px; background: #fff; border: 1px dashed #cbd5e1; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; color: #64748b;">
+                    <span>⏳ Awaiting payment. No transaction records logged for this invoice yet.</span>
+                    <button class="btn btn-primary btn-sm" style="font-size: 10.5px; padding: 3px 8px;"
+                      onclick="InvoiceModule.closeModal('modal-invoice-full-view'); if (typeof PaymentsModule !== 'undefined') PaymentsModule.openCheckoutModal('${inv.id}');">
+                      💳 Pay Now
+                    </button>
+                  </div>
+                `}
               </div>
             </div>
           </div>
