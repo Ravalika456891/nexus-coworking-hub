@@ -430,55 +430,69 @@ const PaymentsModule = {
       ` : ''}
 
       <!-- ── PAYMENT & RECEIPT LEDGER TAB TABLE ── -->
-      <div class="card" style="margin-bottom: 22px;">
-        <div class="card-header" style="padding: 14px 20px; flex-wrap: wrap; gap: 10px;">
-          <div>
-            <div class="card-title">📒 Comprehensive Payment & Receipt Ledger</div>
-            <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">
-              Filter by status or track full 3-step lifecycle: Invoice → Payment → Receipt
+      <div class="settlement-card">
+        <div class="settlement-header" style="flex-direction: column; align-items: stretch; gap: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <div class="settlement-title">
+                <span>📒 Comprehensive Payment & Receipt Ledger</span>
+                <span class="settlement-badge-actionable" style="background: rgba(11, 8, 38, 0.06); color: var(--text-primary); border-color: var(--border-medium);">
+                  ${filteredInvoices.length} of ${invoices.length} Invoices
+                </span>
+              </div>
+              <div style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">
+                Complete audit ledger • Filter by collection status • Track 3-step lifecycle: Invoice → Payment → Reconciled Receipt
+              </div>
             </div>
           </div>
 
-          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <!-- Search & Filter Controls Toolbar -->
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; background: var(--bg-surface-elevated); padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
             <!-- Live Search -->
-            <input type="text" placeholder="🔍 Search startup or invoice..."
-              value="${this.searchQuery}"
-              oninput="PaymentsModule.handleSearch(this.value)"
-              style="padding: 6px 12px; font-size: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-medium); background: var(--bg-surface-elevated); color: var(--text-primary); width: 190px;">
+            <div style="position: relative; min-width: 220px; flex: 1; max-width: 320px;">
+              <input type="text" placeholder="Search startup, invoice #, amount..."
+                value="${this.searchQuery}"
+                oninput="PaymentsModule.handleSearch(this.value)"
+                style="width: 100%; padding: 7px 12px 7px 32px; font-size: 12.5px; border-radius: 8px; border: 1px solid var(--border-medium); background: var(--bg-surface); color: var(--text-primary); outline: none;">
+              <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 12px; color: var(--text-muted); pointer-events: none;">🔍</span>
+            </div>
 
-            <!-- Status Filter Tabs -->
-            <div style="display: flex; gap: 4px; background: var(--bg-surface-elevated); padding: 3px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+            <!-- Status Filter Pills with Counts -->
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
               ${[
-                { id: 'all',       label: 'All' },
-                { id: 'pending',   label: 'Pending' },
-                { id: 'paid',      label: 'Paid' },
-                { id: 'partial',   label: 'Partial' },
-                { id: 'overdue',   label: 'Overdue' },
-                { id: 'cancelled', label: 'Cancelled' }
-              ].map(f => `
-                <button class="btn btn-sm ${this.activeFilter === f.id ? 'btn-primary' : 'btn-secondary'}"
-                  style="padding: 4px 10px; font-size: 11px; border: none;"
-                  onclick="PaymentsModule.setFilter('${f.id}')">
-                  ${f.label}
-                </button>
-              `).join('')}
+                { id: 'all',       label: 'All', count: invoices.length },
+                { id: 'pending',   label: 'Pending', count: invoices.filter(i => getStatus(i) === 'Pending').length },
+                { id: 'paid',      label: 'Paid', count: invoices.filter(i => getStatus(i) === 'Paid').length },
+                { id: 'partial',   label: 'Partial', count: invoices.filter(i => getStatus(i) === 'Partially Paid').length },
+                { id: 'overdue',   label: 'Overdue', count: invoices.filter(i => getStatus(i) === 'Overdue').length },
+                { id: 'cancelled', label: 'Cancelled', count: invoices.filter(i => getStatus(i) === 'Cancelled').length }
+              ].map(f => {
+                const isActive = this.activeFilter === f.id;
+                return `
+                  <button type="button" class="btn btn-sm ${isActive ? 'btn-primary' : 'btn-outline'}"
+                    style="padding: 5px 11px; font-size: 11.5px; border-radius: 9999px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; ${isActive ? 'background: #0B0826; color: #ffffff; border-color: #0B0826;' : ''}"
+                    onclick="PaymentsModule.setFilter('${f.id}')">
+                    <span>${f.label}</span>
+                    <span style="font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 9999px; ${isActive ? 'background: rgba(255,255,255,0.22); color: #fff;' : 'background: rgba(0,0,0,0.06); color: var(--text-secondary);'}">
+                      ${f.count}
+                    </span>
+                  </button>
+                `;
+              }).join('')}
             </div>
           </div>
         </div>
 
-        <div class="table-wrapper">
-          <table class="nexus-table">
+        <div class="settlement-table-wrapper">
+          <table class="settlement-table">
             <thead>
               <tr>
-                <th>Invoice #</th>
-                <th>Startup Name</th>
-                <th>Billing Period</th>
-                <th>Grand Total</th>
-                <th>Payment Status</th>
-                <th>Gateway & Mode</th>
-                <th>Transaction Ref / UTR</th>
-                <th>Settlement Date</th>
-                <th style="text-align: right;">Lifecycle Actions</th>
+                <th style="width: 140px;">Invoice #</th>
+                <th style="min-width: 210px;">Startup &amp; Period</th>
+                <th style="width: 140px;">Grand Total</th>
+                <th style="width: 130px;">Payment Status</th>
+                <th style="min-width: 220px;">Settlement Details</th>
+                <th style="text-align: right; width: 170px;">Lifecycle Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -493,7 +507,7 @@ const PaymentsModule = {
                 return `
                   <tr>
                     <td style="white-space: nowrap;">
-                      <button type="button" class="inv-code-badge" onclick="PaymentsModule.openLifecycleModal('${inv.id}')" title="Track lifecycle for ${inv.id}">
+                      <button type="button" class="inv-code-badge" onclick="PaymentsModule.openLifecycleModal('${inv.id}')" title="Track 3-stage lifecycle for ${inv.id}">
                         <span>${inv.id}</span>
                         <span style="font-size: 11px; opacity: 0.7;">🔍</span>
                       </button>
@@ -503,16 +517,18 @@ const PaymentsModule = {
                         <div class="startup-brand-icon">${startup ? startup.logoEmoji : '🚀'}</div>
                         <div>
                           <div class="startup-brand-name">${inv.startupName}</div>
-                          <div class="startup-brand-period">${startup ? startup.category : ''}</div>
+                          <div class="startup-brand-period">
+                            <span>${inv.billingPeriod || 'Current Cycle'}</span>
+                            ${startup ? ` • <span style="color: var(--accent-secondary); font-weight: 600;">${startup.category}</span>` : ''}
+                          </div>
                         </div>
                       </div>
                     </td>
-                    <td style="font-size: 12.5px; color: var(--text-muted); white-space: nowrap;">${inv.billingPeriod || '—'}</td>
                     <td style="white-space: nowrap;">
                       <div class="cell-amount-total">₹${inv.total.toLocaleString('en-IN')}</div>
                       ${paidSoFar > 0 && status !== 'Paid' ? `
-                        <div style="font-size: 10.5px; color: #059669; font-weight: 600; font-variant-numeric: tabular-nums;">
-                          ₹${paidSoFar.toLocaleString('en-IN')} paid
+                        <div style="font-size: 11px; color: #059669; font-weight: 600; font-variant-numeric: tabular-nums; margin-top: 2px;">
+                          ₹${paidSoFar.toLocaleString('en-IN')} paid (${Math.round((paidSoFar / inv.total) * 100)}%)
                         </div>
                       ` : ''}
                     </td>
@@ -521,70 +537,69 @@ const PaymentsModule = {
                     </td>
                     <td>
                       ${matchPayment ? `
-                        <span class="badge ${matchPayment.gateway === 'Razorpay' ? 'badge-info' : matchPayment.gateway === 'Stripe' ? '' : 'badge-success'}"
-                          style="${matchPayment.gateway === 'Stripe' ? 'background: rgba(99,91,255,0.15); color: #635bff;' : ''} font-size: 10.5px;">
-                          ${matchPayment.gateway || matchPayment.method}
-                        </span>
-                      ` : '<span style="color: var(--text-muted); font-size: 11px;">Awaiting</span>'}
+                        <div>
+                          <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                            <span class="fintech-status-pill pill-status-paid" style="font-size: 11px; font-weight: 700;">
+                              ${matchPayment.gateway || matchPayment.method}
+                            </span>
+                            ${matchPayment.transactionRef ? `
+                              <code style="font-size: 11px; background: rgba(0,0,0,0.04); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border-subtle); color: var(--text-secondary);">
+                                ${matchPayment.transactionRef}
+                              </code>
+                            ` : ''}
+                          </div>
+                          <div style="font-size: 11px; color: var(--text-muted); margin-top: 3px;">
+                            ${matchPayment.paymentDate || 'Reconciled'}
+                          </div>
+                        </div>
+                      ` : `
+                        <div style="display: flex; align-items: center; gap: 6px; color: var(--text-muted); font-size: 12px;">
+                          <span style="opacity: 0.7;">⏳</span>
+                          <span>Awaiting Settlement</span>
+                        </div>
+                      `}
                     </td>
-                    <td>
-                      ${matchPayment ? `
-                        <code style="font-size: 11px; font-family: var(--font-mono); color: var(--text-muted);">
-                          ${matchPayment.transactionRef}
-                        </code>
-                      ` : '<span style="color: var(--text-muted); font-size: 11px;">—</span>'}
-                    </td>
-                    <td style="font-size: 11.5px; color: var(--text-muted);">
-                      ${matchPayment ? (matchPayment.paymentDate || '—') : '—'}
-                    </td>
-                    <td style="text-align: right;">
-                      <div style="display: inline-flex; gap: 4px;">
-                        <!-- Track Lifecycle button -->
-                        <button class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 4px 8px;"
-                          onclick="PaymentsModule.openLifecycleModal('${inv.id}')" title="Track 3-stage lifecycle">
-                          🔄 Track
+                    <td style="text-align: right; white-space: nowrap;">
+                      <div class="fintech-actions-group">
+                        <button type="button" class="btn-action-track" onclick="PaymentsModule.openLifecycleModal('${inv.id}')" title="Track 3-Stage Lifecycle">
+                          <span>🔄</span>
+                          <span>Track</span>
                         </button>
 
                         ${status === 'Paid' && matchPayment ? `
-                          <button class="btn btn-outline btn-sm" style="font-size: 11px; padding: 4px 8px; color: var(--status-success); border-color: var(--status-success);"
-                            onclick="PaymentsModule.viewReceipt('${matchPayment.id}')" title="View Reconciled Receipt">
-                            📄 Receipt
+                          <button type="button" class="btn-action-pay" style="background: #059669;" onclick="PaymentsModule.viewReceipt('${matchPayment.id}')" title="View Reconciled Receipt">
+                            <span>📄</span>
+                            <span>Receipt</span>
                           </button>
                         ` : ''}
 
                         ${status === 'Partially Paid' ? `
-                          <button class="btn btn-primary btn-sm" style="font-size: 11px; padding: 4px 8px;"
-                            onclick="PaymentsModule.openCheckoutModal('${inv.id}')" title="Settle remaining balance">
-                            💳 Settle Balance
+                          <button type="button" class="btn-action-pay" onclick="PaymentsModule.openCheckoutModal('${inv.id}')" title="Settle remaining balance">
+                            <span>💳</span>
+                            <span>Settle</span>
                           </button>
                           ${matchPayment ? `
-                            <button class="btn btn-outline btn-sm" style="font-size: 11px; padding: 4px 8px;"
-                              onclick="PaymentsModule.viewReceipt('${matchPayment.id}')" title="View latest installment receipt">
-                              📄 Receipt
+                            <button type="button" class="btn-action-partial" onclick="PaymentsModule.viewReceipt('${matchPayment.id}')" title="View latest installment receipt">
+                              <span>📄</span>
                             </button>
                           ` : ''}
                         ` : ''}
 
                         ${(status === 'Pending' || status === 'Overdue') ? `
-                          <button class="btn btn-primary btn-sm" style="font-size: 11px; padding: 4px 8px;"
-                            onclick="PaymentsModule.openCheckoutModal('${inv.id}')">
-                            💳 Pay
+                          <button type="button" class="btn-action-pay" onclick="PaymentsModule.openCheckoutModal('${inv.id}')" title="Pay full balance">
+                            <span>💳</span>
+                            <span>Pay</span>
                           </button>
-                          <button class="btn btn-outline btn-sm" style="font-size: 11px; padding: 4px 8px;"
-                            onclick="PaymentsModule.openPartialPayment('${inv.id}')">
-                            🔸 Partial
+                          <button type="button" class="btn-action-partial" onclick="PaymentsModule.openPartialPayment('${inv.id}')" title="Partial installment payment">
+                            <span>🔸</span>
                           </button>
-                          <button class="btn btn-outline btn-sm" style="font-size: 11px; padding: 4px 7px; color: var(--status-danger); border-color: var(--status-danger);"
-                            onclick="PaymentsModule.promptCancelInvoice('${inv.id}')" title="Cancel Invoice">
-                            ✕
+                          <button type="button" class="btn-action-track" style="color: #dc2626 !important; border-color: rgba(239,68,68,0.25);" onclick="PaymentsModule.promptCancelInvoice('${inv.id}')" title="Cancel Invoice">
+                            <span>✕</span>
                           </button>
                         ` : ''}
 
                         ${status === 'Cancelled' ? `
-                          <button class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 4px 8px; opacity: 0.7;"
-                            onclick="PaymentsModule.openLifecycleModal('${inv.id}')">
-                            Audit Trail
-                          </button>
+                          <span style="font-size: 11px; color: var(--text-muted); font-style: italic;">Cancelled</span>
                         ` : ''}
                       </div>
                     </td>
@@ -592,8 +607,17 @@ const PaymentsModule = {
                 `;
               }).join('') : `
                 <tr>
-                  <td colspan="9" style="text-align: center; padding: 36px; color: var(--text-muted);">
-                    No ${this.activeFilter !== 'all' ? this.activeFilter : ''} invoices found matching current criteria.
+                  <td colspan="6" style="text-align: center; padding: 48px 24px; color: var(--text-muted);">
+                    <div style="font-size: 28px; margin-bottom: 8px;">🔍</div>
+                    <div style="font-weight: 700; font-size: 14px; color: var(--text-primary);">
+                      No ${this.activeFilter !== 'all' ? this.activeFilter : ''} invoices found matching current criteria.
+                    </div>
+                    <div style="font-size: 12px; margin-top: 4px;">
+                      Try resetting the filter or changing your search terms.
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline" style="margin-top: 12px;" onclick="PaymentsModule.setFilter('all')">
+                      Reset Filters
+                    </button>
                   </td>
                 </tr>
               `}
