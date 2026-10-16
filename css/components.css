@@ -3801,3 +3801,217 @@ html.auth-locked .app-container {
 [data-theme="navy"] .btn-action-track:hover {
   background: rgba(255, 255, 255, 0.06);
 }
+
+/* ──────────────────────────────────────────────────────────────────
+   PREMIUM STARTUP FOUNDER PORTAL LOGIN MODAL
+   ────────────────────────────────────────────────────────────────── */
+
+.founder-portal-modal {
+  max-width: 680px;
+  width: 95%;
+  border-radius: 20px;
+  overflow: hidden;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-medium);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 1px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+}
+
+.founder-portal-header {
+  background: linear-gradient(135deg, #0B0826 0%, #1e1b4b 100%);
+  padding: 22px 26px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  color: #ffffff;
+  position: relative;
+}
+
+.founder-portal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1;
+}
+
+.founder-portal-close:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: scale(1.05);
+}
+
+.founder-active-session-banner {
+  background: rgba(16, 185, 129, 0.08);
+  border-bottom: 1px solid rgba(16, 185, 129, 0.2);
+  padding: 12px 26px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.founder-active-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25);
+  display: inline-block;
+}
+
+/* Modern Segmented Control Tabs */
+.founder-tabs-track {
+  display: flex;
+  background: var(--bg-primary);
+  padding: 4px;
+  border-radius: 12px;
+  margin: 18px 26px 4px 26px;
+  border: 1px solid var(--border-subtle);
+  gap: 4px;
+}
+
+.founder-tab-pill {
+  flex: 1;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 9px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: var(--font-sans);
+}
+
+.founder-tab-pill:hover {
+  color: var(--text-primary);
+}
+
+.founder-tab-pill.active {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .founder-tab-pill.active,
+[data-theme="navy"] .founder-tab-pill.active {
+  background: var(--bg-surface-elevated);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+/* Cards scroll container */
+.founder-scroll-container {
+  padding: 16px 26px 22px 26px;
+  max-height: 480px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(11, 8, 38, 0.18) transparent;
+}
+
+.founder-scroll-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.founder-scroll-container::-webkit-scrollbar-thumb {
+  background: rgba(11, 8, 38, 0.18);
+  border-radius: 9999px;
+}
+
+.founder-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Startup Card */
+.startup-portal-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 16px;
+  border-radius: 14px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  gap: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.startup-portal-card:hover {
+  border-color: #0B0826 !important;
+  background: var(--bg-surface) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(11, 8, 38, 0.08);
+}
+
+[data-theme="dark"] .startup-portal-card:hover,
+[data-theme="navy"] .startup-portal-card:hover {
+  border-color: #6366f1 !important;
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.15);
+}
+
+.startup-portal-card.active-session {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.04);
+}
+
+.startup-portal-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-medium);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.btn-portal-login {
+  background: #0B0826;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 7px 16px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(11, 8, 38, 0.2);
+}
+
+.btn-portal-login:hover {
+  background: #1e1b4b;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(11, 8, 38, 0.3);
+}
+
+[data-theme="dark"] .btn-portal-login,
+[data-theme="navy"] .btn-portal-login {
+  background: #2563eb;
+  border-color: #3b82f6;
+}
+
+[data-theme="dark"] .btn-portal-login:hover,
+[data-theme="navy"] .btn-portal-login:hover {
+  background: #1d4ed8;
+}

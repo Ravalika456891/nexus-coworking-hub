@@ -589,86 +589,100 @@ const App = {
 
     modalMount.innerHTML = `
       <div class="modal-overlay active" id="modal-startup-login" onclick="if(event.target === this) App.closeModal('modal-startup-login')">
-        <div class="modal-content" style="max-width: 680px; padding: 0; overflow: hidden; border-radius: var(--radius-lg);" onclick="event.stopPropagation()">
+        <div class="modal-content founder-portal-modal" onclick="event.stopPropagation()">
           
           <!-- Header Banner -->
-          <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 20px 24px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: flex-start; color: #ffffff;">
+          <div class="founder-portal-header">
             <div>
               <div style="display: flex; align-items: center; gap: 10px;">
                 <span style="font-size: 24px;">🚀</span>
-                <h3 style="font-size: 18px; font-weight: 800; color: #ffffff; margin: 0;">
+                <h3 style="font-size: 18px; font-weight: 800; color: #ffffff; margin: 0; letter-spacing: -0.3px;">
                   Startup Founder Portal Login
                 </h3>
-                <span class="badge badge-primary" style="font-size: 11px; background: #3b82f6;">Nexus Hub</span>
+                <span style="font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 9999px; background: rgba(59, 130, 246, 0.25); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.4);">
+                  Nexus Hub
+                </span>
               </div>
-              <p style="font-size: 12.5px; color: #94a3b8; margin: 6px 0 0 0;">
+              <p style="font-size: 12.5px; color: #94a3b8; margin: 6px 0 0 0; line-height: 1.45;">
                 Access your dedicated venture dashboard, workspace allocations, GST invoices, and incubation roadmap.
               </p>
             </div>
-            <button class="modal-close-btn" onclick="App.closeModal('modal-startup-login')" style="color: #94a3b8; font-size: 22px; cursor: pointer; border: none; background: none;">&times;</button>
+            <button type="button" class="founder-portal-close" onclick="App.closeModal('modal-startup-login')" title="Close">&times;</button>
           </div>
 
           <!-- Active Session Notice (if already logged in) -->
           ${currentStartup ? `
-            <div style="background: rgba(59, 130, 246, 0.08); border-bottom: 1px solid rgba(59, 130, 246, 0.2); padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-              <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="font-size: 20px;">${currentStartup.logoEmoji || '🚀'}</span>
-                <div>
-                  <div style="font-size: 13px; font-weight: 700; color: var(--text-primary);">
-                    Active Session: ${currentStartup.name}
+            <div class="founder-active-session-banner">
+              <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+                <span style="font-size: 22px;">${currentStartup.logoEmoji || '🚀'}</span>
+                <div style="min-width: 0;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span class="founder-active-dot"></span>
+                    <strong style="font-size: 13.5px; color: var(--text-primary);">${currentStartup.name}</strong>
+                    <span class="fintech-status-pill pill-status-paid" style="font-size: 10.5px; padding: 1px 7px;">Active Session</span>
                   </div>
-                  <div style="font-size: 11.5px; color: var(--text-muted);">
+                  <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">
                     Logged in as <strong>${currentStartup.founders?.name || 'Founder'}</strong> (${currentStartup.founders?.email || currentStartup.id})
                   </div>
                 </div>
               </div>
-              <button class="btn btn-outline btn-sm" onclick="App.logoutStartup()" style="font-size: 11.5px; color: var(--status-danger); border-color: var(--status-danger);">
+              <button type="button" class="btn btn-outline btn-sm" onclick="App.logoutStartup()" style="font-size: 11.5px; font-weight: 600; color: #dc2626; border-color: rgba(220,38,38,0.3); padding: 5px 12px; border-radius: 7px; background: rgba(220,38,38,0.04);">
                 🚪 Sign Out
               </button>
             </div>
           ` : ''}
 
-          <!-- Tabs Switcher -->
-          <div style="display: flex; border-bottom: 1px solid var(--border-subtle); background: var(--bg-surface-elevated);">
-            <button id="tab-btn-quick-login" class="startup-login-tab active" onclick="App.switchStartupLoginTab('quick')" style="flex: 1; padding: 12px; font-size: 13px; font-weight: 700; border: none; background: none; cursor: pointer; border-bottom: 2px solid var(--accent-primary); color: var(--accent-primary);">
-              ⚡ Quick Select Startup (${startups.length})
+          <!-- Segmented Pill Tabs Switcher -->
+          <div class="founder-tabs-track">
+            <button type="button" id="tab-btn-quick-login" class="founder-tab-pill active" onclick="App.switchStartupLoginTab('quick')">
+              <span>⚡</span>
+              <span>Quick Select Startup (${startups.length})</span>
             </button>
-            <button id="tab-btn-cred-login" class="startup-login-tab" onclick="App.switchStartupLoginTab('cred')" style="flex: 1; padding: 12px; font-size: 13px; font-weight: 700; border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; color: var(--text-secondary);">
-              🔑 Email / ID Credentials
+            <button type="button" id="tab-btn-cred-login" class="founder-tab-pill" onclick="App.switchStartupLoginTab('cred')">
+              <span>🔑</span>
+              <span>Email / ID Credentials</span>
             </button>
           </div>
 
-          <div style="padding: 20px 24px; max-height: 460px; overflow-y: auto;">
+          <div class="founder-scroll-container">
             
             <!-- TAB 1: QUICK 1-CLICK SELECT -->
             <div id="startup-login-tab-quick" style="display: block;">
-              <div style="margin-bottom: 14px;">
-                <input type="text" id="quick-startup-search" class="form-control" placeholder="🔍 Search startup name, founder, or sector..." oninput="App.filterStartupLoginList(this.value)" style="font-size: 13px; padding: 9px 12px;">
+              <div style="position: relative; margin-bottom: 14px;">
+                <input type="text" id="quick-startup-search" class="form-control" placeholder="Search startup name, founder, or sector..." oninput="App.filterStartupLoginList(this.value)" style="font-size: 13px; padding: 9px 14px 9px 36px; border-radius: 10px; border: 1.5px solid var(--border-medium); width: 100%; outline: none;">
+                <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--text-muted); pointer-events: none;">🔍</span>
               </div>
 
               <div id="startup-login-cards-container" style="display: flex; flex-direction: column; gap: 8px;">
-                ${startups.map(s => `
-                  <div class="startup-login-card" data-search="${(s.name + ' ' + (s.founders?.name || '') + ' ' + (s.founders?.email || '') + ' ' + s.category + ' ' + s.id).toLowerCase()}" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: var(--radius-md); background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); transition: all 0.15s ease;">
-                    <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
-                      <div style="width: 38px; height: 38px; border-radius: 8px; background: var(--bg-surface); border: 1px solid var(--border-medium); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
-                        ${s.logoEmoji || '🚀'}
-                      </div>
-                      <div style="min-width: 0;">
-                        <div style="font-size: 13.5px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                          <span>${s.name}</span>
-                          <span class="badge badge-info" style="font-size: 10px; padding: 2px 6px;">${s.id}</span>
-                          <span class="badge badge-subtle" style="font-size: 10px; padding: 2px 6px;">${s.stage || 'Incubation'}</span>
+                ${startups.map(s => {
+                  const isCurrent = currentStartup && currentStartup.id === s.id;
+                  return `
+                    <div class="startup-portal-card ${isCurrent ? 'active-session' : ''}" data-search="${(s.name + ' ' + (s.founders?.name || '') + ' ' + (s.founders?.email || '') + ' ' + s.category + ' ' + s.id).toLowerCase()}">
+                      <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+                        <div class="startup-portal-avatar">
+                          ${s.logoEmoji || '🚀'}
                         </div>
-                        <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
-                          👤 <strong>${s.founders?.name || 'Founder'}</strong> • 📧 ${s.founders?.email || (s.id.toLowerCase() + '@venture.io')}
+                        <div style="min-width: 0;">
+                          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <strong style="font-size: 14px; color: var(--text-primary); letter-spacing: -0.2px;">${s.name}</strong>
+                            <span class="inv-code-badge" style="font-size: 10.5px; padding: 2px 7px; background: rgba(11,8,38,0.05); cursor: default;">${s.id}</span>
+                            <span class="fintech-status-pill pill-status-partial" style="font-size: 10.5px; padding: 2px 8px;">${s.stage || 'Incubation'}</span>
+                            ${isCurrent ? `<span class="fintech-status-pill pill-status-paid" style="font-size: 10px; padding: 1px 6px;">Active</span>` : ''}
+                          </div>
+                          <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            <span style="color: var(--text-secondary); font-weight: 600;">👤 ${s.founders?.name || 'Founder'}</span>
+                            <span style="margin: 0 4px; opacity: 0.5;">•</span>
+                            <span>✉️ ${s.founders?.email || (s.id.toLowerCase() + '@venture.io')}</span>
+                          </div>
                         </div>
                       </div>
+                      <button type="button" class="btn-portal-login" onclick="App.loginAsStartup('${s.id}')" title="Sign in as ${s.name}">
+                        <span>Login</span>
+                        <span style="font-size: 11px;">➔</span>
+                      </button>
                     </div>
-                    <button class="btn btn-primary btn-sm" onclick="App.loginAsStartup('${s.id}')" style="white-space: nowrap; font-size: 12px; padding: 6px 14px; flex-shrink: 0;">
-                      Login ➔
-                    </button>
-                  </div>
-                `).join('')}
+                  `;
+                }).join('')}
               </div>
             </div>
 
@@ -676,16 +690,16 @@ const App = {
             <div id="startup-login-tab-cred" style="display: none;">
               <form id="form-startup-cred-login" onsubmit="App.handleStartupLoginForm(event)" novalidate>
                 <div class="form-group" style="margin-bottom: 14px;">
-                  <label class="form-label">Registered 10-Digit Mobile Number, Email, or Startup ID <span class="required-star">*</span></label>
-                  <input type="text" id="input-startup-identifier" class="form-control" value="9880012345" placeholder="e.g. 9880012345, +91 98800 12345, or STP-XYZ" required>
+                  <label class="form-label" style="font-weight: 600; font-size: 12.5px;">Registered 10-Digit Mobile Number, Email, or Startup ID <span class="required-star">*</span></label>
+                  <input type="text" id="input-startup-identifier" class="form-control" value="9880012345" placeholder="e.g. 9880012345, +91 98800 12345, or STP-XYZ" required style="padding: 10px 14px; border-radius: 9px; font-size: 13px;">
                   <span style="font-size: 11px; color: var(--text-muted); margin-top: 4px; display: block;">
                     Mobile numbers must be strictly 10 digits. (+91 prefix accepted)
                   </span>
                 </div>
 
                 <div class="form-group" style="margin-bottom: 16px;">
-                  <label class="form-label">Password (10 to 16 positions) <span class="required-star">*</span></label>
-                  <input type="password" id="input-startup-password" class="form-control" value="password123" placeholder="Enter password (10-16 characters)" required>
+                  <label class="form-label" style="font-weight: 600; font-size: 12.5px;">Password (10 to 16 positions) <span class="required-star">*</span></label>
+                  <input type="password" id="input-startup-password" class="form-control" value="password123" placeholder="Enter password (10-16 characters)" required style="padding: 10px 14px; border-radius: 9px; font-size: 13px;">
                   <span style="font-size: 11px; color: var(--text-muted); margin-top: 4px; display: block;">
                     Must be 10–16 characters only. Demo password: <code>password123</code> (11 chars).
                   </span>
@@ -693,7 +707,7 @@ const App = {
 
                 <div id="startup-login-error" style="display: none; padding: 10px 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--status-danger); border-radius: var(--radius-md); color: var(--status-danger); font-size: 12.5px; margin-bottom: 14px;"></div>
 
-                <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 10px; font-size: 13.5px; font-weight: 700;">
+                <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 11px; font-size: 13.5px; font-weight: 700; background: linear-gradient(135deg, #0B0826 0%, #1e1b4b 100%); border-radius: 9px; box-shadow: 0 4px 14px rgba(11, 8, 38, 0.25);">
                   Sign In to Founder Portal 🚀
                 </button>
               </form>
@@ -702,11 +716,11 @@ const App = {
           </div>
 
           <!-- Footer / Registration Link -->
-          <div style="background: var(--bg-surface-elevated); border-top: 1px solid var(--border-subtle); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-            <div style="font-size: 12px; color: var(--text-secondary);">
-              New venture applying for incubation?
+          <div style="background: var(--bg-surface-elevated); border-top: 1px solid var(--border-subtle); padding: 14px 26px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+            <div style="font-size: 12.5px; color: var(--text-secondary);">
+              🌱 New venture applying for incubation cohort?
             </div>
-            <a href="index.html#cta" class="btn btn-outline btn-sm" onclick="App.closeModal('modal-startup-login')" style="font-size: 12px; font-weight: 600; text-decoration: none;">
+            <a href="index.html#cta" class="btn btn-outline btn-sm" onclick="App.closeModal('modal-startup-login')" style="font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: 8px; text-decoration: none; color: #0B0826; border-color: rgba(11,8,38,0.3);">
               + Apply &amp; Register on Website ➔
             </a>
           </div>
@@ -726,25 +740,13 @@ const App = {
     if (tab === 'quick') {
       quickTab.style.display = 'block';
       credTab.style.display = 'none';
-      if (btnQuick) {
-        btnQuick.style.borderBottomColor = 'var(--accent-primary)';
-        btnQuick.style.color = 'var(--accent-primary)';
-      }
-      if (btnCred) {
-        btnCred.style.borderBottomColor = 'transparent';
-        btnCred.style.color = 'var(--text-secondary)';
-      }
+      if (btnQuick) btnQuick.classList.add('active');
+      if (btnCred) btnCred.classList.remove('active');
     } else {
       quickTab.style.display = 'none';
       credTab.style.display = 'block';
-      if (btnCred) {
-        btnCred.style.borderBottomColor = 'var(--accent-primary)';
-        btnCred.style.color = 'var(--accent-primary)';
-      }
-      if (btnQuick) {
-        btnQuick.style.borderBottomColor = 'transparent';
-        btnQuick.style.color = 'var(--text-secondary)';
-      }
+      if (btnCred) btnCred.classList.add('active');
+      if (btnQuick) btnQuick.classList.remove('active');
     }
   },
 
