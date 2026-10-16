@@ -937,16 +937,6 @@ const App = {
                 </span>
               </div>
 
-              <div class="form-group" style="margin-bottom: 14px;">
-                <label class="form-label" style="font-weight: 600; font-size: 12.5px;">2FA Executive Security Passcode</label>
-                <div style="display: flex; align-items: center; gap: 12px;">
-                  <input type="text" id="input-admin-pin" class="form-control" value="994 201" maxlength="7" style="font-family: var(--font-mono); font-size: 13.5px; font-weight: 700; letter-spacing: 2px; max-width: 130px; text-align: center;">
-                  <span style="font-size: 11.5px; color: var(--status-success); font-weight: 600; display: flex; align-items: center; gap: 4px;">
-                    🛡️ Hardware Key Verified
-                  </span>
-                </div>
-              </div>
-
               <div id="admin-login-error" style="display: none; padding: 10px 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--status-danger); border-radius: var(--radius-md); color: var(--status-danger); font-size: 12.5px; margin-bottom: 12px;"></div>
 
               <div style="margin-bottom: 16px;">
