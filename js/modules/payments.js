@@ -311,31 +311,36 @@ const PaymentsModule = {
 
       <!-- ── URGENT ACTION / SETTLEMENT DESK (Overdue, Pending, Partial) ── -->
       ${(pendingInv.length + overdueInv.length + partialInv.length) > 0 ? `
-        <div class="card" style="margin-bottom: 22px; border-left: 4px solid var(--status-warning);">
-          <div class="card-header" style="padding: 14px 20px;">
-            <div class="card-title" style="display: flex; align-items: center; gap: 8px;">
-              <span>⚡ Fast Settlement Desk — Outstanding Invoices</span>
-              <span class="badge badge-warning">${pendingInv.length + overdueInv.length + partialInv.length} Actionable</span>
+        <div class="settlement-card">
+          <div class="settlement-header">
+            <div>
+              <div class="settlement-title">
+                <span>⚡ Fast Settlement Desk — Outstanding Invoices</span>
+                <span class="settlement-badge-actionable">${pendingInv.length + overdueInv.length + partialInv.length} Actionable</span>
+              </div>
+              <div style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">
+                Immediate clearinghouse for unpaid, overdue, and installment startup billing
+              </div>
             </div>
-            <div style="display: flex; gap: 8px;">
-              <button class="btn btn-primary btn-sm" onclick="PaymentsModule.openBulkSettle()">
+            <div>
+              <button type="button" class="btn-bulk-settle" onclick="PaymentsModule.openBulkSettle()">
                 ⚡ Bulk Settle All Dues
               </button>
             </div>
           </div>
 
-          <div class="table-wrapper">
-            <table class="nexus-table">
+          <div class="settlement-table-wrapper">
+            <table class="settlement-table">
               <thead>
                 <tr>
-                  <th>Invoice #</th>
-                  <th>Startup</th>
-                  <th>Due Date</th>
-                  <th>Invoice Total</th>
-                  <th>Paid So Far</th>
-                  <th>Balance Due</th>
-                  <th>Payment Status</th>
-                  <th style="text-align: right;">Quick Actions</th>
+                  <th style="width: 140px;">Invoice #</th>
+                  <th style="min-width: 220px;">Startup</th>
+                  <th style="width: 140px;">Due Date</th>
+                  <th style="width: 130px;">Invoice Total</th>
+                  <th style="width: 140px;">Paid So Far</th>
+                  <th style="width: 130px;">Balance Due</th>
+                  <th style="width: 140px;">Payment Status</th>
+                  <th style="text-align: right; width: 220px;">Quick Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -346,58 +351,72 @@ const PaymentsModule = {
                   const balanceDue = Math.max(0, inv.total - paidSoFar);
                   const daysOverdue = inv.dueDate ? Math.floor((new Date('2026-10-06') - new Date(inv.dueDate)) / 86400000) : 0;
                   const pctPaid = Math.round((paidSoFar / inv.total) * 100);
+                  const startup = window.store.getStartupById(inv.startupId) || {};
 
                   return `
                     <tr>
-                      <td>
-                        <strong style="font-family: var(--font-mono); color: var(--accent-primary); cursor: pointer;"
-                          onclick="PaymentsModule.openLifecycleModal('${inv.id}')" title="Click to track lifecycle">
-                          ${inv.id} 🔍
-                        </strong>
+                      <td style="white-space: nowrap;">
+                        <button type="button" class="inv-code-badge" onclick="PaymentsModule.openLifecycleModal('${inv.id}')" title="Click to track lifecycle for ${inv.id}">
+                          <span>${inv.id}</span>
+                          <span style="font-size: 11px; opacity: 0.7;">🔍</span>
+                        </button>
                       </td>
                       <td>
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                          <span style="font-size: 18px;">${(window.store.getStartupById(inv.startupId) || {}).logoEmoji || '🚀'}</span>
+                        <div class="startup-brand-cell">
+                          <div class="startup-brand-icon">${startup.logoEmoji || '🚀'}</div>
                           <div>
-                            <strong>${inv.startupName}</strong>
-                            <div style="font-size: 11px; color: var(--text-muted);">${inv.billingPeriod || '—'}</div>
+                            <div class="startup-brand-name">${inv.startupName}</div>
+                            <div class="startup-brand-period">${inv.billingPeriod || '—'}</div>
                           </div>
                         </div>
                       </td>
-                      <td>
-                        <div style="font-weight: 600; color: ${status === 'Overdue' ? 'var(--status-danger)' : 'var(--text-primary)'};">
+                      <td style="white-space: nowrap;">
+                        <div style="font-weight: 600; font-size: 13px; font-variant-numeric: tabular-nums; color: ${status === 'Overdue' ? '#dc2626' : 'var(--text-primary)'};">
                           ${inv.dueDate || '—'}
                         </div>
                         ${daysOverdue > 0 && status === 'Overdue' ? `
-                          <div style="font-size: 10px; color: var(--status-danger); font-weight: 700;">
-                            ⚠️ ${daysOverdue} days overdue
+                          <div class="overdue-alert-chip">
+                            <span class="overdue-dot-pulse"></span>
+                            <span>${daysOverdue} days overdue</span>
                           </div>
                         ` : ''}
                       </td>
-                      <td style="font-family: var(--font-mono); font-weight: 600;">
-                        ₹${inv.total.toLocaleString('en-IN')}
+                      <td style="white-space: nowrap;">
+                        <span class="cell-amount-total">₹${inv.total.toLocaleString('en-IN')}</span>
                       </td>
-                      <td style="font-family: var(--font-mono); color: var(--status-success);">
-                        ${paidSoFar > 0 ? `₹${paidSoFar.toLocaleString('en-IN')} <span style="font-size: 10px; color: var(--text-muted);">(${pctPaid}%)</span>` : '—'}
+                      <td style="white-space: nowrap;">
+                        ${paidSoFar > 0 ? `
+                          <div style="color: #059669; font-weight: 600; font-variant-numeric: tabular-nums; font-size: 13.5px;">
+                            ₹${paidSoFar.toLocaleString('en-IN')}
+                          </div>
+                          <div style="font-size: 10.5px; color: var(--text-muted); font-weight: 500;">
+                            ${pctPaid}% settled
+                          </div>
+                        ` : `
+                          <span style="color: var(--text-muted); font-weight: 500;">—</span>
+                        `}
                       </td>
-                      <td>
-                        <strong style="font-family: var(--font-mono); color: ${status === 'Overdue' ? 'var(--status-danger)' : 'var(--accent-primary)'};">
+                      <td style="white-space: nowrap;">
+                        <span class="cell-amount-balance" style="color: ${status === 'Overdue' ? '#dc2626' : (status === 'Partially Paid' ? '#7c3aed' : 'var(--text-primary)')};">
                           ₹${balanceDue.toLocaleString('en-IN')}
-                        </strong>
+                        </span>
                       </td>
-                      <td>
+                      <td style="white-space: nowrap;">
                         ${this._renderStatusBadge(status)}
                       </td>
-                      <td style="text-align: right;">
-                        <div style="display: inline-flex; gap: 5px;">
-                          <button class="btn btn-primary btn-sm" onclick="PaymentsModule.openCheckoutModal('${inv.id}')" title="Full payment">
-                            💳 Pay Full
+                      <td style="text-align: right; white-space: nowrap;">
+                        <div class="fintech-actions-group">
+                          <button type="button" class="btn-action-pay" onclick="PaymentsModule.openCheckoutModal('${inv.id}')" title="Pay full balance">
+                            <span>💳</span>
+                            <span>Pay Full</span>
                           </button>
-                          <button class="btn btn-outline btn-sm" onclick="PaymentsModule.openPartialPayment('${inv.id}')" title="Partial installment payment">
-                            🔸 Partial
+                          <button type="button" class="btn-action-partial" onclick="PaymentsModule.openPartialPayment('${inv.id}')" title="Partial installment payment">
+                            <span>🔸</span>
+                            <span>Partial</span>
                           </button>
-                          <button class="btn btn-secondary btn-sm" onclick="PaymentsModule.openLifecycleModal('${inv.id}')" title="View 3-stage lifecycle">
-                            🔄 Track
+                          <button type="button" class="btn-action-track" onclick="PaymentsModule.openLifecycleModal('${inv.id}')" title="View 3-stage lifecycle">
+                            <span>🔄</span>
+                            <span>Track</span>
                           </button>
                         </div>
                       </td>
@@ -473,31 +492,31 @@ const PaymentsModule = {
 
                 return `
                   <tr>
-                    <td>
-                      <strong style="font-family: var(--font-mono); color: var(--accent-primary); cursor: pointer;"
-                        onclick="PaymentsModule.openLifecycleModal('${inv.id}')">
-                        ${inv.id}
-                      </strong>
+                    <td style="white-space: nowrap;">
+                      <button type="button" class="inv-code-badge" onclick="PaymentsModule.openLifecycleModal('${inv.id}')" title="Track lifecycle for ${inv.id}">
+                        <span>${inv.id}</span>
+                        <span style="font-size: 11px; opacity: 0.7;">🔍</span>
+                      </button>
                     </td>
                     <td>
-                      <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="font-size: 18px;">${startup ? startup.logoEmoji : '🚀'}</span>
+                      <div class="startup-brand-cell">
+                        <div class="startup-brand-icon">${startup ? startup.logoEmoji : '🚀'}</div>
                         <div>
-                          <strong style="font-size: 13px;">${inv.startupName}</strong>
-                          <div style="font-size: 10.5px; color: var(--accent-secondary);">${startup ? startup.category : ''}</div>
+                          <div class="startup-brand-name">${inv.startupName}</div>
+                          <div class="startup-brand-period">${startup ? startup.category : ''}</div>
                         </div>
                       </div>
                     </td>
-                    <td style="font-size: 12px; color: var(--text-muted);">${inv.billingPeriod || '—'}</td>
-                    <td>
-                      <div style="font-family: var(--font-mono); font-weight: 700;">₹${inv.total.toLocaleString('en-IN')}</div>
+                    <td style="font-size: 12.5px; color: var(--text-muted); white-space: nowrap;">${inv.billingPeriod || '—'}</td>
+                    <td style="white-space: nowrap;">
+                      <div class="cell-amount-total">₹${inv.total.toLocaleString('en-IN')}</div>
                       ${paidSoFar > 0 && status !== 'Paid' ? `
-                        <div style="font-size: 10px; color: var(--status-success); font-family: var(--font-mono);">
+                        <div style="font-size: 10.5px; color: #059669; font-weight: 600; font-variant-numeric: tabular-nums;">
                           ₹${paidSoFar.toLocaleString('en-IN')} paid
                         </div>
                       ` : ''}
                     </td>
-                    <td>
+                    <td style="white-space: nowrap;">
                       ${this._renderStatusBadge(status)}
                     </td>
                     <td>
@@ -696,40 +715,43 @@ const PaymentsModule = {
                 const gwStyle = p.gateway === 'Stripe' ? 'background: rgba(99,91,255,0.15); color: #635bff;' : '';
                 return `
                   <tr>
-                    <td>
-                      <strong style="font-family: var(--font-mono); color: var(--accent-primary);">${p.id}</strong>
+                    <td style="white-space: nowrap;">
+                      <span class="inv-code-badge" style="background: rgba(11, 8, 38, 0.04); cursor: default;">${p.id}</span>
                     </td>
-                    <td>
-                      <span class="badge badge-success" style="font-family: var(--font-mono); font-size: 11px; font-weight: 700;">
+                    <td style="white-space: nowrap;">
+                      <span class="fintech-status-pill pill-status-paid" style="font-size: 11px; font-weight: 700;">
                         ${p.receiptNo || 'REC-SETTLED'}
                       </span>
                     </td>
                     <td>
-                      <div style="display: flex; align-items: center; gap: 8px;">
+                      <div class="startup-brand-cell">
                         <span style="font-size: 18px; cursor: pointer;" onclick="PaymentsModule.openStartupPaymentHistoryModal('${p.startupId}')">${emoji}</span>
                         <div>
-                          <strong style="cursor: pointer; color: var(--text-primary);" onclick="PaymentsModule.openStartupPaymentHistoryModal('${p.startupId}')" title="Click to view full payment history for ${p.startupName}">
+                          <strong style="cursor: pointer; color: var(--text-primary); font-size: 13.5px;" onclick="PaymentsModule.openStartupPaymentHistoryModal('${p.startupId}')" title="Click to view full payment history for ${p.startupName}">
                             ${p.startupName} 🔍
                           </strong>
-                          <div style="font-size: 11px; color: var(--text-muted);">${startup ? startup.category : (p.notes || '')}</div>
+                          <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">${startup ? startup.category : (p.notes || '')}</div>
                         </div>
                       </div>
                     </td>
-                    <td>
-                      <button class="btn btn-link btn-sm" style="font-family: var(--font-mono); font-weight: 700; padding: 0; color: #0B0826; text-decoration: underline;" onclick="typeof InvoiceModule !== 'undefined' ? InvoiceModule.viewInvoice('${p.invoiceId}') : null" title="View Invoice #${p.invoiceId}">
-                        ${p.invoiceId || '—'}
-                      </button>
+                    <td style="white-space: nowrap;">
+                      ${p.invoiceId ? `
+                        <button type="button" class="inv-code-badge" onclick="typeof InvoiceModule !== 'undefined' ? InvoiceModule.viewInvoice('${p.invoiceId}') : null" title="View Invoice #${p.invoiceId}">
+                          <span>${p.invoiceId}</span>
+                          <span style="font-size: 11px; opacity: 0.7;">🧾</span>
+                        </button>
+                      ` : '<span style="color: var(--text-muted);">—</span>'}
                     </td>
-                    <td>
-                      <div style="font-family: var(--font-mono); font-weight: 800; color: var(--status-success); font-size: 13.5px;">
+                    <td style="white-space: nowrap;">
+                      <div style="font-family: var(--font-sans); font-variant-numeric: tabular-nums; font-weight: 700; color: #059669; font-size: 14px;">
                         ₹${(p.amount || 0).toLocaleString('en-IN')}
                       </div>
                       ${p.isPartial ? `
-                        <div style="font-size: 10px; color: #8b5cf6; font-weight: 700;">
-                          🔸 Partial (₹${(p.remainingBalance || 0).toLocaleString('en-IN')} remaining)
+                        <div style="font-size: 10.5px; color: #7c3aed; font-weight: 700; font-variant-numeric: tabular-nums;">
+                          Partial (₹${(p.remainingBalance || 0).toLocaleString('en-IN')} due)
                         </div>
                       ` : `
-                        <div style="font-size: 10px; color: var(--status-success); font-weight: 600;">
+                        <div style="font-size: 10px; color: #059669; font-weight: 600;">
                           ✓ Full Settlement
                         </div>
                       `}
@@ -1210,16 +1232,16 @@ const PaymentsModule = {
   _renderStatusBadge(status) {
     switch (status) {
       case 'Paid':
-        return `<span class="badge badge-success">✅ Paid</span>`;
+        return `<span class="fintech-status-pill pill-status-paid"><span class="fintech-status-dot"></span>Paid</span>`;
       case 'Partially Paid':
-        return `<span class="badge" style="background: rgba(139,92,246,0.15); color: #8b5cf6;">🔸 Partially Paid</span>`;
+        return `<span class="fintech-status-pill pill-status-partial"><span class="fintech-status-dot"></span>Partially Paid</span>`;
       case 'Overdue':
-        return `<span class="badge badge-danger">🔴 Overdue</span>`;
+        return `<span class="fintech-status-pill pill-status-overdue"><span class="fintech-status-dot"></span>Overdue</span>`;
       case 'Cancelled':
-        return `<span class="badge" style="background: rgba(100,116,139,0.15); color: #64748b;">❌ Cancelled</span>`;
+        return `<span class="fintech-status-pill pill-status-cancelled"><span class="fintech-status-dot"></span>Cancelled</span>`;
       case 'Pending':
       default:
-        return `<span class="badge badge-warning">⏳ Pending</span>`;
+        return `<span class="fintech-status-pill pill-status-pending"><span class="fintech-status-dot"></span>Pending</span>`;
     }
   },
 

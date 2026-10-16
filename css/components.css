@@ -3381,3 +3381,423 @@ html.auth-locked .app-container {
 .auth-footer-link:hover {
   color: #ffffff;
 }
+
+/* ──────────────────────────────────────────────────────────────────
+   PREMIUM FINTECH SETTLEMENT DESK & PAYMENTS UI
+   ────────────────────────────────────────────────────────────────── */
+
+.settlement-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  margin-bottom: 24px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.settlement-header {
+  padding: 16px 22px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.settlement-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.2px;
+}
+
+.settlement-badge-actionable {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: rgba(245, 158, 11, 0.12);
+  color: #b45309;
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  border-radius: 9999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+[data-theme="dark"] .settlement-badge-actionable,
+[data-theme="navy"] .settlement-badge-actionable {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+.btn-bulk-settle {
+  background: #0B0826;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: 0 2px 8px rgba(11, 8, 38, 0.25);
+}
+
+.btn-bulk-settle:hover {
+  background: #18114b;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(11, 8, 38, 0.35);
+}
+
+/* Table wrapper specific to settlement desk */
+.settlement-table-wrapper {
+  overflow-x: auto;
+  background: var(--bg-surface);
+}
+
+.settlement-table {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: collapse;
+  text-align: left;
+  font-family: var(--font-sans);
+}
+
+.settlement-table th {
+  background: #fbfbfd;
+  padding: 12px 18px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border-subtle);
+  white-space: nowrap;
+}
+
+[data-theme="dark"] .settlement-table th,
+[data-theme="navy"] .settlement-table th {
+  background: rgba(255, 255, 255, 0.03);
+  color: #94a3b8;
+  border-bottom-color: var(--border-subtle);
+}
+
+.settlement-table td {
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+  vertical-align: middle;
+  font-size: 13.5px;
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .settlement-table td,
+[data-theme="navy"] .settlement-table td {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.settlement-table tbody tr {
+  transition: background 0.15s ease;
+}
+
+.settlement-table tbody tr:hover {
+  background: rgba(11, 8, 38, 0.02);
+}
+
+[data-theme="dark"] .settlement-table tbody tr:hover,
+[data-theme="navy"] .settlement-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.035);
+}
+
+/* Invoice ID badge */
+.inv-code-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  background: rgba(11, 8, 38, 0.05);
+  color: #0B0826;
+  border: 1px solid rgba(11, 8, 38, 0.14);
+  border-radius: 6px;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 12.5px;
+  letter-spacing: -0.2px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.inv-code-badge:hover {
+  background: #0B0826;
+  color: #ffffff;
+  border-color: #0B0826;
+  box-shadow: 0 2px 8px rgba(11, 8, 38, 0.25);
+  transform: translateY(-1px);
+}
+
+[data-theme="dark"] .inv-code-badge,
+[data-theme="navy"] .inv-code-badge {
+  background: rgba(255, 255, 255, 0.07);
+  color: #e2e8f0;
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+[data-theme="dark"] .inv-code-badge:hover,
+[data-theme="navy"] .inv-code-badge:hover {
+  background: #3b82f6;
+  color: #ffffff;
+  border-color: #3b82f6;
+}
+
+/* Startup brand row */
+.startup-brand-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.startup-brand-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: rgba(11, 8, 38, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+[data-theme="dark"] .startup-brand-icon,
+[data-theme="navy"] .startup-brand-icon {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.startup-brand-name {
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+
+.startup-brand-period {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Overdue chip */
+.overdue-alert-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 7px;
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 9999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  margin-top: 4px;
+  white-space: nowrap;
+}
+
+.overdue-dot-pulse {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #ef4444;
+  display: inline-block;
+}
+
+/* Numerical styling */
+.cell-amount-total {
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.cell-amount-balance {
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+/* Modern Fintech Status Pill */
+.fintech-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.15px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.fintech-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.pill-status-overdue {
+  background: rgba(239, 68, 68, 0.09);
+  color: #dc2626;
+  border: 1px solid rgba(239, 68, 68, 0.22);
+}
+.pill-status-overdue .fintech-status-dot {
+  background: #ef4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+}
+
+.pill-status-paid {
+  background: rgba(16, 185, 129, 0.09);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.22);
+}
+.pill-status-paid .fintech-status-dot {
+  background: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.pill-status-partial {
+  background: rgba(139, 92, 246, 0.09);
+  color: #7c3aed;
+  border: 1px solid rgba(139, 92, 246, 0.22);
+}
+.pill-status-partial .fintech-status-dot {
+  background: #8b5cf6;
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+}
+
+.pill-status-pending {
+  background: rgba(245, 158, 11, 0.09);
+  color: #d97706;
+  border: 1px solid rgba(245, 158, 11, 0.22);
+}
+.pill-status-pending .fintech-status-dot {
+  background: #f59e0b;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+}
+
+.pill-status-cancelled {
+  background: rgba(100, 116, 139, 0.09);
+  color: #64748b;
+  border: 1px solid rgba(100, 116, 139, 0.22);
+}
+.pill-status-cancelled .fintech-status-dot {
+  background: #94a3b8;
+}
+
+/* Quick Actions Group */
+.fintech-actions-group {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.btn-action-pay {
+  background: #0B0826;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 6px 12px;
+  border-radius: 7px;
+  font-size: 11.5px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 3px rgba(11, 8, 38, 0.2);
+}
+
+.btn-action-pay:hover {
+  background: #18114b;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(11, 8, 38, 0.3);
+}
+
+[data-theme="dark"] .btn-action-pay,
+[data-theme="navy"] .btn-action-pay {
+  background: #2563eb;
+  border-color: #3b82f6;
+}
+
+[data-theme="dark"] .btn-action-pay:hover,
+[data-theme="navy"] .btn-action-pay:hover {
+  background: #1d4ed8;
+}
+
+.btn-action-partial {
+  background: rgba(139, 92, 246, 0.08);
+  color: #7c3aed !important;
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  padding: 6px 12px;
+  border-radius: 7px;
+  font-size: 11.5px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-action-partial:hover {
+  background: rgba(139, 92, 246, 0.16);
+  border-color: rgba(139, 92, 246, 0.4);
+  transform: translateY(-1px);
+}
+
+.btn-action-track {
+  background: var(--bg-surface-elevated);
+  color: var(--text-secondary) !important;
+  border: 1px solid var(--border-medium);
+  padding: 6px 11px;
+  border-radius: 7px;
+  font-size: 11.5px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-action-track:hover {
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--text-primary) !important;
+  border-color: var(--text-muted);
+  transform: translateY(-1px);
+}
+
+[data-theme="dark"] .btn-action-track:hover,
+[data-theme="navy"] .btn-action-track:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
