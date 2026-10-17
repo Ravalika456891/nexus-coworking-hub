@@ -33,15 +33,84 @@
   const journeyIdxText = document.getElementById('j-current-idx');
   const journeyCards = document.querySelectorAll('.nx-journey-card');
 
-  /* ---------- Announcement Bar ---------- */
+  /* ---------- Announcement Bar & Dynamic Offset ---------- */
+  function syncAnnouncementOffset() {
+    if (!header) return;
+    if (announcement && !announcement.classList.contains('closed')) {
+      const h = announcement.offsetHeight || 44;
+      document.documentElement.style.setProperty('--announcement-h', `${h + 12}px`);
+      header.classList.add('has-announcement');
+    } else {
+      document.documentElement.style.setProperty('--announcement-h', '16px');
+      header.classList.remove('has-announcement');
+    }
+  }
+
   if (announcement) {
-    header.classList.add('has-announcement');
+    syncAnnouncementOffset();
+    window.addEventListener('resize', syncAnnouncementOffset, { passive: true });
+    window.addEventListener('orientationchange', syncAnnouncementOffset);
     if (announcementClose) {
       announcementClose.addEventListener('click', () => {
         announcement.classList.add('closed');
-        header.classList.remove('has-announcement');
+        syncAnnouncementOffset();
       });
     }
+  }
+
+  /* ---------- Mobile Burger Navigation & Touch Accordions ---------- */
+  function closeMobileNav() {
+    if (!nav || !burger) return;
+    nav.classList.remove('open');
+    burger.classList.remove('open');
+    burger.setAttribute('aria-expanded', 'false');
+    header.classList.remove('menu-open');
+    const ecoItem = document.querySelector('.nx-nav-item.has-menu');
+    if (ecoItem) ecoItem.classList.remove('open');
+  }
+
+  if (burger && nav) {
+    burger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = nav.classList.toggle('open');
+      burger.classList.toggle('open', isOpen);
+      burger.setAttribute('aria-expanded', String(isOpen));
+      header.classList.toggle('menu-open', isOpen);
+    });
+
+    // Close when clicking any regular link inside the mobile drawer
+    nav.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => {
+        closeMobileNav();
+      });
+    });
+
+    // Mobile touch accordion for Ecosystem dropdown
+    const ecoBtn = document.getElementById('nav-ecosystem');
+    if (ecoBtn) {
+      ecoBtn.addEventListener('click', (e) => {
+        if (window.innerWidth <= 991) {
+          e.preventDefault();
+          e.stopPropagation();
+          const parent = ecoBtn.closest('.nx-nav-item');
+          if (parent) parent.classList.toggle('open');
+        }
+      });
+    }
+
+    // Close drawer when clicking outside the floating header
+    document.addEventListener('click', (e) => {
+      if (nav.classList.contains('open') && !header.contains(e.target)) {
+        closeMobileNav();
+      }
+    });
+
+    // Close drawer on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && nav.classList.contains('open')) {
+        closeMobileNav();
+      }
+    });
   }
 
   /* ---------- Scroll Handling: Header Hide/Show, Progress, Parallax ---------- */

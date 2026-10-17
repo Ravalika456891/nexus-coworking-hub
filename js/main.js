@@ -61,10 +61,29 @@ const App = {
         wrapper.classList.remove('open');
       }
     });
+
+    // Close mobile sidebar on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        this.toggleMobileSidebar(false);
+      }
+    });
+  },
+
+  toggleMobileSidebar(forceState) {
+    const sidebar = document.querySelector('.app-sidebar');
+    const backdrop = document.getElementById('sidebar-mobile-backdrop');
+    if (!sidebar) return;
+    const isCurrentlyOpen = sidebar.classList.contains('mobile-open');
+    const shouldOpen = typeof forceState === 'boolean' ? forceState : !isCurrentlyOpen;
+    sidebar.classList.toggle('mobile-open', shouldOpen);
+    if (backdrop) backdrop.classList.toggle('active', shouldOpen);
+    document.body.classList.toggle('sidebar-locked', shouldOpen);
   },
 
   switchTab(tabId) {
     this.currentTab = tabId;
+    this.toggleMobileSidebar(false);
 
     // Update Nav bar active states
     document.querySelectorAll('.nav-item').forEach(item => {

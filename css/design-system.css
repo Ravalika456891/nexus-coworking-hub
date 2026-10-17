@@ -937,3 +937,106 @@ body::before {
     padding: 12px;
   }
 }
+
+/* Mobile and Laptop Responsive Adaptations for App OS */
+.header-mobile-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-medium);
+  background: var(--bg-surface-elevated);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 18px;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+.header-mobile-toggle:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent-primary);
+}
+
+.sidebar-mobile-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 998;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.sidebar-mobile-backdrop.active {
+  display: block;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (max-width: 768px) {
+  :root {
+    --sidebar-width: 0px !important;
+  }
+  .header-mobile-toggle {
+    display: inline-flex !important;
+  }
+  .app-sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    left: -285px !important;
+    width: 275px !important;
+    height: 100vh !important;
+    z-index: 1000 !important;
+    transition: left 0.32s cubic-bezier(0.2, 0.9, 0.3, 1) !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45) !important;
+    overflow-y: auto !important;
+  }
+  .app-sidebar.mobile-open {
+    left: 0 !important;
+  }
+  /* Restore full labels inside drawer on mobile when opened */
+  .app-sidebar.mobile-open .brand-info,
+  .app-sidebar.mobile-open .nav-section-title,
+  .app-sidebar.mobile-open .nav-item-text,
+  .app-sidebar.mobile-open .nav-item-badge,
+  .app-sidebar.mobile-open .sidebar-lifecycle-pill,
+  .app-sidebar.mobile-open .founder-switcher-text {
+    display: block !important;
+  }
+  .app-sidebar.mobile-open .nav-item {
+    justify-content: flex-start !important;
+    padding: 10px 14px !important;
+  }
+  .app-main {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .app-header {
+    padding: 10px 12px !important;
+    gap: 8px !important;
+  }
+  .header-stat-badge {
+    display: none !important;
+  }
+  .page-title {
+    font-size: 16px !important;
+  }
+  .header-right {
+    gap: 5px !important;
+  }
+  .app-content, .view-container {
+    padding: 14px 10px !important;
+  }
+  /* Modal responsiveness on mobile */
+  .modal-dialog {
+    width: calc(100% - 20px) !important;
+    margin: 12px auto !important;
+    max-height: calc(100vh - 24px) !important;
+  }
+}

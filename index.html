@@ -74,12 +74,33 @@
         <a href="#programs" class="nx-nav-link" id="nav-programs" data-target="programs">Programs</a>
         <a href="#events" class="nx-nav-link" id="nav-events" data-target="events">Events</a>
         <a href="#faq" class="nx-nav-link" id="nav-faq" data-target="faq">FAQ</a>
+
+        <!-- Mobile Drawer Quick Actions -->
+        <div class="nx-nav-mobile-actions">
+          <a href="app.html?login=startup" class="nx-btn nx-btn-outline-light sm" style="width: 100%; justify-content: center; font-size: 13.5px; padding: 11px;">
+            📱 Founder Portal Login
+          </a>
+          <a href="app.html" class="nx-btn nx-btn-outline-flame sm" style="width: 100%; justify-content: center; font-size: 13.5px; padding: 11px;">
+            🏢 Co-Working Management OS
+          </a>
+          <a href="#cta" class="nx-btn nx-btn-flame sm" style="width: 100%; justify-content: center; font-size: 13.5px; padding: 11px;">
+            🚀 Apply for Cohort 07
+          </a>
+        </div>
       </nav>
 
       <div class="nx-header-actions">
-        <a href="app.html?login=startup" class="nx-btn nx-btn-outline-light sm" id="nav-founder-login-btn" title="Founder Mobile & Password Login" style="margin-right: 4px; padding: 7px 14px; font-size: 13px;">📱 Founder Login</a>
-        <a href="#cta" class="nx-btn nx-btn-flame sm" id="nav-apply-btn">Apply Now</a>
-        <button class="nx-burger" id="nx-burger" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+        <a href="app.html?login=startup" class="nx-btn nx-btn-outline-light sm nx-btn-founder-login" id="nav-founder-login-btn" title="Founder Mobile & Password Login">
+          <span class="btn-text-full">📱 Founder Login</span>
+          <span class="btn-text-short">📱 Login</span>
+        </a>
+        <a href="#cta" class="nx-btn nx-btn-flame sm nx-btn-apply" id="nav-apply-btn">
+          <span class="btn-text-full">Apply Now</span>
+          <span class="btn-text-short">Apply</span>
+        </a>
+        <button class="nx-burger" id="nx-burger" aria-label="Toggle navigation menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
       </div>
     </div>
   </header>
