@@ -305,10 +305,10 @@ const BillingModule = {
             <tbody>
               ${this.getFilteredInvoices(invoices).length > 0 ? this.getFilteredInvoices(invoices).map(inv => `
                 <tr style="${this.selectedStartupId ? 'background: rgba(11, 8, 38, 0.02);' : ''}">
-                  <td><strong style="font-family: var(--font-mono); color: var(--accent-primary);">${inv.id}</strong></td>
-                  <td><strong>${inv.startupName}</strong></td>
-                  <td>${inv.billingPeriod}</td>
-                  <td>${inv.dueDate}</td>
+                  <td style="white-space: nowrap;"><strong style="font-family: var(--font-mono); color: var(--accent-primary);">${inv.id}</strong></td>
+                  <td style="white-space: nowrap;"><strong>${inv.startupName}</strong></td>
+                  <td style="white-space: nowrap;">${inv.billingPeriod}</td>
+                  <td style="white-space: nowrap;">${inv.dueDate}</td>
                   <td style="font-weight: 700; font-family: var(--font-mono);">₹${inv.total.toLocaleString('en-IN')}</td>
                   <td>
                     <span class="badge ${inv.status === 'Paid' ? 'badge-success' : inv.status === 'Overdue' ? 'badge-danger' : 'badge-warning'}">
@@ -445,16 +445,16 @@ const BillingModule = {
                     </td>
 
                     <!-- 2. Startup Name & Sector -->
-                    <td>
-                      <div style="display: flex; align-items: center; gap: 10px;">
+                    <td style="white-space: nowrap;">
+                      <div style="display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;">
                         <span style="font-size: 20px; line-height: 1; flex-shrink: 0;">${emoji}</span>
-                        <div style="min-width: 0;">
-                          <div style="font-weight: 700; color: var(--text-primary); font-size: 13px; line-height: 1.3;">
+                        <div style="white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;">
+                          <strong style="font-weight: 700; color: var(--text-primary); font-size: 13px; white-space: nowrap;">
                             ${p.startupName}
-                          </div>
-                          <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
-                            ${startup ? startup.category : (p.notes || 'Incubation Member')}
-                          </div>
+                          </strong>
+                          <span style="font-size: 11px; color: var(--text-muted); white-space: nowrap;">
+                            • ${startup ? startup.category : (p.notes || 'Incubation Member')}
+                          </span>
                         </div>
                       </div>
                     </td>

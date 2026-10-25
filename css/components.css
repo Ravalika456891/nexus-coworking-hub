@@ -3666,6 +3666,7 @@ html.auth-locked .app-container {
   display: flex;
   align-items: center;
   gap: 10px;
+  white-space: nowrap;
 }
 
 .startup-brand-icon {
@@ -3692,12 +3693,14 @@ html.auth-locked .app-container {
   font-size: 13.5px;
   color: var(--text-primary);
   line-height: 1.25;
+  white-space: nowrap;
 }
 
 .startup-brand-period {
   font-size: 11px;
   color: var(--text-muted);
   margin-top: 2px;
+  white-space: nowrap;
 }
 
 /* Overdue chip */

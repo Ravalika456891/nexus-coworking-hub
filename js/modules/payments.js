@@ -361,12 +361,12 @@ const PaymentsModule = {
                           <span style="font-size: 11px; opacity: 0.7;">🔍</span>
                         </button>
                       </td>
-                      <td>
-                        <div class="startup-brand-cell">
+                      <td style="white-space: nowrap;">
+                        <div class="startup-brand-cell" style="white-space: nowrap;">
                           <div class="startup-brand-icon">${startup.logoEmoji || '🚀'}</div>
-                          <div>
-                            <div class="startup-brand-name">${inv.startupName}</div>
-                            <div class="startup-brand-period">${inv.billingPeriod || '—'}</div>
+                          <div style="white-space: nowrap;">
+                            <div class="startup-brand-name" style="white-space: nowrap;">${inv.startupName}</div>
+                            <div class="startup-brand-period" style="white-space: nowrap;">${inv.billingPeriod || '—'}</div>
                           </div>
                         </div>
                       </td>
@@ -512,12 +512,12 @@ const PaymentsModule = {
                         <span style="font-size: 11px; opacity: 0.7;">🔍</span>
                       </button>
                     </td>
-                    <td>
-                      <div class="startup-brand-cell">
+                    <td style="white-space: nowrap;">
+                      <div class="startup-brand-cell" style="white-space: nowrap;">
                         <div class="startup-brand-icon">${startup ? startup.logoEmoji : '🚀'}</div>
-                        <div>
-                          <div class="startup-brand-name">${inv.startupName}</div>
-                          <div class="startup-brand-period">
+                        <div style="white-space: nowrap;">
+                          <div class="startup-brand-name" style="white-space: nowrap;">${inv.startupName}</div>
+                          <div class="startup-brand-period" style="white-space: nowrap;">
                             <span>${inv.billingPeriod || 'Current Cycle'}</span>
                             ${startup ? ` • <span style="color: var(--accent-secondary); font-weight: 600;">${startup.category}</span>` : ''}
                           </div>
@@ -719,16 +719,16 @@ const PaymentsModule = {
           <table class="nexus-table">
             <thead>
               <tr>
-                <th>Payment ID</th>
-                <th>Receipt #</th>
-                <th>Startup Name</th>
-                <th>Linked Invoice</th>
-                <th>Amount Paid</th>
-                <th>Gateway & Mode</th>
-                <th>Transaction Ref / UTR</th>
-                <th>Settlement Timestamp</th>
-                <th>Status</th>
-                <th style="text-align: right;">History & Receipts</th>
+                <th style="white-space: nowrap;">Payment ID</th>
+                <th style="white-space: nowrap;">Receipt #</th>
+                <th style="white-space: nowrap;">Startup Name</th>
+                <th style="white-space: nowrap;">Linked Invoice</th>
+                <th style="white-space: nowrap;">Amount Paid</th>
+                <th style="white-space: nowrap;">Gateway & Mode</th>
+                <th style="white-space: nowrap;">Transaction Ref / UTR</th>
+                <th style="white-space: nowrap;">Settlement Timestamp</th>
+                <th style="white-space: nowrap;">Status</th>
+                <th style="text-align: right; white-space: nowrap;">History & Receipts</th>
               </tr>
             </thead>
             <tbody>
@@ -747,14 +747,17 @@ const PaymentsModule = {
                         ${p.receiptNo || 'REC-SETTLED'}
                       </span>
                     </td>
-                    <td>
-                      <div class="startup-brand-cell">
-                        <span style="font-size: 18px; cursor: pointer;" onclick="PaymentsModule.openStartupPaymentHistoryModal('${p.startupId}')">${emoji}</span>
-                        <div>
-                          <strong style="cursor: pointer; color: var(--text-primary); font-size: 13.5px;" onclick="PaymentsModule.openStartupPaymentHistoryModal('${p.startupId}')" title="Click to view full payment history for ${p.startupName}">
-                            ${p.startupName} 🔍
+                    <td style="white-space: nowrap;">
+                      <div class="startup-brand-cell" style="display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;">
+                        <span style="font-size: 18px; cursor: pointer; flex-shrink: 0;" onclick="PaymentsModule.openStartupPaymentHistoryModal('${p.startupId}')" title="${emoji} ${p.startupName}">${emoji}</span>
+                        <div style="white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;">
+                          <strong style="cursor: pointer; color: var(--text-primary); font-size: 13.5px; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;" onclick="PaymentsModule.openStartupPaymentHistoryModal('${p.startupId}')" title="Click to view full payment history for ${p.startupName}">
+                            <span>${p.startupName}</span>
+                            <span style="font-size: 11px; opacity: 0.7;">🔍</span>
                           </strong>
-                          <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">${startup ? startup.category : (p.notes || '')}</div>
+                          ${(startup?.category || p.notes) ? `
+                            <span style="font-size: 11px; color: var(--text-muted); white-space: nowrap;">• ${startup ? startup.category : p.notes}</span>
+                          ` : ''}
                         </div>
                       </div>
                     </td>
