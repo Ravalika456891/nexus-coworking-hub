@@ -185,6 +185,13 @@ async function handleApi(req, res, parsedUrl) {
         const ins = await db.insertTableRecord('startups', body);
         return sendJson(res, ins.ok ? 201 : 400, ins);
       }
+      if (req.method === 'PUT' || req.method === 'PATCH') {
+        const body = await parseJsonBody(req);
+        const targetId = body.id || body._id;
+        const updates = body.updates || body;
+        const upd = await db.updateTableRecord('startups', targetId, updates);
+        return sendJson(res, upd.ok ? 200 : 400, upd);
+      }
     }
 
     if (pathname === '/api/workspaces' && req.method === 'GET') {

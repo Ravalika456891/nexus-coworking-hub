@@ -40,9 +40,14 @@ const StartupTablesModule = {
         fetch('/api/database/table?name=inquiries&limit=100').then(r => r.json()).catch(() => ({ records: [] }))
       ]);
 
-      this.liveData.startups = (startupsRes && startupsRes.records && startupsRes.records.length > 0)
-        ? startupsRes.records
-        : window.store.getStartups();
+      if (startupsRes && startupsRes.records && startupsRes.records.length > 0) {
+        this.liveData.startups = startupsRes.records;
+        if (window.store && window.store.syncStartupsWithDatabase) {
+          window.store.syncStartupsWithDatabase(startupsRes.records);
+        }
+      } else {
+        this.liveData.startups = window.store.getStartups();
+      }
 
       this.liveData.milestones = (mlsRes && mlsRes.records && mlsRes.records.length > 0)
         ? mlsRes.records
@@ -249,6 +254,9 @@ const StartupTablesModule = {
             </button>
             <button class="btn btn-outline btn-sm" onclick="StartupTablesModule.exportCurrentCSV()" style="border-radius: 999px; font-weight: 600; padding: 7px 15px; display: inline-flex; align-items: center; gap: 6px;" title="Export current table to CSV">
               <span>📥</span> Export CSV
+            </button>
+            <button class="btn btn-outline btn-sm" onclick="App.switchTab('onboarding')" style="border-radius: 999px; font-weight: 600; padding: 7px 15px; display: inline-flex; align-items: center; gap: 6px;" title="Switch to 5-Stage Onboarding Pipeline">
+              <span>🚀</span> Onboarding Pipeline (${startups.length})
             </button>
           </div>
           <div style="margin-left: auto;">

@@ -176,15 +176,60 @@ class NexusStore {
 
   async syncFromCloud() {
     try {
-      const res = await fetch('/api/state');
-      const data = await res.json();
-      if (data && data.ok && data.state) {
-        this.state = data.state;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
+      const [stateRes, startupsRes] = await Promise.all([
+        fetch('/api/state').then(r => r.json()).catch(() => null),
+        fetch('/api/database/table?name=startups&limit=200').then(r => r.json()).catch(() => null)
+      ]);
+
+      if (stateRes && stateRes.ok && stateRes.state) {
+        this.state = stateRes.state;
+      }
+
+      if (startupsRes && startupsRes.records && startupsRes.records.length > 0) {
+        this.syncStartupsWithDatabase(startupsRes.records);
+      } else {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
+        } catch (e) {}
         this.notify();
       }
     } catch (e) {
       // Fallback to local storage
+    }
+  }
+
+  syncStartupsWithDatabase(dbStartups) {
+    if (!Array.isArray(dbStartups) || dbStartups.length === 0) return;
+    if (!this.state.startups) this.state.startups = [];
+
+    let hasChange = false;
+    dbStartups.forEach(dbItem => {
+      if (!dbItem.id) return;
+      const idx = this.state.startups.findIndex(s => s.id === dbItem.id);
+      if (idx !== -1) {
+        const local = this.state.startups[idx];
+        const merged = { ...local, ...dbItem };
+        if (!merged.documents && local.documents) merged.documents = local.documents;
+        if (!merged.allocatedSeats && local.allocatedSeats) merged.allocatedSeats = local.allocatedSeats;
+        if (!merged.verification && local.verification) merged.verification = local.verification;
+        if (!merged.approval && local.approval) merged.approval = local.approval;
+        if (!merged.founders && local.founders) merged.founders = local.founders;
+
+        if (JSON.stringify(local) !== JSON.stringify(merged)) {
+          this.state.startups[idx] = merged;
+          hasChange = true;
+        }
+      } else {
+        this.state.startups.push(this.normalizeStartupIncubation ? this.normalizeStartupIncubation(dbItem) : dbItem);
+        hasChange = true;
+      }
+    });
+
+    if (hasChange) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
+      } catch (e) {}
+      this.notify();
     }
   }
 
@@ -675,7 +720,16 @@ class NexusStore {
   }
 
   addStartup(data) {
-    const id = `STP-0${this.state.startups.length + 1}`;
+    let maxNum = 0;
+    (this.state.startups || []).forEach(s => {
+      const match = String(s.id || '').match(/STP-(?:0)?(\d+)/i);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (!isNaN(num) && num > maxNum) maxNum = num;
+      }
+    });
+    const nextNum = Math.max(maxNum + 1, (this.state.startups ? this.state.startups.length + 1 : 1));
+    const id = nextNum < 10 ? `STP-0${nextNum}` : `STP-${nextNum}`;
     const resolvedCategory = (data.category === 'Others' && data.otherCategory && data.otherCategory.trim())
       ? data.otherCategory.trim()
       : (data.category || data.sector || 'Others');
@@ -769,12 +823,15 @@ class NexusStore {
     this.addActivity('Onboarding', `New startup registered: ${newStartup.name} (${newStartup.category}). Status: Applied.`, '🚀');
     this.save();
 
-    // Immediate direct sync to backend /api/startups collection
+    // Immediate direct sync to backend MongoDB database
     try {
-      fetch('/api/startups', {
+      fetch('/api/database/table/insert', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newStartup)
+        body: JSON.stringify({
+          tableName: 'startups',
+          document: newStartup
+        })
       }).catch(err => console.warn('Direct startup backend sync:', err));
     } catch (e) {}
 
@@ -786,6 +843,19 @@ class NexusStore {
     if (idx !== -1) {
       this.state.startups[idx] = { ...this.state.startups[idx], ...updates };
       this.save();
+
+      // Immediate direct DB sync
+      try {
+        fetch('/api/database/table/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tableName: 'startups',
+            id,
+            updates
+          })
+        }).catch(err => console.warn('Startup update DB sync error:', err));
+      } catch (e) {}
     }
   }
 
@@ -817,6 +887,27 @@ class NexusStore {
 
     this.addActivity('Onboarding', `${startup.name} moved from ${oldStatus} ➔ ${newStatus}.`, '📈');
     this.save();
+
+    // Immediate direct DB sync so List of Startups is in lockstep
+    try {
+      fetch('/api/database/table/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tableName: 'startups',
+          id: startupId,
+          updates: {
+            status: newStatus,
+            verification: startup.verification,
+            approval: startup.approval,
+            moveInDate: startup.moveInDate,
+            graduationDate: startup.graduationDate,
+            stage: startup.stage
+          }
+        })
+      }).catch(err => console.warn('Startup status DB sync error:', err));
+    } catch (e) {}
+
     return { success: true, message: `Status updated to ${newStatus}` };
   }
 

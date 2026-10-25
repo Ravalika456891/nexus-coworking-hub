@@ -4,13 +4,25 @@ const OnboardingModule = {
   activeStatusFilter: 'all',
   activeCategoryFilter: 'all',
   activeView: 'table',
+  founderFilterOnly: false,
+
+  toggleFounderFilter(onlyMyVenture) {
+    this.founderFilterOnly = onlyMyVenture;
+    this.render();
+  },
 
   render() {
     const container = document.getElementById('view-onboarding');
     if (!container) return;
 
     const counts = window.store.getOnboardingCounts();
-    let startups = window.store.getAccessibleStartups();
+    const isFounderRole = window.store.currentRole === 'startup';
+    const myStartup = isFounderRole ? window.store.getStartupById(window.store.activeFounderId || 'STP-XYZ') : null;
+
+    // Fully synchronized with live startups list so all pipeline tabs (Applied 3, Under Review 1, etc.) match
+    let startups = (this.founderFilterOnly && isFounderRole)
+      ? window.store.getAccessibleStartups()
+      : window.store.getStartups();
 
     if (this.activeStatusFilter !== 'all') {
       startups = startups.filter(s => s.status.toLowerCase() === this.activeStatusFilter.toLowerCase());
@@ -29,17 +41,23 @@ const OnboardingModule = {
 
     container.innerHTML = `
       <!-- Header -->
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; flex-wrap: wrap; gap: 14px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 14px;">
         <div>
           <h2 style="font-size: 20px; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 10px;">
             <span>👥 Startup Onboarding & Lifecycle</span>
             <span class="badge badge-info" style="font-size: 12px;">Stage 1 of Lifecycle</span>
+            <span class="badge" style="background: rgba(34, 197, 94, 0.16); color: #16a34a; font-weight: 700; font-size: 11px; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px;">
+              <span style="width: 7px; height: 7px; border-radius: 50%; background: #22c55e;"></span> MongoDB Atlas Synced
+            </span>
           </h2>
           <p style="font-size: 13px; color: var(--text-secondary); margin-top: 2px;">
             End-to-end incubator onboarding: Registration ➔ Company ➔ Founder ➔ Documents ➔ Verification ➔ Approval ➔ Workspace.
           </p>
         </div>
         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <button class="btn btn-outline btn-sm" onclick="App.switchTab('startupTables')" style="font-size: 11.5px; padding: 6px 14px; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px; font-weight: 600;" title="Switch to List of Startup & Live DB Explorer">
+            📋 List of Startup (${window.store.getStartups().length})
+          </button>
           <div style="display: flex; gap: 4px; background: var(--bg-surface-elevated); padding: 4px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
             <button class="btn btn-sm ${this.activeView === 'table' ? 'btn-primary' : 'btn-outline'}" onclick="OnboardingModule.switchView('table')" style="font-size: 11.5px; padding: 4px 10px;">
               📋 Startup Table
@@ -53,6 +71,29 @@ const OnboardingModule = {
           </button>
         </div>
       </div>
+
+      ${isFounderRole ? `
+        <!-- Founder Portal Perspective Banner with quick toggle -->
+        <div style="background: rgba(6, 182, 212, 0.08); border: 1px solid rgba(6, 182, 212, 0.25); border-radius: var(--radius-md); padding: 10px 16px; margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 20px;">🚀</span>
+            <div>
+              <span style="font-size: 13px; font-weight: 700; color: var(--text-primary);">Founder Portal Directory Sync</span>
+              <span style="font-size: 12px; color: var(--text-muted); margin-left: 6px;">
+                Perspective: <strong>${myStartup ? myStartup.name : 'XYZ Technologies'}</strong> • Showing cohort pipeline synchronized with database.
+              </span>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button class="btn btn-sm ${!this.founderFilterOnly ? 'btn-primary' : 'btn-outline'}" onclick="OnboardingModule.toggleFounderFilter(false)" style="font-size: 11.5px; padding: 4px 12px;">
+              🌐 All Cohort Startups (${counts.all})
+            </button>
+            <button class="btn btn-sm ${this.founderFilterOnly ? 'btn-primary' : 'btn-outline'}" onclick="OnboardingModule.toggleFounderFilter(true)" style="font-size: 11.5px; padding: 4px 12px;">
+              ⭐ My Venture Only (${myStartup ? myStartup.name : 'XYZ Technologies'})
+            </button>
+          </div>
+        </div>
+      ` : ''}
 
       <!-- Lifecycle Workflow Visual Funnel -->
       <div class="card" style="margin-bottom: 22px; padding: 18px 24px; background: var(--bg-surface);">
@@ -1811,7 +1852,12 @@ const OnboardingModule = {
     if (res.success) {
       App.showToast(`🚀 ${res.message}`, 'success');
       this.render();
-      DashboardModule.render();
+      if (typeof DashboardModule !== 'undefined' && DashboardModule.render) {
+        DashboardModule.render();
+      }
+      if (typeof StartupTablesModule !== 'undefined' && StartupTablesModule.fetchData) {
+        StartupTablesModule.fetchData();
+      }
     }
   },
 
