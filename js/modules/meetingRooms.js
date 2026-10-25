@@ -204,60 +204,41 @@ const MeetingRoomsModule = {
         </div>
       ` : ''}
 
-      <!-- Designated Operating Hours Alert Notice -->
-      <div style="background: linear-gradient(90deg, rgba(99, 102, 241, 0.08) 0%, rgba(168, 85, 247, 0.08) 100%); border: 1.5px solid rgba(99, 102, 241, 0.25); border-radius: 12px; padding: 12px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="font-size: 20px;">⏰</span>
-          <div>
-            <div style="font-size: 13.5px; font-weight: 800; color: var(--text-primary);">Designated Operating Windows</div>
-            <div style="font-size: 12px; color: var(--text-secondary);">Meeting rooms can strictly be booked only during two dedicated sessions:</div>
-          </div>
-        </div>
-        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-          <span class="badge" style="background: rgba(34, 197, 94, 0.16); color: #15803d; border: 1.5px solid #16a34a; font-weight: 800; font-size: 12px; padding: 5px 14px; border-radius: 999px;">
-            🌅 Morning: 08:00 AM – 11:00 AM
+      <!-- Unified Modern Scheduler Toolbar (Operating Windows + Status Legend) -->
+      <div style="background: var(--bg-surface-elevated); border: 1.5px solid var(--border-subtle); border-radius: 14px; padding: 12px 18px; margin-bottom: 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.03);">
+        <!-- Windows -->
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em; display: inline-flex; align-items: center; gap: 4px;">
+            <span>⏰</span> Operating Windows:
           </span>
-          <span class="badge" style="background: rgba(99, 102, 241, 0.16); color: #4338ca; border: 1.5px solid #6366f1; font-weight: 800; font-size: 12px; padding: 5px 14px; border-radius: 999px;">
-            🌆 Afternoon: 03:00 PM – 07:00 PM (15:00 – 19:00)
+          <span class="badge" style="background: rgba(34, 197, 94, 0.12); color: #15803d; border: 1px solid rgba(34, 197, 94, 0.35); font-weight: 700; font-size: 11.5px; padding: 4px 12px; border-radius: 999px;">
+            🌅 Morning: 08:00 – 11:00 AM
           </span>
-          <span style="font-size: 11.5px; color: var(--text-muted); font-weight: 600; padding: 4px 10px; background: var(--bg-surface); border-radius: 6px; border: 1px solid var(--border-subtle);">
+          <span style="font-size: 11px; color: var(--text-muted); font-weight: 600; padding: 4px 10px; background: var(--bg-surface); border-radius: 6px; border: 1px solid var(--border-subtle);">
             ☕ 11:00 AM – 03:00 PM Break
           </span>
-        </div>
-      </div>
-
-      <!-- Color-Coded Room & Timing Status Legend -->
-      <div style="background: var(--bg-surface-elevated); border: 1.5px solid var(--border-subtle); border-radius: 12px; padding: 12px 18px; margin-bottom: 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
-        <div style="display: flex; gap: 18px; align-items: center; flex-wrap: wrap; font-size: 12.5px;">
-          <!-- Green: Available -->
-          <div style="display: inline-flex; align-items: center; gap: 8px;">
-            <span style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 6px; background: rgba(34, 197, 94, 0.18); border: 1.5px solid #16a34a; font-size: 11px;">🟢</span>
-            <span style="color: #15803d; font-weight: 800;">Available Timings & Rooms</span>
-            <span style="font-size: 11px; color: var(--text-muted);">(Click green slot to reserve)</span>
-          </div>
-
-          <!-- Blue: My Booked Rooms -->
-          <div style="display: inline-flex; align-items: center; gap: 8px;">
-            <span style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 6px; background: rgba(37, 99, 235, 0.2); border: 1.5px solid #2563eb; font-size: 11px;">🔵</span>
-            <span style="color: #1d4ed8; font-weight: 800;">My Booked Rooms & Timings</span>
-            <span style="font-size: 11px; color: var(--text-muted);">(Booked by ${myStartup.name})</span>
-          </div>
-
-          <!-- Red: Booked by Others -->
-          <div style="display: inline-flex; align-items: center; gap: 8px;">
-            <span style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 6px; background: rgba(239, 68, 68, 0.18); border: 1.5px solid #ef4444; font-size: 11px;">🔴</span>
-            <span style="color: #dc2626; font-weight: 800;">Already Booked by Others</span>
-            <span style="font-size: 11px; color: var(--text-muted);">(Conflict protected)</span>
-          </div>
+          <span class="badge" style="background: rgba(99, 102, 241, 0.12); color: #4338ca; border: 1px solid rgba(99, 102, 241, 0.35); font-weight: 700; font-size: 11.5px; padding: 4px 12px; border-radius: 999px;">
+            🌆 Afternoon: 03:00 – 07:00 PM
+          </span>
         </div>
 
-        <div style="display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-family: var(--font-mono); background: var(--bg-surface); padding: 5px 14px; border-radius: 999px; border: 1.5px solid var(--border-subtle);">
-          <span>📅 <strong>${this.selectedDate}</strong>:</span>
-          <span style="color: #15803d; font-weight: 800;">🟢 ${availableSlotsCount} Open</span>
-          <span>•</span>
-          <span style="color: #1d4ed8; font-weight: 800;">🔵 ${mySlotsCount} Mine</span>
-          <span>•</span>
-          <span style="color: #dc2626; font-weight: 800;">🔴 ${otherSlotsCount} Others</span>
+        <!-- Legend & Realtime Summary -->
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px;">
+            <span style="width: 8px; height: 8px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.6);"></span>
+            <span style="color: #15803d; font-weight: 800;">${availableSlotsCount} Available</span>
+          </div>
+          <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px;">
+            <span style="width: 8px; height: 8px; border-radius: 50%; background: #2563eb; box-shadow: 0 0 6px rgba(37,99,235,0.6);"></span>
+            <span style="color: #1d4ed8; font-weight: 800;">${mySlotsCount} Reserved (Mine)</span>
+          </div>
+          <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px;">
+            <span style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444;"></span>
+            <span style="color: var(--text-muted); font-weight: 600;">${otherSlotsCount} Booked</span>
+          </div>
+          <div style="font-size: 11.5px; font-family: var(--font-mono); font-weight: 700; color: var(--text-secondary); background: var(--bg-surface); padding: 4px 12px; border-radius: 999px; border: 1px solid var(--border-subtle); margin-left: 2px;">
+            📅 ${this.selectedDate}
+          </div>
         </div>
       </div>
 
@@ -552,33 +533,38 @@ const MeetingRoomsModule = {
     const totalBookedHours = myBookedHours + otherBookedHours;
     const isFullyBooked = (totalBookedHours === timeSlots.length);
     const hasMyBookings = myBookedHours > 0;
+    const availableHours = timeSlots.length - totalBookedHours;
 
-    const roomCardClass = isFullyBooked 
-      ? 'room-card status-booked status-fully-booked' 
-      : (hasMyBookings ? 'room-card' : (totalBookedHours > 0 ? 'room-card status-booked' : 'room-card status-available'));
+    const accentColor = isFullyBooked ? '#ef4444' : (hasMyBookings ? '#2563eb' : '#10b981');
 
-    const roomCardStyle = hasMyBookings ? 'border: 1.5px solid rgba(37, 99, 235, 0.45); box-shadow: 0 4px 18px -4px rgba(37, 99, 235, 0.12);' : '';
+    const formatSlot12h = (slot24) => {
+      const [h, m] = slot24.split(':').map(Number);
+      const period = h >= 12 ? 'PM' : 'AM';
+      const displayH = h % 12 || 12;
+      return `${displayH < 10 ? '0' : ''}${displayH}:${m < 10 ? '0' : ''}${m} ${period}`;
+    };
+
+    const getAmenityIcon = (name) => {
+      const n = (name || '').toLowerCase();
+      if (n.includes('display') || n.includes('tv') || n.includes('screen')) return '🖥️';
+      if (n.includes('webex') || n.includes('video') || n.includes('camera') || n.includes('cisco')) return '📹';
+      if (n.includes('audio') || n.includes('speaker') || n.includes('polycom')) return '🔊';
+      if (n.includes('mic')) return '🎙️';
+      if (n.includes('projector') || n.includes('stage')) return '📽️';
+      if (n.includes('glass')) return '🪟';
+      if (n.includes('leather') || n.includes('chair') || n.includes('seat')) return '💺';
+      if (n.includes('livestream') || n.includes('console')) return '📡';
+      if (n.includes('acoustic') || n.includes('quiet') || n.includes('sound')) return '🔇';
+      return '✦';
+    };
 
     let roomStatusBadge = '';
     if (isFullyBooked) {
-      roomStatusBadge = `<span class="badge" style="background: rgba(239, 68, 68, 0.16); color: #dc2626; border: 1.5px solid rgba(239, 68, 68, 0.5); font-weight: 800; font-size: 11px; padding: 4px 10px; border-radius: 999px;">🔴 Fully Booked</span>`;
+      roomStatusBadge = `<span class="badge" style="background: rgba(239, 68, 68, 0.12); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.35); font-weight: 700; font-size: 11px; padding: 3px 9px; border-radius: 999px;">🔴 Fully Booked</span>`;
     } else if (hasMyBookings) {
-      roomStatusBadge = `
-        <div style="display: flex; gap: 5px; align-items: center; flex-wrap: wrap;">
-          <span class="badge" style="background: rgba(37, 99, 235, 0.16); color: #1d4ed8; border: 1.5px solid rgba(37, 99, 235, 0.45); font-weight: 800; font-size: 10.5px; padding: 3px 9px; border-radius: 999px;">🔵 You Booked (${myBookedHours} hrs)</span>
-          ${otherBookedHours > 0 ? `<span class="badge" style="background: rgba(239, 68, 68, 0.14); color: #dc2626; font-size: 10.5px; padding: 3px 8px; border-radius: 999px;">🔴 ${otherBookedHours} Other</span>` : ''}
-          <span class="badge" style="background: rgba(34, 197, 94, 0.14); color: #15803d; border: 1.5px solid rgba(34, 197, 94, 0.4); font-weight: 700; font-size: 10.5px; padding: 3px 8px; border-radius: 999px;">🟢 ${timeSlots.length - totalBookedHours} Open</span>
-        </div>
-      `;
-    } else if (totalBookedHours > 0) {
-      roomStatusBadge = `
-        <div style="display: flex; gap: 5px; align-items: center; flex-wrap: wrap;">
-          <span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #dc2626; border: 1.5px solid rgba(239, 68, 68, 0.45); font-weight: 700; font-size: 10.5px; padding: 3px 8px; border-radius: 999px;">🔴 ${totalBookedHours} Booked</span>
-          <span class="badge" style="background: rgba(34, 197, 94, 0.15); color: #15803d; border: 1.5px solid rgba(34, 197, 94, 0.45); font-weight: 700; font-size: 10.5px; padding: 3px 8px; border-radius: 999px;">🟢 ${timeSlots.length - totalBookedHours} Open</span>
-        </div>
-      `;
+      roomStatusBadge = `<span class="badge" style="background: rgba(37, 99, 235, 0.12); color: #1d4ed8; border: 1px solid rgba(37, 99, 235, 0.4); font-weight: 700; font-size: 11px; padding: 3px 9px; border-radius: 999px;">🔵 You Booked (${myBookedHours}h)</span>`;
     } else {
-      roomStatusBadge = `<span class="badge" style="background: rgba(34, 197, 94, 0.15); color: #15803d; border: 1.5px solid rgba(34, 197, 94, 0.45); font-weight: 800; font-size: 11px; padding: 4px 10px; border-radius: 999px;">🟢 100% Available</span>`;
+      roomStatusBadge = `<span class="badge" style="background: rgba(34, 197, 94, 0.12); color: #15803d; border: 1px solid rgba(34, 197, 94, 0.35); font-weight: 700; font-size: 11px; padding: 3px 9px; border-radius: 999px;">🟢 ${availableHours} Slots Open</span>`;
     }
 
     const renderSlotBtn = (slot) => {
@@ -589,6 +575,7 @@ const MeetingRoomsModule = {
         return curHour >= bHour && curHour < eHour;
       });
 
+      const label = formatSlot12h(slot);
       const isMyBooking = booked && (booked.startupId === myStartup.id || (booked.startupName && booked.startupName.toLowerCase() === myStartup.name.toLowerCase()));
 
       if (booked) {
@@ -596,16 +583,16 @@ const MeetingRoomsModule = {
           return `
             <div class="slot-btn my-booking" 
                  onclick="MeetingRoomsModule.openPassModal('${room.id}', '${booked.id}')" 
-                 title="🔵 Booked by You (${myStartup.name}): ${booked.title} (${booked.startTime} - ${booked.endTime}) • Click for Door Pass">
-              <span style="font-size: 9px;">🔵</span> <span>${slot}</span>
+                 title="🔵 Booked by You (${myStartup.name}): ${booked.title} (${booked.startTime} - ${booked.endTime}) • Click for Digital Door Pass">
+              <span>🎟️</span> <span>${label}</span> <span style="font-size: 9.5px; opacity: 0.9; font-weight: 800;">(Mine)</span>
             </div>
           `;
         } else {
           return `
             <div class="slot-btn booked" 
-                 onclick="App.showToast('Already Booked: ${room.name} is reserved at ${slot} by ${booked.startupName} (${booked.title})', 'warning')" 
-                 title="🔴 Already Booked by ${booked.startupName}: ${booked.title} (${booked.startTime} - ${booked.endTime})">
-              <span style="font-size: 9px;">🔴</span> <span>${slot}</span>
+                 onclick="App.showToast('Already Reserved: ${room.name} at ${label} is booked by ${booked.startupName} (${booked.title})', 'warning')" 
+                 title="🔒 Reserved by ${booked.startupName}: ${booked.title} (${booked.startTime} - ${booked.endTime})">
+              <span>🔒</span> <span style="text-decoration: line-through; opacity: 0.8;">${label}</span>
             </div>
           `;
         }
@@ -613,84 +600,97 @@ const MeetingRoomsModule = {
         return `
           <div class="slot-btn available" 
                onclick="MeetingRoomsModule.openBookModal('${room.id}', '${slot}', '${myStartup.id}')" 
-               title="🟢 Available: Click to reserve ${room.name} at ${slot} for ${myStartup.name}">
-            <span style="font-size: 9px;">🟢</span> <span>${slot}</span>
+               title="🟢 Available: Click to reserve ${room.name} at ${label} for ${myStartup.name}">
+            <span>🟢</span> <span>${label}</span>
           </div>
         `;
       }
     };
 
     return `
-      <div class="${roomCardClass}" style="${roomCardStyle}">
+      <div class="room-card" style="border-top: 3.5px solid ${accentColor};">
+        <!-- Room Header & Metadata -->
         <div class="room-header">
-          <div style="display: flex; gap: 12px; align-items: center;">
-            <div style="width: 46px; height: 46px; border-radius: var(--radius-md); background: var(--bg-surface-elevated); border: 1.5px solid var(--border-medium); display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0;">
+          <div style="display: flex; gap: 12px; align-items: center; min-width: 0;">
+            <div style="width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, var(--bg-surface-elevated), rgba(99, 102, 241, 0.08)); border: 1.5px solid var(--border-medium); display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; box-shadow: var(--shadow-sm);">
               ${room.icon}
             </div>
-            <div>
+            <div style="min-width: 0;">
               <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                <h3 style="font-size: 16.5px; font-weight: 800; color: var(--text-primary); margin: 0;">${room.name}</h3>
+                <h3 style="font-size: 16.5px; font-weight: 800; color: var(--text-primary); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${room.name}</h3>
                 ${roomStatusBadge}
               </div>
-              <div style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">
-                Capacity: <strong>${room.capacity} Pax</strong> • Rate: <strong style="color: var(--text-primary);">₹${room.hourlyRate}/hr</strong>
+              <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px; flex-wrap: wrap;">
+                <span class="badge badge-subtle" style="font-size: 11px; padding: 2px 7px; font-weight: 600;">
+                  👥 ${room.capacity} Pax Capacity
+                </span>
+                <span class="badge" style="background: rgba(11, 8, 38, 0.04); border: 1px solid var(--border-subtle); color: var(--text-primary); font-size: 11px; padding: 2px 7px; font-weight: 700;">
+                  ₹${room.hourlyRate}/hr
+                </span>
               </div>
             </div>
           </div>
           <div>
             ${isFullyBooked ? `
-              <button class="btn btn-outline btn-sm" disabled style="opacity: 0.6; border-color: rgba(239, 68, 68, 0.4); color: #dc2626; cursor: not-allowed; font-weight: 700;">
-                🔴 Fully Booked
+              <button class="btn btn-outline btn-sm" disabled style="opacity: 0.55; border-color: rgba(239, 68, 68, 0.4); color: #dc2626; cursor: not-allowed; font-weight: 700; padding: 6px 12px; font-size: 11.5px; border-radius: 8px;">
+                Full Today
               </button>
             ` : `
-              <button class="btn btn-sm" style="background: rgba(34, 197, 94, 0.14); color: #15803d; border: 1.5px solid #16a34a; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;" onclick="MeetingRoomsModule.openBookModal('${room.id}', null, '${myStartup.id}')" title="Book this room for ${myStartup.name}">
-                <span>+</span> Book Now
+              <button class="btn btn-primary btn-sm" onclick="MeetingRoomsModule.openBookModal('${room.id}', null, '${myStartup.id}')" style="font-weight: 700; padding: 6px 14px; font-size: 11.5px; border-radius: 8px; display: inline-flex; align-items: center; gap: 5px;" title="Reserve ${room.name} for ${myStartup.name}">
+                <span>+</span> Reserve Room
               </button>
             `}
           </div>
         </div>
 
-        <div class="room-amenities-tags">
-          ${room.amenities.map(a => `<span class="amenity-tag">${a}</span>`).join('')}
+        <!-- Amenities Chips -->
+        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+          ${room.amenities.map(a => `
+            <span class="amenity-tag" title="${a}">
+              <span>${getAmenityIcon(a)}</span> <span>${a}</span>
+            </span>
+          `).join('')}
         </div>
 
-        <div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <span style="font-size: 11.5px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">
-              Operating Windows (${this.selectedDate}):
+        <!-- Integrated Operating Windows & Time Slots Grid -->
+        <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 12px 14px;">
+          <!-- Morning Session (08:00 - 11:00 AM) -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: #b45309; display: inline-flex; align-items: center; gap: 5px;">
+              <span>🌅</span> Morning Session (08:00 – 11:00 AM)
             </span>
-            <span style="font-size: 11px; font-weight: 700;">
-              ${hasMyBookings ? `<span style="color: #2563eb;">🔵 ${myBookedHours} hrs Mine</span>` : ''}
-              ${otherBookedHours > 0 ? `<span style="color: #dc2626; margin-left: 6px;">🔴 ${otherBookedHours} Booked</span>` : ''}
-              <span style="color: #15803d; margin-left: 6px;">🟢 ${timeSlots.length - totalBookedHours} Available</span>
-            </span>
+            <span style="font-size: 10.5px; color: var(--text-muted); font-weight: 600;">3 Slots</span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px;">
+            ${morningSlots.map(s => renderSlotBtn(s)).join('')}
           </div>
 
-          <!-- Morning Session: 08:00 - 11:00 AM -->
-          <div style="margin-bottom: 10px; background: rgba(245, 158, 11, 0.04); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 8px; padding: 8px 10px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-              <span style="font-size: 11px; font-weight: 700; color: #b45309; display: inline-flex; align-items: center; gap: 5px;">
-                <span>🌅</span> Morning Session (08:00 AM – 11:00 AM)
-              </span>
-              <span style="font-size: 10.5px; color: var(--text-muted);">3 Hourly Slots</span>
-            </div>
-            <div class="time-slot-picker" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
-              ${morningSlots.map(s => renderSlotBtn(s)).join('')}
-            </div>
+          <!-- Midday Break Divider -->
+          <div style="display: flex; align-items: center; gap: 10px; margin: 10px 0; color: var(--text-muted); font-size: 10.5px; font-weight: 600;">
+            <span style="flex: 1; height: 1px; background: var(--border-subtle);"></span>
+            <span>☕ 11:00 AM – 03:00 PM Break</span>
+            <span style="flex: 1; height: 1px; background: var(--border-subtle);"></span>
           </div>
 
-          <!-- Afternoon Session: 03:00 - 07:00 PM (15:00 - 19:00) -->
-          <div style="background: rgba(99, 102, 241, 0.04); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 8px; padding: 8px 10px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-              <span style="font-size: 11px; font-weight: 700; color: #4338ca; display: inline-flex; align-items: center; gap: 5px;">
-                <span>🌆</span> Afternoon Session (03:00 PM – 07:00 PM)
-              </span>
-              <span style="font-size: 10.5px; color: var(--text-muted);">4 Hourly Slots</span>
-            </div>
-            <div class="time-slot-picker" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;">
-              ${afternoonSlots.map(s => renderSlotBtn(s)).join('')}
-            </div>
+          <!-- Afternoon Session (03:00 - 07:00 PM) -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: #4338ca; display: inline-flex; align-items: center; gap: 5px;">
+              <span>🌆</span> Afternoon Session (03:00 – 07:00 PM)
+            </span>
+            <span style="font-size: 10.5px; color: var(--text-muted); font-weight: 600;">4 Slots</span>
           </div>
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px;">
+            ${afternoonSlots.map(s => renderSlotBtn(s)).join('')}
+          </div>
+        </div>
+
+        <!-- Quick Hint Footer -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 4px; font-size: 11px; color: var(--text-muted);">
+          <span>💡 Click any open green slot to book</span>
+          <span style="font-weight: 600;">
+            ${hasMyBookings ? `<span style="color: #2563eb; font-weight: 700;">🔵 ${myBookedHours}h Mine</span> • ` : ''}
+            <span style="color: #15803d; font-weight: 700;">🟢 ${availableHours} of ${timeSlots.length} Open</span>
+          </span>
         </div>
       </div>
     `;

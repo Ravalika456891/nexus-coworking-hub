@@ -528,23 +528,28 @@
 .room-card {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
+  border-radius: 16px;
   padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 14px;
-  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 18px -4px rgba(0, 0, 0, 0.04);
 }
 
 .room-card:hover {
+  transform: translateY(-2px);
   border-color: var(--border-medium);
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 10px 28px -6px rgba(0, 0, 0, 0.08);
 }
 
 .room-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+  gap: 12px;
 }
 
 .room-amenities-tags {
@@ -555,11 +560,15 @@
 
 .amenity-tag {
   font-size: 11px;
-  background: rgba(255, 255, 255, 0.05);
+  font-weight: 600;
+  background: var(--bg-surface-elevated);
   border: 1px solid var(--border-subtle);
-  padding: 2px 8px;
-  border-radius: var(--radius-sm);
+  padding: 3px 8px;
+  border-radius: 6px;
   color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .time-slot-picker {
@@ -571,9 +580,11 @@
 
 /* Base slot styling */
 .slot-btn {
-  padding: 8px 4px;
+  padding: 8px 6px;
   font-size: 12px;
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
   font-weight: 700;
   border-radius: 8px;
   cursor: pointer;
@@ -582,23 +593,24 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 5px;
   user-select: none;
+  white-space: nowrap;
 }
 
-/* 🟢 Available Timings & Open Rooms: CRISP VIBRANT GREEN */
+/* 🟢 Available Timings & Open Rooms */
 .slot-btn.available,
 .slot-btn:not(.booked) {
-  background: rgba(34, 197, 94, 0.12);
-  border: 1.5px solid rgba(34, 197, 94, 0.45);
+  background: rgba(34, 197, 94, 0.09);
+  border: 1.5px solid rgba(34, 197, 94, 0.35);
   color: #15803d;
 }
 [data-theme="dark"] .slot-btn.available,
 [data-theme="dark"] .slot-btn:not(.booked),
 [data-theme="navy"] .slot-btn.available,
 [data-theme="navy"] .slot-btn:not(.booked) {
-  background: rgba(34, 197, 94, 0.16);
-  border-color: rgba(34, 197, 94, 0.5);
+  background: rgba(34, 197, 94, 0.14);
+  border-color: rgba(34, 197, 94, 0.45);
   color: #4ade80;
 }
 .slot-btn:hover:not(.booked) {
@@ -616,20 +628,20 @@
   box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.4);
 }
 
-/* 🔵 My Booked Rooms & Timings: DISTINCT ROYAL BLUE */
+/* 🔵 My Booked Rooms & Timings */
 .slot-btn.my-booking {
-  background: rgba(37, 99, 235, 0.16) !important;
+  background: rgba(37, 99, 235, 0.12) !important;
   color: #1d4ed8 !important;
-  border: 1.5px solid rgba(37, 99, 235, 0.55) !important;
+  border: 1.5px solid rgba(37, 99, 235, 0.5) !important;
   font-weight: 800;
   cursor: pointer !important;
-  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.12);
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.08);
 }
 [data-theme="dark"] .slot-btn.my-booking,
 [data-theme="navy"] .slot-btn.my-booking {
-  background: rgba(59, 130, 246, 0.24) !important;
+  background: rgba(59, 130, 246, 0.2) !important;
   color: #93c5fd !important;
-  border-color: rgba(59, 130, 246, 0.6) !important;
+  border-color: rgba(59, 130, 246, 0.55) !important;
 }
 .slot-btn.my-booking:hover {
   background: #2563eb !important;
@@ -639,38 +651,36 @@
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
 }
 
-/* 🔴 Already Booked Rooms & Timings: CRISP VIBRANT RED */
+/* 🔴 Already Booked Rooms & Timings (Soft, conflict protected) */
 .slot-btn.booked {
-  background: rgba(239, 68, 68, 0.15) !important;
-  color: #dc2626 !important;
-  border: 1.5px solid rgba(239, 68, 68, 0.5) !important;
+  background: rgba(239, 68, 68, 0.08) !important;
+  color: #b91c1c !important;
+  border: 1.5px solid rgba(239, 68, 68, 0.3) !important;
   cursor: not-allowed !important;
-  font-weight: 700;
+  font-weight: 600;
   position: relative;
+  opacity: 0.82;
 }
 [data-theme="dark"] .slot-btn.booked,
 [data-theme="navy"] .slot-btn.booked {
-  background: rgba(239, 68, 68, 0.22) !important;
+  background: rgba(239, 68, 68, 0.14) !important;
   color: #f87171 !important;
-  border-color: rgba(239, 68, 68, 0.55) !important;
+  border-color: rgba(239, 68, 68, 0.35) !important;
 }
 .slot-btn.booked:hover {
-  background: rgba(239, 68, 68, 0.25) !important;
+  background: rgba(239, 68, 68, 0.15) !important;
   border-color: #ef4444 !important;
 }
 
 /* Room Cards: Status Highlights */
 .room-card.status-available {
-  border-color: rgba(34, 197, 94, 0.4);
-  box-shadow: 0 4px 16px -4px rgba(34, 197, 94, 0.1);
+  border-color: rgba(34, 197, 94, 0.3);
 }
 .room-card.status-booked {
-  border-color: rgba(239, 68, 68, 0.4);
-  box-shadow: 0 4px 16px -4px rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.25);
 }
 .room-card.status-fully-booked {
-  border: 2px solid #ef4444;
-  box-shadow: 0 6px 20px -4px rgba(239, 68, 68, 0.22);
+  border: 1.5px solid rgba(239, 68, 68, 0.45);
 }
 
 .my-booking-card {
