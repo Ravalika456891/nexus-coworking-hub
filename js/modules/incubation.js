@@ -214,114 +214,134 @@ const IncubationModule = {
     const stageObj = stages.find(st => st.id.toLowerCase() === (s.incubationJourneyStage || 'milestones').toLowerCase()) || stages[6];
     const mentor = window.store.getMentors().find(m => m.id === s.mentorId) || { name: s.mentorName || 'John Smith', avatarEmoji: '👨‍💼', role: 'Head of Incubation' };
     const curIdx = stages.findIndex(st => st.id.toLowerCase() === (s.incubationJourneyStage || 'milestones').toLowerCase());
+    const stageColor = stageObj.color || 'var(--accent-primary)';
+
+    const statusBadgeClass = s.status === 'Completed' ? 'badge-success' 
+      : s.status === 'Incubated' ? 'badge-primary' 
+      : s.status === 'Approved' ? 'badge-info' 
+      : 'badge-warning';
 
     return `
-      <div class="startup-dashboard-card ${isFeatured ? 'featured-card' : ''}" id="card-${s.id}">
+      <div class="startup-dashboard-card ${isFeatured ? 'featured-card' : ''}" id="card-${s.id}" style="overflow: hidden; position: relative;">
+        <!-- Stage Color Top Accent Stripe -->
+        <div style="position: absolute; top: 0; left: 0; right: 0; height: 3.5px; background: ${stageColor};"></div>
+
         <!-- Card Header with Startup identity -->
-        <div class="dash-card-header">
-          <div class="dash-startup-brand">
-            <div class="dash-startup-avatar">${s.logoEmoji || '🚀'}</div>
-            <div>
-              <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--accent-primary); letter-spacing: 0.5px;">Startup Dashboard</div>
-              <h3 class="dash-startup-title">Startup: ${s.name}</h3>
-              <div class="dash-startup-sector">${s.category || s.sector} • <span style="font-weight: 600; color: var(--text-secondary);">${s.cohort || 'Cohort 2026-A'}</span></div>
+        <div class="dash-card-header" style="margin-top: 2px;">
+          <div class="dash-startup-brand" style="min-width: 0;">
+            <div class="dash-startup-avatar" style="border: 1.5px solid ${stageColor}33; background: linear-gradient(135deg, ${stageColor}15, var(--bg-surface-elevated)); box-shadow: 0 4px 12px ${stageColor}18; flex-shrink: 0;">
+              ${s.logoEmoji || '🚀'}
+            </div>
+            <div style="min-width: 0;">
+              <h3 class="dash-startup-title" style="font-size: 16px; font-weight: 800; color: var(--text-primary); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${s.name}">
+                ${s.name}
+              </h3>
+              <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px; flex-wrap: wrap;">
+                <span class="badge badge-subtle" style="font-size: 11px; padding: 2px 7px; font-weight: 600; white-space: nowrap;">
+                  ${s.category || s.sector || 'DeepTech'}
+                </span>
+                <span class="badge" style="background: rgba(11, 8, 38, 0.04); border: 1px solid var(--border-subtle); color: var(--text-secondary); font-size: 10.5px; padding: 2px 7px; font-weight: 600; white-space: nowrap;">
+                  ${s.cohort || 'Cohort 2026-A'}
+                </span>
+              </div>
             </div>
           </div>
 
-          <div style="text-align: right;">
-            <span class="badge ${s.status === 'Completed' ? 'badge-success' : 'badge-info'}" style="font-size: 11px;">
-              ${s.status}
+          <div style="text-align: right; flex-shrink: 0;">
+            <span class="badge ${statusBadgeClass}" style="font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px;">
+              ● ${s.status || 'Active'}
             </span>
           </div>
         </div>
 
-        <!-- Dedicated Requirements Block: Incubation Period, Current Stage, Progress, Mentor, Next Milestone -->
-        <div class="dash-detail-section">
-          <!-- 1. Incubation Period -->
-          <div class="dash-detail-row">
-            <span class="dash-label">
-              <span>📅</span> Incubation Period
-            </span>
-            <span class="dash-val" style="font-family: var(--font-mono); font-size: 12px; color: var(--accent-secondary);">
-              ${s.incubationPeriod || '01 Jan 2026 → 31 Dec 2026'}
-            </span>
-          </div>
-
-          <!-- 2. Current Stage -->
-          <div class="dash-detail-row">
-            <span class="dash-label">
-              <span>🧭</span> Current Stage
-            </span>
-            <span class="dash-val" style="display: flex; align-items: center; gap: 6px;">
-              <span class="badge" style="background: rgba(99, 102, 241, 0.15); color: var(--accent-primary); border: 1px solid rgba(99, 102, 241, 0.3); font-size: 11.5px;">
-                ${s.currentStage || s.stage || 'MVP Development'}
+        <!-- Current Stage & Progress Bento Section -->
+        <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 12px 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div style="display: inline-flex; align-items: center; gap: 6px;">
+              <span class="badge" style="background: ${stageColor}18; color: ${stageColor}; border: 1px solid ${stageColor}44; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px;">
+                ${stageObj.icon} ${s.currentStage || stageObj.name}
               </span>
+              <span style="font-size: 11px; color: var(--text-muted); font-weight: 600;">
+                Stage ${stageObj.stageNumber} of 8
+              </span>
+            </div>
+            <span style="font-family: var(--font-mono); font-size: 12px; font-weight: 800; color: ${stageColor};">
+              ${s.progressPercent}%
             </span>
           </div>
 
-          <!-- 3. Progress (Strict ASCII blocks requirement: ████████████░░ 80%) -->
-          <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 2px;">
-            <div style="display: flex; justify-content: space-between; font-size: 12.5px;">
-              <span class="dash-label"><span>📈</span> Progress</span>
-              <span style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Stage ${stageObj.stageNumber} of 8 (${stageObj.name})</span>
-            </div>
+          <!-- Sleek Glowing Progress Bar -->
+          <div style="height: 6px; background: rgba(0, 0, 0, 0.06); border-radius: 999px; overflow: hidden; position: relative;">
+            <div style="width: ${s.progressPercent}%; height: 100%; border-radius: 999px; background: linear-gradient(90deg, ${stageColor}, #38bdf8); box-shadow: 0 0 10px ${stageColor}88; transition: width 0.4s ease;"></div>
+          </div>
 
-            <!-- ASCII Terminal Display Box -->
-            <div class="ascii-progress-box" title="Progress Bar string">
-              <span class="ascii-code-str">${asciiBar}</span>
-              <span style="font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">VERIFIED</span>
-            </div>
+          <!-- ASCII Verification Badge -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 10.5px; color: var(--text-muted);">
+            <span style="font-family: var(--font-mono); letter-spacing: 0.5px; color: var(--text-secondary);">${asciiBar}</span>
+            <span style="font-weight: 700; color: #059669; font-size: 9.5px; letter-spacing: 0.5px;">✓ VERIFIED</span>
+          </div>
+        </div>
 
-            <!-- Graphical gradient bar -->
-            <div class="progress-track" style="height: 6px; margin-top: 2px;">
-              <div class="progress-fill" style="width: ${s.progressPercent}%; background: ${s.progressPercent === 100 ? 'var(--status-success)' : 'var(--accent-gradient)'};"></div>
+        <!-- 2x2 Clean Micro-Metrics Grid -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <!-- Incubation Timeline -->
+          <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 9px 12px;">
+            <div style="font-size: 10.5px; text-transform: uppercase; font-weight: 700; color: var(--text-muted); display: flex; align-items: center; gap: 5px;">
+              <span>📅</span> Timeline
+            </div>
+            <div style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--text-primary); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${s.incubationPeriod || '01 Jan 2026 → 31 Dec 2026'}">
+              ${s.incubationPeriod || '01 Jan 2026 → 31 Dec 2026'}
             </div>
           </div>
 
-          <!-- 4. Mentor -->
-          <div class="dash-detail-row" style="padding-top: 4px; border-top: 1px solid var(--border-subtle);">
-            <span class="dash-label">
+          <!-- Assigned Mentor -->
+          <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 9px 12px;">
+            <div style="font-size: 10.5px; text-transform: uppercase; font-weight: 700; color: var(--text-muted); display: flex; align-items: center; gap: 5px;">
               <span>👨‍💼</span> Mentor
-            </span>
-            <span class="dash-val" style="display: flex; align-items: center; gap: 6px;">
-              <span style="font-size: 14px;">${mentor.avatarEmoji || '👨‍💼'}</span>
-              <span style="font-weight: 700; color: var(--text-primary);">${mentor.name}</span>
-            </span>
+            </div>
+            <div style="font-size: 11.5px; font-weight: 700; color: var(--text-primary); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${mentor.name}">
+              ${mentor.avatarEmoji || '👨‍💼'} ${mentor.name}
+            </div>
           </div>
 
-          <!-- 5. Next Milestone -->
-          <div class="dash-detail-row">
-            <span class="dash-label">
-              <span>🎯</span> Next Milestone
-            </span>
-            <span class="dash-val" style="color: var(--status-success); font-weight: 700;">
-              ${s.nextMilestone || 'Product Launch'}
+          <!-- Next Milestone (Spanning 2 cols) -->
+          <div style="grid-column: span 2; background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 9px 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+            <div style="min-width: 0;">
+              <div style="font-size: 10.5px; text-transform: uppercase; font-weight: 700; color: var(--text-muted); display: flex; align-items: center; gap: 5px;">
+                <span>🎯</span> Next Milestone
+              </div>
+              <div style="font-size: 12px; font-weight: 700; color: #16a34a; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${s.nextMilestone || 'Product Launch'}">
+                ${s.nextMilestone || 'Product Launch'}
+              </div>
+            </div>
+            <span class="badge badge-subtle" style="font-size: 10.5px; font-family: var(--font-mono); padding: 3px 8px; flex-shrink: 0; white-space: nowrap;">
+              Target: ${s.nextMilestoneDate || 'Q4 2026'}
             </span>
           </div>
         </div>
 
-        <!-- 8-Step Mini Journey Stepper Bar -->
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 2px;">
+        <!-- 8-Stage Micro Journey Stepper -->
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 4px 2px 2px 2px;">
           <div class="micro-journey-stepper" title="Journey: Startup → Application → Evaluation → Selection → Incubation → Mentorship → Milestones → Graduation">
             ${stages.map((st, idx) => {
-      const isDone = idx < curIdx || s.progressPercent === 100;
-      const isCur = idx === curIdx && s.progressPercent < 100;
-      return `<div class="micro-step-dot ${isDone ? 'done' : isCur ? 'current' : ''}" title="${st.name}"></div>`;
-    }).join('')}
+              const isDone = idx < curIdx || s.progressPercent === 100;
+              const isCur = idx === curIdx && s.progressPercent < 100;
+              return `<div class="micro-step-dot ${isDone ? 'done' : isCur ? 'current' : ''}" title="${st.name} (Stage ${st.stageNumber})" style="${isCur ? `box-shadow: 0 0 8px ${stageColor}; background: ${stageColor};` : isDone ? `background: ${st.color};` : ''}"></div>`;
+            }).join('')}
           </div>
-          <span style="font-size: 11px; color: var(--text-muted);">Target: ${s.nextMilestoneDate || 'Q4 2026'}</span>
+          <span style="font-size: 11px; font-weight: 600; color: var(--text-muted); white-space: nowrap;">Stage ${curIdx + 1} of 8 Active</span>
         </div>
 
         <!-- Card Action Buttons -->
-        <div class="dash-actions-row">
-          <button class="btn btn-outline btn-sm" style="flex: 1; font-size: 11px; padding: 6px 8px;" onclick="IncubationModule.openUpdateProgressModal('${s.id}')">
-            ✏️ Update Progress
+        <div class="dash-actions-row" style="display: flex; gap: 8px; align-items: center; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--border-subtle);">
+          <button class="btn btn-outline btn-sm" style="flex: 1; font-size: 11px; padding: 6px 10px; white-space: nowrap;" onclick="IncubationModule.openUpdateProgressModal('${s.id}')">
+            ✏️ Progress
           </button>
-          <button class="btn btn-outline btn-sm" style="flex: 1; font-size: 11px; padding: 6px 8px;" onclick="IncubationModule.advanceStageQuick('${s.id}')" title="Advance to next incubation journey stage">
-            ⚡ Advance Stage
+          <button class="btn btn-outline btn-sm" style="flex: 1; font-size: 11px; padding: 6px 10px; white-space: nowrap;" onclick="IncubationModule.advanceStageQuick('${s.id}')" title="Advance to next incubation journey stage">
+            ⚡ Advance
           </button>
-          <button class="btn btn-primary btn-sm" style="flex: 1.2; font-size: 11px; padding: 6px 8px;" onclick="IncubationModule.viewStartupJourneyModal('${s.id}')">
-            🚀 Full Journey
+          <button class="btn btn-primary btn-sm" style="flex: 1.2; font-size: 11.5px; padding: 6px 12px; font-weight: 700; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 4px;" onclick="IncubationModule.viewStartupJourneyModal('${s.id}')">
+            <span>Full Journey</span> <span>→</span>
           </button>
         </div>
       </div>
