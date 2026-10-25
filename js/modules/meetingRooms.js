@@ -792,6 +792,7 @@ const MeetingRoomsModule = {
     const availableHours = timeSlots.length - totalBookedHours;
 
     const formatSlot12h = (slot24) => {
+      if (!slot24) return '';
       const [h, m] = slot24.split(':').map(Number);
       const period = h >= 12 ? 'PM' : 'AM';
       const displayH = h % 12 || 12;
@@ -812,55 +813,105 @@ const MeetingRoomsModule = {
       return '✦';
     };
 
-    // Calculate current live status & headline text (like Condeco "Available until 10:30 today")
+    // Calculate intelligent real-time operating availability
     const now = new Date();
     const pad = n => (n < 10 ? '0' : '') + n;
     const liveTimeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
     const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
     const isToday = (this.selectedDate === todayStr);
 
+    const curHour = now.getHours();
+    const curMin = now.getMinutes();
+    const curTotalMin = curHour * 60 + curMin;
+
     let activeBookingNow = null;
     if (isToday) {
       activeBookingNow = bookings.find(b => b.startTime <= liveTimeStr && b.endTime > liveTimeStr);
     }
 
-    let statusType = 'available'; // 'available' | 'occupied' | 'mine'
+    let statusType = 'available'; // 'available' | 'occupied' | 'mine' | 'break' | 'closed'
+    let statusPillText = 'Available';
     let headlineText = '';
     let nextMeetingText = '';
 
-    if (activeBookingNow) {
-      const isMine = activeBookingNow.startupId === myStartup.id || (activeBookingNow.startupName && activeBookingNow.startupName.toLowerCase() === myStartup.name.toLowerCase());
-      statusType = isMine ? 'mine' : 'occupied';
-      headlineText = isMine 
-        ? `Reserved by Your Team until ${formatSlot12h(activeBookingNow.endTime)}` 
-        : `Occupied until ${formatSlot12h(activeBookingNow.endTime)} - ${activeBookingNow.title}`;
-      
-      const afterList = bookings.filter(b => b.startTime >= activeBookingNow.endTime);
-      if (afterList.length > 0) {
-        nextMeetingText = `${afterList[0].title} - ${formatSlot12h(afterList[0].startTime)} - ${formatSlot12h(afterList[0].endTime)}`;
+    if (isToday) {
+      if (curTotalMin >= 19 * 60) {
+        // After 07:00 PM: Hub is closed for the day
+        statusType = 'closed';
+        statusPillText = 'Closed for Today';
+        headlineText = 'Operating Closed • Opens Tomorrow at 08:00 AM';
+        nextMeetingText = 'Operating Windows: Morning (08:00–11:00 AM) & Afternoon (03:00–07:00 PM)';
+      } else if (curTotalMin < 8 * 60) {
+        // Before 08:00 AM
+        statusType = 'available';
+        statusPillText = 'Opens at 08:00 AM';
+        const firstB = bookings[0];
+        headlineText = firstB ? `Opens at 08:00 AM • First session at ${formatSlot12h(firstB.startTime)}` : 'Opens at 08:00 AM • All slots available';
+        nextMeetingText = firstB ? `${firstB.title} (${firstB.startupName}) - ${formatSlot12h(firstB.startTime)}` : 'No morning reservations scheduled yet';
+      } else if (curTotalMin >= 11 * 60 && curTotalMin < 15 * 60) {
+        // Midday break (11:00 AM - 03:00 PM)
+        statusType = 'break';
+        statusPillText = 'Midday Break';
+        headlineText = 'Midday Break (11:00 AM – 03:00 PM)';
+        const afternoonBookings = bookings.filter(b => parseInt(b.startTime.split(':')[0], 10) >= 15);
+        if (afternoonBookings.length > 0) {
+          nextMeetingText = `Afternoon session opens 03:00 PM • Next: ${afternoonBookings[0].title} (${formatSlot12h(afternoonBookings[0].startTime)})`;
+        } else {
+          nextMeetingText = 'Afternoon session opens 03:00 PM • All afternoon slots open';
+        }
+      } else if (activeBookingNow) {
+        const isMine = activeBookingNow.startupId === myStartup.id || (activeBookingNow.startupName && activeBookingNow.startupName.toLowerCase() === myStartup.name.toLowerCase());
+        statusType = isMine ? 'mine' : 'occupied';
+        statusPillText = isMine ? 'Reserved by You' : 'In Session';
+        headlineText = isMine 
+          ? `Reserved by Your Team until ${formatSlot12h(activeBookingNow.endTime)}` 
+          : `Occupied until ${formatSlot12h(activeBookingNow.endTime)} — ${activeBookingNow.title}`;
+        
+        const afterList = bookings.filter(b => b.startTime >= activeBookingNow.endTime);
+        if (afterList.length > 0) {
+          nextMeetingText = `Next: ${afterList[0].title} (${formatSlot12h(afterList[0].startTime)} – ${formatSlot12h(afterList[0].endTime)})`;
+        } else {
+          nextMeetingText = 'No further reservations scheduled for this operating window';
+        }
       } else {
-        nextMeetingText = 'No further meetings scheduled today';
+        // Room is currently available during operating hours
+        const upcoming = bookings.filter(b => b.startTime > liveTimeStr);
+        if (upcoming.length > 0) {
+          const nextB = upcoming[0];
+          statusType = 'available';
+          statusPillText = 'Available Now';
+          headlineText = `Available until ${formatSlot12h(nextB.startTime)} today`;
+          nextMeetingText = `Next: ${nextB.title} (${formatSlot12h(nextB.startTime)} – ${formatSlot12h(nextB.endTime)})`;
+        } else {
+          statusType = 'available';
+          statusPillText = 'Available Now';
+          const sessionEnd = curTotalMin < 11 * 60 ? '11:00 AM' : '07:00 PM';
+          headlineText = `Available for immediate use until ${sessionEnd}`;
+          nextMeetingText = 'No further bookings today • Walk-in collaboration open';
+        }
       }
     } else {
-      const upcoming = bookings.filter(b => isToday ? b.startTime > liveTimeStr : true);
-      const nextB = upcoming[0] || (bookings.length > 0 ? bookings[0] : null);
-
+      // Future or past date selected
       if (isFullyBooked) {
         statusType = 'occupied';
-        headlineText = 'Fully Booked for Today';
-        nextMeetingText = bookings[0] ? `${bookings[0].title} - ${formatSlot12h(bookings[0].startTime)} - ${formatSlot12h(bookings[0].endTime)}` : 'Full capacity';
-      } else if (nextB) {
+        statusPillText = 'Fully Booked';
+        headlineText = `Fully Booked for ${this.selectedDate}`;
+        nextMeetingText = bookings[0] ? `${bookings[0].title} (${formatSlot12h(bookings[0].startTime)})` : 'Full capacity';
+      } else if (bookings.length > 0) {
         statusType = hasMyBookings ? 'mine' : 'available';
-        headlineText = `Available until ${nextB.startTime} today`;
-        nextMeetingText = `${nextB.title} - ${formatSlot12h(nextB.startTime)} - ${formatSlot12h(nextB.endTime)}`;
+        statusPillText = `${availableHours} Slots Open`;
+        const firstB = bookings[0];
+        headlineText = `${availableHours} Open Slots on ${this.selectedDate}`;
+        nextMeetingText = `First session: ${firstB.title} (${formatSlot12h(firstB.startTime)} – ${formatSlot12h(firstB.endTime)})`;
       } else {
         statusType = 'available';
-        headlineText = 'Available until 07:00 PM today';
-        nextMeetingText = 'None scheduled • Open for immediate reservation';
+        statusPillText = 'All Slots Open';
+        headlineText = `All 7 Operating Slots Open on ${this.selectedDate}`;
+        nextMeetingText = 'No reservations recorded • Free to book morning or afternoon';
       }
     }
 
-    // Formatted date string e.g. "Monday, 26 October"
+    // Formatted date string e.g. "Sunday, 25 October"
     const dParts = this.selectedDate.split('-').map(Number);
     const dObj = new Date(dParts[0], dParts[1] - 1, dParts[2]);
     const dayName = dObj.toLocaleDateString('en-US', { weekday: 'long' });
@@ -871,11 +922,10 @@ const MeetingRoomsModule = {
     // Selected slots for inline lock-in
     const selectedSlots = (this.selectedSlotsByRoom && this.selectedSlotsByRoom[room.id]) || [];
 
-    // Render Timeline ribbon blocks for active session
+    // Render Timeline ribbon blocks for active session (Merging multi-hour consecutive bookings)
     let timelineBlocksHtml = '';
-    const processedBookings = new Set();
-
-    for (let i = 0; i < sessionSlots.length; i++) {
+    let i = 0;
+    while (i < sessionSlots.length) {
       const slot = sessionSlots[i];
       const curHour = parseInt(slot.split(':')[0], 10);
       const booked = bookings.find(b => {
@@ -885,40 +935,60 @@ const MeetingRoomsModule = {
       });
 
       if (booked) {
-        if (!processedBookings.has(booked.id)) {
-          processedBookings.add(booked.id);
-          const bHour = parseInt(booked.startTime.split(':')[0], 10);
-          const eHour = parseInt(booked.endTime.split(':')[0], 10);
-          const sessStart = parseInt(sessionSlots[0].split(':')[0], 10);
-          const sessEnd = parseInt(sessionSlots[sessionSlots.length - 1].split(':')[0], 10) + 1;
-          const clampedStart = Math.max(bHour, sessStart);
-          const clampedEnd = Math.min(eHour, sessEnd);
-          const span = Math.max(1, clampedEnd - clampedStart);
-
-          const isMine = booked.startupId === myStartup.id || (booked.startupName && booked.startupName.toLowerCase() === myStartup.name.toLowerCase());
-
-          timelineBlocksHtml += `
-            <div class="condeco-slot-item ${isMine ? 'mine' : 'booked'}" 
-                 style="flex: ${span};"
-                 onclick="${isMine ? `MeetingRoomsModule.openPassModal('${room.id}', '${booked.id}')` : `App.showToast('Reserved by ${booked.startupName}: ${booked.title} (${booked.startTime} - ${booked.endTime})', 'warning')`}"
-                 title="${booked.title} • ${booked.startTime} - ${booked.endTime} (${booked.startupName})">
-              <span>${booked.startTime}</span>
-              <span class="condeco-slot-line"></span>
-              ${isMine ? `<span style="font-size: 9.5px; background: rgba(255,255,255,0.25); padding: 1px 6px; border-radius: 4px; white-space: nowrap; font-weight: 800;">🎟️ Mine</span><span class="condeco-slot-line"></span>` : ''}
-              <span>${booked.endTime}</span>
-            </div>
-          `;
+        const isMine = booked.startupId === myStartup.id || (booked.startupName && booked.startupName.toLowerCase() === myStartup.name.toLowerCase());
+        
+        // Count consecutive hours booked by the same startup to merge into one continuous span
+        let span = 1;
+        while (i + span < sessionSlots.length) {
+          const nextSlot = sessionSlots[i + span];
+          const nextCurH = parseInt(nextSlot.split(':')[0], 10);
+          const nextBooked = bookings.find(b => {
+            const bH = parseInt(b.startTime.split(':')[0], 10);
+            const eH = parseInt(b.endTime.split(':')[0], 10);
+            return nextCurH >= bH && nextCurH < eH;
+          });
+          if (nextBooked && (nextBooked.id === booked.id || nextBooked.startupId === booked.startupId)) {
+            span++;
+          } else {
+            break;
+          }
         }
+
+        const spanStartH = curHour;
+        const spanEndH = curHour + span;
+        const startStr = `${spanStartH < 10 ? '0' : ''}${spanStartH}:00`;
+        const endStr = `${spanEndH < 10 ? '0' : ''}${spanEndH}:00`;
+
+        const durationText = span > 1 ? `${span} hrs` : '1 hr';
+        const labelCenter = isMine 
+          ? `<span style="font-size: 10px; background: rgba(255,255,255,0.22); padding: 2px 7px; border-radius: 4px; white-space: nowrap; font-weight: 800;">🎟️ Mine (${durationText})</span>`
+          : `<span style="font-size: 10px; background: rgba(0,0,0,0.25); padding: 2px 7px; border-radius: 4px; white-space: nowrap; font-weight: 700;">${booked.startupName || 'Reserved'} (${durationText})</span>`;
+
+        timelineBlocksHtml += `
+          <div class="exec-slot-item ${isMine ? 'mine' : 'booked'}" 
+               style="flex: ${span};"
+               onclick="${isMine ? `MeetingRoomsModule.openPassModal('${room.id}', '${booked.id}')` : `App.showToast('Reserved by ${booked.startupName}: ${booked.title} (${startStr} - ${endStr})', 'warning')`}"
+               title="${booked.title} • ${startStr} - ${endStr} (${booked.startupName})">
+            <span>${startStr}</span>
+            <span class="exec-slot-line"></span>
+            ${labelCenter}
+            <span class="exec-slot-line"></span>
+            <span>${endStr}</span>
+          </div>
+        `;
+
+        i += span;
       } else {
         const isSelected = selectedSlots.includes(slot);
         timelineBlocksHtml += `
-          <div class="condeco-slot-item available ${isSelected ? 'selected' : ''}" 
+          <div class="exec-slot-item available ${isSelected ? 'selected' : ''}" 
                style="flex: 1;"
                onclick="MeetingRoomsModule.toggleSlotSelection('${room.id}', '${slot}')"
                title="${isSelected ? '✓ Selected: Click to unselect' : '🟢 Click to select and lock in ' + formatSlot12h(slot)}">
             ${isSelected ? `<span>✓ ${slot}</span>` : `<span>${slot}</span>`}
           </div>
         `;
+        i++;
       }
     }
 
@@ -965,89 +1035,76 @@ const MeetingRoomsModule = {
     }
 
     return `
-      <div class="condeco-tablet-card" id="condeco-card-${room.id}">
-        <!-- Inner Tablet Screen (High fidelity Condeco charcoal display) -->
-        <div class="condeco-screen">
-          <!-- Top Row: Room Header + Live Clock & Company Brand -->
-          <div class="condeco-screen-header">
-            <div class="condeco-room-title-wrap">
-              <div class="condeco-status-accent-bar ${statusType}"></div>
-              <div>
-                <h3 class="condeco-room-name">${room.name}</h3>
-                <div style="font-size: 11px; color: #94a3b8; margin-top: 2px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                  <span>👥 ${room.capacity} Pax</span>
-                  <span>•</span>
-                  <span>₹${room.hourlyRate}/hr</span>
-                  <span>•</span>
-                  <span style="color: ${statusType === 'available' ? '#4ade80' : (statusType === 'mine' ? '#60a5fa' : '#f87171')}; font-weight: 700;">
-                    ${availableHours} Slots Open
-                  </span>
-                </div>
+      <div class="exec-room-card" id="exec-card-${room.id}">
+        <!-- Top Row: Room Header + Live Clock & Company Brand -->
+        <div class="exec-header-row">
+          <div class="exec-title-group">
+            <div class="exec-status-indicator ${statusType}"></div>
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <h3 class="exec-room-title">${room.name}</h3>
+                <span class="exec-status-pill ${statusType}">● ${statusPillText}</span>
               </div>
-            </div>
-
-            <div class="condeco-brand-clock-wrap">
-              <div class="condeco-live-clock">${liveTimeStr}</div>
-              <div class="condeco-company-logo">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>
-                <span>NEXUS</span>
+              <div class="exec-meta-row">
+                <span class="exec-pill-badge">👥 ${room.capacity} Pax Capacity</span>
+                <span class="exec-pill-badge">₹${room.hourlyRate}/hr</span>
+                <span style="font-size: 11px; color: ${statusType === 'available' ? '#4ade80' : '#cbd5e1'}; font-weight: 700;">
+                  ${availableHours} of ${timeSlots.length} Slots Open
+                </span>
               </div>
             </div>
           </div>
 
-          <!-- Big Headline Availability Status (Directly matches Condeco Display) -->
-          <div>
-            <div class="condeco-headline-text">${headlineText}</div>
-          </div>
-
-          <!-- Next Meeting Section -->
-          <div class="condeco-next-meeting-block">
-            <div class="condeco-next-label">Next meeting</div>
-            <div class="condeco-next-details">
-              <span>${nextMeetingText}</span>
+          <div class="exec-brand-clock">
+            <div class="exec-digital-clock">${liveTimeStr}</div>
+            <div class="exec-brand-badge">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>
+              <span>NEXUS</span>
             </div>
-          </div>
-
-          <!-- Connected Continuous Timeline Bar -->
-          <div class="condeco-timeline-wrap">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-              <span style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">
-                ${activeSession === 'morning' ? '🌅 Morning Window (08:00 – 11:00 AM)' : '🌆 Afternoon Window (03:00 – 07:00 PM)'}
-              </span>
-              <div style="display: flex; gap: 4px;">
-                <button type="button" class="btn btn-sm ${activeSession === 'morning' ? 'btn-primary' : 'btn-outline'}" 
-                        onclick="MeetingRoomsModule.switchRoomWindow('${room.id}', 'morning')" 
-                        style="font-size: 10px; padding: 2px 8px; border-radius: 4px; height: 22px; font-weight: 700;">
-                  08:00–11:00 AM
-                </button>
-                <button type="button" class="btn btn-sm ${activeSession === 'afternoon' ? 'btn-primary' : 'btn-outline'}" 
-                        onclick="MeetingRoomsModule.switchRoomWindow('${room.id}', 'afternoon')" 
-                        style="font-size: 10px; padding: 2px 8px; border-radius: 4px; height: 22px; font-weight: 700;">
-                  03:00–07:00 PM
-                </button>
-              </div>
-            </div>
-
-            <!-- Connected Continuous Ribbon -->
-            <div class="condeco-timeline-bar">
-              <div class="condeco-nav-arrow" onclick="MeetingRoomsModule.switchRoomWindow('${room.id}', 'morning')" title="Morning session">‹</div>
-              ${timelineBlocksHtml}
-              <div class="condeco-nav-arrow" onclick="MeetingRoomsModule.switchRoomWindow('${room.id}', 'afternoon')" title="Afternoon session">›</div>
-            </div>
-
-            <!-- Date Indicator below Timeline -->
-            <div class="condeco-date-row" onclick="MeetingRoomsModule.cycleDate(1)" title="Click to cycle to next day">
-              <span>${formattedDateStr}</span>
-              <span style="font-size: 14px;">›</span>
-            </div>
-
-            <!-- Inline Lock-In Strip (Slides down when slot selected) -->
-            ${lockInBarHtml}
           </div>
         </div>
 
+        <!-- Big Headline Availability Status -->
+        <div>
+          <div class="exec-headline">${headlineText}</div>
+          <div class="exec-next-meeting">
+            <span style="color: #64748b; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">Schedule</span>
+            <span style="color: #cbd5e1; font-size: 13px; font-weight: 600;">${nextMeetingText}</span>
+          </div>
+        </div>
+
+        <!-- Clean Glassmorphic Session Tabs (No duplicate text) -->
+        <div class="exec-session-tabs">
+          <button type="button" class="exec-tab-btn ${activeSession === 'morning' ? 'active' : ''}" 
+                  onclick="MeetingRoomsModule.switchRoomWindow('${room.id}', 'morning')">
+            <span>🌅</span> <span>Morning Window (08:00 – 11:00 AM)</span>
+          </button>
+          <button type="button" class="exec-tab-btn ${activeSession === 'afternoon' ? 'active' : ''}" 
+                  onclick="MeetingRoomsModule.switchRoomWindow('${room.id}', 'afternoon')">
+            <span>🌆</span> <span>Afternoon Window (03:00 – 07:00 PM)</span>
+          </button>
+        </div>
+
+        <!-- Unified Continuous Timeline Ribbon (No repeated hours) -->
+        <div class="exec-timeline-wrap">
+          <div class="exec-timeline-bar">
+            <div class="exec-nav-arrow" onclick="MeetingRoomsModule.switchRoomWindow('${room.id}', 'morning')" title="Morning session (08:00 - 11:00 AM)">‹</div>
+            ${timelineBlocksHtml}
+            <div class="exec-nav-arrow" onclick="MeetingRoomsModule.switchRoomWindow('${room.id}', 'afternoon')" title="Afternoon session (03:00 - 07:00 PM)">›</div>
+          </div>
+
+          <!-- Date Indicator below Timeline -->
+          <div class="exec-date-row" onclick="MeetingRoomsModule.cycleDate(1)" title="Click to cycle to next day">
+            <span>${formattedDateStr}</span>
+            <span style="font-size: 13px;">›</span>
+          </div>
+
+          <!-- Inline Lock-In Strip (Slides down when slot selected) -->
+          ${lockInBarHtml}
+        </div>
+
         <!-- Amenities Chips & Quick Actions Footer -->
-        <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 0 4px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding-top: 4px; border-top: 1px solid rgba(255, 255, 255, 0.06);">
           <div style="display: flex; flex-wrap: wrap; gap: 5px;">
             ${room.amenities.map(a => `
               <span class="amenity-tag" style="background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1); color: #cbd5e1; font-size: 10.5px; padding: 2px 7px;">
@@ -1057,24 +1114,17 @@ const MeetingRoomsModule = {
           </div>
 
           <div style="display: flex; gap: 6px; align-items: center;">
-            <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openKioskModal('${room.id}')" style="font-size: 11px; padding: 4px 10px; border-radius: 6px; color: #cbd5e1; border-color: rgba(255,255,255,0.22); background: rgba(255,255,255,0.05);" title="View 1:1 Wall-Mounted Tablet Kiosk">
-              <span>📱</span> Door Display
+            <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openKioskModal('${room.id}')" style="font-size: 11px; padding: 5px 11px; border-radius: 6px; color: #cbd5e1; border-color: rgba(255,255,255,0.22); background: rgba(255,255,255,0.05);" title="View 1:1 Wall-Mounted Tablet Kiosk">
+              <span>📱</span> Door Tablet
             </button>
-            <button class="btn btn-primary btn-sm" onclick="MeetingRoomsModule.openBookModal('${room.id}', null, '${myStartup.id}')" style="font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 6px;">
+            <button class="btn btn-primary btn-sm" onclick="MeetingRoomsModule.openBookModal('${room.id}', null, '${myStartup.id}')" style="font-size: 11px; font-weight: 700; padding: 5px 13px; border-radius: 6px;">
               <span>+</span> Custom Book
             </button>
           </div>
         </div>
 
-        <!-- Physical Bezel Elements: Embossed Branding, Sensor Dot, and Glowing LED Light Bar -->
-        <div class="condeco-bezel-bottom">
-          <div class="condeco-bezel-logo-row">
-            <span>CONDECO</span>
-            <span class="condeco-sensor-dot"></span>
-            <span>NEXUS DISPLAY</span>
-          </div>
-          <div class="condeco-led-light-bar ${statusType}" title="Room status: ${statusType.toUpperCase()}"></div>
-        </div>
+        <!-- Bottom Embedded Glowing LED Strip -->
+        <div class="exec-bottom-led ${statusType}" title="Room status: ${statusPillText}"></div>
       </div>
     `;
   },

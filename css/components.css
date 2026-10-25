@@ -712,176 +712,246 @@
 }
 
 /* ==========================================================================
-   CONDECO SMART MEETING ROOM TABLET DISPLAY
-   Hardware-inspired wall tablet UI with LED indicator bar & continuous timeline
+/* ==========================================================================
+   EXECUTIVE SLATE & GLASSMORPISM MEETING ROOM SUITE
+   Ultra-luxurious, modern boardroom management card with continuous ribbon
    ========================================================================== */
-.condeco-tablet-card {
-  background: linear-gradient(145deg, #182026 0%, #101519 100%);
+.exec-room-card {
+  background: linear-gradient(150deg, #17212b 0%, #0d1319 100%);
   border: 1.5px solid rgba(255, 255, 255, 0.09);
-  border-radius: 22px;
-  padding: 16px 18px 20px 18px;
-  box-shadow: 0 20px 45px -8px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  padding: 22px 24px;
+  box-shadow: 0 16px 38px -8px rgba(0, 0, 0, 0.42), inset 0 1px 1px rgba(255, 255, 255, 0.1);
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
   position: relative;
   transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
   color: #ffffff;
+  overflow: hidden;
 }
 
-.condeco-tablet-card:hover {
+.exec-room-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 26px 54px -10px rgba(0, 0, 0, 0.65), inset 0 1px 2px rgba(255, 255, 255, 0.18);
-  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow: 0 24px 50px -10px rgba(0, 0, 0, 0.6), inset 0 1px 2px rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
-/* Inner Slate Screen Display */
-.condeco-screen {
-  background: #232b32;
-  border-radius: 14px;
-  padding: 22px 24px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.25);
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  position: relative;
-}
-
-/* Header Row: Room Title with Vertical Indicator + Live Clock & Logo */
-.condeco-screen-header {
+/* Room Header: Title, Specs, Status Pill & Digital Clock */
+.exec-header-row {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
+  gap: 14px;
 }
 
-.condeco-room-title-wrap {
+.exec-title-group {
   display: flex;
   align-items: center;
   gap: 12px;
   min-width: 0;
 }
 
-.condeco-status-accent-bar {
+.exec-status-indicator {
   width: 4.5px;
-  height: 32px;
+  height: 38px;
   border-radius: 4px;
   flex-shrink: 0;
   transition: all 0.3s ease;
 }
-
-.condeco-status-accent-bar.available {
+.exec-status-indicator.available {
   background: #22c55e;
-  box-shadow: 0 0 10px rgba(34, 197, 94, 0.6);
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.65);
 }
-
-.condeco-status-accent-bar.occupied {
-  background: #ef4444;
-  box-shadow: 0 0 10px rgba(239, 68, 68, 0.6);
-}
-
-.condeco-status-accent-bar.mine {
+.exec-status-indicator.mine {
   background: #3b82f6;
-  box-shadow: 0 0 10px rgba(59, 130, 246, 0.6);
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.65);
+}
+.exec-status-indicator.occupied {
+  background: #ef4444;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.65);
+}
+.exec-status-indicator.break,
+.exec-status-indicator.closed {
+  background: #64748b;
+  box-shadow: none;
 }
 
-.condeco-room-name {
-  font-size: 22px;
-  font-weight: 700;
+.exec-room-title {
+  font-size: 21px;
+  font-weight: 800;
   color: #ffffff;
-  letter-spacing: -0.015em;
   margin: 0;
+  letter-spacing: -0.015em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.condeco-brand-clock-wrap {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  flex-shrink: 0;
-}
-
-.condeco-live-clock {
-  font-size: 20px;
-  font-weight: 600;
-  color: #ffffff;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.02em;
-}
-
-.condeco-company-logo {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  color: #cbd5e1;
-  text-transform: uppercase;
-  background: rgba(255, 255, 255, 0.06);
-  padding: 4px 9px;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-/* Big Headline Availability Text */
-.condeco-headline-text {
-  font-size: 21px;
-  font-weight: 500;
-  color: #f8fafc;
-  margin: 2px 0 0 0;
-  letter-spacing: -0.01em;
-  line-height: 1.3;
-}
-
-/* Next Meeting Section */
-.condeco-next-meeting-block {
-  margin-top: 4px;
-}
-
-.condeco-next-label {
-  font-size: 12px;
-  color: #8b99a7;
-  font-weight: 500;
-  text-transform: capitalize;
-  margin-bottom: 2px;
-}
-
-.condeco-next-details {
-  font-size: 14px;
-  color: #f1f5f9;
-  font-weight: 600;
+.exec-meta-row {
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-top: 4px;
   flex-wrap: wrap;
 }
 
-/* Connected Timeline Bar (Condeco Signature Continuous Ribbon) */
-.condeco-timeline-wrap {
-  margin-top: 6px;
+.exec-pill-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  color: #cbd5e1;
 }
 
-.condeco-timeline-bar {
+.exec-status-pill {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 9px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.exec-status-pill.available {
+  background: rgba(34, 197, 94, 0.16);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+}
+.exec-status-pill.mine {
+  background: rgba(59, 130, 246, 0.16);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+}
+.exec-status-pill.occupied {
+  background: rgba(239, 68, 68, 0.16);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+.exec-status-pill.break,
+.exec-status-pill.closed {
+  background: rgba(148, 163, 184, 0.12);
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.exec-brand-clock {
   display: flex;
-  align-items: stretch;
-  height: 44px;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.exec-digital-clock {
+  font-size: 19px;
+  font-weight: 600;
+  color: #f8fafc;
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.03em;
+}
+
+.exec-brand-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 4px 8px;
   border-radius: 6px;
-  overflow: hidden;
-  background: #192026;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.condeco-nav-arrow {
-  width: 38px;
+/* Hero Status Headline & Schedule Note */
+.exec-headline {
+  font-size: 19px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+
+.exec-next-meeting {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #94a3b8;
+  margin-top: 3px;
+  flex-wrap: wrap;
+}
+
+/* Glassmorphic Session Tabs */
+.exec-session-tabs {
+  display: flex;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.28);
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.exec-tab-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 7px 12px;
+  border-radius: 7px;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #1b232a;
+  gap: 6px;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+
+.exec-tab-btn.active {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.exec-tab-btn:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.05);
+  color: #cbd5e1;
+}
+
+/* Unified Continuous Timeline Ribbon */
+.exec-timeline-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.exec-timeline-bar {
+  display: flex;
+  align-items: stretch;
+  height: 44px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #10161c;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.exec-nav-arrow {
+  width: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #141c24;
   color: #94a3b8;
   cursor: pointer;
   font-size: 18px;
@@ -890,48 +960,48 @@
   flex-shrink: 0;
 }
 
-.condeco-nav-arrow:hover {
-  background: #252f38;
+.exec-nav-arrow:hover {
+  background: #1e2832;
   color: #ffffff;
 }
 
-/* Slot Blocks inside Timeline */
-.condeco-slot-item {
+/* Slots inside Timeline Bar */
+.exec-slot-item {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-right: 1px solid rgba(0, 0, 0, 0.2);
+  border-right: 1px solid rgba(0, 0, 0, 0.25);
   user-select: none;
   transition: all 0.18s ease;
   position: relative;
 }
 
-.condeco-slot-item.available {
+.exec-slot-item.available {
   flex: 1;
-  background: #3bb54a;
+  background: #16a34a;
   color: #ffffff;
   font-weight: 700;
-  font-size: 12.5px;
+  font-size: 12px;
   cursor: pointer;
 }
 
-.condeco-slot-item.available:hover {
-  background: #329e40;
+.exec-slot-item.available:hover {
+  background: #15803d;
   filter: brightness(1.1);
 }
 
-.condeco-slot-item.available.selected {
-  background: #15803d !important;
+.exec-slot-item.available.selected {
+  background: #047857 !important;
   box-shadow: inset 0 0 0 2.5px #ffffff;
   color: #ffffff;
   font-weight: 800;
 }
 
-.condeco-slot-item.booked {
-  background: #e53935;
+.exec-slot-item.booked {
+  background: #dc2626;
   color: #ffffff;
   font-weight: 700;
-  font-size: 12px;
+  font-size: 11.5px;
   padding: 0 12px;
   display: flex;
   align-items: center;
@@ -939,11 +1009,11 @@
   cursor: pointer;
 }
 
-.condeco-slot-item.mine {
+.exec-slot-item.mine {
   background: #2563eb;
   color: #ffffff;
   font-weight: 700;
-  font-size: 12px;
+  font-size: 11.5px;
   padding: 0 12px;
   display: flex;
   align-items: center;
@@ -951,82 +1021,55 @@
   cursor: pointer;
 }
 
-.condeco-slot-line {
+.exec-slot-line {
   flex: 1;
   height: 2px;
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.85);
   margin: 0 8px;
-  opacity: 0.95;
   border-radius: 2px;
 }
 
-/* Date Navigator under Timeline */
-.condeco-date-row {
+.exec-date-row {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  margin-top: 8px;
-  font-size: 12.5px;
+  gap: 6px;
+  font-size: 12px;
   font-weight: 600;
-  color: #cbd5e1;
+  color: #94a3b8;
   cursor: pointer;
   transition: color 0.15s ease;
+  padding-top: 2px;
 }
 
-.condeco-date-row:hover {
+.exec-date-row:hover {
   color: #ffffff;
 }
 
-/* Bottom Bezel Physical Elements (Condeco Branding & Glowing LED Bar) */
-.condeco-bezel-bottom {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding-top: 4px;
-}
-
-.condeco-bezel-logo-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.15em;
-  color: #64748b;
-  text-transform: uppercase;
-}
-
-.condeco-sensor-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: #475569;
-}
-
-.condeco-led-light-bar {
-  width: 150px;
-  height: 9px;
+/* Bottom Embedded Glowing LED Strip */
+.exec-bottom-led {
+  width: 130px;
+  height: 6px;
   border-radius: 999px;
-  margin: 10px auto -6px auto;
-  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  margin: 10px auto 0 auto;
+  transition: all 0.35s ease;
 }
-
-.condeco-led-light-bar.available {
+.exec-bottom-led.available {
   background: #4ade80;
-  box-shadow: 0 0 18px #22c55e, 0 3px 10px rgba(34, 197, 94, 0.85);
+  box-shadow: 0 0 14px #22c55e, 0 2px 6px rgba(34, 197, 94, 0.8);
 }
-
-.condeco-led-light-bar.occupied {
-  background: #f87171;
-  box-shadow: 0 0 18px #ef4444, 0 3px 10px rgba(239, 68, 68, 0.85);
-}
-
-.condeco-led-light-bar.mine {
+.exec-bottom-led.mine {
   background: #60a5fa;
-  box-shadow: 0 0 18px #3b82f6, 0 3px 10px rgba(59, 130, 246, 0.85);
+  box-shadow: 0 0 14px #3b82f6, 0 2px 6px rgba(59, 130, 246, 0.8);
+}
+.exec-bottom-led.occupied {
+  background: #f87171;
+  box-shadow: 0 0 14px #ef4444, 0 2px 6px rgba(239, 68, 68, 0.8);
+}
+.exec-bottom-led.break,
+.exec-bottom-led.closed {
+  background: #475569;
+  box-shadow: none;
 }
 
 /* Fullscreen Door Tablet Kiosk Modal */
