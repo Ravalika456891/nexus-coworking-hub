@@ -1052,124 +1052,259 @@ const MeetingRoomsModule = {
     } else if (validEnds.length > 0) {
       endSelect.selectedIndex = 0;
     }
+    this.updateModalCostPreview();
+  },
+
+  setModalTitle(text) {
+    const el = document.getElementById('book-meeting-title');
+    if (el) el.value = text;
+  },
+
+  switchModalSession(session) {
+    const morningBtn = document.getElementById('tab-session-morning');
+    const afternoonBtn = document.getElementById('tab-session-afternoon');
+    if (morningBtn && afternoonBtn) {
+      if (session === 'morning') {
+        morningBtn.className = 'btn btn-sm btn-primary';
+        morningBtn.style.background = '#2563eb';
+        morningBtn.style.color = '#ffffff';
+        afternoonBtn.className = 'btn btn-sm btn-outline';
+        afternoonBtn.style.background = 'transparent';
+        afternoonBtn.style.color = 'var(--text-primary)';
+      } else {
+        morningBtn.className = 'btn btn-sm btn-outline';
+        morningBtn.style.background = 'transparent';
+        morningBtn.style.color = 'var(--text-primary)';
+        afternoonBtn.className = 'btn btn-sm btn-primary';
+        afternoonBtn.style.background = '#2563eb';
+        afternoonBtn.style.color = '#ffffff';
+      }
+    }
+
+    const { morningStarts, afternoonStarts } = this.generateStartSlots();
+    const starts = session === 'morning' ? morningStarts : afternoonStarts;
+    const startSelect = document.getElementById('book-start-time');
+    if (startSelect) {
+      startSelect.innerHTML = starts.map(t => `<option value="${t.value}">${t.label}</option>`).join('');
+      startSelect.selectedIndex = 0;
+      this.syncEndTime(starts[0].value);
+      this.updateModalCostPreview();
+    }
+  },
+
+  updateModalCostPreview() {
+    const roomSelect = document.getElementById('book-modal-room-id');
+    const startupSelect = document.getElementById('book-modal-startup-id');
+    const startSelect = document.getElementById('book-start-time');
+    const endSelect = document.getElementById('book-end-time');
+    const titleEl = document.getElementById('modal-cost-summary-title');
+    const badgeEl = document.getElementById('modal-credits-remaining-badge');
+    if (!roomSelect || !startupSelect || !startSelect || !endSelect || !titleEl) return;
+
+    const roomId = roomSelect.value;
+    const startupId = startupSelect.value;
+    const startTime = startSelect.value;
+    const endTime = endSelect.value;
+
+    const room = window.store.getMeetingRoomById(roomId);
+    const startup = window.store.getStartupById(startupId);
+    if (!room || !startup) return;
+
+    const startH = parseFloat(startTime.split(':')[0]) + parseFloat(startTime.split(':')[1] || 0) / 60;
+    const endH = parseFloat(endTime.split(':')[0]) + parseFloat(endTime.split(':')[1] || 0) / 60;
+    const duration = Math.max(0.5, endH - startH);
+
+    const remainingCredits = Math.max(0, (startup.includedMeetingHours || 12) - (startup.usedMeetingHours || 0));
+    if (remainingCredits >= duration) {
+      titleEl.innerHTML = `Covered by Plan (₹0) • <span style="font-size: 11.5px; font-weight: 600; color: var(--text-secondary);">${duration} hr${duration > 1 ? 's' : ''} deducted</span>`;
+      titleEl.style.color = '#15803d';
+      if (badgeEl) {
+        badgeEl.className = 'badge badge-success';
+        badgeEl.textContent = `${remainingCredits - duration} hrs remaining`;
+      }
+    } else {
+      const charge = Math.round(room.hourlyRate * duration);
+      titleEl.innerHTML = `Total Amount: ₹${charge} • <span style="font-size: 11.5px; font-weight: 600; color: var(--text-secondary);">${duration} hr${duration > 1 ? 's' : ''} at ₹${room.hourlyRate}/hr</span>`;
+      titleEl.style.color = '#2563eb';
+      if (badgeEl) {
+        badgeEl.className = 'badge badge-primary';
+        badgeEl.textContent = `₹${charge} will be invoiced`;
+      }
+    }
   },
 
   openBookModal(preselectedRoomId = null, preselectedTime = null, preselectedStartupId = null) {
     const rooms = window.store.getMeetingRooms();
     const startups = window.store.getStartups();
     const activeFounderId = preselectedStartupId || this.getMyStartupId();
-    const { allStarts } = this.generateStartSlots();
+    const activeStartup = startups.find(s => s.id === activeFounderId) || startups[0];
+    const initialRoom = rooms.find(r => r.id === preselectedRoomId) || rooms[0];
 
-    // Default start time: prefer preselected if valid, else 09:00
-    let defaultStartTime = preselectedTime;
-    if (!defaultStartTime || !allStarts.some(s => s.value === defaultStartTime)) {
-      defaultStartTime = '09:00';
+    // Determine initial session from preselectedTime
+    let initialSession = 'morning';
+    let initialStartTime = '09:00';
+    if (preselectedTime) {
+      initialStartTime = preselectedTime;
+      const h = parseInt(preselectedTime.split(':')[0], 10);
+      initialSession = (h >= 12) ? 'afternoon' : 'morning';
     }
 
-    const validEndSlots = this.getValidEndSlots(defaultStartTime);
-    const defaultEndTime = validEndSlots.length > 1 ? validEndSlots[1].value : (validEndSlots[0] ? validEndSlots[0].value : '11:00');
-
     const html = `
-      <div class="modal-overlay active" id="modal-book-room">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h3 class="modal-title">📅 Reserve Meeting Room</h3>
-            <button class="modal-close-btn" onclick="MeetingRoomsModule.closeModal('modal-book-room')">&times;</button>
+      <div class="modal-overlay active" id="modal-book-room" onclick="if(event.target === this) MeetingRoomsModule.closeModal('modal-book-room')" style="display: flex; align-items: center; justify-content: center; z-index: 1050; padding: 16px;">
+        <div class="modal-content" style="max-width: 580px; width: 100%; border-radius: 20px; overflow: hidden; background: var(--bg-surface); border: 1.5px solid var(--border-medium); box-shadow: 0 25px 60px -12px rgba(0,0,0,0.35);">
+          
+          <!-- Premium Modal Header -->
+          <div style="background: linear-gradient(135deg, #0b2545 0%, #1e3a8a 60%, #2563eb 100%); color: #ffffff; padding: 22px 24px; position: relative;">
+            <button type="button" class="modal-close-btn" onclick="MeetingRoomsModule.closeModal('modal-book-room')" style="position: absolute; right: 18px; top: 18px; color: #ffffff; background: rgba(255,255,255,0.18); border: none; border-radius: 50%; width: 30px; height: 30px; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;">✕</button>
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #93c5fd; font-weight: 700;">
+              <span>⚡ Nexus Conference System</span> • <span>Conflict-Free Scheduler</span>
+            </div>
+            <h2 style="font-size: 20px; font-weight: 800; margin: 6px 0 2px 0; color: #ffffff; display: flex; align-items: center; gap: 8px;">
+              <span>📅</span> Reserve Meeting Room
+            </h2>
+            <div style="font-size: 12.5px; color: #bfdbfe;">
+              Select session, time window, and lock in with instant digital door pass.
+            </div>
           </div>
-          <div class="modal-body">
+
+          <!-- Modal Body -->
+          <div style="padding: 22px 24px; max-height: calc(85vh - 120px); overflow-y: auto;">
             <form id="form-book-room" onsubmit="MeetingRoomsModule.handleBookSubmit(event)">
-              <div class="form-group">
-                <label class="form-label">Meeting Room <span class="required-star">*</span></label>
-                <select name="roomId" class="form-control" required>
-                  ${rooms.map(r => `
-                    <option value="${r.id}" ${preselectedRoomId === r.id ? 'selected' : ''}>
-                      ${r.name} (${r.capacity} Pax • ₹${r.hourlyRate}/hr)
-                    </option>
-                  `).join('')}
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">Reserving Startup <span class="required-star">*</span></label>
-                <select name="startupId" class="form-control" required>
-                  ${startups.map(s => {
-                    const isSelected = s.id === activeFounderId;
-                    return `
-                      <option value="${s.id}" ${isSelected ? 'selected' : ''}>
-                        ${s.name} (${s.id}) — Free Credits: ${Math.max(0, (s.includedMeetingHours||12) - (s.usedMeetingHours||0))} hrs
-                      </option>
-                    `;
-                  }).join('')}
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">Meeting Title / Objective <span class="required-star">*</span></label>
-                <input type="text" name="title" id="book-meeting-title" class="form-control" value="Investor Demo & Product Review" placeholder="e.g. Investor Demo & Product Review" required>
-                <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px;">
-                  <button type="button" class="btn btn-outline btn-sm" style="font-size: 11px; padding: 2px 8px;" onclick="document.getElementById('book-meeting-title').value = 'Investor Demo & Product Review'">⚡ Investor Demo</button>
-                  <button type="button" class="btn btn-outline btn-sm" style="font-size: 11px; padding: 2px 8px;" onclick="document.getElementById('book-meeting-title').value = 'Sprint Planning & Tech Sync'">🚀 Sprint Planning</button>
-                  <button type="button" class="btn btn-outline btn-sm" style="font-size: 11px; padding: 2px 8px;" onclick="document.getElementById('book-meeting-title').value = 'Board Advisory Session'">🏢 Board Advisory</button>
-                  <button type="button" class="btn btn-outline btn-sm" style="font-size: 11px; padding: 2px 8px;" onclick="document.getElementById('book-meeting-title').value = 'Client Discovery Call'">🤝 Client Discovery</button>
-                </div>
-              </div>
-
-              <div class="form-row-2">
-                <div class="form-group">
-                  <label class="form-label">Date <span class="required-star">*</span></label>
-                  <input type="date" name="date" class="form-control" value="${this.selectedDate}" required>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Attendees <span class="required-star">*</span></label>
-                  <input type="number" name="attendees" class="form-control" value="6" min="1" max="50" required>
-                </div>
-              </div>
-
-              <div class="form-row-2">
-                <div class="form-group">
-                  <label class="form-label">Start Time <span class="required-star">*</span></label>
-                  <select name="startTime" id="book-start-time" class="form-control" onchange="MeetingRoomsModule.syncEndTime(this.value)" required>
-                    <optgroup label="🌅 Morning Session (08:00 AM – 11:00 AM)">
-                      ${this.generateStartSlots().morningStarts.map(t => `
-                        <option value="${t.value}" ${t.value === defaultStartTime ? 'selected' : ''}>
-                          ${t.label}
-                        </option>
-                      `).join('')}
-                    </optgroup>
-                    <optgroup label="🌆 Afternoon Session (03:00 PM – 07:00 PM)">
-                      ${this.generateStartSlots().afternoonStarts.map(t => `
-                        <option value="${t.value}" ${t.value === defaultStartTime ? 'selected' : ''}>
-                          ${t.label}
-                        </option>
-                      `).join('')}
-                    </optgroup>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">End Time <span class="required-star">*</span></label>
-                  <select name="endTime" id="book-end-time" class="form-control" required>
-                    ${validEndSlots.map(t => `
-                      <option value="${t.value}" ${t.value === defaultEndTime ? 'selected' : ''}>
-                        ${t.label}
+              
+              <!-- 2-Column Bento: Room & Reserving Venture -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                <!-- Room Selector -->
+                <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 10px 12px;">
+                  <label class="form-label" style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 5px; display: flex; align-items: center; gap: 5px;">
+                    <span>🏢</span> Meeting Room <span style="color: #ef4444;">*</span>
+                  </label>
+                  <select name="roomId" id="book-modal-room-id" class="form-control" style="font-weight: 700; font-size: 12.5px; padding: 6px 8px; border-radius: 8px;" onchange="MeetingRoomsModule.updateModalCostPreview()" required>
+                    ${rooms.map(r => `
+                      <option value="${r.id}" ${r.id === initialRoom.id ? 'selected' : ''}>
+                        ${r.icon} ${r.name} (${r.capacity} Pax • ₹${r.hourlyRate}/hr)
                       </option>
                     `).join('')}
                   </select>
                 </div>
+
+                <!-- Venture Selector -->
+                <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 10px 12px;">
+                  <label class="form-label" style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 5px; display: flex; align-items: center; gap: 5px;">
+                    <span>👤</span> Reserving Venture <span style="color: #ef4444;">*</span>
+                  </label>
+                  <select name="startupId" id="book-modal-startup-id" class="form-control" style="font-weight: 700; font-size: 12.5px; padding: 6px 8px; border-radius: 8px;" onchange="MeetingRoomsModule.updateModalCostPreview()" required>
+                    ${startups.map(s => {
+                      const rem = Math.max(0, (s.includedMeetingHours || 12) - (s.usedMeetingHours || 0));
+                      return `
+                        <option value="${s.id}" ${s.id === activeStartup.id ? 'selected' : ''}>
+                          ${s.name} (${rem}h credits left)
+                        </option>
+                      `;
+                    }).join('')}
+                  </select>
+                </div>
               </div>
 
-              <!-- Dedicated Operating Hours Policy Banner -->
-              <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(34, 197, 94, 0.08) 100%); border: 1.5px solid rgba(99, 102, 241, 0.25); border-radius: var(--radius-md); padding: 10px 14px; font-size: 12px; margin-bottom: 16px;">
-                <div style="font-weight: 800; color: var(--text-primary); margin-bottom: 3px; display: flex; align-items: center; gap: 5px;">
-                  <span>⏰</span> <span>Operating Windows Policy:</span>
+              <!-- Meeting Purpose / Title with Modern Chips -->
+              <div style="margin-bottom: 16px;">
+                <label class="form-label" style="font-size: 11.5px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; display: flex; align-items: center; gap: 5px;">
+                  <span>🎯</span> Meeting Title / Agenda <span style="color: #ef4444;">*</span>
+                </label>
+                <div style="position: relative;">
+                  <input type="text" name="title" id="book-meeting-title" class="form-control" style="padding-left: 34px; font-weight: 600; font-size: 13px; border-radius: 10px;" value="Investor Demo & Product Review" placeholder="e.g. Investor Demo & Product Review" required>
+                  <span style="position: absolute; left: 11px; top: 50%; transform: translateY(-50%); font-size: 14px; opacity: 0.6;">📌</span>
                 </div>
-                <div style="color: var(--text-secondary); line-height: 1.45;">
-                  Bookings are strictly accepted only between <strong>08:00 AM – 11:00 AM</strong> (Morning) and <strong>03:00 PM – 07:00 PM</strong> (Afternoon). Overages (if any) are billed at flat ₹800/hr after monthly credits.
+                <!-- Quick Agenda Chips -->
+                <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px;">
+                  <button type="button" class="btn btn-outline btn-sm" style="font-size: 11px; padding: 3px 10px; border-radius: 999px; font-weight: 600;" onclick="MeetingRoomsModule.setModalTitle('Investor Demo & Product Review')">⚡ Investor Demo</button>
+                  <button type="button" class="btn btn-outline btn-sm" style="font-size: 11px; padding: 3px 10px; border-radius: 999px; font-weight: 600;" onclick="MeetingRoomsModule.setModalTitle('Sprint Planning & Tech Sync')">🚀 Sprint Planning</button>
+                  <button type="button" class="btn btn-outline btn-sm" style="font-size: 11px; padding: 3px 10px; border-radius: 999px; font-weight: 600;" onclick="MeetingRoomsModule.setModalTitle('Board Advisory Session')">🏢 Board Advisory</button>
+                  <button type="button" class="btn btn-outline btn-sm" style="font-size: 11px; padding: 3px 10px; border-radius: 999px; font-weight: 600;" onclick="MeetingRoomsModule.setModalTitle('Client Discovery & Demo')">🤝 Client Discovery</button>
                 </div>
               </div>
 
-              <div class="modal-footer" style="padding-right: 0; padding-bottom: 0;">
-                <button type="button" class="btn btn-secondary" onclick="MeetingRoomsModule.closeModal('modal-book-room')">Cancel</button>
-                <button type="submit" class="btn btn-primary">Confirm Reservation</button>
+              <!-- Date & Attendees Row -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                <div class="form-group" style="margin: 0;">
+                  <label class="form-label" style="font-size: 11.5px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px;">
+                    📅 Reservation Date <span style="color: #ef4444;">*</span>
+                  </label>
+                  <input type="date" name="date" id="book-modal-date" class="form-control" style="font-weight: 700; font-size: 12.5px; border-radius: 10px;" value="${this.selectedDate}" onchange="MeetingRoomsModule.updateModalCostPreview()" required>
+                </div>
+                <div class="form-group" style="margin: 0;">
+                  <label class="form-label" style="font-size: 11.5px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px;">
+                    👥 Expected Attendees <span style="color: #ef4444;">*</span>
+                  </label>
+                  <input type="number" name="attendees" class="form-control" style="font-weight: 700; font-size: 12.5px; border-radius: 10px;" value="6" min="1" max="50" required>
+                </div>
+              </div>
+
+              <!-- Operating Session Selector Tabs -->
+              <div style="background: var(--bg-surface-elevated); border: 1.5px solid var(--border-subtle); border-radius: 14px; padding: 14px; margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                  <label class="form-label" style="font-size: 11.5px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin: 0;">
+                    ⏰ Dedicated Operating Session <span style="color: #ef4444;">*</span>
+                  </label>
+                  <span style="font-size: 11px; color: var(--text-muted);">Strict operating policy</span>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+                  <button type="button" id="tab-session-morning" class="btn btn-sm ${initialSession === 'morning' ? 'btn-primary' : 'btn-outline'}" style="font-size: 12px; font-weight: 700; padding: 8px 12px; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 6px;" onclick="MeetingRoomsModule.switchModalSession('morning')">
+                    <span>🌅</span> <span>Morning (08:00 – 11:00 AM)</span>
+                  </button>
+                  <button type="button" id="tab-session-afternoon" class="btn btn-sm ${initialSession === 'afternoon' ? 'btn-primary' : 'btn-outline'}" style="font-size: 12px; font-weight: 700; padding: 8px 12px; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 6px;" onclick="MeetingRoomsModule.switchModalSession('afternoon')">
+                    <span>🌆</span> <span>Afternoon (03:00 – 07:00 PM)</span>
+                  </button>
+                </div>
+
+                <!-- Start & End Time Dropdowns -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                  <div>
+                    <label class="form-label" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">
+                      Start Time
+                    </label>
+                    <select name="startTime" id="book-start-time" class="form-control" style="font-weight: 700; font-size: 12.5px; border-radius: 8px;" onchange="MeetingRoomsModule.syncEndTime(this.value); MeetingRoomsModule.updateModalCostPreview();" required>
+                      <!-- Populated dynamically based on active session -->
+                    </select>
+                  </div>
+                  <div>
+                    <label class="form-label" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">
+                      End Time (Duration)
+                    </label>
+                    <select name="endTime" id="book-end-time" class="form-control" style="font-weight: 700; font-size: 12.5px; border-radius: 8px;" onchange="MeetingRoomsModule.updateModalCostPreview()" required>
+                      <!-- Populated dynamically -->
+                    </select>
+                  </div>
+                </div>
+
+                <div style="margin-top: 8px; font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+                  <span>☕</span> <span>Midday Break: 11:00 AM – 03:00 PM is strictly reserved for cleaning & reset.</span>
+                </div>
+              </div>
+
+              <!-- Live Cost & Plan Credits Summary Strip -->
+              <div id="modal-cost-summary-box" style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.08) 0%, rgba(37, 99, 235, 0.08) 100%); border: 1.5px solid rgba(34, 197, 94, 0.35); border-radius: 12px; padding: 12px 16px; margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div>
+                  <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-muted);">
+                    Billing Calculation
+                  </div>
+                  <div id="modal-cost-summary-title" style="font-size: 13.5px; font-weight: 800; color: #15803d; margin-top: 2px;">
+                    Covered by Incubation Plan (₹0)
+                  </div>
+                </div>
+                <div id="modal-credits-remaining-badge" class="badge badge-success" style="font-size: 11.5px; padding: 4px 10px; font-weight: 700;">
+                  Plan Credits Active
+                </div>
+              </div>
+
+              <!-- Footer Buttons -->
+              <div style="display: flex; gap: 10px; justify-content: flex-end; align-items: center; padding-top: 10px; border-top: 1px solid var(--border-subtle);">
+                <button type="button" class="btn btn-secondary" onclick="MeetingRoomsModule.closeModal('modal-book-room')" style="font-weight: 600; padding: 8px 18px; border-radius: 8px; font-size: 12.5px;">
+                  Cancel
+                </button>
+                <button type="submit" class="btn btn-primary" style="font-weight: 800; padding: 9px 24px; border-radius: 8px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35);">
+                  <span>🔒 Confirm & Lock In</span> <span>➔</span>
+                </button>
               </div>
             </form>
           </div>
@@ -1178,6 +1313,15 @@ const MeetingRoomsModule = {
     `;
 
     document.getElementById('modal-mount').innerHTML = html;
+    this.switchModalSession(initialSession);
+    if (preselectedTime) {
+      const startSelect = document.getElementById('book-start-time');
+      if (startSelect && [...startSelect.options].some(o => o.value === preselectedTime)) {
+        startSelect.value = preselectedTime;
+        this.syncEndTime(preselectedTime);
+      }
+    }
+    this.updateModalCostPreview();
   },
 
   handleBookSubmit(e) {
