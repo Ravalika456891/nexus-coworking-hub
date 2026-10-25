@@ -219,6 +219,52 @@ const StartupTablesModule = {
           align-items: center;
           gap: 6px;
         }
+        .st-table-wrapper {
+          background: var(--bg-surface);
+          border: 1px solid var(--border-subtle);
+          border-radius: var(--radius-lg);
+          box-shadow: 0 4px 16px -4px rgba(0, 0, 0, 0.04);
+          overflow: hidden;
+        }
+        .st-table-scroller {
+          overflow-x: auto;
+          scrollbar-width: thin;
+        }
+        .st-table-scroller::-webkit-scrollbar {
+          height: 6px;
+        }
+        .st-table-scroller::-webkit-scrollbar-thumb {
+          background: var(--border-medium);
+          border-radius: 999px;
+        }
+        .st-data-table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 12.5px;
+          margin: 0;
+        }
+        .st-data-table th {
+          background: var(--bg-surface-elevated);
+          border-bottom: 1.5px solid var(--border-subtle);
+          color: var(--text-muted);
+          font-size: 11px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          padding: 13px 16px;
+          vertical-align: middle;
+          white-space: nowrap;
+        }
+        .st-data-table td {
+          padding: 13px 16px;
+          border-bottom: 1px solid var(--border-subtle);
+          vertical-align: middle;
+          color: var(--text-secondary);
+          transition: background 0.15s ease;
+        }
+        .st-data-table tr:hover td {
+          background: var(--bg-surface-elevated);
+        }
       </style>
 
       <!-- Attractive Hero Banner -->
@@ -390,6 +436,10 @@ const StartupTablesModule = {
     this.activeSubTab = tab;
     this.searchQuery = '';
     this.render();
+    setTimeout(() => {
+      const scrollers = document.querySelectorAll('.st-table-scroller, #startup-tables-content div[style*="overflow-x"]');
+      scrollers.forEach(el => { el.scrollLeft = 0; });
+    }, 10);
   },
 
   handleSearch(q) {
@@ -426,19 +476,19 @@ const StartupTablesModule = {
     const spaces = window.store.getSpaces();
 
     return `
-      <div class="card" style="padding: 0; overflow: hidden; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); background: var(--bg-surface);">
-        <div style="overflow-x: auto;">
-          <table class="table" style="width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 0;">
+      <div class="st-table-wrapper">
+        <div class="st-table-scroller">
+          <table class="st-data-table" style="min-width: 960px;">
             <thead>
-              <tr style="background: var(--bg-surface-elevated); border-bottom: 1px solid var(--border-subtle); color: var(--text-muted); text-align: left;">
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Startup Name & ID</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Founder & Team</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Sector / Category</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Stage & Progress</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Allocated Desks</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Financials / Ask</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Status</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; text-align: right;">Actions</th>
+              <tr>
+                <th style="width: 22%; text-align: left;">Startup & ID</th>
+                <th style="width: 17%; text-align: left;">Founder & Team</th>
+                <th style="width: 12%; text-align: center;">Sector</th>
+                <th style="width: 15%; text-align: left;">Stage & Progress</th>
+                <th style="width: 11%; text-align: center;">Allocated Desks</th>
+                <th style="width: 11%; text-align: right;">Financials / MRR</th>
+                <th style="width: 6%; text-align: center;">Status</th>
+                <th style="width: 6%; text-align: right;">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -452,49 +502,48 @@ const StartupTablesModule = {
                 });
 
                 return `
-                  <tr style="border-bottom: 1px solid var(--border-subtle); transition: background 0.15s ease;" onmouseover="this.style.background='var(--bg-surface-elevated)'" onmouseout="this.style.background='transparent'">
-                    <td style="padding: 12px 16px; white-space: nowrap;">
+                  <tr>
+                    <td style="text-align: left;">
                       <div style="display: flex; align-items: center; gap: 10px;">
-                        <span style="font-size: 20px; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; background: var(--bg-surface-elevated); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); cursor: pointer;" onclick="StartupTablesModule.openCompanyDossier('${s.id}')">${s.logoEmoji || '🚀'}</span>
-                        <div style="cursor: pointer;" onclick="StartupTablesModule.openCompanyDossier('${s.id}')">
-                          <div class="st-company-title" style="font-weight: 700; color: var(--text-primary); font-size: 13px;">${s.name}</div>
+                        <span style="font-size: 20px; width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; background: var(--bg-surface-elevated); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); cursor: pointer; flex-shrink: 0;" onclick="StartupTablesModule.openCompanyDossier('${s.id}')">${s.logoEmoji || '🚀'}</span>
+                        <div style="cursor: pointer; min-width: 0;" onclick="StartupTablesModule.openCompanyDossier('${s.id}')">
+                          <div class="st-company-title" style="font-weight: 700; color: var(--text-primary); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">${s.name}</div>
                           <div style="font-family: var(--font-mono); font-size: 11px; color: var(--accent-primary);">${s.id}</div>
                         </div>
                       </div>
                     </td>
-                    <td style="padding: 12px 16px; white-space: nowrap;">
-                      <div style="font-weight: 600; color: var(--text-primary); font-size: 12px;">👤 ${s.founders?.name || 'Lead Founder'}</div>
-                      <div style="font-size: 11px; color: var(--text-muted);">${s.founders?.email || 'N/A'} • ${s.teamSize || 2} Pax</div>
+                    <td style="text-align: left;">
+                      <div style="font-weight: 600; color: var(--text-primary); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px;">👤 ${s.founders?.name || 'Lead Founder'}</div>
+                      <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">${s.founders?.email || 'N/A'} • ${s.teamSize || 2} Pax</div>
                     </td>
-                    <td style="padding: 12px 16px; white-space: nowrap;">
+                    <td style="text-align: center;">
                       <span class="badge badge-subtle" style="font-size: 11px;">${s.category || s.sector || 'DeepTech'}</span>
                     </td>
-                    <td style="padding: 12px 16px; white-space: nowrap;">
+                    <td style="text-align: left;">
                       <div style="font-weight: 600; font-size: 11.5px; color: var(--text-primary);">${s.currentStage || s.incubationJourneyStage || 'MVP Dev'}</div>
-                      <div style="font-size: 10.5px; color: #38bdf8; font-family: var(--font-mono);">${s.progressPercent || 25}% Progress</div>
+                      <div style="display: flex; align-items: center; gap: 7px; margin-top: 4px;">
+                        <div style="width: 55px; height: 4px; background: rgba(56, 189, 248, 0.15); border-radius: 2px; overflow: hidden;">
+                          <div style="width: ${s.progressPercent || 25}%; height: 100%; background: #38bdf8; border-radius: 2px;"></div>
+                        </div>
+                        <span style="font-size: 10.5px; color: #38bdf8; font-family: var(--font-mono);">${s.progressPercent || 25}%</span>
+                      </div>
                     </td>
-                    <td style="padding: 12px 16px; white-space: nowrap;">
+                    <td style="text-align: center;">
                       ${allocated.length > 0 
-                        ? allocated.map(l => `<span class="badge badge-info" style="font-family: var(--font-mono); font-size: 10px; margin-right: 3px;">${l}</span>`).join('') 
+                        ? `<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 3px;">` + allocated.map(l => `<span class="badge badge-info" style="font-family: var(--font-mono); font-size: 10px;">${l}</span>`).join('') + `</div>`
                         : `<span style="font-size: 11px; color: var(--text-muted); font-style: italic;">None (Desk Needed)</span>`
                       }
                     </td>
-                    <td style="padding: 12px 16px; white-space: nowrap;">
-                      <div style="font-weight: 700; font-size: 12px; color: var(--text-primary);">₹${(s.targetFundingAsk || 2500000).toLocaleString('en-IN')}</div>
-                      <div style="font-size: 10.5px; color: var(--text-muted);">MRR: ₹${(s.monthlyRecurringRevenue || 150000).toLocaleString('en-IN')}</div>
+                    <td style="text-align: right;">
+                      <div style="font-weight: 700; font-size: 12px; color: var(--text-primary); font-family: var(--font-mono);">₹${(s.targetFundingAsk || 2500000).toLocaleString('en-IN')}</div>
+                      <div style="font-size: 10.5px; color: var(--text-muted); font-family: var(--font-mono); margin-top: 1px;">MRR: ₹${(s.monthlyRecurringRevenue || 150000).toLocaleString('en-IN')}</div>
                     </td>
-                    <td style="padding: 12px 16px; white-space: nowrap;">
+                    <td style="text-align: center;">
                       ${statusBadge}
                     </td>
-                    <td style="padding: 12px 16px; text-align: right; white-space: nowrap;">
-                      <button class="btn btn-sm" style="padding: 4px 10px; font-size: 11px; margin-right: 4px; font-weight: 700; background: #001f54; color: #ffffff; border: 1px solid #1e3a8a; border-radius: 6px; cursor: pointer;" onclick="StartupTablesModule.openCompanyDossier('${s.id}')">
-                        👁️ View Details
-                      </button>
-                      <button class="btn btn-outline btn-sm" style="padding: 3px 8px; font-size: 11px; margin-right: 4px;" onclick="OnboardingModule.openVerificationModal('${s.id}')">
-                        View
-                      </button>
-                      <button class="btn btn-outline btn-sm" style="padding: 3px 8px; font-size: 11px;" onclick="IncubationModule.viewStartupJourneyModal('${s.id}')">
-                        Journey
+                    <td style="text-align: right; white-space: nowrap;">
+                      <button class="btn btn-sm" style="padding: 4px 10px; font-size: 11px; font-weight: 700; background: #001f54; color: #ffffff; border: 1px solid #1e3a8a; border-radius: 6px; cursor: pointer;" onclick="StartupTablesModule.openCompanyDossier('${s.id}')" title="View company dossier">
+                        👁️ View
                       </button>
                     </td>
                   </tr>
@@ -520,57 +569,64 @@ const StartupTablesModule = {
       list = list.filter(m => 
         (m.title || '').toLowerCase().includes(q) ||
         (m.startupName || '').toLowerCase().includes(q) ||
-        (m.verifiedBy || '').toLowerCase().includes(q)
+        (m.verifiedBy || '').toLowerCase().includes(q) ||
+        (m.id || '').toLowerCase().includes(q)
       );
     }
 
     return `
-      <div class="card" style="padding: 0; overflow: hidden; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); background: var(--bg-surface);">
-        <div style="overflow-x: auto;">
-          <table class="table" style="width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 0;">
+      <div class="st-table-wrapper">
+        <div class="st-table-scroller">
+          <table class="st-data-table" style="min-width: 900px;">
             <thead>
-              <tr style="background: var(--bg-surface-elevated); border-bottom: 1px solid var(--border-subtle); color: var(--text-muted); text-align: left;">
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Milestone Label & ID</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Milestone Title</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Startup Name</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Target Date</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Progress %</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Mentor Verifier</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Status</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; text-align: right;">Action</th>
+              <tr>
+                <th style="width: 14%; text-align: left;">Milestone & ID</th>
+                <th style="width: 26%; text-align: left;">Milestone Title</th>
+                <th style="width: 17%; text-align: left;">Startup Venture</th>
+                <th style="width: 12%; text-align: center;">Target Date</th>
+                <th style="width: 11%; text-align: center;">Completion</th>
+                <th style="width: 14%; text-align: left;">Mentor Verifier</th>
+                <th style="width: 8%; text-align: center;">Status</th>
+                <th style="width: 8%; text-align: right;">Action</th>
               </tr>
             </thead>
             <tbody>
               ${list.length === 0 ? `
                 <tr><td colspan="8" style="padding: 40px; text-align: center; color: var(--text-muted);">No milestones found</td></tr>
               ` : list.map(m => `
-                <tr style="border-bottom: 1px solid var(--border-subtle);">
-                  <td style="padding: 12px 16px; font-family: var(--font-mono); font-weight: 700; color: var(--accent-primary);">
-                    ${m.milestoneLabel || m.id}
+                <tr>
+                  <td style="text-align: left;">
+                    <div style="font-weight: 700; color: var(--text-primary); font-size: 12.5px;">${m.milestoneLabel || ('Milestone ' + (m.sequenceNumber || 1))}</div>
+                    <div style="font-family: var(--font-mono); font-size: 10.5px; color: var(--accent-primary); margin-top: 2px;">${m.id}</div>
                   </td>
-                  <td style="padding: 12px 16px; font-weight: 600; color: var(--text-primary); max-width: 240px;">
-                    ${m.title}
+                  <td style="text-align: left;">
+                    <div style="font-weight: 600; color: var(--text-primary); line-height: 1.4; max-width: 250px;">${m.title}</div>
                   </td>
-                  <td style="padding: 12px 16px; white-space: nowrap;">
-                    <span style="cursor: pointer; font-weight: 600; color: var(--text-primary);" class="st-company-title" onclick="StartupTablesModule.openCompanyDossier('${m.startupId || 'STP-01'}')">
-                      ${m.startupName || m.startupId || 'XYZ Technologies'}
+                  <td style="text-align: left;">
+                    <span style="cursor: pointer; font-weight: 600; color: var(--text-primary); display: inline-flex; align-items: center; gap: 5px;" class="st-company-title" onclick="StartupTablesModule.openCompanyDossier('${m.startupId || 'STP-XYZ'}')">
+                      <span>🏢</span> ${m.startupName || m.startupId || 'XYZ Technologies'}
                     </span>
                   </td>
-                  <td style="padding: 12px 16px; white-space: nowrap; font-family: var(--font-mono); font-size: 11.5px;">
+                  <td style="text-align: center; font-family: var(--font-mono); font-size: 11.5px;">
                     📅 ${m.targetDate || '2026-11-20'}
                   </td>
-                  <td style="padding: 12px 16px; white-space: nowrap;">
-                    <div style="font-family: var(--font-mono); font-size: 11.5px; color: #38bdf8;">${m.progressPercent || 0}%</div>
+                  <td style="text-align: center;">
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 3px;">
+                      <span style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: #38bdf8;">${m.progressPercent || 0}%</span>
+                      <div style="width: 50px; height: 4px; background: rgba(56, 189, 248, 0.15); border-radius: 2px; overflow: hidden;">
+                        <div style="width: ${m.progressPercent || 0}%; height: 100%; background: #38bdf8; border-radius: 2px;"></div>
+                      </div>
+                    </div>
                   </td>
-                  <td style="padding: 12px 16px; white-space: nowrap;">
-                    🧠 ${m.verifiedBy || 'John Smith (Mentor)'}
+                  <td style="text-align: left; font-size: 12px;">
+                    🧠 <span style="font-weight: 500;">${m.verifiedBy || 'John Smith (Mentor)'}</span>
                   </td>
-                  <td style="padding: 12px 16px; white-space: nowrap;">
-                    <span class="badge ${m.status === 'Completed' ? 'badge-success' : (m.status === 'In Progress' ? 'badge-info' : 'badge-subtle')}">
+                  <td style="text-align: center;">
+                    <span class="badge ${m.status === 'Completed' ? 'badge-success' : (m.status === 'In Progress' ? 'badge-info' : 'badge-subtle')}" style="font-size: 11px;">
                       ${m.status}
                     </span>
                   </td>
-                  <td style="padding: 12px 16px; text-align: right; white-space: nowrap;">
+                  <td style="text-align: right;">
                     <button class="btn btn-outline btn-sm" style="padding: 3px 8px; font-size: 11px;" onclick="MilestonesModule.openEditMilestoneModal('${m.id}')">
                       ✏️ Edit
                     </button>
@@ -579,6 +635,12 @@ const StartupTablesModule = {
               `).join('')}
             </tbody>
           </table>
+        </div>
+        <div style="padding: 12px 18px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; background: var(--bg-surface-elevated); font-size: 12px; color: var(--text-muted);">
+          <span>Showing <strong>${list.length}</strong> of <strong>${this.liveData.milestones.length}</strong> sprint milestone targets</span>
+          <button class="btn btn-outline btn-sm" style="font-size: 11px;" onclick="StartupTablesModule.exportCurrentCSV()">
+            📥 Export Milestones CSV
+          </button>
         </div>
       </div>
     `;
@@ -591,47 +653,93 @@ const StartupTablesModule = {
       list = list.filter(m => 
         (m.name || '').toLowerCase().includes(q) ||
         (m.role || '').toLowerCase().includes(q) ||
-        (m.expertise || '').toLowerCase().includes(q)
+        (m.expertise || '').toLowerCase().includes(q) ||
+        (m.id || '').toLowerCase().includes(q)
       );
     }
 
     return `
-      <div class="card" style="padding: 0; overflow: hidden; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); background: var(--bg-surface);">
-        <div style="overflow-x: auto;">
-          <table class="table" style="width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 0;">
+      <div class="st-table-wrapper">
+        <div class="st-table-scroller">
+          <table class="st-data-table" style="min-width: 820px;">
             <thead>
-              <tr style="background: var(--bg-surface-elevated); border-bottom: 1px solid var(--border-subtle); color: var(--text-muted); text-align: left;">
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Mentor ID</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Name & Title</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Domain Specialization</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Assigned Startups</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Advisory Hours</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Contact Email</th>
+              <tr>
+                <th style="width: 32%; text-align: left;">Mentor & Leadership</th>
+                <th style="width: 28%; text-align: left;">Domain Specialization</th>
+                <th style="width: 14%; text-align: center;">Assigned Ventures</th>
+                <th style="width: 12%; text-align: center;">Advisory Committed</th>
+                <th style="width: 14%; text-align: right;">Contact & Actions</th>
               </tr>
             </thead>
             <tbody>
-              ${list.map(m => `
-                <tr style="border-bottom: 1px solid var(--border-subtle);">
-                  <td style="padding: 12px 16px; font-family: var(--font-mono); font-weight: 700; color: var(--accent-primary);">${m.id}</td>
-                  <td style="padding: 12px 16px; font-weight: 700; color: var(--text-primary); white-space: nowrap;">
-                    🧠 ${m.name} <span style="font-weight: 400; color: var(--text-muted); font-size: 11.5px;">(${m.role})</span>
-                  </td>
-                  <td style="padding: 12px 16px; white-space: nowrap;">
-                    <span class="badge badge-info">${m.expertise || m.domain || 'DeepTech & Strategy'}</span>
-                  </td>
-                  <td style="padding: 12px 16px; white-space: nowrap;">
-                    ${(m.assignedStartups || ['STP-XYZ']).join(', ')}
-                  </td>
-                  <td style="padding: 12px 16px; font-family: var(--font-mono);">
-                    ${m.advisoryHoursTotal || 36} hrs / month
-                  </td>
-                  <td style="padding: 12px 16px; color: var(--text-muted); font-size: 12px;">
-                    ${m.email || (m.name.toLowerCase().replace(/\s+/g, '.') + '@thub.org')}
-                  </td>
-                </tr>
-              `).join('')}
+              ${list.length === 0 ? `
+                <tr><td colspan="5" style="padding: 40px; text-align: center; color: var(--text-muted);">No mentors found matching criteria</td></tr>
+              ` : list.map(m => {
+                const assigned = m.assignedStartups || m.startupsMentored || ['STP-XYZ'];
+                const email = m.email || (m.name.toLowerCase().replace(/[^a-z0-9]/g, '.') + '@nexusincubation.io');
+                const expertiseList = (m.expertise || m.domain || 'DeepTech & Strategy').split(',').map(s => s.trim()).filter(Boolean);
+                
+                return `
+                  <tr>
+                    <td style="text-align: left;">
+                      <div style="display: flex; align-items: flex-start; gap: 12px;">
+                        <div style="width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, rgba(124, 58, 237, 0.12) 0%, rgba(168, 85, 247, 0.18) 100%); display: flex; align-items: center; justify-content: center; font-size: 20px; border: 1px solid rgba(124, 58, 237, 0.25); flex-shrink: 0;">
+                          ${m.avatarEmoji || '🧠'}
+                        </div>
+                        <div style="min-width: 0;">
+                          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <span style="font-weight: 700; color: var(--text-primary); font-size: 13.5px;">${m.name}</span>
+                            <span class="badge badge-subtle" style="font-family: var(--font-mono); font-size: 10.5px; padding: 2px 7px; color: var(--accent-primary); border: 1px solid var(--border-subtle);">${m.id}</span>
+                          </div>
+                          <div style="font-size: 11.5px; color: var(--text-muted); line-height: 1.4; margin-top: 3px; max-width: 290px;">
+                            ${m.role}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td style="text-align: left;">
+                      <div style="display: flex; flex-wrap: wrap; gap: 5px; max-width: 320px;">
+                        ${expertiseList.map(tag => `
+                          <span class="badge badge-info" style="font-size: 11px; padding: 3px 8px; line-height: 1.35; font-weight: 500; border-radius: 6px;">
+                            ${tag}
+                          </span>
+                        `).join('')}
+                      </div>
+                    </td>
+                    <td style="text-align: center;">
+                      <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 5px;">
+                        ${assigned.map(stId => `
+                          <span class="badge badge-subtle st-company-title" style="font-family: var(--font-mono); font-size: 11px; font-weight: 600; padding: 4px 8px; cursor: pointer; border: 1px solid var(--border-subtle);" onclick="StartupTablesModule.openCompanyDossier('${stId}')" title="Click to view dossier for ${stId}">
+                            🏢 ${stId}
+                          </span>
+                        `).join('')}
+                      </div>
+                    </td>
+                    <td style="text-align: center;">
+                      <div style="display: inline-flex; flex-direction: column; align-items: center;">
+                        <span style="font-family: var(--font-mono); font-weight: 700; font-size: 13px; color: var(--text-primary);">${m.advisoryHoursTotal || 36} hrs</span>
+                        <span style="font-size: 10.5px; color: var(--text-muted); font-weight: 500;">/ month</span>
+                      </div>
+                    </td>
+                    <td style="text-align: right;">
+                      <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                        <a href="mailto:${email}" class="btn btn-outline btn-sm" style="font-size: 11px; padding: 4px 11px; border-radius: 999px; display: inline-flex; align-items: center; gap: 5px; text-decoration: none; color: var(--text-primary); font-weight: 600;" title="Email ${m.name}">
+                          <span>✉️</span> Contact
+                        </a>
+                        <span style="font-size: 10.5px; color: var(--text-muted); font-family: var(--font-mono); max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${email}</span>
+                      </div>
+                    </td>
+                  </tr>
+                `;
+              }).join('')}
             </tbody>
           </table>
+        </div>
+        <div style="padding: 12px 18px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; background: var(--bg-surface-elevated); font-size: 12px; color: var(--text-muted);">
+          <span>Showing <strong>${list.length}</strong> of <strong>${this.liveData.mentors.length}</strong> advisory mentors</span>
+          <button class="btn btn-outline btn-sm" style="font-size: 11px;" onclick="StartupTablesModule.exportCurrentCSV()">
+            📥 Export Mentors CSV
+          </button>
         </div>
       </div>
     `;
@@ -649,38 +757,51 @@ const StartupTablesModule = {
     }
 
     return `
-      <div class="card" style="padding: 0; overflow: hidden; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); background: var(--bg-surface);">
-        <div style="overflow-x: auto;">
-          <table class="table" style="width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 0;">
+      <div class="st-table-wrapper">
+        <div class="st-table-scroller">
+          <table class="st-data-table" style="min-width: 860px;">
             <thead>
-              <tr style="background: var(--bg-surface-elevated); border-bottom: 1px solid var(--border-subtle); color: var(--text-muted); text-align: left;">
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Lead ID</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Applicant Name</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Venture Name</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Sector / Stage</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Contact Email</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Source</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Status</th>
+              <tr>
+                <th style="width: 12%; text-align: left;">Lead ID</th>
+                <th style="width: 22%; text-align: left;">Applicant & Contact</th>
+                <th style="width: 24%; text-align: left;">Venture & Sector</th>
+                <th style="width: 12%; text-align: center;">Source</th>
+                <th style="width: 14%; text-align: center;">Status</th>
+                <th style="width: 16%; text-align: right;">Actions</th>
               </tr>
             </thead>
             <tbody>
               ${list.length === 0 ? `
-                <tr><td colspan="7" style="padding: 40px; text-align: center; color: var(--text-muted);">No inbound leads in collection</td></tr>
+                <tr><td colspan="6" style="padding: 40px; text-align: center; color: var(--text-muted);">No inbound leads in collection</td></tr>
               ` : list.map(l => `
-                <tr style="border-bottom: 1px solid var(--border-subtle);">
-                  <td style="padding: 12px 16px; font-family: var(--font-mono); font-weight: 700; color: var(--accent-primary);">${l.id || l._id}</td>
-                  <td style="padding: 12px 16px; font-weight: 700; color: var(--text-primary); white-space: nowrap;">${l.fullName || l.name || 'Anonymous Lead'}</td>
-                  <td style="padding: 12px 16px; font-weight: 600; color: var(--text-primary); white-space: nowrap;">${l.startupName || 'Stealth AI'}</td>
-                  <td style="padding: 12px 16px; white-space: nowrap;">
-                    <span class="badge badge-subtle">${l.sector || 'DeepTech'}</span> • ${l.stage || 'MVP Ready'}
+                <tr>
+                  <td style="text-align: left; font-family: var(--font-mono); font-weight: 700; color: var(--accent-primary);">${l.id || l._id}</td>
+                  <td style="text-align: left;">
+                    <div style="font-weight: 700; color: var(--text-primary); font-size: 13px;">${l.fullName || l.name || 'Anonymous Lead'}</div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">${l.email || 'N/A'}</div>
                   </td>
-                  <td style="padding: 12px 16px; color: var(--text-muted);">${l.email || 'N/A'}</td>
-                  <td style="padding: 12px 16px; white-space: nowrap;"><span class="badge badge-info">${l.source || 'Website'}</span></td>
-                  <td style="padding: 12px 16px; white-space: nowrap;"><span class="badge badge-success">${l.status || 'Under Review'}</span></td>
+                  <td style="text-align: left;">
+                    <div style="font-weight: 600; color: var(--text-primary); font-size: 12.5px;">🏢 ${l.startupName || 'Stealth Venture'}</div>
+                    <div style="margin-top: 3px;">
+                      <span class="badge badge-subtle" style="font-size: 10.5px;">${l.sector || 'DeepTech'}</span>
+                      <span style="font-size: 11px; color: var(--text-muted);">• ${l.stage || 'MVP Ready'}</span>
+                    </div>
+                  </td>
+                  <td style="text-align: center;"><span class="badge badge-info" style="font-size: 11px;">${l.source || 'Website'}</span></td>
+                  <td style="text-align: center;"><span class="badge badge-success" style="font-size: 11px;">${l.status || 'Under Review'}</span></td>
+                  <td style="text-align: right;">
+                    ${l.email ? `<a href="mailto:${l.email}" class="btn btn-outline btn-sm" style="font-size: 11px; padding: 4px 10px; text-decoration: none;">✉️ Email</a>` : ''}
+                  </td>
                 </tr>
               `).join('')}
             </tbody>
           </table>
+        </div>
+        <div style="padding: 12px 18px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; background: var(--bg-surface-elevated); font-size: 12px; color: var(--text-muted);">
+          <span>Showing <strong>${list.length}</strong> of <strong>${this.liveData.leads.length}</strong> candidate applications</span>
+          <button class="btn btn-outline btn-sm" style="font-size: 11px;" onclick="StartupTablesModule.exportCurrentCSV()">
+            📥 Export Leads CSV
+          </button>
         </div>
       </div>
     `;
@@ -698,37 +819,46 @@ const StartupTablesModule = {
     }
 
     return `
-      <div class="card" style="padding: 0; overflow: hidden; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); background: var(--bg-surface);">
-        <div style="overflow-x: auto;">
-          <table class="table" style="width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 0;">
+      <div class="st-table-wrapper">
+        <div class="st-table-scroller">
+          <table class="st-data-table" style="min-width: 860px;">
             <thead>
-              <tr style="background: var(--bg-surface-elevated); border-bottom: 1px solid var(--border-subtle); color: var(--text-muted); text-align: left;">
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Ticket #</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Name & Email</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Subject</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Category</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Priority</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Status</th>
+              <tr>
+                <th style="width: 12%; text-align: left;">Ticket #</th>
+                <th style="width: 22%; text-align: left;">Sender & Contact</th>
+                <th style="width: 32%; text-align: left;">Subject & Message</th>
+                <th style="width: 12%; text-align: center;">Category</th>
+                <th style="width: 10%; text-align: center;">Priority</th>
+                <th style="width: 12%; text-align: center;">Status</th>
               </tr>
             </thead>
             <tbody>
               ${list.length === 0 ? `
                 <tr><td colspan="6" style="padding: 40px; text-align: center; color: var(--text-muted);">No inquiries in collection</td></tr>
               ` : list.map(i => `
-                <tr style="border-bottom: 1px solid var(--border-subtle);">
-                  <td style="padding: 12px 16px; font-family: var(--font-mono); font-weight: 700; color: var(--accent-primary);">${i.ticketNumber || i.id || 'INQ-101'}</td>
-                  <td style="padding: 12px 16px; white-space: nowrap;">
-                    <div style="font-weight: 700; color: var(--text-primary);">${i.name}</div>
-                    <div style="font-size: 11px; color: var(--text-muted);">${i.email}</div>
+                <tr>
+                  <td style="text-align: left; font-family: var(--font-mono); font-weight: 700; color: var(--accent-primary);">${i.ticketNumber || i.id || 'INQ-101'}</td>
+                  <td style="text-align: left;">
+                    <div style="font-weight: 700; color: var(--text-primary); font-size: 13px;">${i.name}</div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">${i.email}</div>
                   </td>
-                  <td style="padding: 12px 16px; font-weight: 600; color: var(--text-primary); max-width: 260px;">${i.subject || i.message || 'Support Request'}</td>
-                  <td style="padding: 12px 16px; white-space: nowrap;"><span class="badge badge-subtle">${i.category || 'General'}</span></td>
-                  <td style="padding: 12px 16px; white-space: nowrap;"><span class="badge ${i.priority === 'High' ? 'badge-warning' : 'badge-subtle'}">${i.priority || 'Normal'}</span></td>
-                  <td style="padding: 12px 16px; white-space: nowrap;"><span class="badge badge-info">${i.status || 'New'}</span></td>
+                  <td style="text-align: left;">
+                    <div style="font-weight: 600; color: var(--text-primary); line-height: 1.35; max-width: 300px;">${i.subject || 'Support Ticket'}</div>
+                    ${i.message ? `<div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 3px; max-width: 300px; line-height: 1.35;">${i.message}</div>` : ''}
+                  </td>
+                  <td style="text-align: center;"><span class="badge badge-subtle" style="font-size: 11px;">${i.category || 'General'}</span></td>
+                  <td style="text-align: center;"><span class="badge ${i.priority === 'High' ? 'badge-warning' : 'badge-subtle'}" style="font-size: 11px;">${i.priority || 'Normal'}</span></td>
+                  <td style="text-align: center;"><span class="badge badge-info" style="font-size: 11px;">${i.status || 'New'}</span></td>
                 </tr>
               `).join('')}
             </tbody>
           </table>
+        </div>
+        <div style="padding: 12px 18px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; background: var(--bg-surface-elevated); font-size: 12px; color: var(--text-muted);">
+          <span>Showing <strong>${list.length}</strong> of <strong>${this.liveData.inquiries.length}</strong> inquiry tickets</span>
+          <button class="btn btn-outline btn-sm" style="font-size: 11px;" onclick="StartupTablesModule.exportCurrentCSV()">
+            📥 Export Inquiries CSV
+          </button>
         </div>
       </div>
     `;
