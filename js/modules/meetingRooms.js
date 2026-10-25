@@ -566,8 +566,152 @@ const MeetingRoomsModule = {
       if (typeof DashboardModule !== 'undefined' && DashboardModule.render) {
         DashboardModule.render();
       }
+
+      // Show the requested "Successfully Booked Room" confirmation modal
+      const rooms = window.store.getMeetingRooms();
+      const bookedRoom = rooms.find(r => r.id === roomId);
+      if (bookedRoom && res.booking) {
+        this.showBookingSuccessModal(bookedRoom, res.booking, myStartup);
+      }
     } else {
       App.showToast(`⚠️ ${res.message}`, 'danger');
+    }
+  },
+
+  showBookingSuccessModal(room, booking, myStartup) {
+    if (!room || !booking) return;
+
+    const formatSlot12h = (slot24) => {
+      const [h, m] = slot24.split(':').map(Number);
+      const period = h >= 12 ? 'PM' : 'AM';
+      const displayH = h % 12 || 12;
+      return `${displayH < 10 ? '0' : ''}${displayH}:${m < 10 ? '0' : ''}${m} ${period}`;
+    };
+
+    const dParts = booking.date.split('-').map(Number);
+    const dObj = new Date(dParts[0], dParts[1] - 1, dParts[2]);
+    const dayName = dObj.toLocaleDateString('en-US', { weekday: 'long' });
+    const dayNum = dObj.getDate();
+    const monthName = dObj.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    const formattedDate = `${dayName}, ${dayNum} ${monthName}`;
+
+    // Deterministic 4-digit PIN based on booking ID
+    const pinDigits = String(Math.abs((booking.id || 'BKG100').split('').reduce((acc, c) => acc + c.charCodeAt(0), 1234)) % 9000 + 1000);
+
+    const html = `
+      <div class="modal-overlay active" id="modal-booking-success" onclick="if(event.target === this) MeetingRoomsModule.closeModal('modal-booking-success')" style="z-index: 1060; display: flex; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.78); backdrop-filter: blur(8px); padding: 20px; animation: fadeIn 0.2s ease;">
+        <div class="modal-content" style="max-width: 520px; width: 100%; border-radius: 22px; background: var(--bg-surface); border: 1.5px solid rgba(34, 197, 94, 0.4); overflow: hidden; box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6); animation: scaleUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);">
+          
+          <!-- Celebratory Header Banner -->
+          <div style="background: linear-gradient(135deg, #064e3b 0%, #065f46 50%, #047857 100%); color: #ffffff; padding: 28px 24px 22px 24px; text-align: center; position: relative;">
+            <button class="modal-close-btn" onclick="MeetingRoomsModule.closeModal('modal-booking-success')" style="position: absolute; right: 16px; top: 16px; color: #ffffff; background: rgba(255,255,255,0.15); border: none; border-radius: 50%; width: 30px; height: 30px; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s;">&times;</button>
+            
+            <div style="width: 64px; height: 64px; border-radius: 50%; background: #22c55e; color: #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 32px; box-shadow: 0 0 0 8px rgba(34, 197, 94, 0.25), 0 8px 24px rgba(34, 197, 94, 0.5); margin-bottom: 12px;">
+              ✓
+            </div>
+            
+            <h2 style="font-size: 22px; font-weight: 800; color: #ffffff; margin: 0 0 4px 0; letter-spacing: -0.01em;">
+              Room Successfully Booked!
+            </h2>
+            <p style="font-size: 13px; color: #a7f3d0; margin: 0;">
+              Your reservation is confirmed & synced to the door display tablet.
+            </p>
+          </div>
+
+          <!-- Booking Summary Card -->
+          <div style="padding: 22px 24px;">
+            <!-- Room Info Card -->
+            <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(34, 197, 94, 0.12); border: 1.5px solid rgba(34, 197, 94, 0.35); display: flex; align-items: center; justify-content: center; font-size: 22px;">
+                  ${room.icon || '🏢'}
+                </div>
+                <div>
+                  <h3 style="font-size: 16px; font-weight: 800; color: var(--text-primary); margin: 0;">${room.name}</h3>
+                  <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">
+                    👥 ${room.capacity} Pax Capacity • ₹${room.hourlyRate}/hr
+                  </div>
+                </div>
+              </div>
+              <span class="badge badge-success" style="font-size: 11px; padding: 4px 10px; font-weight: 800;">
+                ● Locked In
+              </span>
+            </div>
+
+            <!-- Bento Details Grid -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;">
+              <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 12px 14px;">
+                <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.04em;">
+                  📅 Date
+                </div>
+                <div style="font-size: 13px; font-weight: 800; color: var(--text-primary); margin-top: 4px;">
+                  ${formattedDate}
+                </div>
+              </div>
+
+              <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 12px 14px;">
+                <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.04em;">
+                  ⏰ Time Window
+                </div>
+                <div style="font-size: 13px; font-weight: 800; color: #2563eb; margin-top: 4px; font-family: var(--font-mono);">
+                  ${formatSlot12h(booking.startTime)} – ${formatSlot12h(booking.endTime)}
+                </div>
+              </div>
+
+              <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 12px 14px;">
+                <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.04em;">
+                  🎯 Meeting Agenda
+                </div>
+                <div style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                  ${booking.title}
+                </div>
+              </div>
+
+              <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 12px 14px;">
+                <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.04em;">
+                  💳 Billing / Plan
+                </div>
+                <div style="font-size: 13px; font-weight: 800; color: #16a34a; margin-top: 4px;">
+                  ${booking.cost === 0 ? 'Covered by Plan (₹0)' : `₹${booking.cost}`}
+                </div>
+              </div>
+            </div>
+
+            <!-- Smart Keypad Door Access PIN Strip -->
+            <div style="background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(99, 102, 241, 0.08) 100%); border: 1.5px dashed rgba(37, 99, 235, 0.4); border-radius: 14px; padding: 14px 16px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+              <div>
+                <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #1d4ed8;">
+                  🔑 Smart Door Keypad PIN
+                </div>
+                <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">
+                  Enter on the Condeco tablet keypad outside ${room.name}
+                </div>
+              </div>
+              <div style="font-family: var(--font-mono); font-size: 18px; font-weight: 900; letter-spacing: 0.2em; color: #1e40af; background: var(--bg-surface); padding: 4px 14px; border-radius: 8px; border: 1px solid rgba(37, 99, 235, 0.25);">
+                * ${pinDigits} #
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display: flex; gap: 8px; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
+              <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openKioskModal('${room.id}'); MeetingRoomsModule.closeModal('modal-booking-success');" style="font-weight: 700; padding: 8px 14px; border-radius: 8px; font-size: 12px; display: inline-flex; align-items: center; gap: 5px;">
+                <span>📱</span> Door Tablet View
+              </button>
+              <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openPassModal('${room.id}', '${booking.id}'); MeetingRoomsModule.closeModal('modal-booking-success');" style="font-weight: 700; padding: 8px 14px; border-radius: 8px; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; color: #2563eb; border-color: rgba(37, 99, 235, 0.35);">
+                <span>🎫</span> Digital Pass
+              </button>
+              <button class="btn btn-primary btn-sm" onclick="MeetingRoomsModule.closeModal('modal-booking-success')" style="font-weight: 800; padding: 8px 20px; border-radius: 8px; font-size: 12px; background: #16a34a; border-color: #15803d; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);">
+                ✓ Done
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const mount = document.getElementById('modal-mount');
+    if (mount) {
+      mount.insertAdjacentHTML('beforeend', html);
     }
   },
 
@@ -1449,10 +1593,16 @@ const MeetingRoomsModule = {
 
     if (res.success) {
       App.showToast(`✅ ${res.message}`, 'success');
-      // If user booked for their own startup, switch to myBookings or keep on scheduler with update
       this.render();
       if (typeof DashboardModule !== 'undefined' && DashboardModule.render) {
         DashboardModule.render();
+      }
+
+      const rooms = window.store.getMeetingRooms();
+      const bookedRoom = rooms.find(r => r.id === data.roomId);
+      const myStartup = this.getMyStartup();
+      if (bookedRoom && res.booking) {
+        this.showBookingSuccessModal(bookedRoom, res.booking, myStartup);
       }
     } else {
       App.showToast(`⚠️ ${res.message}`, 'danger');
