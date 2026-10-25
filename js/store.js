@@ -336,7 +336,7 @@ class NexusStore {
         badgeClass: 'badge-primary',
         accentColor: '#6366f1',
         description: 'Omnipotent system authority with unrestricted access to all hub operations, settings, and financials.',
-        scopeSummary: 'Can access everything.',
+        scopeSummary: 'All Modules & Operations',
         allowedTabs: ['dashboard', 'onboarding', 'workspace', 'meetingRooms', 'billing', 'payments', 'incubation', 'milestones', 'reports', 'contact'],
         features: [
           'Full Omnipotent System Access',
@@ -653,7 +653,7 @@ class NexusStore {
     if (mentorId) this.activeMentorId = mentorId;
     
     const roleInfo = this.getCurrentRoleInfo();
-    this.addActivity('Security', `RBAC perspective switched to: ${roleInfo.name} (${roleInfo.scopeSummary}).`, '🛡️');
+    this.addActivity('Security', `RBAC perspective switched to: ${roleInfo.name}.`, '🛡️');
     this.save();
     this.notify();
   }

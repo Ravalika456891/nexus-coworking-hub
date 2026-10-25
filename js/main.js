@@ -319,7 +319,7 @@ const App = {
     }
 
     this.updateRoleIndicator();
-    this.showToast(`Switched perspective to ${roleInfo.icon} ${roleInfo.name} (${roleInfo.scopeSummary})`, 'info');
+    this.showToast(`Switched perspective to ${roleInfo.icon} ${roleInfo.name}`, 'info');
   },
 
   toggleRoleDropdown(e) {
@@ -435,8 +435,6 @@ const App = {
               ${roleInfo.icon} ${roleInfo.name}
             </span>
             <span style="color: var(--text-muted); font-size: 12px; flex-shrink: 0;">• ${roleInfo.user.roleTitle}</span>
-            <span style="color: var(--border-medium); margin: 0 4px; flex-shrink: 0;">|</span>
-            <span style="font-size: 12px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0;">${roleInfo.scopeSummary}</span>
           </div>
         </div>
 
