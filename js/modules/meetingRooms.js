@@ -5,6 +5,7 @@ const MeetingRoomsModule = {
   activeTab: 'scheduler', // 'scheduler' | 'myBookings' | 'allBookings'
   activeStartupFilter: null, // null = defaults to active startup
   myBookingsFilterDate: 'all', // 'all' | 'selected'
+  selectedSlotsByRoom: {}, // { [roomId]: ['09:00', '10:00'] }
 
   getMyStartupId() {
     if (this.activeStartupFilter) return this.activeStartupFilter;
@@ -505,6 +506,71 @@ const MeetingRoomsModule = {
     return count;
   },
 
+  toggleSlotSelection(roomId, slot) {
+    if (!this.selectedSlotsByRoom) this.selectedSlotsByRoom = {};
+    if (!this.selectedSlotsByRoom[roomId]) {
+      this.selectedSlotsByRoom[roomId] = [];
+    }
+    const list = this.selectedSlotsByRoom[roomId];
+    const idx = list.indexOf(slot);
+    if (idx > -1) {
+      list.splice(idx, 1);
+    } else {
+      const isMorning = parseInt(slot.split(':')[0], 10) < 12;
+      const hasOppositeSession = list.some(s => (parseInt(s.split(':')[0], 10) < 12) !== isMorning);
+      if (hasOppositeSession) {
+        this.selectedSlotsByRoom[roomId] = [slot];
+      } else {
+        list.push(slot);
+        list.sort();
+      }
+    }
+    this.render();
+  },
+
+  clearSlotSelection(roomId) {
+    if (this.selectedSlotsByRoom && this.selectedSlotsByRoom[roomId]) {
+      delete this.selectedSlotsByRoom[roomId];
+      this.render();
+    }
+  },
+
+  lockInSelectedSlots(roomId) {
+    if (!this.selectedSlotsByRoom || !this.selectedSlotsByRoom[roomId]) return;
+    const slots = [...this.selectedSlotsByRoom[roomId]].sort();
+    if (!slots.length) return;
+
+    const startTime = slots[0];
+    const lastSlot = slots[slots.length - 1];
+    const lastH = parseInt(lastSlot.split(':')[0], 10) + 1;
+    const endTime = `${lastH < 10 ? '0' : ''}${lastH}:00`;
+
+    const myStartup = this.getMyStartup();
+    const titleInput = document.getElementById(`lockin-title-${roomId}`);
+    const title = (titleInput && titleInput.value.trim()) || 'Strategic Review & Team Sprint';
+
+    const res = window.store.bookMeetingRoom({
+      roomId,
+      startupId: myStartup.id,
+      title,
+      date: this.selectedDate,
+      startTime,
+      endTime,
+      attendees: 4
+    });
+
+    if (res.success) {
+      App.showToast(`🔒 Locked In! Reserved ${startTime} – ${endTime} for ${myStartup.name}`, 'success');
+      delete this.selectedSlotsByRoom[roomId];
+      this.render();
+      if (typeof DashboardModule !== 'undefined' && DashboardModule.render) {
+        DashboardModule.render();
+      }
+    } else {
+      App.showToast(`⚠️ ${res.message}`, 'danger');
+    }
+  },
+
   renderRoomCard(room, myStartup) {
     const morningSlots = ['08:00', '09:00', '10:00'];
     const afternoonSlots = ['15:00', '16:00', '17:00', '18:00'];
@@ -567,6 +633,8 @@ const MeetingRoomsModule = {
       roomStatusBadge = `<span class="badge" style="background: rgba(34, 197, 94, 0.12); color: #15803d; border: 1px solid rgba(34, 197, 94, 0.35); font-weight: 700; font-size: 11px; padding: 3px 9px; border-radius: 999px;">🟢 ${availableHours} Slots Open</span>`;
     }
 
+    const selectedSlots = (this.selectedSlotsByRoom && this.selectedSlotsByRoom[room.id]) || [];
+
     const renderSlotBtn = (slot) => {
       const curHour = parseInt(slot.split(':')[0], 10);
       const booked = bookings.find(b => {
@@ -577,6 +645,7 @@ const MeetingRoomsModule = {
 
       const label = formatSlot12h(slot);
       const isMyBooking = booked && (booked.startupId === myStartup.id || (booked.startupName && booked.startupName.toLowerCase() === myStartup.name.toLowerCase()));
+      const isSelected = selectedSlots.includes(slot);
 
       if (booked) {
         if (isMyBooking) {
@@ -597,15 +666,67 @@ const MeetingRoomsModule = {
           `;
         }
       } else {
-        return `
-          <div class="slot-btn available" 
-               onclick="MeetingRoomsModule.openBookModal('${room.id}', '${slot}', '${myStartup.id}')" 
-               title="🟢 Available: Click to reserve ${room.name} at ${label} for ${myStartup.name}">
-            <span>🟢</span> <span>${label}</span>
-          </div>
-        `;
+        if (isSelected) {
+          return `
+            <div class="slot-btn available selected" 
+                 onclick="MeetingRoomsModule.toggleSlotSelection('${room.id}', '${slot}')" 
+                 title="✓ Selected: Click to unselect">
+              <span>✓</span> <span>${label}</span>
+            </div>
+          `;
+        } else {
+          return `
+            <div class="slot-btn available" 
+                 onclick="MeetingRoomsModule.toggleSlotSelection('${room.id}', '${slot}')" 
+                 title="🟢 Click to select and lock in ${label}">
+              <span>🟢</span> <span>${label}</span>
+            </div>
+          `;
+        }
       }
     };
+
+    // Calculate Lock-In Preview if slots are selected
+    let lockInBarHtml = '';
+    if (selectedSlots.length > 0) {
+      const sorted = [...selectedSlots].sort();
+      const startSlot = sorted[0];
+      const endSlotLast = sorted[sorted.length - 1];
+      const endHour = parseInt(endSlotLast.split(':')[0], 10) + 1;
+      const endSlotStr = `${endHour < 10 ? '0' : ''}${endHour}:00`;
+
+      const duration = sorted.length;
+      const remainingCredits = Math.max(0, (myStartup.includedMeetingHours || 12) - (myStartup.usedMeetingHours || 0));
+      const isCovered = remainingCredits >= duration;
+      const costBadge = isCovered ? 'Covered by Plan (₹0)' : `₹${room.hourlyRate * duration}`;
+
+      lockInBarHtml = `
+        <div class="lockin-action-bar">
+          <div style="min-width: 0; flex: 1;">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <span style="font-size: 12px; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 4px;">
+                <span>🔒</span> <span>Lock In:</span> <strong style="color: #059669; font-family: var(--font-mono);">${formatSlot12h(startSlot)} – ${formatSlot12h(endSlotStr)}</strong> <span style="color: var(--text-muted); font-size: 11px;">(${duration} hr${duration > 1 ? 's' : ''})</span>
+              </span>
+              <span class="badge ${isCovered ? 'badge-success' : 'badge-primary'}" style="font-size: 10.5px; padding: 2px 8px; font-weight: 700;">
+                ${costBadge}
+              </span>
+            </div>
+            <div style="margin-top: 6px;">
+              <input type="text" id="lockin-title-${room.id}" class="form-control" style="font-size: 11.5px; padding: 4px 8px; height: 28px; width: 100%; max-width: 280px;" placeholder="Meeting title / agenda..." value="Strategic Review & Team Sprint">
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+            <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.clearSlotSelection('${room.id}')" style="font-size: 11px; padding: 5px 9px; border-radius: 6px; color: var(--text-muted);" title="Clear selection">
+              ✕
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="MeetingRoomsModule.lockInSelectedSlots('${room.id}')" style="font-size: 11.5px; font-weight: 800; padding: 6px 14px; border-radius: 8px; background: #059669; border-color: #047857; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.35);" title="Lock in this reservation immediately">
+              <span>🔒</span> <span>Lock In Now</span>
+            </button>
+          </div>
+        </div>
+      `;
+    }
 
     return `
       <div class="room-card" style="border-top: 3.5px solid ${accentColor};">
@@ -637,7 +758,7 @@ const MeetingRoomsModule = {
               </button>
             ` : `
               <button class="btn btn-primary btn-sm" onclick="MeetingRoomsModule.openBookModal('${room.id}', null, '${myStartup.id}')" style="font-weight: 700; padding: 6px 14px; font-size: 11.5px; border-radius: 8px; display: inline-flex; align-items: center; gap: 5px;" title="Reserve ${room.name} for ${myStartup.name}">
-                <span>+</span> Reserve Room
+                <span>+</span> Custom Book
               </button>
             `}
           </div>
@@ -682,11 +803,14 @@ const MeetingRoomsModule = {
           <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px;">
             ${afternoonSlots.map(s => renderSlotBtn(s)).join('')}
           </div>
+
+          <!-- Dynamic Lock-In Action Strip (Appears when any slot on the bar is selected) -->
+          ${lockInBarHtml}
         </div>
 
         <!-- Quick Hint Footer -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 4px; font-size: 11px; color: var(--text-muted);">
-          <span>💡 Click any open green slot to book</span>
+          <span>💡 ${selectedSlots.length > 0 ? 'Click "Lock In Now" above to confirm' : 'Click any slot on the bar to select & lock in'}</span>
           <span style="font-weight: 600;">
             ${hasMyBookings ? `<span style="color: #2563eb; font-weight: 700;">🔵 ${myBookedHours}h Mine</span> • ` : ''}
             <span style="color: #15803d; font-weight: 700;">🟢 ${availableHours} of ${timeSlots.length} Open</span>
