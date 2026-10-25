@@ -456,13 +456,13 @@ const MeetingRoomsModule = {
           <table class="table" style="width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 0;">
             <thead>
               <tr style="background: var(--bg-surface-elevated); border-bottom: 1px solid var(--border-subtle); color: var(--text-muted); text-align: left;">
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Room</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Startup Venture</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Meeting Purpose</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Date & Time Window</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; text-align: center;">Attendees</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Billing / Credits</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; text-align: right;">Action</th>
+                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; white-space: nowrap;">Room</th>
+                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; white-space: nowrap;">Startup Venture</th>
+                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; min-width: 170px;">Meeting Purpose</th>
+                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; white-space: nowrap;">Date & Time Window</th>
+                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; text-align: center; white-space: nowrap;">Attendees</th>
+                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; white-space: nowrap;">Billing / Credits</th>
+                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; text-align: right; white-space: nowrap;">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -472,32 +472,34 @@ const MeetingRoomsModule = {
                 const isMine = b.startupId === myStartup.id;
                 return `
                   <tr style="border-bottom: 1px solid var(--border-subtle); background: ${isMine ? 'rgba(37, 99, 235, 0.04)' : 'transparent'};">
-                    <td style="padding: 12px 16px;">
+                    <td style="padding: 12px 16px; white-space: nowrap;">
                       <div style="display: flex; align-items: center; gap: 8px;">
                         <span>${b.roomIcon || '🏢'}</span>
                         <strong style="color: var(--text-primary);">${b.roomName}</strong>
                       </div>
                     </td>
-                    <td style="padding: 12px 16px;">
-                      <span class="badge ${isMine ? 'badge-primary' : 'badge-subtle'}" style="font-weight: 700;">
+                    <td style="padding: 12px 16px; white-space: nowrap;">
+                      <span class="badge ${isMine ? 'badge-primary' : 'badge-subtle'}" style="font-weight: 700; white-space: nowrap;">
                         ${b.startupName} ${isMine ? '★ (You)' : ''}
                       </span>
                     </td>
-                    <td style="padding: 12px 16px; font-weight: 600; color: var(--text-primary);">${b.title}</td>
-                    <td style="padding: 12px 16px; font-family: var(--font-mono); font-size: 11.5px;">
-                      📅 ${b.date} • <strong style="color: #2563eb;">${b.startTime} - ${b.endTime}</strong>
+                    <td style="padding: 12px 16px; font-weight: 600; color: var(--text-primary); min-width: 170px;">${b.title}</td>
+                    <td style="padding: 12px 16px; font-family: var(--font-mono); font-size: 11.5px; white-space: nowrap;">
+                      📅 ${b.date} • <strong style="color: #2563eb; white-space: nowrap;">${b.startTime} - ${b.endTime}</strong>
                     </td>
-                    <td style="padding: 12px 16px; text-align: center;">${b.attendees} Pax</td>
-                    <td style="padding: 12px 16px;">
-                      ${b.cost === 0 ? '<span style="color: #16a34a; font-weight: 700;">Covered by Plan (₹0)</span>' : `₹${b.cost}`}
+                    <td style="padding: 12px 16px; text-align: center; white-space: nowrap;">${b.attendees} Pax</td>
+                    <td style="padding: 12px 16px; white-space: nowrap;">
+                      ${b.cost === 0 ? '<span style="color: #16a34a; font-weight: 700; white-space: nowrap;">Covered by Plan (₹0)</span>' : `<span style="white-space: nowrap;">₹${b.cost}</span>`}
                     </td>
-                    <td style="padding: 12px 16px; text-align: right;">
-                      <button class="btn btn-outline btn-sm" style="padding: 3px 8px; font-size: 11px; color: #2563eb; border-color: rgba(37,99,235,0.4); margin-right: 4px;" onclick="MeetingRoomsModule.openPassModal('${b.roomId}', '${b.id}')">
-                        Pass
-                      </button>
-                      <button class="btn btn-outline btn-sm" style="padding: 3px 8px; font-size: 11px; color: #dc2626; border-color: rgba(239, 68, 68, 0.4);" onclick="MeetingRoomsModule.cancelBooking('${b.roomId}', '${b.id}')">
-                        Cancel
-                      </button>
+                    <td style="padding: 12px 16px; text-align: right; white-space: nowrap;">
+                      <div style="display: inline-flex; gap: 6px; align-items: center; white-space: nowrap;">
+                        <button class="btn btn-outline btn-sm" style="padding: 4px 10px; font-size: 11px; color: #2563eb; border-color: rgba(37,99,235,0.4); white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;" onclick="MeetingRoomsModule.openPassModal('${b.roomId}', '${b.id}')">
+                          <span>🎫</span><span>Pass</span>
+                        </button>
+                        <button class="btn btn-outline btn-sm" style="padding: 4px 10px; font-size: 11px; color: #dc2626; border-color: rgba(239, 68, 68, 0.4); white-space: nowrap; flex-shrink: 0;" onclick="MeetingRoomsModule.cancelBooking('${b.roomId}', '${b.id}')">
+                          Cancel
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 `;
@@ -720,13 +722,13 @@ const MeetingRoomsModule = {
         <table class="nexus-table" style="font-size: 12.5px;">
           <thead>
             <tr>
-              <th>Room</th>
-              <th>Meeting Purpose</th>
-              <th>Startup</th>
-              <th>Time Window</th>
-              <th>Attendees</th>
-              <th>Fee / Credits</th>
-              <th>Action</th>
+              <th style="white-space: nowrap;">Room</th>
+              <th style="min-width: 170px;">Meeting Purpose</th>
+              <th style="white-space: nowrap;">Startup</th>
+              <th style="white-space: nowrap;">Time Window</th>
+              <th style="white-space: nowrap; text-align: center;">Attendees</th>
+              <th style="white-space: nowrap;">Fee / Credits</th>
+              <th style="white-space: nowrap; text-align: right;">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -734,22 +736,26 @@ const MeetingRoomsModule = {
               const isMine = b.startupId === myStartup.id;
               return `
                 <tr style="background: ${isMine ? 'rgba(37, 99, 235, 0.05)' : 'transparent'};">
-                  <td><strong>${b.roomName}</strong></td>
-                  <td>${b.title}</td>
-                  <td>
-                    <span class="badge ${isMine ? 'badge-primary' : 'badge-info'}" style="font-weight: 700;">
+                  <td style="white-space: nowrap;"><strong>${b.roomName}</strong></td>
+                  <td style="min-width: 170px; font-weight: 500;">${b.title}</td>
+                  <td style="white-space: nowrap;">
+                    <span class="badge ${isMine ? 'badge-primary' : 'badge-info'}" style="font-weight: 700; white-space: nowrap;">
                       ${b.startupName} ${isMine ? '★ (Mine)' : ''}
                     </span>
                   </td>
-                  <td><code style="font-family: var(--font-mono); font-weight: 700; color: ${isMine ? '#2563eb' : 'inherit'};">${b.startTime} - ${b.endTime}</code></td>
-                  <td>${b.attendees} Pax</td>
-                  <td>${b.cost === 0 ? '<span style="color: #16a34a; font-weight: 600;">Covered by Plan</span>' : `₹${b.cost}`}</td>
-                  <td>
-                    <div style="display: flex; gap: 5px;">
-                      <button class="btn btn-outline btn-sm" style="font-size: 11px; padding: 2px 8px; color: #2563eb; border-color: rgba(37,99,235,0.4);" onclick="MeetingRoomsModule.openPassModal('${b.roomId}', '${b.id}')">
-                        🎫 Pass
+                  <td style="white-space: nowrap;">
+                    <code style="font-family: var(--font-mono); font-weight: 700; color: ${isMine ? '#2563eb' : 'inherit'}; white-space: nowrap; display: inline-block;">${b.startTime} - ${b.endTime}</code>
+                  </td>
+                  <td style="white-space: nowrap; text-align: center;">${b.attendees} Pax</td>
+                  <td style="white-space: nowrap;">
+                    ${b.cost === 0 ? '<span style="color: #16a34a; font-weight: 600; white-space: nowrap;">Covered by Plan</span>' : `<span style="white-space: nowrap;">₹${b.cost}</span>`}
+                  </td>
+                  <td style="white-space: nowrap; text-align: right;">
+                    <div style="display: inline-flex; gap: 6px; align-items: center; white-space: nowrap;">
+                      <button class="btn btn-outline btn-sm" style="font-size: 11.5px; padding: 4px 10px; color: #2563eb; border-color: rgba(37,99,235,0.4); white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; line-height: 1; flex-shrink: 0;" onclick="MeetingRoomsModule.openPassModal('${b.roomId}', '${b.id}')">
+                        <span>🎫</span><span>Pass</span>
                       </button>
-                      <button class="btn btn-outline btn-sm" style="font-size: 11px; padding: 2px 8px; color: var(--status-danger);" onclick="MeetingRoomsModule.cancelBooking('${b.roomId}', '${b.id}')">
+                      <button class="btn btn-outline btn-sm" style="font-size: 11.5px; padding: 4px 10px; color: var(--status-danger); border-color: rgba(239,68,68,0.4); white-space: nowrap; line-height: 1; flex-shrink: 0;" onclick="MeetingRoomsModule.cancelBooking('${b.roomId}', '${b.id}')">
                         Cancel
                       </button>
                     </div>

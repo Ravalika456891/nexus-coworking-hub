@@ -795,6 +795,7 @@ body::before {
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   text-decoration: none;
   letter-spacing: -0.01em;
+  white-space: nowrap;
 }
 
 .btn:active {
@@ -855,6 +856,7 @@ body::before {
 .btn-sm {
   padding: 6px 14px;
   font-size: 12px;
+  white-space: nowrap;
 }
 
 
