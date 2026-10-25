@@ -112,6 +112,63 @@ class NexusStore {
         }
       ];
     }
+    // Ensure meeting room seed reservations exist for today and 2026-10-25
+    if (!this.state.meetingRooms || this.state.meetingRooms.length === 0) {
+      this.state.meetingRooms = JSON.parse(JSON.stringify(window.INITIAL_DATA.meetingRooms || []));
+    }
+    const todayStr = new Date().toISOString().split('T')[0];
+    const testDates = [todayStr, '2026-10-25'];
+    testDates.forEach(d => {
+      const hasBookingsForDate = (this.state.meetingRooms || []).some(r => 
+        (r.bookings || []).some(b => b.date === d && b.status !== 'Cancelled')
+      );
+      if (!hasBookingsForDate && this.state.meetingRooms && this.state.meetingRooms.length > 0) {
+        const r1 = this.state.meetingRooms.find(r => r.id === 'MR-01' || (r.name && r.name.includes('Boardroom')));
+        if (r1) {
+          if (!r1.bookings) r1.bookings = [];
+          r1.bookings.push({
+            id: `BKG-${d}-01`,
+            startupId: 'STP-01',
+            startupName: 'NeuroPulse AI',
+            title: 'Medical Board & Advisory Review',
+            date: d,
+            startTime: '10:00',
+            endTime: '12:00',
+            attendees: 10,
+            cost: 0,
+            status: 'Confirmed'
+          });
+          r1.bookings.push({
+            id: `BKG-${d}-02`,
+            startupId: 'STP-03',
+            startupName: 'FinEdge Protocol',
+            title: 'Pre-Series A VC Due Diligence',
+            date: d,
+            startTime: '15:00',
+            endTime: '17:00',
+            attendees: 12,
+            cost: 0,
+            status: 'Confirmed'
+          });
+        }
+        const r2 = this.state.meetingRooms.find(r => r.id === 'MR-02' || (r.name && r.name.includes('Pitch Arena')));
+        if (r2) {
+          if (!r2.bookings) r2.bookings = [];
+          r2.bookings.push({
+            id: `BKG-${d}-03`,
+            startupId: 'STP-XYZ',
+            startupName: 'XYZ Technologies',
+            title: 'Enterprise Architecture & Client Demo',
+            date: d,
+            startTime: '13:00',
+            endTime: '15:00',
+            attendees: 18,
+            cost: 0,
+            status: 'Confirmed'
+          });
+        }
+      }
+    });
   }
 
   getContactInquiries() {

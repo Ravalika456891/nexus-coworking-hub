@@ -9,23 +9,63 @@ const MeetingRoomsModule = {
 
     const rooms = window.store.getMeetingRooms();
     const startups = window.store.getStartups();
+    const timeSlots = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
+
+    let totalSlotsCount = rooms.length * timeSlots.length;
+    let totalBookedCount = 0;
+    rooms.forEach(r => {
+      const bList = (r.bookings || []).filter(b => b.date === this.selectedDate && b.status !== 'Cancelled');
+      timeSlots.forEach(slot => {
+        const curHour = parseInt(slot.split(':')[0], 10);
+        const booked = bList.some(b => {
+          const bHour = parseInt(b.startTime.split(':')[0], 10);
+          const eHour = parseInt(b.endTime.split(':')[0], 10);
+          return curHour >= bHour && curHour < eHour;
+        });
+        if (booked) totalBookedCount++;
+      });
+    });
+    const totalAvailableCount = Math.max(0, totalSlotsCount - totalBookedCount);
 
     container.innerHTML = `
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; flex-wrap: wrap; gap: 14px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 14px;">
         <div>
-          <h2 style="font-size: 20px; font-weight: 800; color: var(--text-primary);">
-            Meeting Rooms & Conference Scheduler
+          <h2 style="font-size: 20px; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+            <span>🏢</span> Meeting Rooms & Conference Scheduler
           </h2>
           <p style="font-size: 13px; color: var(--text-secondary); margin-top: 2px;">
-            State-of-the-art boardrooms, presentation arenas, and focus pods with conflict prevention.
+            Real-time conflict prevention: state-of-the-art boardrooms, presentation arenas, and focus pods.
           </p>
         </div>
 
-        <div style="display: flex; gap: 10px; align-items: center;">
-          <input type="date" class="form-control" style="width: auto; padding: 6px 12px; font-size: 13px;" value="${this.selectedDate}" onchange="MeetingRoomsModule.setDate(this.value)">
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <input type="date" class="form-control" style="width: auto; padding: 7px 14px; font-size: 13px; font-weight: 600;" value="${this.selectedDate}" onchange="MeetingRoomsModule.setDate(this.value)">
           <button class="btn btn-primary" onclick="MeetingRoomsModule.openBookModal()">
             + Reserve Room
           </button>
+        </div>
+      </div>
+
+      <!-- Color-Coded Room & Timing Status Legend -->
+      <div style="background: var(--bg-surface-elevated); border: 1.5px solid var(--border-subtle); border-radius: 12px; padding: 12px 18px; margin-bottom: 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
+        <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap; font-size: 12.5px;">
+          <div style="display: inline-flex; align-items: center; gap: 8px;">
+            <span style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 6px; background: rgba(34, 197, 94, 0.18); border: 1.5px solid #16a34a; font-size: 11px;">🟢</span>
+            <span style="color: #15803d; font-weight: 800;">Available Rooms & Timings</span>
+            <span style="font-size: 11.5px; color: var(--text-muted);">(Click green slot to reserve)</span>
+          </div>
+          <div style="display: inline-flex; align-items: center; gap: 8px;">
+            <span style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 6px; background: rgba(239, 68, 68, 0.18); border: 1.5px solid #ef4444; font-size: 11px;">🔴</span>
+            <span style="color: #dc2626; font-weight: 800;">Already Booked Rooms & Timings</span>
+            <span style="font-size: 11.5px; color: var(--text-muted);">(Conflict protected)</span>
+          </div>
+        </div>
+
+        <div style="display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-family: var(--font-mono); background: var(--bg-surface); padding: 5px 14px; border-radius: 999px; border: 1.5px solid var(--border-subtle);">
+          <span>📅 <strong>${this.selectedDate}</strong>:</span>
+          <span style="color: #15803d; font-weight: 800;">🟢 ${totalAvailableCount} Open</span>
+          <span>•</span>
+          <span style="color: #dc2626; font-weight: 800;">🔴 ${totalBookedCount} Booked</span>
         </div>
       </div>
 
@@ -40,7 +80,9 @@ const MeetingRoomsModule = {
           <div class="card-title">
             <span>📅 Confirmed Reservations for ${this.selectedDate}</span>
           </div>
-          <span class="badge badge-info">${this.getBookingsCountForDate()} Sessions</span>
+          <span class="badge ${totalBookedCount > 0 ? 'badge-danger' : 'badge-info'}" style="font-weight: 700;">
+            ${this.getBookingsCountForDate()} Active Sessions (${totalBookedCount} Hours Booked)
+          </span>
         </div>
         ${this.renderBookingsTable(rooms)}
       </div>
@@ -67,21 +109,68 @@ const MeetingRoomsModule = {
     const timeSlots = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
     const bookings = (room.bookings || []).filter(b => b.date === this.selectedDate && b.status !== 'Cancelled');
 
+    let bookedCount = 0;
+    const slotDetails = timeSlots.map(slot => {
+      const curHour = parseInt(slot.split(':')[0], 10);
+      const booked = bookings.find(b => {
+        const bHour = parseInt(b.startTime.split(':')[0], 10);
+        const eHour = parseInt(b.endTime.split(':')[0], 10);
+        return curHour >= bHour && curHour < eHour;
+      });
+      if (booked) bookedCount++;
+      return { slot, booked };
+    });
+
+    const isFullyBooked = (bookedCount === timeSlots.length);
+    const isPartiallyBooked = (bookedCount > 0 && !isFullyBooked);
+    const isFullyAvailable = (bookedCount === 0);
+
+    const roomCardClass = isFullyBooked 
+      ? 'room-card status-booked status-fully-booked' 
+      : (isPartiallyBooked ? 'room-card status-booked' : 'room-card status-available');
+
+    let roomStatusBadge = '';
+    if (isFullyBooked) {
+      roomStatusBadge = `<span class="badge" style="background: rgba(239, 68, 68, 0.16); color: #dc2626; border: 1.5px solid rgba(239, 68, 68, 0.5); font-weight: 800; font-size: 11px; padding: 4px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 5px;">🔴 Fully Booked</span>`;
+    } else if (isPartiallyBooked) {
+      roomStatusBadge = `
+        <div style="display: flex; gap: 5px; align-items: center; flex-wrap: wrap;">
+          <span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #dc2626; border: 1.5px solid rgba(239, 68, 68, 0.45); font-weight: 700; font-size: 11px; padding: 3px 8px; border-radius: 999px;">🔴 ${bookedCount} Booked</span>
+          <span class="badge" style="background: rgba(34, 197, 94, 0.15); color: #15803d; border: 1.5px solid rgba(34, 197, 94, 0.45); font-weight: 700; font-size: 11px; padding: 3px 8px; border-radius: 999px;">🟢 ${timeSlots.length - bookedCount} Open</span>
+        </div>
+      `;
+    } else {
+      roomStatusBadge = `<span class="badge" style="background: rgba(34, 197, 94, 0.15); color: #15803d; border: 1.5px solid rgba(34, 197, 94, 0.45); font-weight: 800; font-size: 11px; padding: 4px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 5px;">🟢 100% Available</span>`;
+    }
+
     return `
-      <div class="room-card">
+      <div class="${roomCardClass}">
         <div class="room-header">
           <div style="display: flex; gap: 12px; align-items: center;">
-            <div style="width: 44px; height: 44px; border-radius: var(--radius-md); background: var(--bg-surface-elevated); border: 1px solid var(--border-medium); display: flex; align-items: center; justify-content: center; font-size: 22px;">
+            <div style="width: 46px; height: 46px; border-radius: var(--radius-md); background: var(--bg-surface-elevated); border: 1.5px solid var(--border-medium); display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0;">
               ${room.icon}
             </div>
             <div>
-              <h3 style="font-size: 16px; font-weight: 700; color: var(--text-primary);">${room.name}</h3>
-              <span style="font-size: 12px; color: var(--text-muted);">Capacity: <strong>${room.capacity} Pax</strong> • Rate: ₹${room.hourlyRate}/hr</span>
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <h3 style="font-size: 16.5px; font-weight: 800; color: var(--text-primary); margin: 0;">${room.name}</h3>
+                ${roomStatusBadge}
+              </div>
+              <div style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">
+                Capacity: <strong>${room.capacity} Pax</strong> • Rate: <strong style="color: var(--text-primary);">₹${room.hourlyRate}/hr</strong>
+              </div>
             </div>
           </div>
-          <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openBookModal('${room.id}')">
-            Book Now
-          </button>
+          <div>
+            ${isFullyBooked ? `
+              <button class="btn btn-outline btn-sm" disabled style="opacity: 0.6; border-color: rgba(239, 68, 68, 0.4); color: #dc2626; cursor: not-allowed; font-weight: 700;">
+                🔴 Fully Booked
+              </button>
+            ` : `
+              <button class="btn btn-sm" style="background: rgba(34, 197, 94, 0.14); color: #15803d; border: 1.5px solid #16a34a; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;" onclick="MeetingRoomsModule.openBookModal('${room.id}')" title="Book this room">
+                <span>+</span> Book Now
+              </button>
+            `}
+          </div>
         </div>
 
         <div class="room-amenities-tags">
@@ -89,22 +178,33 @@ const MeetingRoomsModule = {
         </div>
 
         <div>
-          <div style="font-size: 11.5px; color: var(--text-muted); font-weight: 600; margin-bottom: 6px; text-transform: uppercase;">
-            Time Slot Availability (${this.selectedDate}):
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 11.5px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">
+              Time Slot Availability (${this.selectedDate}):
+            </span>
+            <span style="font-size: 11px; font-weight: 700; color: ${bookedCount > 0 ? '#dc2626' : '#15803d'};">
+              ${bookedCount > 0 ? `🔴 ${bookedCount} Booked • 🟢 ${timeSlots.length - bookedCount} Available` : `🟢 All Timings Available`}
+            </span>
           </div>
-          <div class="time-slot-picker">
-            ${timeSlots.map(slot => {
-              const booked = bookings.find(b => {
-                const bHour = parseInt(b.startTime.split(':')[0]);
-                const eHour = parseInt(b.endTime.split(':')[0]);
-                const curHour = parseInt(slot.split(':')[0]);
-                return curHour >= bHour && curHour < eHour;
-              });
 
+          <div class="time-slot-picker">
+            ${slotDetails.map(({ slot, booked }) => {
               if (booked) {
-                return `<div class="slot-btn booked" title="Booked by ${booked.startupName}: ${booked.title}">${slot}</div>`;
+                return `
+                  <div class="slot-btn booked" 
+                       onclick="App.showToast('Already Booked: ${room.name} is reserved at ${slot} by ${booked.startupName} (${booked.title})', 'warning')" 
+                       title="🔴 Already Booked by ${booked.startupName}: ${booked.title} (${booked.startTime} - ${booked.endTime})">
+                    <span style="font-size: 9px;">🔴</span> <span>${slot}</span>
+                  </div>
+                `;
               } else {
-                return `<div class="slot-btn" onclick="MeetingRoomsModule.openBookModal('${room.id}', '${slot}')">${slot}</div>`;
+                return `
+                  <div class="slot-btn available" 
+                       onclick="MeetingRoomsModule.openBookModal('${room.id}', '${slot}')" 
+                       title="🟢 Available: Click to reserve ${room.name} at ${slot}">
+                    <span style="font-size: 9px;">🟢</span> <span>${slot}</span>
+                  </div>
+                `;
               }
             }).join('')}
           </div>
