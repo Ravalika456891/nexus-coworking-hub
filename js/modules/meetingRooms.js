@@ -71,7 +71,9 @@ const MeetingRoomsModule = {
     const myBookings = this.getMyBookings();
     const myBookingsToday = myBookings.filter(b => b.date === this.selectedDate);
 
-    const timeSlots = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
+    const morningSlots = ['08:00', '09:00', '10:00'];
+    const afternoonSlots = ['15:00', '16:00', '17:00', '18:00'];
+    const timeSlots = [...morningSlots, ...afternoonSlots];
 
     // Slot statistics for selected date
     let totalSlotsCount = rooms.length * timeSlots.length;
@@ -204,6 +206,28 @@ const MeetingRoomsModule = {
           </button>
         </div>
       ` : ''}
+
+      <!-- Designated Operating Hours Alert Notice -->
+      <div style="background: linear-gradient(90deg, rgba(99, 102, 241, 0.08) 0%, rgba(168, 85, 247, 0.08) 100%); border: 1.5px solid rgba(99, 102, 241, 0.25); border-radius: 12px; padding: 12px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 20px;">⏰</span>
+          <div>
+            <div style="font-size: 13.5px; font-weight: 800; color: var(--text-primary);">Designated Operating Windows</div>
+            <div style="font-size: 12px; color: var(--text-secondary);">Meeting rooms can strictly be booked only during two dedicated sessions:</div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <span class="badge" style="background: rgba(34, 197, 94, 0.16); color: #15803d; border: 1.5px solid #16a34a; font-weight: 800; font-size: 12px; padding: 5px 14px; border-radius: 999px;">
+            🌅 Morning: 08:00 AM – 11:00 AM
+          </span>
+          <span class="badge" style="background: rgba(99, 102, 241, 0.16); color: #4338ca; border: 1.5px solid #6366f1; font-weight: 800; font-size: 12px; padding: 5px 14px; border-radius: 999px;">
+            🌆 Afternoon: 03:00 PM – 07:00 PM (15:00 – 19:00)
+          </span>
+          <span style="font-size: 11.5px; color: var(--text-muted); font-weight: 600; padding: 4px 10px; background: var(--bg-surface); border-radius: 6px; border: 1px solid var(--border-subtle);">
+            ☕ 11:00 AM – 03:00 PM Break
+          </span>
+        </div>
+      </div>
 
       <!-- Color-Coded Room & Timing Status Legend -->
       <div style="background: var(--bg-surface-elevated); border: 1.5px solid var(--border-subtle); border-radius: 12px; padding: 12px 18px; margin-bottom: 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
@@ -502,30 +526,28 @@ const MeetingRoomsModule = {
   },
 
   renderRoomCard(room, myStartup) {
-    const timeSlots = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
+    const morningSlots = ['08:00', '09:00', '10:00'];
+    const afternoonSlots = ['15:00', '16:00', '17:00', '18:00'];
+    const timeSlots = [...morningSlots, ...afternoonSlots];
     const bookings = (room.bookings || []).filter(b => b.date === this.selectedDate && b.status !== 'Cancelled');
 
     let myBookedHours = 0;
     let otherBookedHours = 0;
 
-    const slotDetails = timeSlots.map(slot => {
+    timeSlots.forEach(slot => {
       const curHour = parseInt(slot.split(':')[0], 10);
       const booked = bookings.find(b => {
         const bHour = parseInt(b.startTime.split(':')[0], 10);
         const eHour = parseInt(b.endTime.split(':')[0], 10);
         return curHour >= bHour && curHour < eHour;
       });
-
-      let isMyBooking = false;
       if (booked) {
         if (booked.startupId === myStartup.id || (booked.startupName && booked.startupName.toLowerCase() === myStartup.name.toLowerCase())) {
-          isMyBooking = true;
           myBookedHours++;
         } else {
           otherBookedHours++;
         }
       }
-      return { slot, booked, isMyBooking };
     });
 
     const totalBookedHours = myBookedHours + otherBookedHours;
@@ -559,6 +581,45 @@ const MeetingRoomsModule = {
     } else {
       roomStatusBadge = `<span class="badge" style="background: rgba(34, 197, 94, 0.15); color: #15803d; border: 1.5px solid rgba(34, 197, 94, 0.45); font-weight: 800; font-size: 11px; padding: 4px 10px; border-radius: 999px;">🟢 100% Available</span>`;
     }
+
+    const renderSlotBtn = (slot) => {
+      const curHour = parseInt(slot.split(':')[0], 10);
+      const booked = bookings.find(b => {
+        const bHour = parseInt(b.startTime.split(':')[0], 10);
+        const eHour = parseInt(b.endTime.split(':')[0], 10);
+        return curHour >= bHour && curHour < eHour;
+      });
+
+      const isMyBooking = booked && (booked.startupId === myStartup.id || (booked.startupName && booked.startupName.toLowerCase() === myStartup.name.toLowerCase()));
+
+      if (booked) {
+        if (isMyBooking) {
+          return `
+            <div class="slot-btn my-booking" 
+                 onclick="MeetingRoomsModule.openPassModal('${room.id}', '${booked.id}')" 
+                 title="🔵 Booked by You (${myStartup.name}): ${booked.title} (${booked.startTime} - ${booked.endTime}) • Click for Door Pass">
+              <span style="font-size: 9px;">🔵</span> <span>${slot}</span>
+            </div>
+          `;
+        } else {
+          return `
+            <div class="slot-btn booked" 
+                 onclick="App.showToast('Already Booked: ${room.name} is reserved at ${slot} by ${booked.startupName} (${booked.title})', 'warning')" 
+                 title="🔴 Already Booked by ${booked.startupName}: ${booked.title} (${booked.startTime} - ${booked.endTime})">
+              <span style="font-size: 9px;">🔴</span> <span>${slot}</span>
+            </div>
+          `;
+        }
+      } else {
+        return `
+          <div class="slot-btn available" 
+               onclick="MeetingRoomsModule.openBookModal('${room.id}', '${slot}', '${myStartup.id}')" 
+               title="🟢 Available: Click to reserve ${room.name} at ${slot} for ${myStartup.name}">
+            <span style="font-size: 9px;">🟢</span> <span>${slot}</span>
+          </div>
+        `;
+      }
+    };
 
     return `
       <div class="${roomCardClass}" style="${roomCardStyle}">
@@ -595,47 +656,41 @@ const MeetingRoomsModule = {
         </div>
 
         <div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
             <span style="font-size: 11.5px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">
-              Time Slot Availability (${this.selectedDate}):
+              Operating Windows (${this.selectedDate}):
             </span>
             <span style="font-size: 11px; font-weight: 700;">
-              ${hasMyBookings ? `<span style="color: #2563eb;">🔵 ${myBookedHours} hrs Booked by You</span>` : ''}
+              ${hasMyBookings ? `<span style="color: #2563eb;">🔵 ${myBookedHours} hrs Mine</span>` : ''}
               ${otherBookedHours > 0 ? `<span style="color: #dc2626; margin-left: 6px;">🔴 ${otherBookedHours} Booked</span>` : ''}
               <span style="color: #15803d; margin-left: 6px;">🟢 ${timeSlots.length - totalBookedHours} Available</span>
             </span>
           </div>
 
-          <div class="time-slot-picker">
-            ${slotDetails.map(({ slot, booked, isMyBooking }) => {
-              if (booked) {
-                if (isMyBooking) {
-                  return `
-                    <div class="slot-btn my-booking" 
-                         onclick="MeetingRoomsModule.openPassModal('${room.id}', '${booked.id}')" 
-                         title="🔵 Booked by You (${myStartup.name}): ${booked.title} (${booked.startTime} - ${booked.endTime}) • Click for Door Pass">
-                      <span style="font-size: 9px;">🔵</span> <span>${slot}</span>
-                    </div>
-                  `;
-                } else {
-                  return `
-                    <div class="slot-btn booked" 
-                         onclick="App.showToast('Already Booked: ${room.name} is reserved at ${slot} by ${booked.startupName} (${booked.title})', 'warning')" 
-                         title="🔴 Already Booked by ${booked.startupName}: ${booked.title} (${booked.startTime} - ${booked.endTime})">
-                      <span style="font-size: 9px;">🔴</span> <span>${slot}</span>
-                    </div>
-                  `;
-                }
-              } else {
-                return `
-                  <div class="slot-btn available" 
-                       onclick="MeetingRoomsModule.openBookModal('${room.id}', '${slot}', '${myStartup.id}')" 
-                       title="🟢 Available: Click to reserve ${room.name} at ${slot} for ${myStartup.name}">
-                    <span style="font-size: 9px;">🟢</span> <span>${slot}</span>
-                  </div>
-                `;
-              }
-            }).join('')}
+          <!-- Morning Session: 08:00 - 11:00 AM -->
+          <div style="margin-bottom: 10px; background: rgba(245, 158, 11, 0.04); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 8px; padding: 8px 10px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+              <span style="font-size: 11px; font-weight: 700; color: #b45309; display: inline-flex; align-items: center; gap: 5px;">
+                <span>🌅</span> Morning Session (08:00 AM – 11:00 AM)
+              </span>
+              <span style="font-size: 10.5px; color: var(--text-muted);">3 Hourly Slots</span>
+            </div>
+            <div class="time-slot-picker" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
+              ${morningSlots.map(s => renderSlotBtn(s)).join('')}
+            </div>
+          </div>
+
+          <!-- Afternoon Session: 03:00 - 07:00 PM (15:00 - 19:00) -->
+          <div style="background: rgba(99, 102, 241, 0.04); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 8px; padding: 8px 10px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+              <span style="font-size: 11px; font-weight: 700; color: #4338ca; display: inline-flex; align-items: center; gap: 5px;">
+                <span>🌆</span> Afternoon Session (03:00 PM – 07:00 PM)
+              </span>
+              <span style="font-size: 10.5px; color: var(--text-muted);">4 Hourly Slots</span>
+            </div>
+            <div class="time-slot-picker" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;">
+              ${afternoonSlots.map(s => renderSlotBtn(s)).join('')}
+            </div>
           </div>
         </div>
       </div>
@@ -811,48 +866,81 @@ const MeetingRoomsModule = {
     document.getElementById('modal-mount').innerHTML = html;
   },
 
-  generateTimeSlots() {
-    const slots = [];
-    for (let hour = 8; hour <= 21; hour++) {
-      for (let min of [0, 30]) {
-        if (hour === 21 && min === 30) continue;
-        const hStr = hour < 10 ? `0${hour}` : `${hour}`;
-        const mStr = min < 10 ? `0${min}` : `${min}`;
-        const timeVal = `${hStr}:${mStr}`;
-        const period = hour >= 12 ? 'PM' : 'AM';
-        const displayHour = hour % 12 === 0 ? 12 : hour % 12;
-        const displayStr = `${displayHour}:${mStr} ${period}`;
-        slots.push({ value: timeVal, label: `${timeVal} (${displayStr})` });
-      }
+  generateStartSlots() {
+    const morningStarts = [
+      { value: '08:00', label: '08:00 AM (Morning Session)' },
+      { value: '08:30', label: '08:30 AM (Morning Session)' },
+      { value: '09:00', label: '09:00 AM (Morning Session)' },
+      { value: '09:30', label: '09:30 AM (Morning Session)' },
+      { value: '10:00', label: '10:00 AM (Morning Session)' },
+      { value: '10:30', label: '10:30 AM (Morning Session)' }
+    ];
+    const afternoonStarts = [
+      { value: '15:00', label: '03:00 PM (Afternoon Session)' },
+      { value: '15:30', label: '03:30 PM (Afternoon Session)' },
+      { value: '16:00', label: '04:00 PM (Afternoon Session)' },
+      { value: '16:30', label: '04:30 PM (Afternoon Session)' },
+      { value: '17:00', label: '05:00 PM (Afternoon Session)' },
+      { value: '17:30', label: '05:30 PM (Afternoon Session)' },
+      { value: '18:00', label: '06:00 PM (Afternoon Session)' },
+      { value: '18:30', label: '06:30 PM (Afternoon Session)' }
+    ];
+    return { morningStarts, afternoonStarts, allStarts: [...morningStarts, ...afternoonStarts] };
+  },
+
+  getValidEndSlots(startVal) {
+    if (!startVal) return [];
+    const [h, m] = startVal.split(':').map(Number);
+    const startMin = h * 60 + (m || 0);
+    const isMorning = (startMin < 12 * 60);
+
+    const maxEndMin = isMorning ? (11 * 60) : (19 * 60);
+    const endSlots = [];
+
+    for (let cur = startMin + 30; cur <= maxEndMin; cur += 30) {
+      const curH = Math.floor(cur / 60);
+      const curM = cur % 60;
+      const val = `${curH < 10 ? '0' : ''}${curH}:${curM < 10 ? '0' : ''}${curM}`;
+      const duration = (cur - startMin) / 60;
+      const displayHour = curH > 12 ? (curH - 12) : curH;
+      const period = curH >= 12 ? 'PM' : 'AM';
+      const label = `${val} (${displayHour}:${curM < 10 ? '0' : ''}${curM} ${period} • ${duration} hr${duration > 1 ? 's' : ''})`;
+      endSlots.push({ value: val, label });
     }
-    return slots;
+    return endSlots;
   },
 
   syncEndTime(startTimeVal) {
     const endSelect = document.getElementById('book-end-time');
     if (!endSelect || !startTimeVal) return;
-    const parts = startTimeVal.split(':');
-    const startH = parseInt(parts[0], 10);
-    const startM = parseInt(parts[1] || '0', 10);
-    let endH = startH + 1;
-    let endM = startM;
-    if (endH > 21 || (endH === 21 && endM > 0)) {
-      endH = 21;
-      endM = 0;
+    const validEnds = this.getValidEndSlots(startTimeVal);
+    endSelect.innerHTML = validEnds.map(e => `
+      <option value="${e.value}">
+        ${e.label}
+      </option>
+    `).join('');
+    // Default to 1 hour (2nd option if available)
+    if (validEnds.length > 1) {
+      endSelect.selectedIndex = 1;
+    } else if (validEnds.length > 0) {
+      endSelect.selectedIndex = 0;
     }
-    const endVal = `${endH < 10 ? '0' : ''}${endH}:${endM < 10 ? '0' : ''}${endM}`;
-    endSelect.value = endVal;
   },
 
   openBookModal(preselectedRoomId = null, preselectedTime = null, preselectedStartupId = null) {
     const rooms = window.store.getMeetingRooms();
     const startups = window.store.getStartups();
     const activeFounderId = preselectedStartupId || this.getMyStartupId();
-    const timeSlots = this.generateTimeSlots();
+    const { allStarts } = this.generateStartSlots();
 
-    const defaultStartTime = preselectedTime || '11:00';
-    const endHour = parseInt(defaultStartTime.split(':')[0], 10) + 1;
-    const defaultEndTime = `${endHour < 10 ? '0' : ''}${endHour}:00`;
+    // Default start time: prefer preselected if valid, else 09:00
+    let defaultStartTime = preselectedTime;
+    if (!defaultStartTime || !allStarts.some(s => s.value === defaultStartTime)) {
+      defaultStartTime = '09:00';
+    }
+
+    const validEndSlots = this.getValidEndSlots(defaultStartTime);
+    const defaultEndTime = validEndSlots.length > 1 ? validEndSlots[1].value : (validEndSlots[0] ? validEndSlots[0].value : '11:00');
 
     const html = `
       <div class="modal-overlay active" id="modal-book-room">
@@ -914,17 +1002,26 @@ const MeetingRoomsModule = {
                 <div class="form-group">
                   <label class="form-label">Start Time <span class="required-star">*</span></label>
                   <select name="startTime" id="book-start-time" class="form-control" onchange="MeetingRoomsModule.syncEndTime(this.value)" required>
-                    ${timeSlots.map(t => `
-                      <option value="${t.value}" ${t.value === defaultStartTime ? 'selected' : ''}>
-                        ${t.label}
-                      </option>
-                    `).join('')}
+                    <optgroup label="🌅 Morning Session (08:00 AM – 11:00 AM)">
+                      ${this.generateStartSlots().morningStarts.map(t => `
+                        <option value="${t.value}" ${t.value === defaultStartTime ? 'selected' : ''}>
+                          ${t.label}
+                        </option>
+                      `).join('')}
+                    </optgroup>
+                    <optgroup label="🌆 Afternoon Session (03:00 PM – 07:00 PM)">
+                      ${this.generateStartSlots().afternoonStarts.map(t => `
+                        <option value="${t.value}" ${t.value === defaultStartTime ? 'selected' : ''}>
+                          ${t.label}
+                        </option>
+                      `).join('')}
+                    </optgroup>
                   </select>
                 </div>
                 <div class="form-group">
                   <label class="form-label">End Time <span class="required-star">*</span></label>
                   <select name="endTime" id="book-end-time" class="form-control" required>
-                    ${timeSlots.map(t => `
+                    ${validEndSlots.map(t => `
                       <option value="${t.value}" ${t.value === defaultEndTime ? 'selected' : ''}>
                         ${t.label}
                       </option>
@@ -933,8 +1030,14 @@ const MeetingRoomsModule = {
                 </div>
               </div>
 
-              <div style="background: rgba(99, 102, 241, 0.08); border: 1px solid var(--border-medium); border-radius: var(--radius-md); padding: 10px 14px; font-size: 12px; margin-bottom: 16px;">
-                💡 <strong>Smart Policy:</strong> Booking uses included monthly allowance credits first. Overages (if any) are billed at flat ₹800/hr on the next monthly tax invoice.
+              <!-- Dedicated Operating Hours Policy Banner -->
+              <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(34, 197, 94, 0.08) 100%); border: 1.5px solid rgba(99, 102, 241, 0.25); border-radius: var(--radius-md); padding: 10px 14px; font-size: 12px; margin-bottom: 16px;">
+                <div style="font-weight: 800; color: var(--text-primary); margin-bottom: 3px; display: flex; align-items: center; gap: 5px;">
+                  <span>⏰</span> <span>Operating Windows Policy:</span>
+                </div>
+                <div style="color: var(--text-secondary); line-height: 1.45;">
+                  Bookings are strictly accepted only between <strong>08:00 AM – 11:00 AM</strong> (Morning) and <strong>03:00 PM – 07:00 PM</strong> (Afternoon). Overages (if any) are billed at flat ₹800/hr after monthly credits.
+                </div>
               </div>
 
               <div class="modal-footer" style="padding-right: 0; padding-bottom: 0;">

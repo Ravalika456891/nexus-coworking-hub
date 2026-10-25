@@ -132,8 +132,8 @@ class NexusStore {
             startupName: 'NeuroPulse AI',
             title: 'Medical Board & Advisory Review',
             date: d,
-            startTime: '10:00',
-            endTime: '12:00',
+            startTime: '09:00',
+            endTime: '11:00',
             attendees: 10,
             cost: 0,
             status: 'Confirmed'
@@ -160,14 +160,28 @@ class NexusStore {
             startupName: 'XYZ Technologies',
             title: 'Enterprise Architecture & Client Demo',
             date: d,
-            startTime: '13:00',
-            endTime: '15:00',
+            startTime: '16:00',
+            endTime: '18:00',
             attendees: 18,
             cost: 0,
             status: 'Confirmed'
           });
         }
       }
+    });
+
+    // Sanitize any existing cached bookings to respect allowed 08:00-11:00 or 15:00-19:00 operating windows
+    (this.state.meetingRooms || []).forEach(r => {
+      (r.bookings || []).forEach(b => {
+        if (b.startTime === '10:00' && b.endTime === '12:00') {
+          b.startTime = '09:00';
+          b.endTime = '11:00';
+        }
+        if (b.startTime === '13:00' && b.endTime === '15:00') {
+          b.startTime = '16:00';
+          b.endTime = '18:00';
+        }
+      });
     });
   }
 
@@ -1231,6 +1245,28 @@ class NexusStore {
     const room = this.getMeetingRoomById(roomId);
     const startup = this.getStartupById(startupId);
     if (!room || !startup) return { success: false, message: 'Room or Startup not found' };
+
+    // Strict Operating Window Check: Morning (08:00 - 11:00 AM) and Afternoon (15:00 - 19:00 / 3:00 - 7:00 PM)
+    const toMinutes = (t) => {
+      const parts = (t || '').split(':').map(Number);
+      return (parts[0] || 0) * 60 + (parts[1] || 0);
+    };
+    const startMin = toMinutes(startTime);
+    const endMin = toMinutes(endTime);
+
+    if (endMin <= startMin) {
+      return { success: false, message: 'Invalid booking duration: End time must be later than start time.' };
+    }
+
+    const isMorning = (startMin >= 8 * 60 && endMin <= 11 * 60);
+    const isAfternoon = (startMin >= 15 * 60 && endMin <= 19 * 60);
+
+    if (!isMorning && !isAfternoon) {
+      return { 
+        success: false, 
+        message: 'Operating Window Restriction: Meeting rooms can ONLY be booked during Morning (08:00 AM – 11:00 AM) or Afternoon (03:00 PM – 07:00 PM).' 
+      };
+    }
 
     // Conflict Check
     const hasConflict = (room.bookings || []).some(b => {

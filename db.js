@@ -19,7 +19,7 @@ let db = null;
 let isConnected = false;
 let lastError = null;
 
-const MONGODB_URI = process.env.MONGODB_URI || '';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://nexusadmin:H1iKZL5M93ugrxwn@h-hub.uyc1vpr.mongodb.net/nexus_hub?retryWrites=true&w=majority&appName=H-HUB';
 const DB_NAME = process.env.MONGODB_DB_NAME || 'nexus_hub';
 
 // Defined Schema Tables / Collections

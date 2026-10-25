@@ -30,29 +30,31 @@ function broadcastFileChange(file) {
 }
 
 let watchDebounce = null;
-try {
-  fs.watch(__dirname, { recursive: true }, (eventType, filename) => {
-    if (!filename) return;
-    const fn = filename.replace(/\\/g, '/');
-    if (
-      fn.includes('node_modules') ||
-      fn.includes('.git') ||
-      fn.includes('.vercel') ||
-      fn.includes('.system_generated') ||
-      fn.includes('.env') ||
-      fn.endsWith('.log') ||
-      fn.endsWith('.tmp')
-    ) {
-      return;
-    }
-    clearTimeout(watchDebounce);
-    watchDebounce = setTimeout(() => {
-      console.log(`⚡ [AutoReload] Detected file change: ${filename} -> Broadcasting browser update`);
-      broadcastFileChange(filename);
-    }, 150);
-  });
-} catch (err) {
-  console.warn('File watcher not supported on this platform:', err.message);
+if (!process.env.VERCEL) {
+  try {
+    fs.watch(__dirname, { recursive: true }, (eventType, filename) => {
+      if (!filename) return;
+      const fn = filename.replace(/\\/g, '/');
+      if (
+        fn.includes('node_modules') ||
+        fn.includes('.git') ||
+        fn.includes('.vercel') ||
+        fn.includes('.system_generated') ||
+        fn.includes('.env') ||
+        fn.endsWith('.log') ||
+        fn.endsWith('.tmp')
+      ) {
+        return;
+      }
+      clearTimeout(watchDebounce);
+      watchDebounce = setTimeout(() => {
+        console.log(`⚡ [AutoReload] Detected file change: ${filename} -> Broadcasting browser update`);
+        broadcastFileChange(filename);
+      }, 150);
+    });
+  } catch (err) {
+    console.warn('File watcher not supported on this platform:', err.message);
+  }
 }
 
 function parseJsonBody(req) {
@@ -271,7 +273,7 @@ async function handleApi(req, res, parsedUrl) {
       return sendJson(res, success ? 200 : 400, { ok: success });
     }
 
-    return sendJson(res, 404, { ok: false, error: 'Endpoint not found' });
+    return sendJson(res, 404, { ok: false, error: 'Endpoint not found', path: pathname });
   } catch (err) {
     console.error('API Error:', err);
     return sendJson(res, 500, { ok: false, error: err.message });
@@ -279,10 +281,23 @@ async function handleApi(req, res, parsedUrl) {
 }
 
 async function handler(req, res) {
+  const matchedHeader = req.headers['x-matched-path'] || req.headers['x-invoke-path'];
   const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+  
+  if (parsedUrl.searchParams.has('__route')) {
+    parsedUrl.pathname = '/api/' + parsedUrl.searchParams.get('__route');
+  } else if (matchedHeader) {
+    try {
+      const orig = new URL(matchedHeader, `http://${req.headers.host || 'localhost'}`);
+      parsedUrl.pathname = orig.pathname;
+    } catch (e) {
+      parsedUrl.pathname = matchedHeader;
+    }
+  }
+
   let reqUrl = parsedUrl.pathname;
 
-  if (reqUrl.startsWith('/api/')) {
+  if (reqUrl.startsWith('/api/') || reqUrl === '/api') {
     return handleApi(req, res, parsedUrl);
   }
 

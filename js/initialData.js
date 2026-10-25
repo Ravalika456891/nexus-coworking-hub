@@ -1072,8 +1072,8 @@ window.INITIAL_DATA = {
           startupName: "NeuroPulse AI",
           title: "AI Medical Board Advisory Session",
           date: "2026-10-25",
-          startTime: "10:00",
-          endTime: "12:00",
+          startTime: "09:00",
+          endTime: "11:00",
           attendees: 10,
           cost: 0,
           status: "Confirmed"
@@ -1107,8 +1107,8 @@ window.INITIAL_DATA = {
           startupName: "XYZ Technologies",
           title: "Enterprise Architecture & Investor Demo",
           date: "2026-10-25",
-          startTime: "13:00",
-          endTime: "15:00",
+          startTime: "16:00",
+          endTime: "18:00",
           attendees: 22,
           cost: 0,
           status: "Confirmed"
