@@ -571,11 +571,57 @@ const MeetingRoomsModule = {
     }
   },
 
+  switchRoomWindow(roomId, session) {
+    if (!this.roomActiveSession) this.roomActiveSession = {};
+    this.roomActiveSession[roomId] = session;
+    this.render();
+  },
+
+  cycleDate(delta) {
+    const parts = this.selectedDate.split('-').map(Number);
+    const d = new Date(parts[0], parts[1] - 1, parts[2]);
+    d.setDate(d.getDate() + delta);
+    const pad = n => (n < 10 ? '0' : '') + n;
+    this.selectedDate = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    this.render();
+  },
+
+  openKioskModal(roomId) {
+    const rooms = window.store.getMeetingRooms();
+    const room = rooms.find(r => r.id === roomId) || rooms[0];
+    if (!room) return;
+    const myStartup = this.getMyStartup();
+
+    const html = `
+      <div id="modal-condeco-kiosk" class="condeco-kiosk-backdrop">
+        <div style="position: absolute; top: 20px; right: 24px; z-index: 10000; display: flex; gap: 10px; align-items: center;">
+          <select class="form-control" style="background: rgba(0,0,0,0.6); color: #ffffff; border-color: rgba(255,255,255,0.25); font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 8px;" onchange="MeetingRoomsModule.openKioskModal(this.value)">
+            ${rooms.map(r => `<option value="${r.id}" ${r.id === room.id ? 'selected' : ''}>🏢 Switch Door: ${r.name}</option>`).join('')}
+          </select>
+          <button class="btn btn-outline" onclick="MeetingRoomsModule.closeModal('modal-condeco-kiosk')" style="color: #ffffff; border-color: rgba(255,255,255,0.3); font-weight: 700; border-radius: 8px; padding: 6px 14px;">
+            ✕ Exit Door Kiosk
+          </button>
+        </div>
+
+        <div class="condeco-kiosk-mount">
+          ${this.renderRoomCard(room, myStartup)}
+        </div>
+      </div>
+    `;
+
+    document.getElementById('modal-mount').innerHTML = html;
+  },
+
   renderRoomCard(room, myStartup) {
     const morningSlots = ['08:00', '09:00', '10:00'];
     const afternoonSlots = ['15:00', '16:00', '17:00', '18:00'];
     const timeSlots = [...morningSlots, ...afternoonSlots];
-    const bookings = (room.bookings || []).filter(b => b.date === this.selectedDate && b.status !== 'Cancelled');
+    const bookings = (room.bookings || []).filter(b => b.date === this.selectedDate && b.status !== 'Cancelled').sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+    // Active session for timeline
+    if (!this.roomActiveSession) this.roomActiveSession = {};
+    const activeSession = this.roomActiveSession[room.id] || 'morning';
+    const sessionSlots = (activeSession === 'morning') ? morningSlots : afternoonSlots;
 
     let myBookedHours = 0;
     let otherBookedHours = 0;
@@ -601,8 +647,6 @@ const MeetingRoomsModule = {
     const hasMyBookings = myBookedHours > 0;
     const availableHours = timeSlots.length - totalBookedHours;
 
-    const accentColor = isFullyBooked ? '#ef4444' : (hasMyBookings ? '#2563eb' : '#10b981');
-
     const formatSlot12h = (slot24) => {
       const [h, m] = slot24.split(':').map(Number);
       const period = h >= 12 ? 'PM' : 'AM';
@@ -624,18 +668,71 @@ const MeetingRoomsModule = {
       return '✦';
     };
 
-    let roomStatusBadge = '';
-    if (isFullyBooked) {
-      roomStatusBadge = `<span class="badge" style="background: rgba(239, 68, 68, 0.12); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.35); font-weight: 700; font-size: 11px; padding: 3px 9px; border-radius: 999px;">🔴 Fully Booked</span>`;
-    } else if (hasMyBookings) {
-      roomStatusBadge = `<span class="badge" style="background: rgba(37, 99, 235, 0.12); color: #1d4ed8; border: 1px solid rgba(37, 99, 235, 0.4); font-weight: 700; font-size: 11px; padding: 3px 9px; border-radius: 999px;">🔵 You Booked (${myBookedHours}h)</span>`;
-    } else {
-      roomStatusBadge = `<span class="badge" style="background: rgba(34, 197, 94, 0.12); color: #15803d; border: 1px solid rgba(34, 197, 94, 0.35); font-weight: 700; font-size: 11px; padding: 3px 9px; border-radius: 999px;">🟢 ${availableHours} Slots Open</span>`;
+    // Calculate current live status & headline text (like Condeco "Available until 10:30 today")
+    const now = new Date();
+    const pad = n => (n < 10 ? '0' : '') + n;
+    const liveTimeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    const isToday = (this.selectedDate === todayStr);
+
+    let activeBookingNow = null;
+    if (isToday) {
+      activeBookingNow = bookings.find(b => b.startTime <= liveTimeStr && b.endTime > liveTimeStr);
     }
 
+    let statusType = 'available'; // 'available' | 'occupied' | 'mine'
+    let headlineText = '';
+    let nextMeetingText = '';
+
+    if (activeBookingNow) {
+      const isMine = activeBookingNow.startupId === myStartup.id || (activeBookingNow.startupName && activeBookingNow.startupName.toLowerCase() === myStartup.name.toLowerCase());
+      statusType = isMine ? 'mine' : 'occupied';
+      headlineText = isMine 
+        ? `Reserved by Your Team until ${formatSlot12h(activeBookingNow.endTime)}` 
+        : `Occupied until ${formatSlot12h(activeBookingNow.endTime)} - ${activeBookingNow.title}`;
+      
+      const afterList = bookings.filter(b => b.startTime >= activeBookingNow.endTime);
+      if (afterList.length > 0) {
+        nextMeetingText = `${afterList[0].title} - ${formatSlot12h(afterList[0].startTime)} - ${formatSlot12h(afterList[0].endTime)}`;
+      } else {
+        nextMeetingText = 'No further meetings scheduled today';
+      }
+    } else {
+      const upcoming = bookings.filter(b => isToday ? b.startTime > liveTimeStr : true);
+      const nextB = upcoming[0] || (bookings.length > 0 ? bookings[0] : null);
+
+      if (isFullyBooked) {
+        statusType = 'occupied';
+        headlineText = 'Fully Booked for Today';
+        nextMeetingText = bookings[0] ? `${bookings[0].title} - ${formatSlot12h(bookings[0].startTime)} - ${formatSlot12h(bookings[0].endTime)}` : 'Full capacity';
+      } else if (nextB) {
+        statusType = hasMyBookings ? 'mine' : 'available';
+        headlineText = `Available until ${nextB.startTime} today`;
+        nextMeetingText = `${nextB.title} - ${formatSlot12h(nextB.startTime)} - ${formatSlot12h(nextB.endTime)}`;
+      } else {
+        statusType = 'available';
+        headlineText = 'Available until 07:00 PM today';
+        nextMeetingText = 'None scheduled • Open for immediate reservation';
+      }
+    }
+
+    // Formatted date string e.g. "Monday, 26 October"
+    const dParts = this.selectedDate.split('-').map(Number);
+    const dObj = new Date(dParts[0], dParts[1] - 1, dParts[2]);
+    const dayName = dObj.toLocaleDateString('en-US', { weekday: 'long' });
+    const dayNum = dObj.getDate();
+    const monthName = dObj.toLocaleDateString('en-US', { month: 'long' });
+    const formattedDateStr = `${dayName}, ${dayNum} ${monthName}`;
+
+    // Selected slots for inline lock-in
     const selectedSlots = (this.selectedSlotsByRoom && this.selectedSlotsByRoom[room.id]) || [];
 
-    const renderSlotBtn = (slot) => {
+    // Render Timeline ribbon blocks for active session
+    let timelineBlocksHtml = '';
+    const processedBookings = new Set();
+
+    for (let i = 0; i < sessionSlots.length; i++) {
+      const slot = sessionSlots[i];
       const curHour = parseInt(slot.split(':')[0], 10);
       const booked = bookings.find(b => {
         const bHour = parseInt(b.startTime.split(':')[0], 10);
@@ -643,50 +740,45 @@ const MeetingRoomsModule = {
         return curHour >= bHour && curHour < eHour;
       });
 
-      const label = formatSlot12h(slot);
-      const isMyBooking = booked && (booked.startupId === myStartup.id || (booked.startupName && booked.startupName.toLowerCase() === myStartup.name.toLowerCase()));
-      const isSelected = selectedSlots.includes(slot);
-
       if (booked) {
-        if (isMyBooking) {
-          return `
-            <div class="slot-btn my-booking" 
-                 onclick="MeetingRoomsModule.openPassModal('${room.id}', '${booked.id}')" 
-                 title="🔵 Booked by You (${myStartup.name}): ${booked.title} (${booked.startTime} - ${booked.endTime}) • Click for Digital Door Pass">
-              <span>🎟️</span> <span>${label}</span> <span style="font-size: 9.5px; opacity: 0.9; font-weight: 800;">(Mine)</span>
-            </div>
-          `;
-        } else {
-          return `
-            <div class="slot-btn booked" 
-                 onclick="App.showToast('Already Reserved: ${room.name} at ${label} is booked by ${booked.startupName} (${booked.title})', 'warning')" 
-                 title="🔒 Reserved by ${booked.startupName}: ${booked.title} (${booked.startTime} - ${booked.endTime})">
-              <span>🔒</span> <span style="text-decoration: line-through; opacity: 0.8;">${label}</span>
+        if (!processedBookings.has(booked.id)) {
+          processedBookings.add(booked.id);
+          const bHour = parseInt(booked.startTime.split(':')[0], 10);
+          const eHour = parseInt(booked.endTime.split(':')[0], 10);
+          const sessStart = parseInt(sessionSlots[0].split(':')[0], 10);
+          const sessEnd = parseInt(sessionSlots[sessionSlots.length - 1].split(':')[0], 10) + 1;
+          const clampedStart = Math.max(bHour, sessStart);
+          const clampedEnd = Math.min(eHour, sessEnd);
+          const span = Math.max(1, clampedEnd - clampedStart);
+
+          const isMine = booked.startupId === myStartup.id || (booked.startupName && booked.startupName.toLowerCase() === myStartup.name.toLowerCase());
+
+          timelineBlocksHtml += `
+            <div class="condeco-slot-item ${isMine ? 'mine' : 'booked'}" 
+                 style="flex: ${span};"
+                 onclick="${isMine ? `MeetingRoomsModule.openPassModal('${room.id}', '${booked.id}')` : `App.showToast('Reserved by ${booked.startupName}: ${booked.title} (${booked.startTime} - ${booked.endTime})', 'warning')`}"
+                 title="${booked.title} • ${booked.startTime} - ${booked.endTime} (${booked.startupName})">
+              <span>${booked.startTime}</span>
+              <span class="condeco-slot-line"></span>
+              ${isMine ? `<span style="font-size: 9.5px; background: rgba(255,255,255,0.25); padding: 1px 6px; border-radius: 4px; white-space: nowrap; font-weight: 800;">🎟️ Mine</span><span class="condeco-slot-line"></span>` : ''}
+              <span>${booked.endTime}</span>
             </div>
           `;
         }
       } else {
-        if (isSelected) {
-          return `
-            <div class="slot-btn available selected" 
-                 onclick="MeetingRoomsModule.toggleSlotSelection('${room.id}', '${slot}')" 
-                 title="✓ Selected: Click to unselect">
-              <span>✓</span> <span>${label}</span>
-            </div>
-          `;
-        } else {
-          return `
-            <div class="slot-btn available" 
-                 onclick="MeetingRoomsModule.toggleSlotSelection('${room.id}', '${slot}')" 
-                 title="🟢 Click to select and lock in ${label}">
-              <span>🟢</span> <span>${label}</span>
-            </div>
-          `;
-        }
+        const isSelected = selectedSlots.includes(slot);
+        timelineBlocksHtml += `
+          <div class="condeco-slot-item available ${isSelected ? 'selected' : ''}" 
+               style="flex: 1;"
+               onclick="MeetingRoomsModule.toggleSlotSelection('${room.id}', '${slot}')"
+               title="${isSelected ? '✓ Selected: Click to unselect' : '🟢 Click to select and lock in ' + formatSlot12h(slot)}">
+            ${isSelected ? `<span>✓ ${slot}</span>` : `<span>${slot}</span>`}
+          </div>
+        `;
       }
-    };
+    }
 
-    // Calculate Lock-In Preview if slots are selected
+    // Dynamic Lock-In Action Strip
     let lockInBarHtml = '';
     if (selectedSlots.length > 0) {
       const sorted = [...selectedSlots].sort();
@@ -701,26 +793,26 @@ const MeetingRoomsModule = {
       const costBadge = isCovered ? 'Covered by Plan (₹0)' : `₹${room.hourlyRate * duration}`;
 
       lockInBarHtml = `
-        <div class="lockin-action-bar">
+        <div class="lockin-action-bar" style="background: rgba(16, 185, 129, 0.16); border: 1.5px solid rgba(16, 185, 129, 0.55); color: #ffffff; margin-top: 10px;">
           <div style="min-width: 0; flex: 1;">
             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-              <span style="font-size: 12px; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 4px;">
-                <span>🔒</span> <span>Lock In:</span> <strong style="color: #059669; font-family: var(--font-mono);">${formatSlot12h(startSlot)} – ${formatSlot12h(endSlotStr)}</strong> <span style="color: var(--text-muted); font-size: 11px;">(${duration} hr${duration > 1 ? 's' : ''})</span>
+              <span style="font-size: 12.5px; font-weight: 800; color: #ffffff; display: flex; align-items: center; gap: 5px;">
+                <span>🔒</span> <span>Lock In:</span> <strong style="color: #4ade80; font-family: var(--font-mono);">${formatSlot12h(startSlot)} – ${formatSlot12h(endSlotStr)}</strong> <span style="color: #cbd5e1; font-size: 11px;">(${duration} hr${duration > 1 ? 's' : ''})</span>
               </span>
               <span class="badge ${isCovered ? 'badge-success' : 'badge-primary'}" style="font-size: 10.5px; padding: 2px 8px; font-weight: 700;">
                 ${costBadge}
               </span>
             </div>
             <div style="margin-top: 6px;">
-              <input type="text" id="lockin-title-${room.id}" class="form-control" style="font-size: 11.5px; padding: 4px 8px; height: 28px; width: 100%; max-width: 280px;" placeholder="Meeting title / agenda..." value="Strategic Review & Team Sprint">
+              <input type="text" id="lockin-title-${room.id}" class="form-control" style="font-size: 11.5px; padding: 4px 10px; height: 28px; width: 100%; max-width: 290px; background: rgba(0,0,0,0.3); color: #ffffff; border-color: rgba(255,255,255,0.2);" placeholder="Meeting title / agenda..." value="Executive Strategy & Client Sprint">
             </div>
           </div>
 
           <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
-            <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.clearSlotSelection('${room.id}')" style="font-size: 11px; padding: 5px 9px; border-radius: 6px; color: var(--text-muted);" title="Clear selection">
+            <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.clearSlotSelection('${room.id}')" style="font-size: 11px; padding: 5px 9px; border-radius: 6px; color: #cbd5e1; border-color: rgba(255,255,255,0.25);" title="Clear selection">
               ✕
             </button>
-            <button class="btn btn-primary btn-sm" onclick="MeetingRoomsModule.lockInSelectedSlots('${room.id}')" style="font-size: 11.5px; font-weight: 800; padding: 6px 14px; border-radius: 8px; background: #059669; border-color: #047857; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.35);" title="Lock in this reservation immediately">
+            <button class="btn btn-sm" onclick="MeetingRoomsModule.lockInSelectedSlots('${room.id}')" style="font-size: 11.5px; font-weight: 800; padding: 6px 14px; border-radius: 8px; background: #22c55e; color: #ffffff; border: 1px solid #16a34a; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 4px 14px rgba(34, 197, 94, 0.45);" title="Lock in this reservation immediately">
               <span>🔒</span> <span>Lock In Now</span>
             </button>
           </div>
@@ -729,92 +821,115 @@ const MeetingRoomsModule = {
     }
 
     return `
-      <div class="room-card" style="border-top: 3.5px solid ${accentColor};">
-        <!-- Room Header & Metadata -->
-        <div class="room-header">
-          <div style="display: flex; gap: 12px; align-items: center; min-width: 0;">
-            <div style="width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, var(--bg-surface-elevated), rgba(99, 102, 241, 0.08)); border: 1.5px solid var(--border-medium); display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; box-shadow: var(--shadow-sm);">
-              ${room.icon}
-            </div>
-            <div style="min-width: 0;">
-              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                <h3 style="font-size: 16.5px; font-weight: 800; color: var(--text-primary); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${room.name}</h3>
-                ${roomStatusBadge}
+      <div class="condeco-tablet-card" id="condeco-card-${room.id}">
+        <!-- Inner Tablet Screen (High fidelity Condeco charcoal display) -->
+        <div class="condeco-screen">
+          <!-- Top Row: Room Header + Live Clock & Company Brand -->
+          <div class="condeco-screen-header">
+            <div class="condeco-room-title-wrap">
+              <div class="condeco-status-accent-bar ${statusType}"></div>
+              <div>
+                <h3 class="condeco-room-name">${room.name}</h3>
+                <div style="font-size: 11px; color: #94a3b8; margin-top: 2px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                  <span>👥 ${room.capacity} Pax</span>
+                  <span>•</span>
+                  <span>₹${room.hourlyRate}/hr</span>
+                  <span>•</span>
+                  <span style="color: ${statusType === 'available' ? '#4ade80' : (statusType === 'mine' ? '#60a5fa' : '#f87171')}; font-weight: 700;">
+                    ${availableHours} Slots Open
+                  </span>
+                </div>
               </div>
-              <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px; flex-wrap: wrap;">
-                <span class="badge badge-subtle" style="font-size: 11px; padding: 2px 7px; font-weight: 600;">
-                  👥 ${room.capacity} Pax Capacity
-                </span>
-                <span class="badge" style="background: rgba(11, 8, 38, 0.04); border: 1px solid var(--border-subtle); color: var(--text-primary); font-size: 11px; padding: 2px 7px; font-weight: 700;">
-                  ₹${room.hourlyRate}/hr
-                </span>
+            </div>
+
+            <div class="condeco-brand-clock-wrap">
+              <div class="condeco-live-clock">${liveTimeStr}</div>
+              <div class="condeco-company-logo">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>
+                <span>NEXUS</span>
               </div>
             </div>
           </div>
+
+          <!-- Big Headline Availability Status (Directly matches Condeco Display) -->
           <div>
-            ${isFullyBooked ? `
-              <button class="btn btn-outline btn-sm" disabled style="opacity: 0.55; border-color: rgba(239, 68, 68, 0.4); color: #dc2626; cursor: not-allowed; font-weight: 700; padding: 6px 12px; font-size: 11.5px; border-radius: 8px;">
-                Full Today
-              </button>
-            ` : `
-              <button class="btn btn-primary btn-sm" onclick="MeetingRoomsModule.openBookModal('${room.id}', null, '${myStartup.id}')" style="font-weight: 700; padding: 6px 14px; font-size: 11.5px; border-radius: 8px; display: inline-flex; align-items: center; gap: 5px;" title="Reserve ${room.name} for ${myStartup.name}">
-                <span>+</span> Custom Book
-              </button>
-            `}
+            <div class="condeco-headline-text">${headlineText}</div>
+          </div>
+
+          <!-- Next Meeting Section -->
+          <div class="condeco-next-meeting-block">
+            <div class="condeco-next-label">Next meeting</div>
+            <div class="condeco-next-details">
+              <span>${nextMeetingText}</span>
+            </div>
+          </div>
+
+          <!-- Connected Continuous Timeline Bar -->
+          <div class="condeco-timeline-wrap">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">
+                ${activeSession === 'morning' ? '🌅 Morning Window (08:00 – 11:00 AM)' : '🌆 Afternoon Window (03:00 – 07:00 PM)'}
+              </span>
+              <div style="display: flex; gap: 4px;">
+                <button type="button" class="btn btn-sm ${activeSession === 'morning' ? 'btn-primary' : 'btn-outline'}" 
+                        onclick="MeetingRoomsModule.switchRoomWindow('${room.id}', 'morning')" 
+                        style="font-size: 10px; padding: 2px 8px; border-radius: 4px; height: 22px; font-weight: 700;">
+                  08:00–11:00 AM
+                </button>
+                <button type="button" class="btn btn-sm ${activeSession === 'afternoon' ? 'btn-primary' : 'btn-outline'}" 
+                        onclick="MeetingRoomsModule.switchRoomWindow('${room.id}', 'afternoon')" 
+                        style="font-size: 10px; padding: 2px 8px; border-radius: 4px; height: 22px; font-weight: 700;">
+                  03:00–07:00 PM
+                </button>
+              </div>
+            </div>
+
+            <!-- Connected Continuous Ribbon -->
+            <div class="condeco-timeline-bar">
+              <div class="condeco-nav-arrow" onclick="MeetingRoomsModule.switchRoomWindow('${room.id}', 'morning')" title="Morning session">‹</div>
+              ${timelineBlocksHtml}
+              <div class="condeco-nav-arrow" onclick="MeetingRoomsModule.switchRoomWindow('${room.id}', 'afternoon')" title="Afternoon session">›</div>
+            </div>
+
+            <!-- Date Indicator below Timeline -->
+            <div class="condeco-date-row" onclick="MeetingRoomsModule.cycleDate(1)" title="Click to cycle to next day">
+              <span>${formattedDateStr}</span>
+              <span style="font-size: 14px;">›</span>
+            </div>
+
+            <!-- Inline Lock-In Strip (Slides down when slot selected) -->
+            ${lockInBarHtml}
           </div>
         </div>
 
-        <!-- Amenities Chips -->
-        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
-          ${room.amenities.map(a => `
-            <span class="amenity-tag" title="${a}">
-              <span>${getAmenityIcon(a)}</span> <span>${a}</span>
-            </span>
-          `).join('')}
+        <!-- Amenities Chips & Quick Actions Footer -->
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 0 4px;">
+          <div style="display: flex; flex-wrap: wrap; gap: 5px;">
+            ${room.amenities.map(a => `
+              <span class="amenity-tag" style="background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1); color: #cbd5e1; font-size: 10.5px; padding: 2px 7px;">
+                <span>${getAmenityIcon(a)}</span> <span>${a}</span>
+              </span>
+            `).join('')}
+          </div>
+
+          <div style="display: flex; gap: 6px; align-items: center;">
+            <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openKioskModal('${room.id}')" style="font-size: 11px; padding: 4px 10px; border-radius: 6px; color: #cbd5e1; border-color: rgba(255,255,255,0.22); background: rgba(255,255,255,0.05);" title="View 1:1 Wall-Mounted Tablet Kiosk">
+              <span>📱</span> Door Display
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="MeetingRoomsModule.openBookModal('${room.id}', null, '${myStartup.id}')" style="font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 6px;">
+              <span>+</span> Custom Book
+            </button>
+          </div>
         </div>
 
-        <!-- Integrated Operating Windows & Time Slots Grid -->
-        <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 12px 14px;">
-          <!-- Morning Session (08:00 - 11:00 AM) -->
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: #b45309; display: inline-flex; align-items: center; gap: 5px;">
-              <span>🌅</span> Morning Session (08:00 – 11:00 AM)
-            </span>
-            <span style="font-size: 10.5px; color: var(--text-muted); font-weight: 600;">3 Slots</span>
+        <!-- Physical Bezel Elements: Embossed Branding, Sensor Dot, and Glowing LED Light Bar -->
+        <div class="condeco-bezel-bottom">
+          <div class="condeco-bezel-logo-row">
+            <span>CONDECO</span>
+            <span class="condeco-sensor-dot"></span>
+            <span>NEXUS DISPLAY</span>
           </div>
-          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px;">
-            ${morningSlots.map(s => renderSlotBtn(s)).join('')}
-          </div>
-
-          <!-- Midday Break Divider -->
-          <div style="display: flex; align-items: center; gap: 10px; margin: 10px 0; color: var(--text-muted); font-size: 10.5px; font-weight: 600;">
-            <span style="flex: 1; height: 1px; background: var(--border-subtle);"></span>
-            <span>☕ 11:00 AM – 03:00 PM Break</span>
-            <span style="flex: 1; height: 1px; background: var(--border-subtle);"></span>
-          </div>
-
-          <!-- Afternoon Session (03:00 - 07:00 PM) -->
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: #4338ca; display: inline-flex; align-items: center; gap: 5px;">
-              <span>🌆</span> Afternoon Session (03:00 – 07:00 PM)
-            </span>
-            <span style="font-size: 10.5px; color: var(--text-muted); font-weight: 600;">4 Slots</span>
-          </div>
-          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px;">
-            ${afternoonSlots.map(s => renderSlotBtn(s)).join('')}
-          </div>
-
-          <!-- Dynamic Lock-In Action Strip (Appears when any slot on the bar is selected) -->
-          ${lockInBarHtml}
-        </div>
-
-        <!-- Quick Hint Footer -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 4px; font-size: 11px; color: var(--text-muted);">
-          <span>💡 ${selectedSlots.length > 0 ? 'Click "Lock In Now" above to confirm' : 'Click any slot on the bar to select & lock in'}</span>
-          <span style="font-weight: 600;">
-            ${hasMyBookings ? `<span style="color: #2563eb; font-weight: 700;">🔵 ${myBookedHours}h Mine</span> • ` : ''}
-            <span style="color: #15803d; font-weight: 700;">🟢 ${availableHours} of ${timeSlots.length} Open</span>
-          </span>
+          <div class="condeco-led-light-bar ${statusType}" title="Room status: ${statusType.toUpperCase()}"></div>
         </div>
       </div>
     `;

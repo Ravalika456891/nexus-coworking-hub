@@ -711,6 +711,344 @@
   border: 1.5px solid rgba(239, 68, 68, 0.45);
 }
 
+/* ==========================================================================
+   CONDECO SMART MEETING ROOM TABLET DISPLAY
+   Hardware-inspired wall tablet UI with LED indicator bar & continuous timeline
+   ========================================================================== */
+.condeco-tablet-card {
+  background: linear-gradient(145deg, #182026 0%, #101519 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.09);
+  border-radius: 22px;
+  padding: 16px 18px 20px 18px;
+  box-shadow: 0 20px 45px -8px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  color: #ffffff;
+}
+
+.condeco-tablet-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 26px 54px -10px rgba(0, 0, 0, 0.65), inset 0 1px 2px rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+/* Inner Slate Screen Display */
+.condeco-screen {
+  background: #232b32;
+  border-radius: 14px;
+  padding: 22px 24px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+}
+
+/* Header Row: Room Title with Vertical Indicator + Live Clock & Logo */
+.condeco-screen-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.condeco-room-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.condeco-status-accent-bar {
+  width: 4.5px;
+  height: 32px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.condeco-status-accent-bar.available {
+  background: #22c55e;
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.6);
+}
+
+.condeco-status-accent-bar.occupied {
+  background: #ef4444;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.6);
+}
+
+.condeco-status-accent-bar.mine {
+  background: #3b82f6;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.6);
+}
+
+.condeco-room-name {
+  font-size: 22px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.015em;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.condeco-brand-clock-wrap {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.condeco-live-clock {
+  font-size: 20px;
+  font-weight: 600;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.condeco-company-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #cbd5e1;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 4px 9px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Big Headline Availability Text */
+.condeco-headline-text {
+  font-size: 21px;
+  font-weight: 500;
+  color: #f8fafc;
+  margin: 2px 0 0 0;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+
+/* Next Meeting Section */
+.condeco-next-meeting-block {
+  margin-top: 4px;
+}
+
+.condeco-next-label {
+  font-size: 12px;
+  color: #8b99a7;
+  font-weight: 500;
+  text-transform: capitalize;
+  margin-bottom: 2px;
+}
+
+.condeco-next-details {
+  font-size: 14px;
+  color: #f1f5f9;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Connected Timeline Bar (Condeco Signature Continuous Ribbon) */
+.condeco-timeline-wrap {
+  margin-top: 6px;
+}
+
+.condeco-timeline-bar {
+  display: flex;
+  align-items: stretch;
+  height: 44px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #192026;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.condeco-nav-arrow {
+  width: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1b232a;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 18px;
+  user-select: none;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.condeco-nav-arrow:hover {
+  background: #252f38;
+  color: #ffffff;
+}
+
+/* Slot Blocks inside Timeline */
+.condeco-slot-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid rgba(0, 0, 0, 0.2);
+  user-select: none;
+  transition: all 0.18s ease;
+  position: relative;
+}
+
+.condeco-slot-item.available {
+  flex: 1;
+  background: #3bb54a;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.condeco-slot-item.available:hover {
+  background: #329e40;
+  filter: brightness(1.1);
+}
+
+.condeco-slot-item.available.selected {
+  background: #15803d !important;
+  box-shadow: inset 0 0 0 2.5px #ffffff;
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.condeco-slot-item.booked {
+  background: #e53935;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.condeco-slot-item.mine {
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.condeco-slot-line {
+  flex: 1;
+  height: 2px;
+  background: #ffffff;
+  margin: 0 8px;
+  opacity: 0.95;
+  border-radius: 2px;
+}
+
+/* Date Navigator under Timeline */
+.condeco-date-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.condeco-date-row:hover {
+  color: #ffffff;
+}
+
+/* Bottom Bezel Physical Elements (Condeco Branding & Glowing LED Bar) */
+.condeco-bezel-bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-top: 4px;
+}
+
+.condeco-bezel-logo-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.condeco-sensor-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #475569;
+}
+
+.condeco-led-light-bar {
+  width: 150px;
+  height: 9px;
+  border-radius: 999px;
+  margin: 10px auto -6px auto;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.condeco-led-light-bar.available {
+  background: #4ade80;
+  box-shadow: 0 0 18px #22c55e, 0 3px 10px rgba(34, 197, 94, 0.85);
+}
+
+.condeco-led-light-bar.occupied {
+  background: #f87171;
+  box-shadow: 0 0 18px #ef4444, 0 3px 10px rgba(239, 68, 68, 0.85);
+}
+
+.condeco-led-light-bar.mine {
+  background: #60a5fa;
+  box-shadow: 0 0 18px #3b82f6, 0 3px 10px rgba(59, 130, 246, 0.85);
+}
+
+/* Fullscreen Door Tablet Kiosk Modal */
+.condeco-kiosk-backdrop {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at center, #1e2630 0%, #0d1115 100%);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  backdrop-filter: blur(12px);
+  animation: fadeIn 0.25s ease;
+}
+
+.condeco-kiosk-mount {
+  width: 100%;
+  max-width: 860px;
+  perspective: 1000px;
+}
+
 .my-booking-card {
   background: var(--bg-surface);
   border: 1.5px solid rgba(37, 99, 235, 0.28);
