@@ -114,9 +114,6 @@ const MeetingRoomsModule = {
               🏢 ${myStartup.name} Perspective
             </span>
           </div>
-          <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">
-            Reserve executive boardrooms, presentation stages, and focus pods with conflict prevention.
-          </p>
         </div>
 
         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
