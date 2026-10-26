@@ -991,26 +991,26 @@ const MeetingRoomsModule = {
       const costBadge = isCovered ? 'Covered by Plan (₹0)' : `₹${room.hourlyRate * duration}`;
 
       lockInBarHtml = `
-        <div class="lockin-action-bar" style="background: rgba(16, 185, 129, 0.16); border: 1.5px solid rgba(16, 185, 129, 0.55); color: #ffffff; margin-top: 10px; border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;">
+        <div class="lockin-action-bar" style="background: rgba(16, 185, 129, 0.08); border: 1.5px solid rgba(16, 185, 129, 0.4); color: var(--text-primary, #0f172a); margin-top: 10px; border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;">
           <div style="min-width: 0; flex: 1;">
             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-              <span style="font-size: 13px; font-weight: 800; color: #ffffff; display: flex; align-items: center; gap: 5px;">
-                <span>🔒</span> <span>Lock In:</span> <strong style="color: #4ade80; font-family: var(--font-mono);">${formatSlot12h(startSlot)} – ${formatSlot12h(endSlotStr)}</strong> <span style="color: #cbd5e1; font-size: 11px;">(${duration} hr${duration > 1 ? 's' : ''})</span>
+              <span style="font-size: 13px; font-weight: 800; color: var(--text-primary, #0f172a); display: flex; align-items: center; gap: 5px;">
+                <span>🔒</span> <span>Lock In:</span> <strong style="color: #059669; font-family: var(--font-mono);">${formatSlot12h(startSlot)} – ${formatSlot12h(endSlotStr)}</strong> <span style="color: var(--text-secondary, #64748b); font-size: 11px;">(${duration} hr${duration > 1 ? 's' : ''})</span>
               </span>
               <span class="badge ${isCovered ? 'badge-success' : 'badge-primary'}" style="font-size: 10.5px; padding: 2px 8px; font-weight: 700;">
                 ${costBadge}
               </span>
             </div>
             <div style="margin-top: 8px;">
-              <input type="text" id="lockin-title-${room.id}" class="form-control" style="font-size: 12px; padding: 6px 12px; height: 32px; width: 100%; max-width: 320px; background: rgba(0,0,0,0.35); color: #ffffff; border-color: rgba(255,255,255,0.22); border-radius: 6px;" placeholder="Meeting title / agenda..." value="Executive Strategy & Client Sprint">
+              <input type="text" id="lockin-title-${room.id}" class="form-control" style="font-size: 12px; padding: 6px 12px; height: 32px; width: 100%; max-width: 320px; background: var(--bg-surface, #ffffff); color: var(--text-primary, #0f172a); border-color: var(--border-medium, #cbd5e1); border-radius: 6px;" placeholder="Meeting title / agenda..." value="Executive Strategy & Client Sprint">
             </div>
           </div>
 
           <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
-            <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.clearSlotSelection('${room.id}')" style="font-size: 11.5px; padding: 6px 12px; border-radius: 6px; color: #cbd5e1; border-color: rgba(255,255,255,0.25);" title="Clear selection">
+            <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.clearSlotSelection('${room.id}')" style="font-size: 11.5px; padding: 6px 12px; border-radius: 6px; color: var(--text-secondary, #64748b); border-color: var(--border-medium, #cbd5e1);" title="Clear selection">
               ✕ Cancel
             </button>
-            <button class="btn btn-sm" onclick="MeetingRoomsModule.lockInSelectedSlots('${room.id}')" style="font-size: 12px; font-weight: 800; padding: 7px 16px; border-radius: 8px; background: #22c55e; color: #ffffff; border: 1px solid #16a34a; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 14px rgba(34, 197, 94, 0.45);" title="Lock in this reservation immediately">
+            <button class="btn btn-sm" onclick="MeetingRoomsModule.lockInSelectedSlots('${room.id}')" style="font-size: 12px; font-weight: 800; padding: 7px 16px; border-radius: 8px; background: #16a34a; color: #ffffff; border: 1px solid #15803d; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35);" title="Lock in this reservation immediately">
               <span>🔒</span> <span>Lock In Now</span>
             </button>
           </div>
@@ -1032,7 +1032,7 @@ const MeetingRoomsModule = {
               <div class="exec-meta-row">
                 <span class="exec-pill-badge">👥 ${room.capacity} Pax Capacity</span>
                 <span class="exec-pill-badge">₹${room.hourlyRate}/hr</span>
-                <span style="font-size: 11px; color: ${statusType === 'available' ? '#4ade80' : '#cbd5e1'}; font-weight: 700;">
+                <span style="font-size: 11px; color: ${statusType === 'available' ? '#16a34a' : 'var(--text-secondary, #64748b)'}; font-weight: 700;">
                   ${availableHours} of 7 Slots Open
                 </span>
               </div>
@@ -1052,7 +1052,7 @@ const MeetingRoomsModule = {
         <div class="clear-date-bar">
           <div class="clear-date-nav">
             <button type="button" class="clear-date-btn" onclick="MeetingRoomsModule.cycleDate(-1)" title="Previous day">‹ Prev Day</button>
-            <div style="font-size: 12.5px; font-weight: 700; color: #ffffff; display: flex; align-items: center; gap: 6px;">
+            <div style="font-size: 12.5px; font-weight: 700; color: var(--text-primary, #0f172a); display: flex; align-items: center; gap: 6px;">
               <span>📅</span>
               <span>${formattedDateStr}</span>
               ${isToday ? `<span class="badge badge-success" style="font-size: 10px; padding: 1px 6px;">Today</span>` : isTomorrow ? `<span class="badge badge-info" style="font-size: 10px; padding: 1px 6px;">Tomorrow</span>` : ''}
@@ -1101,17 +1101,17 @@ const MeetingRoomsModule = {
         ${lockInBarHtml}
 
         <!-- Amenities Chips & Quick Actions Footer -->
-        <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding-top: 4px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding-top: 6px; border-top: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.08));">
           <div style="display: flex; flex-wrap: wrap; gap: 5px;">
             ${room.amenities.map(a => `
-              <span class="amenity-tag" style="background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1); color: #cbd5e1; font-size: 10.5px; padding: 2px 7px;">
+              <span class="amenity-tag" style="background: rgba(0, 0, 0, 0.04); border: 1px solid var(--border-subtle, rgba(0,0,0,0.08)); color: var(--text-secondary, #475569); font-size: 10.5px; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
                 <span>${getAmenityIcon(a)}</span> <span>${a}</span>
               </span>
             `).join('')}
           </div>
 
           <div style="display: flex; gap: 6px; align-items: center;">
-            <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openKioskModal('${room.id}')" style="font-size: 11px; padding: 5px 11px; border-radius: 6px; color: #cbd5e1; border-color: rgba(255,255,255,0.22); background: rgba(255,255,255,0.05);" title="View 1:1 Wall-Mounted Tablet Kiosk">
+            <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openKioskModal('${room.id}')" style="font-size: 11px; padding: 5px 11px; border-radius: 6px; color: var(--text-primary, #1e293b); border-color: var(--border-medium, #cbd5e1); background: var(--bg-surface, #ffffff);" title="View 1:1 Wall-Mounted Tablet Kiosk">
               <span>📱</span> Door Tablet
             </button>
             <button class="btn btn-primary btn-sm" onclick="MeetingRoomsModule.openBookModal('${room.id}', null, '${myStartup.id}')" style="font-size: 11px; font-weight: 700; padding: 5px 13px; border-radius: 6px;">
