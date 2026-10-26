@@ -234,8 +234,8 @@ const MeetingRoomsModule = {
             <span style="color: #1d4ed8; font-weight: 800;">${mySlotsCount} Reserved (Mine)</span>
           </div>
           <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px;">
-            <span style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444;"></span>
-            <span style="color: var(--text-muted); font-weight: 600;">${otherSlotsCount} Booked</span>
+            <span style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);"></span>
+            <span style="color: #dc2626; font-weight: 800;">${otherSlotsCount} Booked (Red)</span>
           </div>
           <div style="font-size: 11.5px; font-family: var(--font-mono); font-weight: 700; color: var(--text-secondary); background: var(--bg-surface); padding: 4px 12px; border-radius: 999px; border: 1px solid var(--border-subtle); margin-left: 2px;">
             📅 ${this.selectedDate}
@@ -458,8 +458,8 @@ const MeetingRoomsModule = {
                       </div>
                     </td>
                     <td style="padding: 12px 16px; white-space: nowrap;">
-                      <span class="badge ${isMine ? 'badge-primary' : 'badge-subtle'}" style="font-weight: 700; white-space: nowrap;">
-                        ${b.startupName} ${isMine ? '★ (You)' : ''}
+                      <span class="badge" style="font-weight: 700; white-space: nowrap; ${isMine ? 'background: rgba(37, 99, 235, 0.12); color: #2563eb; border: 1px solid rgba(37, 99, 235, 0.3);' : 'background: #fef2f2; color: #dc2626; border: 1.5px solid #fca5a5;'}">
+                        ${isMine ? '★ ' + b.startupName + ' (You)' : '🔴 ' + b.startupName + ' (Booked)'}
                       </span>
                     </td>
                     <td style="padding: 12px 16px; font-weight: 600; color: var(--text-primary); min-width: 170px;">${b.title}</td>
@@ -954,10 +954,10 @@ const MeetingRoomsModule = {
         } else {
           return `
             <div class="clear-slot-card booked" 
-                 onclick="App.showToast('Slot booked: ${booked.title} (${booked.startupName})', 'warning')"
-                 title="Reserved by ${booked.startupName || 'Startup'} (${timeRangeLabel})">
+                 onclick="App.showToast('Slot already booked: ${booked.title} (${booked.startupName})', 'warning')"
+                 title="Already Reserved by ${booked.startupName || 'Startup'} (${timeRangeLabel}) • Slot unavailable">
               <div class="slot-time">${timeRangeLabel}</div>
-              <div class="slot-status">🔒 ${booked.startupName || 'Reserved'}</div>
+              <div class="slot-status">🔴 Booked: ${booked.startupName || 'Reserved'}</div>
             </div>
           `;
         }
@@ -1032,8 +1032,8 @@ const MeetingRoomsModule = {
               <div class="exec-meta-row">
                 <span class="exec-pill-badge">👥 ${room.capacity} Pax Capacity</span>
                 <span class="exec-pill-badge">₹${room.hourlyRate}/hr</span>
-                <span style="font-size: 11px; color: ${statusType === 'available' ? '#16a34a' : 'var(--text-secondary, #64748b)'}; font-weight: 700;">
-                  ${availableHours} of 7 Slots Open
+                <span style="font-size: 11px; color: ${availableHours === 0 ? '#dc2626' : otherBookedHours > 0 ? '#ea580c' : statusType === 'available' ? '#16a34a' : 'var(--text-secondary, #64748b)'}; font-weight: 700;">
+                  ${availableHours === 0 ? '🔴 0 Slots Open (Fully Booked)' : otherBookedHours > 0 ? `${availableHours} of 7 Slots Open • <span style="color: #dc2626; font-weight: 800;">${otherBookedHours} Booked</span>` : `${availableHours} of 7 Slots Open`}
                 </span>
               </div>
             </div>
