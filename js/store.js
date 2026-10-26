@@ -1425,7 +1425,8 @@ class NexusStore {
           desc: `${sp.label} (${sp.type}) - Monthly License`,
           qty: 1,
           rate: sp.monthlyRate,
-          amount: sp.monthlyRate
+          amount: sp.monthlyRate,
+          sac: '997212'
         });
         subtotal += sp.monthlyRate;
       }
@@ -1440,7 +1441,8 @@ class NexusStore {
           desc: addOn.name,
           qty: 1,
           rate: addOn.monthlyCost,
-          amount: addOn.monthlyCost
+          amount: addOn.monthlyCost,
+          sac: '998413'
         });
         subtotal += addOn.monthlyCost;
       }
@@ -1454,7 +1456,8 @@ class NexusStore {
         desc: `Meeting Room Credit Overage (${overageHours.toFixed(1)} hrs @ ₹${this.state.billingRules.overageHourlyRate}/hr)`,
         qty: overageHours,
         rate: this.state.billingRules.overageHourlyRate,
-        amount: overageCost
+        amount: overageCost,
+        sac: '997212'
       });
       subtotal += overageCost;
     }
@@ -1574,19 +1577,19 @@ class NexusStore {
     if (type !== 'meeting') {
       if (billing && billing.lineItems.length > 0) {
         billing.lineItems.forEach(li => {
-          lineItems.push({ section: 'Workspace Rent', desc: li.desc, qty: li.qty, rate: li.rate, amount: li.amount });
+          lineItems.push({ section: 'Workspace Rent', desc: li.desc, qty: li.qty, rate: li.rate, amount: li.amount, sac: li.sac || '997212' });
         });
       } else {
-        lineItems.push({ section: 'Workspace Rent', desc: 'Monthly Workspace License Fee', qty: 1, rate: 25000, amount: 25000 });
+        lineItems.push({ section: 'Workspace Rent', desc: 'Monthly Workspace License Fee', qty: 1, rate: 25000, amount: 25000, sac: '997212' });
       }
     }
 
     // ── 2. Maintenance / Facilities ──────────────────────────────────────
     if (type !== 'meeting' && inclMaint) {
-      lineItems.push({ section: 'Facilities', desc: 'Common Area Maintenance & Utilities', qty: 1, rate: 2000, amount: 2000 });
+      lineItems.push({ section: 'Facilities', desc: 'Common Area Maintenance & Utilities', qty: 1, rate: 2000, amount: 2000, sac: '997212' });
     }
     if (type !== 'meeting' && inclSec) {
-      lineItems.push({ section: 'Facilities', desc: 'Building Security & CCTV Monitoring', qty: 1, rate: 1500, amount: 1500 });
+      lineItems.push({ section: 'Facilities', desc: 'Building Security & CCTV Monitoring', qty: 1, rate: 1500, amount: 1500, sac: '997212' });
     }
 
     // ── 3. Meeting Room Charges ──────────────────────────────────────────
@@ -1610,7 +1613,8 @@ class NexusStore {
             desc: `${room.name} — ${hours} hr${hours !== 1 ? 's' : ''} × ₹${room.hourlyRate}/hr`,
             qty: hours,
             rate: room.hourlyRate,
-            amount: bkg.cost
+            amount: bkg.cost,
+            sac: '997212'
           });
         });
       });
@@ -1917,13 +1921,19 @@ class NexusStore {
     if (!this.state.payments) this.state.payments = [];
     this.state.payments.unshift(paymentRecord);
 
-    // Sync matching rent record if fully settled
-    if (isNowFullyPaid && this.state.rentRecords) {
+    // Sync matching rent record
+    if (this.state.rentRecords) {
       const matchRent = this.state.rentRecords.find(r => r.invoiceId === invoice.id || r.startupId === invoice.startupId);
       if (matchRent) {
-        matchRent.status = 'Paid';
-        matchRent.receiptNo = receiptNum;
-        matchRent.paidAt = new Date().toISOString().split('T')[0];
+        matchRent.balanceDue = remainingBalance;
+        matchRent.amountPaid = (matchRent.amountPaid || 0) + actualPayAmount;
+        if (isNowFullyPaid) {
+          matchRent.status = 'Paid';
+          matchRent.receiptNo = receiptNum;
+          matchRent.paidAt = new Date().toISOString().split('T')[0];
+        } else {
+          matchRent.status = 'Partially Paid';
+        }
       }
     }
 

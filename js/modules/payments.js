@@ -864,7 +864,7 @@ const PaymentsModule = {
               </div>
             </div>
             <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 10px;">
-              UPI Autopay, Corporate Credit Cards, NetBanking (60+ banks), Instant Webhooks & MCA GST Invoicing.
+              UPI Autopay, Corporate Credit Cards, NetBanking (60+ banks), Instant Webhooks & GST-ready Invoicing.
             </p>
             <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px;">
               <div style="font-size: 11px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
@@ -1355,7 +1355,7 @@ const PaymentsModule = {
                     <span style="font-size: 18px;">🧾</span>
                     <strong style="font-size: 13.5px; color: var(--text-primary);">Stage 1: Tax Invoice Issued</strong>
                   </div>
-                  <span class="badge badge-info" style="font-size: 10px;">MCA & GST Compliant</span>
+                  <span class="badge badge-info" style="font-size: 10px;">GST-Ready Invoice</span>
                 </div>
                 <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; font-size: 12px; margin-top: 10px;">
                   <div>
@@ -2076,6 +2076,163 @@ if (paymentIntent.status === 'succeeded') {
     }
   },
 
+  // ─── Record Offline / Bank Settlement Modal (Admin/Manager Action) ─────────
+  openRecordPaymentModal(invoiceId) {
+    const inv = window.store.getInvoiceById(invoiceId);
+    if (!inv) {
+      if (typeof App !== 'undefined') App.showToast('Invoice not found.', 'danger');
+      return;
+    }
+
+    if (inv.status === 'Paid') {
+      if (typeof App !== 'undefined') App.showToast('This invoice is already fully paid.', 'info');
+      return;
+    }
+    if (inv.status === 'Cancelled') {
+      if (typeof App !== 'undefined') App.showToast('This invoice has been voided / cancelled.', 'warning');
+      return;
+    }
+
+    const payments = window.store.getPaymentsByInvoiceId ? window.store.getPaymentsByInvoiceId(inv.id) : [];
+    const paidSoFar = payments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+    const balanceDue = Math.max(0, Number(inv.total || 0) - paidSoFar);
+    const todayStr = new Date().toISOString().split('T')[0];
+    const defaultRef = `NEFT/AXIS/${Math.floor(100000000 + Math.random() * 900000000)}`;
+
+    const html = `
+      <div class="modal-overlay active" id="modal-record-payment">
+        <div class="modal-content modal-wide" style="max-width: 580px; background: #ffffff; color: #0f172a;">
+          <div class="modal-header" style="background: linear-gradient(135deg, #065f46, #047857); color: white; padding: 18px 24px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 24px;">💵</span>
+              <div>
+                <h3 class="modal-title" style="color: white; font-size: 16px; font-weight: 800;">Record Payment Settlement</h3>
+                <span style="font-size: 11.5px; opacity: 0.85;">
+                  Log offline, bank transfer, or cheque receipt for #${inv.id}
+                </span>
+              </div>
+            </div>
+            <button class="modal-close-btn" style="color: white;" onclick="PaymentsModule.closeModal('modal-record-payment')">×</button>
+          </div>
+
+          <div class="modal-body" style="padding: 22px 24px; background: #f8fafc;">
+            <!-- Summary Callout -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px;">
+              <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px;">
+                <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #64748b;">Startup &amp; Invoice</div>
+                <div style="font-weight: 800; font-size: 14px; color: #0f172a; margin-top: 2px;">${inv.startupName}</div>
+                <div style="font-size: 11px; color: #64748b; font-family: var(--font-mono);">${inv.id} • ${inv.billingPeriod}</div>
+              </div>
+              <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 12px 14px;">
+                <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #065f46;">Outstanding Balance</div>
+                <div style="font-weight: 900; font-size: 20px; color: #059669; font-family: var(--font-mono); margin-top: 2px;">
+                  ₹${balanceDue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+                ${paidSoFar > 0 ? `<div style="font-size: 10.5px; color: #047857;">(₹${paidSoFar.toLocaleString('en-IN')} already settled)</div>` : ''}
+              </div>
+            </div>
+
+            <!-- Payment Fields Form -->
+            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px 18px;">
+              <div class="form-group" style="margin-bottom: 14px;">
+                <label class="form-label" style="font-size: 11.5px; font-weight: 700;">Amount Received (₹) <span class="required-star">*</span></label>
+                <div style="display: flex; gap: 8px;">
+                  <input type="number" id="rec-pay-amount" class="form-control" style="font-size: 15px; font-weight: 800; font-family: var(--font-mono);" value="${balanceDue}" min="1" max="${balanceDue}">
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('rec-pay-amount').value = ${balanceDue}" style="font-size: 11px; font-weight: 700; white-space: nowrap;">
+                    Full Balance
+                  </button>
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" style="font-size: 11.5px; font-weight: 700;">Payment Mode</label>
+                  <select id="rec-pay-method" class="form-control" style="font-size: 12px;">
+                    <option value="NEFT / RTGS" selected>🏦 Direct Bank Wire (NEFT/RTGS)</option>
+                    <option value="UPI / IMPS">📱 UPI / IMPS Reference</option>
+                    <option value="Cheque / DD">📝 Cheque / Demand Draft</option>
+                    <option value="Credit / Debit Card">💳 POS Card Swipe</option>
+                    <option value="Cash Voucher">💵 Cash Counter Voucher</option>
+                    <option value="Razorpay">💙 Razorpay (Verified Gateway)</option>
+                    <option value="Stripe">🟣 Stripe (Verified Card)</option>
+                  </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" style="font-size: 11.5px; font-weight: 700;">Payment Date</label>
+                  <input type="date" id="rec-pay-date" class="form-control" value="${todayStr}" style="font-size: 12px;">
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-bottom: 14px;">
+                <label class="form-label" style="font-size: 11.5px; font-weight: 700;">Bank UTR / Transaction Reference # <span class="required-star">*</span></label>
+                <input type="text" id="rec-pay-ref" class="form-control" value="${defaultRef}" placeholder="e.g. UTR / IMPS ref / Cheque #" style="font-family: var(--font-mono); font-size: 12px;">
+              </div>
+
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="font-size: 11.5px; font-weight: 700;">Officer Notes / Settlement Remarks</label>
+                <input type="text" id="rec-pay-notes" class="form-control" value="Rent &amp; GST settlement confirmed by co-working manager." placeholder="Optional notes" style="font-size: 12px;">
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer" style="background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+            <button class="btn btn-secondary" onclick="PaymentsModule.closeModal('modal-record-payment')">Cancel</button>
+            <button class="btn btn-primary" onclick="PaymentsModule.submitRecordedPayment('${inv.id}')" style="background: #059669; border-color: #047857; font-weight: 700;">
+              ✓ Save &amp; Issue GST Receipt
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('modal-mount').innerHTML = html;
+  },
+
+  submitRecordedPayment(invoiceId) {
+    const inv = window.store.getInvoiceById(invoiceId);
+    if (!inv) return;
+
+    const amountInput = document.getElementById('rec-pay-amount');
+    const methodSelect = document.getElementById('rec-pay-method');
+    const dateInput = document.getElementById('rec-pay-date');
+    const refInput = document.getElementById('rec-pay-ref');
+    const notesInput = document.getElementById('rec-pay-notes');
+
+    const amount = parseFloat(amountInput ? amountInput.value : 0);
+    const method = methodSelect ? methodSelect.value : 'NEFT / RTGS';
+    const date = dateInput ? dateInput.value : new Date().toISOString().split('T')[0];
+    const ref = refInput ? refInput.value.trim() : `NEFT/${Date.now()}`;
+    const notes = notesInput ? notesInput.value.trim() : 'Recorded payment';
+
+    if (!amount || amount <= 0) {
+      if (typeof App !== 'undefined') App.showToast('Please enter a valid amount greater than ₹0.', 'danger');
+      return;
+    }
+
+    const res = window.store.recordPartialPayment(invoiceId, {
+      amount,
+      method,
+      ref,
+      notes,
+      gatewayMeta: { gateway: method }
+    });
+
+    this.closeModal('modal-record-payment');
+
+    if (res.success) {
+      if (typeof App !== 'undefined') {
+        App.showToast(`✅ Payment of ₹${amount.toLocaleString('en-IN')} recorded for ${inv.startupName}!`, 'success');
+      }
+      this.render();
+      if (typeof BillingModule !== 'undefined') BillingModule.render();
+      if (typeof DashboardModule !== 'undefined') DashboardModule.render();
+      setTimeout(() => this.viewReceipt(res.payment.id), 400);
+    } else {
+      if (typeof App !== 'undefined') App.showToast(`⚠️ ${res.message}`, 'danger');
+    }
+  },
+
   // ─── Cancel Invoice Action ─────────────────────────────────────────────────
 
   promptCancelInvoice(invoiceId) {
@@ -2382,8 +2539,8 @@ if (paymentIntent.status === 'succeeded') {
             <div style="background: #fff; border-radius: 12px; box-shadow: 0 4px 18px rgba(0,0,0,0.06); border: 1px solid #e2e8f0; overflow: hidden;">
               <!-- Header Brand Banner -->
               <div style="background: linear-gradient(135deg, #10b981, #059669); padding: 22px 24px; color: white; text-align: center;">
-                <div style="font-size: 9px; font-weight: 800; letter-spacing: 2px; opacity: 0.85; text-transform: uppercase;">
-                  Ministry of Corporate Affairs & GST Tax Receipt
+                <div style="font-size: 9px; font-weight: 800; letter-spacing: 2px; opacity: 0.9; text-transform: uppercase;">
+                  Official GST Tax Receipt &amp; Payment Acknowledgement
                 </div>
                 <div style="font-size: 19px; font-weight: 900; margin-top: 4px;">${hub ? hub.name : 'Nexus Co-Working Hub'}</div>
                 <div style="font-size: 10.5px; opacity: 0.9; margin-top: 3px;">${hub ? hub.address : ''}</div>
@@ -2444,7 +2601,7 @@ if (paymentIntent.status === 'succeeded') {
                   </div>
                   <div style="font-size: 9.5px; color: #94a3b8; line-height: 1.4;">
                     Digital Verification Code<br>
-                    <strong style="color: #059669; font-family: var(--font-mono); font-size: 11px;">QR-MCA-${payment.receiptNo}</strong>
+                    <strong style="color: #059669; font-family: var(--font-mono); font-size: 11px;">QR-GST-${payment.receiptNo}</strong>
                   </div>
                 </div>
                 <div style="text-align: right; font-size: 9px; color: #94a3b8;">

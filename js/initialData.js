@@ -1192,7 +1192,7 @@ window.INITIAL_DATA = {
       dueDate: "2026-10-05",
       status: "Cancelled",
       invoiceId: "INV-2026-085",
-      cancellationReason: "Voided due to MCA incubation grant fee waiver amendment",
+      cancellationReason: "Voided due to Incubation grant fee waiver amendment",
       receiptNo: null,
       paidAt: null
     },
@@ -1301,7 +1301,7 @@ window.INITIAL_DATA = {
       dueDate: "2026-10-05",
       billingPeriod: "October 2026",
       lineItems: [
-        { desc: "Dedicated Workspace License - Monthly", qty: 1, rate: 25000, amount: 25000 }
+        { desc: "Dedicated Workspace License - Monthly", qty: 1, rate: 25000, amount: 25000, sac: "997212" }
       ],
       subtotal: 25000,
       grantSubsidyPercent: 0,
@@ -1326,10 +1326,10 @@ window.INITIAL_DATA = {
       dueDate: "2026-10-05",
       billingPeriod: "October 2026",
       lineItems: [
-        { desc: "Private Cabin 102 (6-Seater) - Monthly License", qty: 1, rate: 58000, amount: 58000 },
-        { desc: "Dedicated Desk DD-05 - Overflow Seat", qty: 1, rate: 12000, amount: 12000 },
-        { desc: "Dedicated 1 Gbps Static IP & Firewall", qty: 1, rate: 3500, amount: 3500 },
-        { desc: "Artisan Coffee Pass (Unlimited)", qty: 1, rate: 2000, amount: 2000 }
+        { desc: "Private Cabin 102 (6-Seater) - Monthly License", qty: 1, rate: 58000, amount: 58000, sac: "997212" },
+        { desc: "Dedicated Desk DD-05 - Overflow Seat", qty: 1, rate: 12000, amount: 12000, sac: "997212" },
+        { desc: "Dedicated 1 Gbps Static IP & Firewall", qty: 1, rate: 3500, amount: 3500, sac: "998413" },
+        { desc: "Artisan Coffee Pass (Unlimited)", qty: 1, rate: 2000, amount: 2000, sac: "996331" }
       ],
       subtotal: 75500,
       grantSubsidyPercent: 25,
@@ -1354,11 +1354,11 @@ window.INITIAL_DATA = {
       dueDate: "2026-10-05",
       billingPeriod: "October 2026",
       lineItems: [
-        { desc: "Private Cabin 104 (8-Seater) - Monthly License", qty: 1, rate: 74000, amount: 74000 },
-        { desc: "Dedicated Desks (DD-01, DD-02)", qty: 2, rate: 12000, amount: 24000 },
-        { desc: "Dedicated 1 Gbps Static IP & Firewall", qty: 1, rate: 3500, amount: 3500 },
-        { desc: "Private Server Rack & Local GPU Node", qty: 1, rate: 6500, amount: 6500 },
-        { desc: "Artisan Coffee Pass (Unlimited)", qty: 1, rate: 2000, amount: 2000 }
+        { desc: "Private Cabin 104 (8-Seater) - Monthly License", qty: 1, rate: 74000, amount: 74000, sac: "997212" },
+        { desc: "Dedicated Desks (DD-01, DD-02)", qty: 2, rate: 12000, amount: 24000, sac: "997212" },
+        { desc: "Dedicated 1 Gbps Static IP & Firewall", qty: 1, rate: 3500, amount: 3500, sac: "998413" },
+        { desc: "Private Server Rack & Local GPU Node", qty: 1, rate: 6500, amount: 6500, sac: "998315" },
+        { desc: "Artisan Coffee Pass (Unlimited)", qty: 1, rate: 2000, amount: 2000, sac: "996331" }
       ],
       subtotal: 110000,
       grantSubsidyPercent: 0,
@@ -1382,9 +1382,9 @@ window.INITIAL_DATA = {
       dueDate: "2026-10-05",
       billingPeriod: "September 2026",
       lineItems: [
-        { desc: "Private Cabin 101 (4-Seater) - Monthly License", qty: 1, rate: 42000, amount: 42000 },
-        { desc: "Secure Storage Locker Bay", qty: 1, rate: 1500, amount: 1500 },
-        { desc: "Private Server Rack & Cloud Staging", qty: 1, rate: 6500, amount: 6500 }
+        { desc: "Private Cabin 101 (4-Seater) - Monthly License", qty: 1, rate: 42000, amount: 42000, sac: "997212" },
+        { desc: "Secure Storage Locker Bay", qty: 1, rate: 1500, amount: 1500, sac: "997212" },
+        { desc: "Private Server Rack & Cloud Staging", qty: 1, rate: 6500, amount: 6500, sac: "998315" }
       ],
       subtotal: 50000,
       grantSubsidyPercent: 50,
@@ -1408,9 +1408,9 @@ window.INITIAL_DATA = {
       dueDate: "2026-10-18",
       billingPeriod: "October 2026",
       lineItems: [
-        { desc: "Private Cabin 103 (4-Seater) - Monthly License", qty: 1, rate: 40000, amount: 40000 },
-        { desc: "Hardware Prototyping Lab Power Pass", qty: 1, rate: 5000, amount: 5000 },
-        { desc: "High-Speed Static IP & Mesh Wi-Fi", qty: 1, rate: 3500, amount: 3500 }
+        { desc: "Private Cabin 103 (4-Seater) - Monthly License", qty: 1, rate: 40000, amount: 40000, sac: "997212" },
+        { desc: "Hardware Prototyping Lab Power Pass", qty: 1, rate: 5000, amount: 5000, sac: "998313" },
+        { desc: "High-Speed Static IP & Mesh Wi-Fi", qty: 1, rate: 3500, amount: 3500, sac: "998413" }
       ],
       subtotal: 48500,
       grantSubsidyPercent: 0,
@@ -1435,7 +1435,7 @@ window.INITIAL_DATA = {
       dueDate: "2026-10-05",
       billingPeriod: "October 2026",
       lineItems: [
-        { desc: "Dedicated Desk D20 - Monthly License", qty: 1, rate: 8000, amount: 8000 }
+        { desc: "Dedicated Desk D20 - Monthly License", qty: 1, rate: 8000, amount: 8000, sac: "997212" }
       ],
       subtotal: 8000,
       grantSubsidyPercent: 0,
@@ -1450,7 +1450,7 @@ window.INITIAL_DATA = {
       gateway: null,
       paidAt: null,
       transactionRef: null,
-      cancellationReason: "Voided due to MCA incubation grant fee waiver amendment",
+      cancellationReason: "Voided due to Incubation grant fee waiver amendment",
       cancelledAt: "2026-10-04T10:15:00Z"
     }
   ],

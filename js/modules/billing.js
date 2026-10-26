@@ -291,7 +291,7 @@ const BillingModule = {
               ` : ''}
             </div>
             <span style="font-size: 12px; color: var(--text-muted);">
-              Itemized GST invoices compliant with Ministry of Corporate Affairs standards.
+              Itemized GST-ready invoices with full tax breakdown and SAC codes.
             </span>
           </div>
 
@@ -333,65 +333,121 @@ const BillingModule = {
           </div>
         ` : ''}
 
-        <div class="table-wrapper">
-          <table class="nexus-table">
+        <div class="table-wrapper" style="overflow-x: auto;">
+          <table class="nexus-table" style="width: 100%; table-layout: auto;">
             <thead>
               <tr>
-                <th>Invoice #</th>
-                <th>Startup Name</th>
-                <th>Billing Period</th>
-                <th>Due Date</th>
-                <th>Total (w/ GST)</th>
-                <th>Status</th>
-                <th>Action</th>
+                <th style="min-width: 130px; white-space: nowrap;">Invoice #</th>
+                <th style="min-width: 160px; white-space: nowrap;">Startup</th>
+                <th style="min-width: 110px; white-space: nowrap;">Period</th>
+                <th style="min-width: 120px; white-space: nowrap;">Due Date</th>
+                <th style="min-width: 140px; white-space: nowrap;">GST Breakdown</th>
+                <th style="min-width: 110px; white-space: nowrap;">Total (w/ GST)</th>
+                <th style="min-width: 110px; white-space: nowrap;">Status</th>
+                <th style="min-width: 160px; text-align: right; white-space: nowrap;">Actions</th>
               </tr>
             </thead>
             <tbody>
-              ${this.getFilteredInvoices(invoices).length > 0 ? this.getFilteredInvoices(invoices).map(inv => `
+              ${this.getFilteredInvoices(invoices).length > 0 ? this.getFilteredInvoices(invoices).map(inv => {
+                const isFounder = (window.store && (window.store.currentRole === 'founder' || window.store.currentRole === 'startup'));
+                const isPaid = inv.status === 'Paid';
+                const isCancelled = inv.status === 'Cancelled';
+                const isOverdue = inv.status === 'Overdue' || (new Date(inv.dueDate) < new Date('2026-10-26T23:59:59') && !isPaid && !isCancelled);
+                const daysOverdue = Math.max(0, Math.floor((new Date('2026-10-26T23:59:59') - new Date(inv.dueDate)) / 86400000));
+                
+                return `
                 <tr style="${this.selectedStartupId ? 'background: rgba(11, 8, 38, 0.02);' : ''}">
-                  <td style="white-space: nowrap;"><strong style="font-family: var(--font-mono); color: var(--accent-primary);">${inv.id}</strong></td>
-                  <td style="white-space: nowrap;"><strong>${inv.startupName}</strong></td>
-                  <td style="white-space: nowrap;">${inv.billingPeriod}</td>
                   <td style="white-space: nowrap;">
-                    <div style="font-family: var(--font-mono); font-weight: 600;">${inv.dueDate}</div>
-                    ${inv.status === 'Cancelled' ? `
+                    <strong style="font-family: var(--font-mono); color: var(--accent-primary); font-size: 13px;">${inv.id}</strong>
+                    <div style="font-size: 10px; color: var(--text-muted); font-family: var(--font-mono);">SAC: 997212</div>
+                  </td>
+                  <td style="white-space: nowrap;">
+                    <div style="font-weight: 700; color: var(--text-primary); font-size: 13px;">${inv.startupName}</div>
+                    <div style="font-size: 10.5px; color: var(--text-muted); font-family: var(--font-mono);">${inv.clientGstin ? `GSTIN: ${inv.clientGstin}` : 'GST-Ready'}</div>
+                  </td>
+                  <td style="white-space: nowrap; font-size: 12px; color: var(--text-secondary);">${inv.billingPeriod}</td>
+                  <td style="white-space: nowrap;">
+                    <div style="font-family: var(--font-mono); font-weight: 600; font-size: 12.5px;">${inv.dueDate}</div>
+                    ${isCancelled ? `
                       <span style="font-size: 10px; color: #64748b; font-weight: 600;">Voided</span>
-                    ` : (new Date(inv.dueDate) < new Date('2026-10-26T23:59:59') && inv.status !== 'Paid') ? `
+                    ` : isOverdue ? `
                       <span style="font-size: 10.5px; color: var(--status-danger); font-weight: 700;">
-                        ⚠️ ${Math.max(0, Math.floor((new Date('2026-10-26T23:59:59') - new Date(inv.dueDate)) / 86400000))}d overdue
+                        ⚠️ ${daysOverdue}d overdue
                       </span>
                     ` : `
                       <span style="font-size: 10px; color: var(--text-muted);">Net 5 Days</span>
                     `}
                   </td>
-                  <td style="font-weight: 700; font-family: var(--font-mono);">₹${Number(inv.total || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                  <td>
-                    <span class="badge ${inv.status === 'Paid' ? 'badge-success' : inv.status === 'Overdue' ? 'badge-danger' : inv.status === 'Cancelled' ? 'badge-subtle' : 'badge-warning'}" style="${inv.status === 'Cancelled' ? 'background: rgba(100, 116, 139, 0.12); color: #475569; border: 1px solid rgba(100, 116, 139, 0.25); font-weight: 700;' : ''}">
-                      ${inv.status === 'Cancelled' ? 'Cancelled / Voided' : inv.status}
+                  <!-- Taxable & GST breakdown -->
+                  <td style="white-space: nowrap;">
+                    <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary);">
+                      Taxable: ₹${Number(inv.taxableAmount || inv.subtotal || 0).toLocaleString('en-IN')}
+                    </div>
+                    <div style="font-family: var(--font-mono); font-size: 10.5px; color: #6366f1;">
+                      + 18% GST: ₹${Number(inv.taxGst || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                  </td>
+                  <!-- Total Amount -->
+                  <td style="white-space: nowrap;">
+                    <div style="font-weight: 800; font-family: var(--font-mono); font-size: 13.5px; color: var(--text-primary);">
+                      ₹${Number(inv.total || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                  </td>
+                  <td style="white-space: nowrap;">
+                    <span class="badge ${isPaid ? 'badge-success' : isOverdue ? 'badge-danger' : isCancelled ? 'badge-subtle' : 'badge-warning'}" style="${isCancelled ? 'background: rgba(100, 116, 139, 0.12); color: #475569; border: 1px solid rgba(100, 116, 139, 0.25); font-weight: 700;' : ''}">
+                      ${isCancelled ? 'Cancelled / Voided' : inv.status}
                     </span>
                   </td>
-                  <td>
-                    <div style="display: flex; gap: 6px;">
-                      <button class="btn btn-secondary btn-sm" onclick="BillingModule.viewInvoice('${inv.id}')">
-                        View Invoice
-                      </button>
-                      ${inv.status === 'Cancelled' ? `
-                        <span style="font-size: 11px; color: #64748b; font-weight: 600; display: inline-flex; align-items: center; gap: 3px; padding: 4px 8px; background: rgba(100, 116, 139, 0.08); border-radius: 4px;">
+                  <!-- Single Primary Action + ⋯ Menu -->
+                  <td style="white-space: nowrap; text-align: right;">
+                    <div style="display: inline-flex; gap: 6px; align-items: center; justify-content: flex-end; white-space: nowrap;">
+                      ${isCancelled ? `
+                        <span class="badge" style="background: rgba(100, 116, 139, 0.08); color: #64748b; font-size: 11px; padding: 4px 8px; border: 1px solid rgba(100, 116, 139, 0.2); white-space: nowrap;">
                           🚫 Voided
                         </span>
-                      ` : inv.status !== 'Paid' ? `
-                        <button class="btn btn-primary btn-sm" onclick="PaymentsModule.openCheckoutModal('${inv.id}')">
+                      ` : isPaid ? `
+                        <button class="btn btn-outline btn-sm" style="font-size: 11px; padding: 4px 10px; color: var(--accent-primary); border-color: rgba(99, 102, 241, 0.4); font-weight: 600; white-space: nowrap;" onclick="BillingModule.viewInvoice('${inv.id}')" title="View Full Tax Invoice">
+                          📄 View Invoice
+                        </button>
+                      ` : isFounder ? `
+                        <button class="btn btn-primary btn-sm" style="font-size: 11px; padding: 4px 12px; font-weight: 700; white-space: nowrap;" onclick="PaymentsModule.openCheckoutModal('${inv.id}')" title="Pay Full Balance Online">
                           💳 Pay Now
                         </button>
                       ` : `
-                        <span style="font-size: 11px; color: var(--status-success); font-weight: 600; display: inline-flex; align-items: center; gap: 3px;">
-                          ✓ Settled
-                        </span>
+                        <button class="btn btn-primary btn-sm" style="font-size: 11px; padding: 4px 10px; font-weight: 700; white-space: nowrap; background: #059669; border-color: #047857;" onclick="PaymentsModule.openRecordPaymentModal('${inv.id}')" title="Record Bank/Offline Payment">
+                          💵 Record payment
+                        </button>
                       `}
+
+                      <!-- Compact "⋯" Action Menu -->
+                      <div class="row-menu-wrapper" style="position: relative; display: inline-block;">
+                        <button class="btn btn-outline btn-sm row-menu-trigger" onclick="BillingModule.toggleRowMenu(event, '${inv.id}')" style="font-size: 14px; padding: 3px 8px; line-height: 1; border-color: var(--border-medium); color: var(--text-secondary); min-width: 28px;" title="More options for Invoice #${inv.id}">
+                          ⋯
+                        </button>
+                        <div id="row-menu-${inv.id}" class="rent-row-menu" style="display: none; position: absolute; right: 0; top: 100%; margin-top: 4px; z-index: 1000; min-width: 175px; background: var(--bg-surface); border: 1px solid var(--border-medium); border-radius: var(--radius-md); box-shadow: 0 10px 25px rgba(0,0,0,0.18); padding: 5px; text-align: left;">
+                          <button class="row-menu-item" onclick="BillingModule.closeAllRowMenus(); BillingModule.viewInvoice('${inv.id}')" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 10px; font-size: 12px; font-weight: 600; color: var(--text-primary); border: none; background: transparent; cursor: pointer; border-radius: 6px; text-align: left; transition: all 0.15s ease;">
+                            <span>🧾</span> <span>View Invoice</span>
+                          </button>
+                          <button class="row-menu-item" onclick="BillingModule.closeAllRowMenus(); InvoiceModule._printExistingInvoice('${inv.id}')" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 10px; font-size: 12px; font-weight: 600; color: var(--text-primary); border: none; background: transparent; cursor: pointer; border-radius: 6px; text-align: left; transition: all 0.15s ease;">
+                            <span>🖨️</span> <span>Print / PDF</span>
+                          </button>
+                          ${!isPaid && !isCancelled ? `
+                            <button class="row-menu-item" onclick="BillingModule.closeAllRowMenus(); PaymentsModule.openRecordPaymentModal('${inv.id}')" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 10px; font-size: 12px; font-weight: 600; color: #059669; border: none; background: transparent; cursor: pointer; border-radius: 6px; text-align: left; transition: all 0.15s ease;">
+                              <span>💵</span> <span>Record payment</span>
+                            </button>
+                            <button class="row-menu-item" onclick="BillingModule.closeAllRowMenus(); PaymentsModule.openCheckoutModal('${inv.id}')" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 10px; font-size: 12px; font-weight: 600; color: #4338ca; border: none; background: transparent; cursor: pointer; border-radius: 6px; text-align: left; transition: all 0.15s ease;">
+                              <span>💳</span> <span>Pay via Gateway</span>
+                            </button>
+                          ` : ''}
+                          <button class="row-menu-item" onclick="BillingModule.closeAllRowMenus(); BillingModule.openStartupPaymentHistoryModal('${inv.startupId}')" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 10px; font-size: 12px; font-weight: 600; color: var(--text-primary); border: none; background: transparent; cursor: pointer; border-radius: 6px; text-align: left; transition: all 0.15s ease;">
+                            <span>👤</span> <span>Startup profile</span>
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </td>
                 </tr>
-              `).join('') : `
+              `}).join('') : `
                 <tr>
                   <td colspan="7" style="text-align: center; padding: 36px 20px; color: var(--text-muted);">
                     <div style="font-size: 26px; margin-bottom: 8px;">📄</div>
@@ -577,18 +633,32 @@ const BillingModule = {
                     </td>
 
                     <!-- 7. Actions -->
-                    <td style="text-align: right;">
-                      <div style="display: inline-flex; gap: 6px; align-items: center; justify-content: flex-end;">
-                        <button class="btn btn-outline btn-sm" style="color: #15803d; border-color: #86efac; background: rgba(34, 197, 94, 0.08); font-size: 11.5px; font-weight: 600; padding: 5px 9px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;" onclick="PaymentsModule.viewReceipt('${p.id}')" title="View Formal Tax Receipt Voucher">
+                    <td style="white-space: nowrap; text-align: right;">
+                      <div style="display: inline-flex; gap: 6px; align-items: center; justify-content: flex-end; white-space: nowrap;">
+                        <button class="btn btn-outline btn-sm" style="color: #15803d; border-color: #86efac; background: rgba(34, 197, 94, 0.08); font-size: 11px; font-weight: 600; padding: 4px 10px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;" onclick="PaymentsModule.viewReceipt('${p.id}')" title="View Formal Tax Receipt Voucher">
                           <span>📄</span>
                           <span>Receipt</span>
                         </button>
-                        ${p.invoiceId ? `
-                          <button class="btn btn-secondary btn-sm" style="font-size: 11.5px; font-weight: 600; padding: 5px 9px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;" onclick="BillingModule.viewInvoice('${p.invoiceId}')" title="View Itemized Invoice #${p.invoiceId}">
-                            <span>🧾</span>
-                            <span>Invoice</span>
+
+                        <!-- Compact "⋯" Action Menu -->
+                        <div class="row-menu-wrapper" style="position: relative; display: inline-block;">
+                          <button class="btn btn-outline btn-sm row-menu-trigger" onclick="BillingModule.toggleRowMenu(event, 'pay-${p.id}')" style="font-size: 14px; padding: 3px 8px; line-height: 1; border-color: var(--border-medium); color: var(--text-secondary); min-width: 28px;" title="More options for payment #${p.id}">
+                            ⋯
                           </button>
-                        ` : ''}
+                          <div id="row-menu-pay-${p.id}" class="rent-row-menu" style="display: none; position: absolute; right: 0; top: 100%; margin-top: 4px; z-index: 1000; min-width: 175px; background: var(--bg-surface); border: 1px solid var(--border-medium); border-radius: var(--radius-md); box-shadow: 0 10px 25px rgba(0,0,0,0.18); padding: 5px; text-align: left;">
+                            <button class="row-menu-item" onclick="BillingModule.closeAllRowMenus(); PaymentsModule.viewReceipt('${p.id}')" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 10px; font-size: 12px; font-weight: 600; color: var(--status-success); border: none; background: transparent; cursor: pointer; border-radius: 6px; text-align: left; transition: all 0.15s ease;">
+                              <span>📄</span> <span>View Receipt</span>
+                            </button>
+                            ${p.invoiceId ? `
+                              <button class="row-menu-item" onclick="BillingModule.closeAllRowMenus(); BillingModule.viewInvoice('${p.invoiceId}')" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 10px; font-size: 12px; font-weight: 600; color: var(--text-primary); border: none; background: transparent; cursor: pointer; border-radius: 6px; text-align: left; transition: all 0.15s ease;">
+                                <span>🧾</span> <span>View Invoice</span>
+                              </button>
+                            ` : ''}
+                            <button class="row-menu-item" onclick="BillingModule.closeAllRowMenus(); BillingModule.openStartupPaymentHistoryModal('${p.startupId}')" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 10px; font-size: 12px; font-weight: 600; color: var(--text-primary); border: none; background: transparent; cursor: pointer; border-radius: 6px; text-align: left; transition: all 0.15s ease;">
+                              <span>👤</span> <span>Startup profile</span>
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     </td>
                   </tr>
@@ -1035,6 +1105,7 @@ const BillingModule = {
 
   renderRentRow(r) {
     const isSelected = this.selectedStartupId === r.startupId;
+    const isFounder = (window.store && (window.store.currentRole === 'founder' || window.store.currentRole === 'startup'));
     const allInvoices = window.store.getAccessibleInvoices();
     const cleanName = (r.startupName || '').replace(/Startup\s+[A-Z]\s*\((.*?)\)/i, '$1').trim().toLowerCase();
     
@@ -1099,7 +1170,7 @@ const BillingModule = {
           </div>
           ${isCancelled ? `
             <div style="font-size: 11px; color: #64748b; font-weight: 600; margin-top: 2px;">
-              ✨ Fee Waived (MCA Grant)
+              ✨ Fee Waived (Incubation Grant)
             </div>
           ` : breakdown ? `
             <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 3px; font-family: var(--font-mono); line-height: 1.35;">
@@ -1170,21 +1241,33 @@ const BillingModule = {
               <button class="btn btn-outline btn-sm" style="font-size: 11px; padding: 4px 10px; color: var(--status-success); border-color: rgba(34, 197, 94, 0.4); font-weight: 600; white-space: nowrap;" onclick="BillingModule.handleRentReceiptClick('${r.id}')" title="View Official Payment Receipt">
                 📄 Receipt
               </button>
-            ` : `
-              <button class="btn btn-primary btn-sm" style="font-size: 11px; padding: 4px 12px; font-weight: 700; white-space: nowrap;" onclick="BillingModule.handleRentPayClick('${r.id}')" title="Process Rent Payment">
+            ` : isFounder ? `
+              <button class="btn btn-primary btn-sm" style="font-size: 11px; padding: 4px 12px; font-weight: 700; white-space: nowrap;" onclick="BillingModule.handleRentPayClick('${r.id}')" title="Pay Full Rent Online">
                 💳 Pay Now
+              </button>
+            ` : `
+              <button class="btn btn-primary btn-sm" style="font-size: 11px; padding: 4px 10px; font-weight: 700; white-space: nowrap; background: #059669; border-color: #047857;" onclick="BillingModule.handleRentRecordPaymentClick('${r.id}')" title="Record Bank/Offline Payment">
+                💵 Record payment
               </button>
             `}
 
-            <!-- Compact "⋯" Action Menu (Invoice, Startup profile, Activity log) -->
+            <!-- Compact "⋯" Action Menu -->
             <div class="row-menu-wrapper" style="position: relative; display: inline-block;">
-              <button class="btn btn-outline btn-sm row-menu-trigger" onclick="BillingModule.toggleRowMenu(event, '${r.id}')" style="font-size: 14px; padding: 3px 8px; line-height: 1; border-color: var(--border-medium); color: var(--text-secondary); min-width: 28px;" title="More options for ${r.startupName}">
+              <button class="btn btn-outline btn-sm row-menu-trigger" onclick="BillingModule.toggleRowMenu(event, 'rent-${r.id}')" style="font-size: 14px; padding: 3px 8px; line-height: 1; border-color: var(--border-medium); color: var(--text-secondary); min-width: 28px;" title="More options for ${r.startupName}">
                 ⋯
               </button>
-              <div id="row-menu-${r.id}" class="rent-row-menu" style="display: none; position: absolute; right: 0; top: 100%; margin-top: 4px; z-index: 1000; min-width: 170px; background: var(--bg-surface); border: 1px solid var(--border-medium); border-radius: var(--radius-md); box-shadow: 0 10px 25px rgba(0,0,0,0.18); padding: 5px; text-align: left;">
+              <div id="row-menu-rent-${r.id}" class="rent-row-menu" style="display: none; position: absolute; right: 0; top: 100%; margin-top: 4px; z-index: 1000; min-width: 175px; background: var(--bg-surface); border: 1px solid var(--border-medium); border-radius: var(--radius-md); box-shadow: 0 10px 25px rgba(0,0,0,0.18); padding: 5px; text-align: left;">
                 <button class="row-menu-item" onclick="BillingModule.closeAllRowMenus(); BillingModule.handleRentInvoiceClick('${r.id}')" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 10px; font-size: 12px; font-weight: 600; color: var(--text-primary); border: none; background: transparent; cursor: pointer; border-radius: 6px; text-align: left; transition: all 0.15s ease;">
                   <span>🧾</span> <span>View Invoice</span>
                 </button>
+                ${!isPaid && !isCancelled ? `
+                  <button class="row-menu-item" onclick="BillingModule.closeAllRowMenus(); BillingModule.handleRentRecordPaymentClick('${r.id}')" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 10px; font-size: 12px; font-weight: 600; color: #059669; border: none; background: transparent; cursor: pointer; border-radius: 6px; text-align: left; transition: all 0.15s ease;">
+                    <span>💵</span> <span>Record payment</span>
+                  </button>
+                  <button class="row-menu-item" onclick="BillingModule.closeAllRowMenus(); BillingModule.handleRentPayClick('${r.id}')" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 10px; font-size: 12px; font-weight: 600; color: #4338ca; border: none; background: transparent; cursor: pointer; border-radius: 6px; text-align: left; transition: all 0.15s ease;">
+                    <span>💳</span> <span>Pay via Gateway</span>
+                  </button>
+                ` : ''}
                 <button class="row-menu-item" onclick="BillingModule.closeAllRowMenus(); BillingModule.openStartupPaymentHistoryModal('${r.startupId}')" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 10px; font-size: 12px; font-weight: 600; color: var(--text-primary); border: none; background: transparent; cursor: pointer; border-radius: 6px; text-align: left; transition: all 0.15s ease;">
                   <span>👤</span> <span>Startup profile</span>
                 </button>
@@ -1247,10 +1330,36 @@ const BillingModule = {
       PaymentsModule.openCheckoutModal(rent.invoiceId);
     } else {
       const res = window.store.generateInvoice(rent.startupId, 'October 2026');
-      if (res.success) {
+      if (res && res.success) {
         rent.invoiceId = res.invoice.id;
         window.store.save();
         PaymentsModule.openCheckoutModal(res.invoice.id);
+      }
+    }
+  },
+
+  handleRentRecordPaymentClick(rentId) {
+    const rent = window.store.getRentRecordById(rentId);
+    if (!rent) return;
+
+    if (rent.status === 'Cancelled' || rent.balanceDue === 0) {
+      if (typeof App !== 'undefined') App.showToast('This rent agreement is cancelled or already settled.', 'info');
+      return;
+    }
+
+    if (rent.invoiceId) {
+      const inv = window.store.getInvoiceById(rent.invoiceId);
+      if (inv && inv.status === 'Cancelled') {
+        if (typeof App !== 'undefined') App.showToast('This invoice is cancelled / voided. No payment required.', 'warning');
+        return;
+      }
+      PaymentsModule.openRecordPaymentModal(rent.invoiceId);
+    } else {
+      const res = window.store.generateInvoice(rent.startupId, 'October 2026');
+      if (res && res.success) {
+        rent.invoiceId = res.invoice.id;
+        window.store.save();
+        PaymentsModule.openRecordPaymentModal(res.invoice.id);
       }
     }
   },
@@ -1594,11 +1703,41 @@ const BillingModule = {
     }
   },
 
+  toggleRowMenu(event, menuKey) {
+    if (event) {
+      event.stopPropagation();
+    }
+    const targetMenu = document.getElementById(`row-menu-${menuKey}`);
+    const isCurrentlyOpen = targetMenu && targetMenu.style.display === 'block';
+    this.closeAllRowMenus();
+    if (targetMenu && !isCurrentlyOpen) {
+      targetMenu.style.display = 'block';
+    }
+  },
+
+  closeAllRowMenus() {
+    document.querySelectorAll('.rent-row-menu').forEach(menu => {
+      menu.style.display = 'none';
+    });
+  },
+
   closeModal(id) {
     const el = document.getElementById(id);
     if (el) el.remove();
   }
 };
+
+// Global click listener to close popover row menus
+if (typeof window !== 'undefined' && !window.__billingMenuListenerAttached) {
+  window.addEventListener('click', (e) => {
+    if (!e.target.closest('.row-menu-wrapper')) {
+      if (window.BillingModule && window.BillingModule.closeAllRowMenus) {
+        window.BillingModule.closeAllRowMenus();
+      }
+    }
+  });
+  window.__billingMenuListenerAttached = true;
+}
 
 window.BillingModule = BillingModule;
 

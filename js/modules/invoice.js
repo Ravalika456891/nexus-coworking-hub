@@ -645,16 +645,18 @@ const InvoiceModule = {
       <table class="items">
         <thead>
           <tr>
-            <th style="width: 52%;">Description</th>
-            <th class="c" style="width: 10%;">Qty/Hrs</th>
-            <th class="r" style="width: 18%;">Unit Rate (₹)</th>
-            <th class="r" style="width: 20%;">Amount (₹)</th>
+            <th style="width: 44%;">Description</th>
+            <th class="c" style="width: 14%;">SAC Code</th>
+            <th class="c" style="width: 8%;">Qty/Hrs</th>
+            <th class="r" style="width: 16%;">Unit Rate (₹)</th>
+            <th class="r" style="width: 18%;">Amount (₹)</th>
           </tr>
         </thead>
         <tbody>
           ${items.map(item => `
             <tr>
               <td><strong>${item.desc}</strong></td>
+              <td class="c" style="font-family: monospace; font-size: 11px;">${item.sac || (sectionName === 'Facilities' ? '998413' : '997212')}</td>
               <td class="c">${item.qty}</td>
               <td class="r">₹${Number(item.rate).toLocaleString('en-IN')}</td>
               <td class="amt">₹${Number(item.amount).toLocaleString('en-IN')}</td>
@@ -680,15 +682,16 @@ const InvoiceModule = {
     </div>
 
     <div class="totals-block">
-      <div class="total-row"><span>Gross Subtotal:</span><strong>₹${subtotal.toLocaleString('en-IN')}</strong></div>
-      ${subsidyDeduction > 0 ? `<div class="total-row" style="color: #16a34a;"><span>Grant Subsidy (${subsidyPct}%):</span><strong style="color: #16a34a;">-₹${subsidyDeduction.toLocaleString('en-IN')}</strong></div>
-      <div class="total-row"><span>Taxable Value:</span><strong>₹${taxableAmount.toLocaleString('en-IN')}</strong></div>` : ''}
-      <div class="total-row"><span>CGST @ 9%:</span><strong>₹${cgst.toLocaleString('en-IN')}</strong></div>
-      <div class="total-row"><span>SGST @ 9%:</span><strong>₹${sgst.toLocaleString('en-IN')}</strong></div>
+      <div class="total-row"><span>Gross Base Subtotal:</span><strong>₹${subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></div>
+      ${subsidyDeduction > 0 ? `<div class="total-row" style="color: #16a34a;"><span>Grant Subsidy (${subsidyPct}%):</span><strong style="color: #16a34a;">-₹${subsidyDeduction.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></div>
+      <div class="total-row"><span>Taxable Value:</span><strong>₹${taxableAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></div>` : ''}
+      <div class="total-row"><span>CGST @ 9% (SAC 997212):</span><strong>₹${cgst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></div>
+      <div class="total-row"><span>SGST @ 9% (SAC 997212):</span><strong>₹${sgst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></div>
+      <div class="total-row" style="color: #4338ca; font-weight: 700;"><span>Total GST (18%):</span><strong>₹${(cgst + sgst).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></div>
       <div style="border-top: 1px solid #e2e8f0; margin: 8px 0;"></div>
       <div class="total-grand">
-        <span>TOTAL DUE</span>
-        <strong>₹${grandTotal.toLocaleString('en-IN')}</strong>
+        <span>TOTAL INVOICE (INR)</span>
+        <strong>₹${grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
       </div>
       <div class="words-row">
         Amount in Words: <strong>${amountInWords}</strong>
@@ -783,10 +786,15 @@ const InvoiceModule = {
               <!-- Invoice Header Band -->
               <div style="background: linear-gradient(135deg, #03003a 0%, #0c076e 100%); padding: 24px 28px; display: flex; justify-content: space-between; align-items: flex-start; color: white;">
                 <div>
-                  <div style="font-size: 9px; font-weight: 700; letter-spacing: 2.5px; opacity: 0.8; text-transform: uppercase;">Tax Invoice</div>
+                  <div style="font-size: 9px; font-weight: 700; letter-spacing: 2.5px; opacity: 0.8; text-transform: uppercase;">GST Tax Invoice</div>
                   <div style="font-size: 20px; font-weight: 900; margin-top: 4px;">${hub ? hub.name : 'Nexus Co-Working Hub'}</div>
                   <div style="font-size: 11px; opacity: 0.85; margin-top: 4px;">${hub ? hub.address : ''}</div>
-                  <div style="font-size: 11px; opacity: 0.85;">GSTIN: <strong>${hub ? hub.gstin : ''}</strong> | PAN: <strong>${hub ? hub.pan : ''}</strong></div>
+                  <div style="font-size: 11px; opacity: 0.9; margin-top: 2px;">
+                    GSTIN: <strong style="font-family: var(--font-mono); color: #67e8f9;">${hub ? hub.gstin : '36AAACN1234F1Z8'}</strong> | PAN: <strong>${hub ? hub.pan : 'AAACN1234F'}</strong> | State: <strong>Telangana (36)</strong>
+                  </div>
+                  <div style="font-size: 10.5px; opacity: 0.85; margin-top: 3px;">
+                    Service Category: <strong>Rental of Commercial Space & Co-Working</strong> • Primary SAC: <strong style="font-family: var(--font-mono); color: #fef08a;">997212</strong>
+                  </div>
                 </div>
                 <div style="text-align: right;">
                   <div style="font-size: 9px; opacity: 0.7; letter-spacing: 1px; text-transform: uppercase;">Invoice #</div>
@@ -800,23 +808,22 @@ const InvoiceModule = {
               <!-- Billed-to -->
               <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #e2e8f0;">
                 <div style="padding: 16px 22px; border-right: 1px solid #e2e8f0;">
-                  <div style="font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #94a3b8; margin-bottom: 8px;">Billed To</div>
+                  <div style="font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #94a3b8; margin-bottom: 8px;">Billed To (Client / Tenant)</div>
                   <div style="font-weight: 800; font-size: 15px; color: #0f172a;">${inv.startupName}</div>
-                  ${startup ? `
                   <div style="font-size: 12px; color: #475569; margin-top: 4px; line-height: 1.7;">
-                    ${startup.founders ? `Attn: ${startup.founders.name}<br>` : ''}
-                    GSTIN: <strong style="font-family: var(--font-mono); color: #4338ca; font-size: 11px;">${startup.gstin || 'N/A'}</strong><br>
-                    CIN: ${startup.registrationNumber || 'N/A'}<br>
-                    Category: ${startup.category}
-                  </div>` : ''}
+                    ${startup && startup.founders ? `Attn: ${startup.founders.name}<br>` : ''}
+                    GSTIN: <strong style="font-family: var(--font-mono); color: #4338ca; font-size: 11.5px;">${(startup && startup.gstin) || inv.clientGstin || 'Unregistered / Consumer'}</strong><br>
+                    CIN: ${(startup && startup.registrationNumber) || 'N/A'}<br>
+                    Place of Supply: <strong>Telangana (36)</strong> • Category: ${(startup && startup.category) || 'Startup'}
+                  </div>
                 </div>
                 <div style="padding: 16px 22px; background: #f8fafc;">
                   <div style="font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #94a3b8; margin-bottom: 8px;">Invoice Details</div>
                   <div style="font-size: 12px; color: #475569; line-height: 1.8;">
                     Invoice Date: <strong>${today}</strong><br>
                     Due Date: <strong style="color: #dc2626;">${dueFmt}</strong><br>
-                    Terms: <strong>Net 5 Days</strong><br>
-                    Status: <strong style="color: ${inv.status === 'Paid' ? '#16a34a' : '#d97706'};">${inv.status.toUpperCase()}</strong>
+                    Payment Terms: <strong>Net 5 Days</strong><br>
+                    Invoice Status: <strong style="color: ${inv.status === 'Paid' ? '#16a34a' : inv.status === 'Cancelled' ? '#64748b' : '#d97706'};">${inv.status.toUpperCase()}</strong>
                     ${inv.grantSubsidyPercent > 0 ? `<br>Grant Subsidy: <strong style="color:#16a34a;">${inv.grantSubsidyPercent}%</strong>` : ''}
                   </div>
                 </div>
@@ -833,15 +840,17 @@ const InvoiceModule = {
                       <thead>
                         <tr style="background: #f8fafc;">
                           <th style="text-align: left; padding: 7px 10px; color: #64748b; font-weight: 600; font-size: 10px; text-transform: uppercase; border-bottom: 1px solid #e2e8f0;">Description</th>
-                          <th style="text-align: center; padding: 7px 10px; color: #64748b; font-weight: 600; font-size: 10px; text-transform: uppercase; border-bottom: 1px solid #e2e8f0;">Qty</th>
-                          <th style="text-align: right; padding: 7px 10px; color: #64748b; font-weight: 600; font-size: 10px; text-transform: uppercase; border-bottom: 1px solid #e2e8f0;">Rate (₹)</th>
-                          <th style="text-align: right; padding: 7px 10px; color: #64748b; font-weight: 600; font-size: 10px; text-transform: uppercase; border-bottom: 1px solid #e2e8f0;">Amount (₹)</th>
+                          <th style="text-align: center; padding: 7px 10px; color: #64748b; font-weight: 600; font-size: 10px; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; width: 90px;">SAC Code</th>
+                          <th style="text-align: center; padding: 7px 10px; color: #64748b; font-weight: 600; font-size: 10px; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; width: 60px;">Qty</th>
+                          <th style="text-align: right; padding: 7px 10px; color: #64748b; font-weight: 600; font-size: 10px; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; width: 110px;">Rate (₹)</th>
+                          <th style="text-align: right; padding: 7px 10px; color: #64748b; font-weight: 600; font-size: 10px; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; width: 120px;">Amount (₹)</th>
                         </tr>
                       </thead>
                       <tbody>
                         ${items.map((item, idx) => `
                           <tr style="background: ${idx % 2 === 1 ? '#f8fafc' : '#fff'};">
                             <td style="padding: 8px 10px; color: #334155; font-weight: 500;">${item.desc}</td>
+                            <td style="padding: 8px 10px; text-align: center; font-family: var(--font-mono); font-size: 11px; color: #4338ca; font-weight: 700;">${item.sac || (secName === 'Facilities' ? '998413' : '997212')}</td>
                             <td style="padding: 8px 10px; text-align: center; color: #64748b;">${item.qty}</td>
                             <td style="padding: 8px 10px; text-align: right; font-family: var(--font-sans); font-variant-numeric: tabular-nums; color: #475569;">₹${Number(item.rate).toLocaleString('en-IN')}</td>
                             <td style="padding: 8px 10px; text-align: right; font-family: var(--font-sans); font-variant-numeric: tabular-nums; font-weight: 700; color: #1e293b;">₹${Number(item.amount).toLocaleString('en-IN')}</td>
@@ -855,14 +864,16 @@ const InvoiceModule = {
                   <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
                     <thead><tr style="background: #f8fafc;">
                       <th style="text-align: left; padding: 7px 10px; color: #64748b; font-size: 10px; text-transform: uppercase; border-bottom: 1px solid #e2e8f0;">Description</th>
-                      <th style="text-align: center; padding: 7px 10px; color: #64748b; font-size: 10px; text-transform: uppercase; border-bottom: 1px solid #e2e8f0;">Qty</th>
-                      <th style="text-align: right; padding: 7px 10px; color: #64748b; font-size: 10px; text-transform: uppercase; border-bottom: 1px solid #e2e8f0;">Rate</th>
-                      <th style="text-align: right; padding: 7px 10px; color: #64748b; font-size: 10px; text-transform: uppercase; border-bottom: 1px solid #e2e8f0;">Amount</th>
+                      <th style="text-align: center; padding: 7px 10px; color: #64748b; font-size: 10px; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; width: 90px;">SAC Code</th>
+                      <th style="text-align: center; padding: 7px 10px; color: #64748b; font-size: 10px; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; width: 60px;">Qty</th>
+                      <th style="text-align: right; padding: 7px 10px; color: #64748b; font-size: 10px; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; width: 110px;">Rate</th>
+                      <th style="text-align: right; padding: 7px 10px; color: #64748b; font-size: 10px; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; width: 120px;">Amount</th>
                     </tr></thead>
                     <tbody>
                       ${(inv.lineItems || []).map((item, idx) => `
                         <tr style="background: ${idx % 2 === 1 ? '#f8fafc' : '#fff'};">
                           <td style="padding: 8px 10px; color: #334155;">${item.desc}</td>
+                          <td style="padding: 8px 10px; text-align: center; font-family: var(--font-mono); font-size: 11px; color: #4338ca; font-weight: 700;">${item.sac || '997212'}</td>
                           <td style="padding: 8px 10px; text-align: center;">${item.qty}</td>
                           <td style="padding: 8px 10px; text-align: right; font-family: var(--font-sans); font-variant-numeric: tabular-nums;">₹${Number(item.rate).toLocaleString('en-IN')}</td>
                           <td style="padding: 8px 10px; text-align: right; font-family: var(--font-sans); font-variant-numeric: tabular-nums; font-weight: 700;">₹${Number(item.amount).toLocaleString('en-IN')}</td>
@@ -891,24 +902,27 @@ const InvoiceModule = {
                 </div>
                 <div style="padding: 16px 22px;">
                   <div style="font-size: 11.5px; color: #64748b; display: flex; justify-content: space-between; padding: 4px 0;">
-                    <span>Subtotal:</span><strong style="font-family: var(--font-sans); font-variant-numeric: tabular-nums; color: #1e293b;">₹${Number(inv.subtotal || 0).toLocaleString('en-IN')}</strong>
+                    <span>Base Amount / Subtotal:</span><strong style="font-family: var(--font-sans); font-variant-numeric: tabular-nums; color: #1e293b;">₹${Number(inv.subtotal || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
                   </div>
                   ${Number(inv.subsidyDeduction) > 0 ? `
                   <div style="font-size: 11.5px; color: #16a34a; display: flex; justify-content: space-between; padding: 4px 0;">
-                    <span>Grant (${inv.grantSubsidyPercent}%):</span><strong style="font-family: var(--font-sans); font-variant-numeric: tabular-nums;">-₹${Number(inv.subsidyDeduction).toLocaleString('en-IN')}</strong>
+                    <span>Incubation Grant (${inv.grantSubsidyPercent}%):</span><strong style="font-family: var(--font-sans); font-variant-numeric: tabular-nums;">-₹${Number(inv.subsidyDeduction).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
                   </div>
                   <div style="font-size: 11.5px; color: #64748b; display: flex; justify-content: space-between; padding: 4px 0; border-top: 1px solid #e2e8f0; margin-top: 2px; padding-top: 6px;">
-                    <span>Taxable Value:</span><strong style="font-family: var(--font-sans); font-variant-numeric: tabular-nums; color: #1e293b;">₹${Number(inv.taxableAmount || 0).toLocaleString('en-IN')}</strong>
+                    <span>Taxable Value:</span><strong style="font-family: var(--font-sans); font-variant-numeric: tabular-nums; color: #1e293b;">₹${Number(inv.taxableAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
                   </div>` : ''}
                   <div style="font-size: 11.5px; color: #64748b; display: flex; justify-content: space-between; padding: 4px 0;">
-                    <span>CGST @ 9%:</span><strong style="font-family: var(--font-sans); font-variant-numeric: tabular-nums;">₹${Math.round(Number(inv.taxGst || 0)/2).toLocaleString('en-IN')}</strong>
+                    <span>CGST @ 9% (SAC 997212):</span><strong style="font-family: var(--font-sans); font-variant-numeric: tabular-nums;">₹${(Number(inv.taxGst || 0)/2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
                   </div>
                   <div style="font-size: 11.5px; color: #64748b; display: flex; justify-content: space-between; padding: 4px 0;">
-                    <span>SGST @ 9%:</span><strong style="font-family: var(--font-sans); font-variant-numeric: tabular-nums;">₹${Math.round(Number(inv.taxGst || 0)/2).toLocaleString('en-IN')}</strong>
+                    <span>SGST @ 9% (SAC 997212):</span><strong style="font-family: var(--font-sans); font-variant-numeric: tabular-nums;">₹${(Number(inv.taxGst || 0)/2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                  </div>
+                  <div style="font-size: 11.5px; color: #4338ca; font-weight: 700; display: flex; justify-content: space-between; padding: 4px 0; border-top: 1px solid #e2e8f0; margin-top: 2px; padding-top: 5px;">
+                    <span>Total GST Tax (18%):</span><strong style="font-family: var(--font-sans); font-variant-numeric: tabular-nums;">₹${Number(inv.taxGst || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
                   </div>
                   <div style="display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #03003a, #0c076e); padding: 10px 14px; border-radius: 8px; margin-top: 10px;">
-                    <span style="font-weight: 800; color: white; font-size: 13px;">TOTAL DUE</span>
-                    <strong style="font-family: var(--font-sans); font-variant-numeric: tabular-nums; font-size: 18px; color: white; letter-spacing: -0.02em;">₹${Number(inv.total || 0).toLocaleString('en-IN')}</strong>
+                    <span style="font-weight: 800; color: white; font-size: 13px;">TOTAL INVOICE (INR)</span>
+                    <strong style="font-family: var(--font-sans); font-variant-numeric: tabular-nums; font-size: 18px; color: white; letter-spacing: -0.02em;">₹${Number(inv.total || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
                   </div>
                 </div>
               </div>
@@ -971,29 +985,42 @@ const InvoiceModule = {
                   </div>
                 ` : inv.status === 'Cancelled' ? `
                   <div style="padding: 12px 14px; background: rgba(100, 116, 139, 0.08); border: 1px dashed #94a3b8; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; color: #475569;">
-                    <span>🚫 This invoice has been Cancelled / Voided (MCA Grant Fee Waiver Amendment). No payment is due.</span>
+                    <span>🚫 This invoice has been Cancelled / Voided (Incubation Grant Fee Waiver Amendment). No payment is due.</span>
                     <span class="badge" style="background: rgba(100, 116, 139, 0.2); color: #334155; font-weight: 700;">Voided (Fee Waived)</span>
                   </div>
                 ` : `
-                  <div style="padding: 12px 14px; background: #fff; border: 1px dashed #cbd5e1; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; color: #64748b;">
+                  <div style="padding: 12px 14px; background: #fff; border: 1px dashed #cbd5e1; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; color: #64748b; flex-wrap: wrap; gap: 8px;">
                     <span>⏳ Awaiting payment. No transaction records logged for this invoice yet.</span>
-                    <button class="btn btn-primary btn-sm" style="font-size: 10.5px; padding: 3px 8px;"
-                      onclick="InvoiceModule.closeModal('modal-invoice-full-view'); if (typeof PaymentsModule !== 'undefined') PaymentsModule.openCheckoutModal('${inv.id}');">
-                      💳 Pay Now
-                    </button>
+                    <div style="display: flex; gap: 8px;">
+                      <button class="btn btn-outline btn-sm" style="font-size: 11px; padding: 4px 10px; color: #059669; border-color: #a7f3d0; background: #ecfdf5; font-weight: 700;"
+                        onclick="InvoiceModule.closeModal('modal-invoice-full-view'); PaymentsModule.openRecordPaymentModal('${inv.id}')">
+                        💵 Record Payment
+                      </button>
+                      <button class="btn btn-primary btn-sm" style="font-size: 11px; padding: 4px 10px;"
+                        onclick="InvoiceModule.closeModal('modal-invoice-full-view'); if (typeof PaymentsModule !== 'undefined') PaymentsModule.openCheckoutModal('${inv.id}');">
+                        💳 Pay Now
+                      </button>
+                    </div>
                   </div>
                 `}
               </div>
             </div>
           </div>
 
-          <div class="modal-footer" style="background: #f8fafc; border-top: 1px solid #e2e8f0;">
-            <button class="btn btn-secondary" onclick="InvoiceModule.closeModal('modal-invoice-full-view')">Close</button>
-            <button class="btn btn-outline" onclick="InvoiceModule._printExistingInvoice('${inv.id}')">🖨️ Print / Save as PDF</button>
+          <div class="modal-footer" style="background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-secondary" onclick="InvoiceModule.closeModal('modal-invoice-full-view')">Close</button>
+              <button class="btn btn-outline" onclick="InvoiceModule._printExistingInvoice('${inv.id}')">🖨️ Print / Save as PDF</button>
+            </div>
             ${inv.status !== 'Paid' && inv.status !== 'Cancelled' ? `
-              <button class="btn btn-primary" onclick="InvoiceModule.closeModal('modal-invoice-full-view'); PaymentsModule.openCheckoutModal('${inv.id}')">
-                💳 Proceed to Payment — ₹${Number(inv.total || 0).toLocaleString('en-IN')}
-              </button>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn btn-outline" onclick="InvoiceModule.closeModal('modal-invoice-full-view'); PaymentsModule.openRecordPaymentModal('${inv.id}')" style="color: #059669; border-color: #a7f3d0; background: #ecfdf5; font-weight: 700;">
+                  💵 Record Payment
+                </button>
+                <button class="btn btn-primary" onclick="InvoiceModule.closeModal('modal-invoice-full-view'); PaymentsModule.openCheckoutModal('${inv.id}')">
+                  💳 Pay Now — ₹${Number(inv.total || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </button>
+              </div>
             ` : ''}
           </div>
         </div>
