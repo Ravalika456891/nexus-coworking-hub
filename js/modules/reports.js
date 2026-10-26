@@ -22,12 +22,15 @@ const ReportsModule = {
           </p>
         </div>
 
-        <div style="display: flex; gap: 10px;">
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
           <button class="btn btn-secondary" onclick="ReportsModule.exportCSV('invoices')">
-            📥 Export Invoices CSV
+            📥 Invoices CSV
+          </button>
+          <button class="btn btn-secondary" onclick="ReportsModule.exportCSV('meetingRooms')">
+            📥 Meeting Rooms CSV
           </button>
           <button class="btn btn-primary" onclick="ReportsModule.exportCSV('startups')">
-            📥 Export Startups CSV
+            📥 Startups CSV
           </button>
         </div>
       </div>
@@ -110,6 +113,9 @@ const ReportsModule = {
                 </div>
               `;
             }).join('')}
+            <button class="btn btn-sm btn-outline" style="margin-top: 14px; font-size: 11.5px; width: 100%; font-weight: 700;" onclick="App.switchTab('meetingRooms'); MeetingRoomsModule.switchTab('myBookings');">
+              📋 Open My Meeting Room Bookings Feed Report ➔
+            </button>
           </div>
         </div>
       </div>
@@ -253,6 +259,19 @@ const ReportsModule = {
       });
       this.downloadBlob(csv, 'nexus_invoices_and_revenue.csv');
       App.showToast('📥 Exported Invoices & Collections to CSV!', 'success');
+    } else if (type === 'meetingRooms') {
+      const rooms = window.store.getMeetingRooms();
+      let csv = 'BookingID,RoomID,RoomName,Capacity,MeetingPurpose,Date,StartTime,EndTime,DurationHours,Attendees,Status,Cost,StartupID,StartupName\n';
+      rooms.forEach(r => {
+        (r.bookings || []).forEach(b => {
+          const sParts = b.startTime.split(':').map(Number);
+          const eParts = b.endTime.split(':').map(Number);
+          const dur = Math.max(0.5, ((eParts[0] * 60 + (eParts[1] || 0)) - (sParts[0] * 60 + (sParts[1] || 0))) / 60);
+          csv += `"${b.id}","${r.id}","${r.name}",${r.capacity||10},"${(b.title||'').replace(/"/g, '""')}","${b.date}","${b.startTime}","${b.endTime}",${dur.toFixed(1)},${b.attendees},"${b.status||'Confirmed'}","${b.cost === 0 ? 'Plan Credit' : '₹' + b.cost}","${b.startupId}","${b.startupName}"\n`;
+        });
+      });
+      this.downloadBlob(csv, 'nexus_meeting_rooms_master_bookings_report.csv');
+      App.showToast('📥 Exported Meeting Rooms Master Report to CSV!', 'success');
     }
   },
 
