@@ -1320,32 +1320,31 @@
   color: #2563eb;
 }
 
-/* Booked by other - Muted Subtle Grey Tile */
+/* Booked by other - Distinct Clear Red Color */
 .clear-slot-card.booked {
-  background: #f8fafc !important;
-  border: 1px solid #e2e8f0 !important;
-  box-shadow: none !important;
+  background: #fef2f2 !important;
+  border: 1.5px solid #f87171 !important;
+  box-shadow: 0 1px 3px rgba(239, 68, 68, 0.08) !important;
   cursor: pointer;
-  opacity: 0.88;
+  opacity: 1 !important;
   transition: all 0.18s ease;
 }
 
 .clear-slot-card.booked:hover {
-  background: #f1f5f9 !important;
-  border-color: #cbd5e1 !important;
-  opacity: 1;
+  background: #fee2e2 !important;
+  border-color: #ef4444 !important;
   transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.18) !important;
 }
 
 .clear-slot-card.booked .slot-time {
-  color: #64748b !important;
-  font-weight: 600;
+  color: #991b1b !important;
+  font-weight: 700;
 }
 
 .clear-slot-card.booked .slot-status {
-  color: #94a3b8 !important;
-  font-weight: 600;
+  color: #dc2626 !important;
+  font-weight: 700;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -1460,18 +1459,20 @@
 
 [data-theme="dark"] .clear-slot-card.booked,
 [data-theme="navy"] .clear-slot-card.booked {
-  background: rgba(255, 255, 255, 0.04) !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
+  background: rgba(239, 68, 68, 0.16) !important;
+  border-color: rgba(239, 68, 68, 0.45) !important;
 }
 
 [data-theme="dark"] .clear-slot-card.booked .slot-time,
 [data-theme="navy"] .clear-slot-card.booked .slot-time {
-  color: #94a3b8 !important;
+  color: #fca5a5 !important;
+  font-weight: 700;
 }
 
 [data-theme="dark"] .clear-slot-card.booked .slot-status,
 [data-theme="navy"] .clear-slot-card.booked .slot-status {
-  color: #64748b !important;
+  color: #f87171 !important;
+  font-weight: 700;
 }
 
 /* Meeting Rooms Top Filter Bar */

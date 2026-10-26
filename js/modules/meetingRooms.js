@@ -365,8 +365,8 @@ const MeetingRoomsModule = {
             <span style="color: #1d4ed8; font-weight: 700;">${mySlotsCount} Reserved by You</span>
           </div>
           <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px;">
-            <span style="width: 8px; height: 8px; border-radius: 50%; background: #94a3b8;"></span>
-            <span style="color: #64748b; font-weight: 700;">${otherSlotsCount} Booked (Occupied)</span>
+            <span style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 6px rgba(239, 68, 68, 0.4);"></span>
+            <span style="color: #dc2626; font-weight: 700;">${otherSlotsCount} Booked (Red)</span>
           </div>
         </div>
       </div>
@@ -1735,7 +1735,7 @@ const MeetingRoomsModule = {
                  onclick="MeetingRoomsModule.openWaitlistModal('${room.id}', '${slot}', '${booked.id}')"
                  title="${timeRangeLabel} • Reserved by ${booked.startupName || 'Startup'}${booked.title ? ': ' + booked.title : ''} • Tap to join waitlist / get notified">
               <div class="slot-time">${timeRangeLabel}</div>
-              <div class="slot-status">🔒 Booked</div>
+              <div class="slot-status">🔴 Booked</div>
             </div>
           `;
         }
@@ -1813,8 +1813,8 @@ const MeetingRoomsModule = {
               <div class="exec-meta-row">
                 <span class="exec-pill-badge">👥 ${room.capacity} Pax Capacity</span>
                 <span class="exec-pill-badge" style="background: rgba(99, 102, 241, 0.08); color: #4f46e5; border: 1px solid rgba(99, 102, 241, 0.25); font-weight: 800;">₹${room.hourlyRate}/hr</span>
-                <span style="font-size: 11px; color: ${availableHours === 0 ? '#dc2626' : otherBookedHours > 0 ? '#ea580c' : statusType === 'available' ? '#16a34a' : 'var(--text-secondary, #64748b)'}; font-weight: 700;">
-                  ${availableHours === 0 ? '0 Slots Open (Fully Booked)' : otherBookedHours > 0 ? `${availableHours} of 7 Slots Open • ${otherBookedHours} Booked` : `${availableHours} of 7 Slots Open`}
+                <span style="font-size: 11px; color: ${availableHours === 0 ? '#dc2626' : otherBookedHours > 0 ? '#dc2626' : statusType === 'available' ? '#16a34a' : 'var(--text-secondary, #64748b)'}; font-weight: 700;">
+                  ${availableHours === 0 ? '0 Slots Open (🔴 Fully Booked)' : otherBookedHours > 0 ? `${availableHours} of 7 Slots Open • <span style="color: #dc2626; font-weight: 800;">🔴 ${otherBookedHours} Booked</span>` : `${availableHours} of 7 Slots Open`}
                 </span>
               </div>
             </div>
