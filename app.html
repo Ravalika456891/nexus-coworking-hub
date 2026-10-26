@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/design-system.css?v=20261025_09">
-  <link rel="stylesheet" href="css/components.css?v=20261026_02">
+  <link rel="stylesheet" href="css/components.css?v=20261026_03">
   <style>
     /* Invoice type selector buttons */
     .inv-type-btn {
@@ -36,10 +36,153 @@
       background: rgba(99, 102, 241, 0.12);
       color: var(--accent-primary);
     }
-    /* Print: hide app chrome, show only invoice */
+    /* ==========================================================================
+       ENTERPRISE PRINT STYLESHEET (PDF & PAPER READY)
+       ========================================================================== */
     @media print {
-      body > * { display: none !important; }
-      #print-invoice-target { display: block !important; }
+      @page {
+        margin: 10mm 12mm;
+        size: auto;
+      }
+
+      html, body {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        height: auto !important;
+        min-height: 0 !important;
+        overflow: visible !important;
+        font-size: 11pt !important;
+      }
+
+      /* Hide chrome, navigation, auth gate, toasts, banners, and action controls */
+      .app-sidebar,
+      .app-header,
+      .persona-banner-bar,
+      #auth-gate-overlay,
+      .toast-container,
+      .modal-close-btn,
+      .modal-header .btn,
+      .modal-header button,
+      .modal-footer,
+      .btn:not(.keep-print),
+      button:not(.keep-print),
+      .no-print {
+        display: none !important;
+      }
+
+      /* When printing a Modal (Invoice Viewer, Door Pass, Diploma, Statement, etc.) */
+      body.printing-modal .app-shell,
+      body:has(#modal-mount .modal-overlay) .app-shell,
+      body:has(#modal-mount:not(:empty)) .app-shell,
+      body:has(.modal-overlay.active) .app-shell {
+        display: none !important;
+      }
+
+      #modal-mount {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+
+      .modal-overlay,
+      .modal-overlay.active,
+      .modal-backdrop {
+        display: block !important;
+        position: static !important;
+        inset: auto !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
+        background: transparent !important;
+        backdrop-filter: none !important;
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: visible !important;
+      }
+
+      .modal-content,
+      .modal-wide {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-shadow: none !important;
+        border: none !important;
+        background: #ffffff !important;
+        color: #0f172a !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: visible !important;
+        border-radius: 0 !important;
+      }
+
+      .modal-header {
+        border-bottom: 2px solid #e2e8f0 !important;
+        padding: 0 0 12px 0 !important;
+        margin-bottom: 16px !important;
+        background: transparent !important;
+      }
+
+      .modal-body {
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: visible !important;
+      }
+
+      .invoice-view-box {
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+        background: #ffffff !important;
+        color: #0f172a !important;
+      }
+
+      /* When printing regular views (no modal) */
+      .app-shell {
+        display: block !important;
+        position: static !important;
+        height: auto !important;
+        overflow: visible !important;
+      }
+
+      .app-main {
+        margin-left: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow: visible !important;
+      }
+
+      .view-container.active {
+        display: block !important;
+        overflow: visible !important;
+        padding: 0 !important;
+      }
+
+      .view-container:not(.active) {
+        display: none !important;
+      }
+
+      table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+      }
+
+      tr, td, th {
+        page-break-inside: avoid !important;
+      }
+
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
     }
   </style>
   <script>
@@ -475,7 +618,7 @@
   <script src="js/modules/leads.js?v=20261025_04"></script>
   <script src="js/modules/database.js?v=20261025_04"></script>
   <script src="js/authGate.js?v=20261025_04"></script>
-  <script src="js/main.js?v=20261025_04"></script>
+  <script src="js/main.js?v=20261026_05"></script>
   <script src="js/liveReload.js?v=20261025_04"></script>
 </body>
 </html>

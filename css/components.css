@@ -3988,29 +3988,98 @@ textarea.form-control.field-invalid {
 
 /* Print CSS */
 @media print {
-  body {
+  @page {
+    margin: 10mm 12mm;
+    size: auto;
+  }
+
+  html, body {
     background: #ffffff !important;
-    color: #000000 !important;
+    color: #0f172a !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
   }
 
   .app-sidebar,
   .app-header,
-  .btn,
+  .persona-banner-bar,
+  #auth-gate-overlay,
+  .toast-container,
+  .btn:not(.keep-print),
+  button:not(.keep-print),
   .modal-footer,
   .modal-close-btn,
-  .toast-container {
+  .no-print {
     display: none !important;
+  }
+
+  body.printing-modal .app-shell,
+  body:has(#modal-mount .modal-overlay) .app-shell,
+  body:has(#modal-mount:not(:empty)) .app-shell,
+  body:has(.modal-overlay.active) .app-shell {
+    display: none !important;
+  }
+
+  #modal-mount {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .modal-overlay,
+  .modal-overlay.active,
+  .modal-backdrop {
+    display: block !important;
+    position: static !important;
+    inset: auto !important;
+    width: 100% !important;
+    height: auto !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  .modal-content,
+  .modal-wide {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    border-radius: 0 !important;
+  }
+
+  .modal-body {
+    padding: 0 !important;
+    overflow: visible !important;
   }
 
   .app-main {
     margin-left: 0 !important;
     width: 100% !important;
+    padding: 0 !important;
   }
 
   .invoice-view-box {
     box-shadow: none !important;
     padding: 0 !important;
+    margin: 0 !important;
     max-width: 100% !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
   }
 }
 

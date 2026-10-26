@@ -1219,3 +1219,19 @@ const App = {
 window.App = App;
 document.addEventListener('DOMContentLoaded', () => App.init());
 
+// Global Print Management: Detect if a modal (e.g. invoice, pass, certificate) is open before printing
+window.addEventListener('beforeprint', () => {
+  const mount = document.getElementById('modal-mount');
+  const hasModal = mount && mount.innerHTML.trim() !== '' && mount.querySelector('.modal-overlay, .modal-content, .invoice-view-box');
+  if (hasModal) {
+    document.body.classList.add('printing-modal');
+  } else {
+    document.body.classList.remove('printing-modal');
+  }
+});
+
+window.addEventListener('afterprint', () => {
+  document.body.classList.remove('printing-modal');
+});
+
+
