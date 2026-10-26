@@ -914,8 +914,168 @@ const MeetingRoomsModule = {
     `;
   },
 
+  formatTimeTo12Hour(time24) {
+    if (!time24) return '';
+    const parts = time24.split(':');
+    let h = parseInt(parts[0], 10);
+    const m = parts[1] || '00';
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    return `${h < 10 ? '0' : ''}${h}:${m} ${ampm}`;
+  },
+
   renderAllBookingsView({ allBookings, myStartup }) {
+    const startups = (window.store && window.store.getStartups) ? window.store.getStartups() : [];
+
     return `
+      <!-- Company-by-Company Monthly Meeting Room Consumption & Invoice Ledger -->
+      <div class="card" style="margin-bottom: 24px; padding: 0; overflow: hidden; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); background: var(--bg-surface);">
+        <div style="padding: 16px 20px; background: var(--bg-surface-elevated); border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <h3 style="font-size: 15px; font-weight: 800; color: var(--text-primary); margin: 0; display: flex; align-items: center; gap: 8px;">
+              <span>🏢 Company-by-Company Monthly Meeting Room Consumption &amp; Invoice Ledger</span>
+            </h3>
+            <p style="font-size: 12px; color: var(--text-muted); margin: 3px 0 0 0;">
+              Total monthly bookings count, exact date/time (AM/PM), credit consumption, and invoice charges across all incubated ventures.
+            </p>
+          </div>
+          <span class="badge badge-success" style="font-size: 11px; font-weight: 700; padding: 4px 10px;">
+            ✓ 100% Plan Subsidized • Zero Overages
+          </span>
+        </div>
+
+        <div style="overflow-x: auto;">
+          <table class="nexus-table" style="width: 100%; table-layout: auto; margin: 0; font-size: 12.5px;">
+            <thead>
+              <tr>
+                <th style="min-width: 180px; white-space: nowrap;">Company / Startup</th>
+                <th style="min-width: 120px; text-align: center; white-space: nowrap;">Monthly Bookings</th>
+                <th style="min-width: 250px;">Date, Timing &amp; AM / PM Session Window</th>
+                <th style="min-width: 160px; white-space: nowrap;">Credit Hours Used / Plan</th>
+                <th style="min-width: 120px; white-space: nowrap;">Overages Billed</th>
+                <th style="min-width: 140px; white-space: nowrap;">Cost on All Invoices</th>
+                <th style="min-width: 110px; text-align: right; white-space: nowrap;">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${startups.map(s => {
+                const sBookings = allBookings.filter(b => b.startupId === s.id || (b.startupName && b.startupName.toLowerCase() === s.name.toLowerCase()));
+                const isMine = s.id === myStartup.id;
+                const included = s.includedMeetingHours || 12;
+                const used = s.usedMeetingHours || sBookings.reduce((acc, b) => {
+                  const sParts = b.startTime.split(':').map(Number);
+                  const eParts = b.endTime.split(':').map(Number);
+                  return acc + Math.max(0.5, ((eParts[0] * 60 + (eParts[1] || 0)) - (sParts[0] * 60 + (sParts[1] || 0))) / 60);
+                }, 0);
+                const overageHours = Math.max(0, used - included);
+                const overageCost = overageHours * 800;
+                const fillPct = Math.min(100, Math.round((used / included) * 100));
+
+                return `
+                  <tr style="${isMine ? 'background: rgba(37, 99, 235, 0.04); outline: 1px solid rgba(37, 99, 235, 0.2);' : ''}">
+                    <!-- 1. Company Name & Info -->
+                    <td style="white-space: nowrap;">
+                      <div style="display: flex; align-items: center; gap: 9px;">
+                        <span style="font-size: 20px;">${s.logoEmoji || '🚀'}</span>
+                        <div>
+                          <strong style="color: var(--text-primary); font-size: 13px;">${s.name}</strong>
+                          ${isMine ? '<span class="badge badge-primary" style="font-size: 9px; padding: 1px 5px; margin-left: 4px;">You</span>' : ''}
+                          <div style="font-size: 10.5px; color: var(--text-muted); font-family: var(--font-mono);">
+                            ${s.id} • ${s.category || 'Incubation Member'}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+
+                    <!-- 2. Monthly Bookings Count -->
+                    <td style="text-align: center; white-space: nowrap;">
+                      <span class="badge ${sBookings.length > 0 ? 'badge-primary' : 'badge-subtle'}" style="font-size: 11.5px; font-weight: 700; padding: 4px 10px;">
+                        ${sBookings.length} ${sBookings.length === 1 ? 'Booking' : 'Bookings'}
+                      </span>
+                    </td>
+
+                    <!-- 3. Exact Date, Timing & AM/PM Window -->
+                    <td style="min-width: 250px;">
+                      ${sBookings.length === 0 ? `
+                        <span style="color: var(--text-muted); font-size: 11.5px; font-style: italic;">No active room reservations this cycle</span>
+                      ` : `
+                        <div style="display: flex; flex-direction: column; gap: 5px;">
+                          ${sBookings.map(b => {
+                            const sHour = parseInt(b.startTime.split(':')[0], 10);
+                            const isAM = sHour < 12;
+                            const ampmTag = isAM ? '🌅 Morning (AM)' : '🌇 Afternoon (PM)';
+                            const time12 = `${this.formatTimeTo12Hour(b.startTime)} – ${this.formatTimeTo12Hour(b.endTime)}`;
+                            return `
+                              <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 11px; background: var(--bg-surface-elevated); padding: 3px 8px; border-radius: 6px; border: 1px solid var(--border-subtle); flex-wrap: wrap;">
+                                <span>📅 <strong>${b.date}</strong></span>
+                                <span>•</span>
+                                <span style="font-family: var(--font-mono); font-weight: 700; color: #2563eb;">⏰ ${time12}</span>
+                                <span>•</span>
+                                <span class="badge ${isAM ? 'badge-warning' : 'badge-info'}" style="font-size: 9.5px; padding: 1px 5px; font-weight: 700;">
+                                  ${ampmTag}
+                                </span>
+                                <span style="color: var(--text-muted); font-size: 10px;">(${b.roomName})</span>
+                              </div>
+                            `;
+                          }).join('')}
+                        </div>
+                      `}
+                    </td>
+
+                    <!-- 4. Credit Hours Used vs Included Allowance -->
+                    <td style="white-space: nowrap;">
+                      <div style="display: flex; justify-content: space-between; font-size: 11.5px; font-weight: 700; font-family: var(--font-mono); margin-bottom: 3px;">
+                        <span>${used.toFixed(1)} hrs</span>
+                        <span style="color: var(--text-muted);">of ${included} hrs free</span>
+                      </div>
+                      <div class="progress-track" style="height: 6px; width: 130px; background: var(--border-subtle); border-radius: 999px; overflow: hidden;">
+                        <div class="progress-fill" style="width: ${fillPct}%; height: 100%; background: ${fillPct > 90 ? '#ef4444' : fillPct > 60 ? '#f59e0b' : '#10b981'}; border-radius: 999px;"></div>
+                      </div>
+                    </td>
+
+                    <!-- 5. Overages Billed -->
+                    <td style="white-space: nowrap;">
+                      ${overageHours > 0 ? `
+                        <span style="font-size: 12px; font-weight: 700; color: #dc2626; font-family: var(--font-mono);">
+                          ⚠️ ${overageHours.toFixed(1)} hrs over
+                        </span>
+                      ` : `
+                        <span style="font-size: 11.5px; font-weight: 600; color: #16a34a;">
+                          ✓ 0 hrs (Within Plan)
+                        </span>
+                      `}
+                    </td>
+
+                    <!-- 6. Cost on All Invoices -->
+                    <td style="white-space: nowrap;">
+                      ${overageCost > 0 ? `
+                        <div style="font-weight: 800; font-family: var(--font-mono); color: #dc2626; font-size: 13px;">
+                          ₹${overageCost.toLocaleString('en-IN')}
+                        </div>
+                        <div style="font-size: 10px; color: var(--text-muted);">Billed on monthly rent invoice</div>
+                      ` : `
+                        <div style="font-weight: 700; font-family: var(--font-mono); color: #16a34a; font-size: 12.5px;">
+                          ₹0.00 (Covered)
+                        </div>
+                        <div style="font-size: 10px; color: var(--text-muted);">Included in incubation grant</div>
+                      `}
+                    </td>
+
+                    <!-- 7. Action -->
+                    <td style="text-align: right; white-space: nowrap;">
+                      <button class="btn btn-outline btn-sm" style="font-size: 11px; padding: 4px 9px;" onclick="MeetingRoomsModule.openBookModal(null, null, '${s.id}')" title="Book space for ${s.name}">
+                        + Book
+                      </button>
+                    </td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- All Individual Confirmed Meeting Room Reservations Ledger -->
       <div class="card" style="padding: 0; overflow: hidden; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); background: var(--bg-surface);">
         <div style="padding: 16px 20px; background: var(--bg-surface-elevated); border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
           <div>
@@ -923,7 +1083,7 @@ const MeetingRoomsModule = {
               📋 All Confirmed Meeting Room Reservations (${allBookings.length})
             </h3>
             <p style="font-size: 12px; color: var(--text-muted); margin: 2px 0 0 0;">
-              Production database records across all incubator ventures and meeting spaces.
+              Itemized production records across all incubator ventures and meeting spaces.
             </p>
           </div>
           <button class="btn btn-primary btn-sm" onclick="MeetingRoomsModule.openBookModal()" style="font-weight: 700; border-radius: 6px;">
@@ -938,9 +1098,9 @@ const MeetingRoomsModule = {
                 <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; white-space: nowrap;">Room</th>
                 <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; white-space: nowrap;">Startup Venture</th>
                 <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; min-width: 170px;">Meeting Purpose</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; white-space: nowrap;">Date & Time Window</th>
+                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; white-space: nowrap;">Date &amp; AM/PM Timing</th>
                 <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; text-align: center; white-space: nowrap;">Attendees</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; white-space: nowrap;">Billing / Credits</th>
+                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; white-space: nowrap;">Billing / Cost</th>
                 <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; text-align: right; white-space: nowrap;">Action</th>
               </tr>
             </thead>
@@ -949,6 +1109,11 @@ const MeetingRoomsModule = {
                 <tr><td colspan="7" style="padding: 40px; text-align: center; color: var(--text-muted);">No reservations recorded in database</td></tr>
               ` : allBookings.map(b => {
                 const isMine = b.startupId === myStartup.id;
+                const sHour = parseInt(b.startTime.split(':')[0], 10);
+                const isAM = sHour < 12;
+                const ampmLabel = isAM ? '🌅 Morning (AM)' : '🌇 Afternoon (PM)';
+                const time12 = `${this.formatTimeTo12Hour(b.startTime)} – ${this.formatTimeTo12Hour(b.endTime)}`;
+
                 return `
                   <tr style="border-bottom: 1px solid var(--border-subtle); background: ${isMine ? 'rgba(37, 99, 235, 0.04)' : 'transparent'};">
                     <td style="padding: 12px 16px; white-space: nowrap;">
@@ -964,7 +1129,10 @@ const MeetingRoomsModule = {
                     </td>
                     <td style="padding: 12px 16px; font-weight: 600; color: var(--text-primary); min-width: 170px;">${b.title}</td>
                     <td style="padding: 12px 16px; font-family: var(--font-mono); font-size: 11.5px; white-space: nowrap;">
-                      📅 ${b.date} • <strong style="color: #2563eb; white-space: nowrap;">${b.startTime} - ${b.endTime}</strong>
+                      📅 ${b.date} • <strong style="color: #2563eb; white-space: nowrap;">${time12}</strong>
+                      <span class="badge ${isAM ? 'badge-warning' : 'badge-info'}" style="font-size: 9.5px; padding: 1px 5px; margin-left: 4px;">
+                        ${ampmLabel}
+                      </span>
                     </td>
                     <td style="padding: 12px 16px; text-align: center; white-space: nowrap;">${b.attendees} Pax</td>
                     <td style="padding: 12px 16px; white-space: nowrap;">
