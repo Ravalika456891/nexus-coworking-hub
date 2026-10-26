@@ -107,7 +107,36 @@ const MeetingRoomsModule = {
     return all.filter(b => b.startupId === myStartup.id || (b.startupName && b.startupName.toLowerCase() === myStartup.name.toLowerCase()));
   },
 
+  initAutoRefresh() {
+    if (this._autoRefreshInit) return;
+    this._autoRefreshInit = true;
+
+    // Auto re-fetch every 30 seconds
+    setInterval(() => {
+      this.refetchAvailability(false);
+    }, 30000);
+
+    // Auto re-fetch when window gains focus
+    window.addEventListener('focus', () => {
+      this.refetchAvailability(false);
+    });
+  },
+
+  async refetchAvailability(showToast = false) {
+    if (!window.store || !window.store.fetchMeetingRoomsAvailability) return;
+    try {
+      await window.store.fetchMeetingRoomsAvailability(this.selectedDate);
+      this.render();
+      if (showToast && typeof App !== 'undefined' && App.showToast) {
+        App.showToast('Meeting room availability updated.', 'info');
+      }
+    } catch (e) {
+      // offline fallback
+    }
+  },
+
   render() {
+    this.initAutoRefresh();
     const container = document.getElementById('view-meetingRooms');
     if (!container) return;
 
@@ -402,8 +431,8 @@ const MeetingRoomsModule = {
               <span style="color: #1d4ed8; font-weight: 700;">${mySlotsCount} Reserved by You</span>
             </div>
             <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px;">
-              <span style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 6px rgba(239, 68, 68, 0.4);"></span>
-              <span style="color: #dc2626; font-weight: 700;">${otherSlotsCount} Booked</span>
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: #64748b;"></span>
+              <span style="color: #64748b; font-weight: 700;">${otherSlotsCount} Booked (🔒)</span>
             </div>
           `}
         </div>
@@ -1757,8 +1786,12 @@ const MeetingRoomsModule = {
     }, 100);
   },
 
-  submitBookingConfirmation(event, roomId) {
+  async submitBookingConfirmation(event, roomId) {
     if (event) event.preventDefault();
+    const form = document.getElementById('form-confirm-booking');
+    const submitBtn = form ? form.querySelector('button[type="submit"]') : null;
+    const originalBtnHtml = submitBtn ? submitBtn.innerHTML : 'Confirm & Reserve Room ➔';
+
     const titleInput = document.getElementById('confirm-meeting-title');
     const attendeesInput = document.getElementById('confirm-attendees');
     const title = (titleInput && titleInput.value.trim()) || 'Strategic Review & Team Sprint';
@@ -1773,32 +1806,83 @@ const MeetingRoomsModule = {
     const endTime = `${lastH < 10 ? '0' : ''}${lastH}:00`;
 
     const myStartup = this.getMyStartup();
-    const res = window.store.bookMeetingRoom({
-      roomId,
-      startupId: myStartup.id,
-      title,
-      date: this.selectedDate,
-      startTime,
-      endTime,
-      attendees
-    });
+    const rooms = window.store.getMeetingRooms();
+    const room = rooms.find(r => r.id === roomId);
 
-    if (res.success) {
-      this.closeModal('modal-confirm-booking');
-      delete this.selectedSlotsByRoom[roomId];
-      this.render();
-      if (typeof DashboardModule !== 'undefined' && DashboardModule.render) {
-        DashboardModule.render();
+    // Disable button and show spinner
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `<span style="display: inline-block; width: 14px; height: 14px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; margin-right: 6px; vertical-align: middle;"></span> Verifying & Reserving...`;
+    }
+
+    try {
+      // Re-validate availability in the background before confirming
+      await window.store.fetchMeetingRoomsAvailability(this.selectedDate);
+      const freshRoom = window.store.getMeetingRoomById(roomId) || room;
+      const recentConflict = (freshRoom.bookings || []).find(b => {
+        return window.store.hasBookingConflict({ ...b, roomId }, { roomId, date: this.selectedDate, startTime, endTime });
+      });
+
+      if (recentConflict) {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalBtnHtml;
+        }
+        this.closeModal('modal-confirm-booking');
+        const alternatives = window.store.findBookingAlternatives({ roomId, date: this.selectedDate, startTime, endTime, attendees, startupId: myStartup.id });
+        this.showConflictAlternativesModal(
+          freshRoom, 
+          { startTime, endTime, date: this.selectedDate, attendees, title }, 
+          "This slot was just booked by another startup. Pick another time below.", 
+          alternatives
+        );
+        return;
       }
 
-      const rooms = window.store.getMeetingRooms();
-      const bookedRoom = rooms.find(r => r.id === roomId);
-      if (bookedRoom && res.booking) {
-        this.showBookingSuccessModal(bookedRoom, res.booking, myStartup);
+      const res = await window.store.bookMeetingRoom({
+        roomId,
+        startupId: myStartup.id,
+        startupName: myStartup.name,
+        title,
+        date: this.selectedDate,
+        startTime,
+        endTime,
+        attendees
+      });
+
+      if (res.success) {
+        this.closeModal('modal-confirm-booking');
+        delete this.selectedSlotsByRoom[roomId];
+        this.render();
+        if (typeof DashboardModule !== 'undefined' && DashboardModule.render) {
+          DashboardModule.render();
+        }
+
+        const bookedRoom = window.store.getMeetingRoomById(roomId) || room;
+        if (bookedRoom && res.booking) {
+          this.showBookingSuccessModal(bookedRoom, res.booking, myStartup);
+        }
+        App.showToast(`🎉 Reservation confirmed for ${bookedRoom ? bookedRoom.name : 'Meeting Room'}!`, 'success');
+      } else {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalBtnHtml;
+        }
+        this.closeModal('modal-confirm-booking');
+        const alternatives = res.alternatives || window.store.findBookingAlternatives({ roomId, date: this.selectedDate, startTime, endTime, attendees, startupId: myStartup.id });
+        this.showConflictAlternativesModal(
+          room,
+          { startTime, endTime, date: this.selectedDate, attendees, title },
+          res.message || "This slot was just booked by another startup. Pick another time below.",
+          alternatives
+        );
       }
-      App.showToast(`🎉 Reservation confirmed for ${bookedRoom ? bookedRoom.name : 'Meeting Room'}!`, 'success');
-    } else {
-      App.showToast(`⚠️ ${res.message}`, 'danger');
+    } catch (err) {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnHtml;
+      }
+      App.showToast(`⚠️ Booking error: ${err.message}`, 'danger');
     }
   },
 
@@ -2397,9 +2481,9 @@ const MeetingRoomsModule = {
           } else {
             return `
               <div class="clear-slot-card past booked-other" 
-                   title="Past booking (${timeRangeLabel}) • Reserved by ${booked.startupName || 'Startup'}${booked.title ? ': ' + booked.title : ''}">
+                   title="Past booking (${timeRangeLabel}) • Reserved by ${booked.startupName || 'Another Startup'}">
                 <div class="slot-time">${timeRangeLabel}</div>
-                <div class="slot-status">🔴 Booked (Past)</div>
+                <div class="slot-status">🔒 Booked (Past)</div>
               </div>
             `;
           }
@@ -2420,8 +2504,8 @@ const MeetingRoomsModule = {
         if (isMine) {
           return `
             <div class="clear-slot-card mine" 
-                 onclick="MeetingRoomsModule.openPassModal('${room.id}', '${booked.id}')"
-                 title="Reserved by you (${timeRangeLabel}) • Click to view Door Pass">
+                 onclick="MeetingRoomsModule.openBookingDetailsModal('${room.id}', '${booked.id}')"
+                 title="Reserved by you (${timeRangeLabel}) • Click to view details or cancel">
               <div class="slot-time">${timeRangeLabel}</div>
               <div class="slot-status">🎟️ Booked by you</div>
             </div>
@@ -2429,10 +2513,12 @@ const MeetingRoomsModule = {
         } else {
           return `
             <div class="clear-slot-card booked" 
-                 onclick="MeetingRoomsModule.openWaitlistModal('${room.id}', '${slot}', '${booked.id}')"
-                 title="${timeRangeLabel} • Reserved by ${booked.startupName || 'Startup'}${booked.title ? ': ' + booked.title : ''} • Tap to join waitlist / get notified">
+                 title="Booked by ${booked.startupName || 'Another Startup'} (${timeRangeLabel})"
+                 tabindex="0"
+                 aria-disabled="true"
+                 style="cursor: not-allowed;">
               <div class="slot-time">${timeRangeLabel}</div>
-              <div class="slot-status">🔴 Booked</div>
+              <div class="slot-status">🔒 Booked</div>
             </div>
           `;
         }
@@ -3130,35 +3216,228 @@ const MeetingRoomsModule = {
     this.updateModalCostPreview();
   },
 
-  handleBookSubmit(e) {
+  async handleBookSubmit(e) {
     e.preventDefault();
-    const fd = new FormData(e.target);
-    const data = Object.fromEntries(fd.entries());
+    const form = e.target;
+    const submitBtn = form ? form.querySelector('button[type="submit"]') : null;
+    const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '<span>🔒 Confirm & Lock In</span> <span>➔</span>';
 
-    const res = window.store.bookMeetingRoom(data);
-    this.closeModal('modal-book-room');
+    const fd = new FormData(form);
+    const data = Object.fromEntries(fd.entries());
+    const myStartup = this.getMyStartup();
+    data.startupName = myStartup.name;
+
+    const roomId = data.roomId;
+    const room = window.store.getMeetingRoomById(roomId);
+
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `<span style="display: inline-block; width: 14px; height: 14px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; margin-right: 6px; vertical-align: middle;"></span> Verifying & Locking In...`;
+    }
+
+    try {
+      // Re-validate availability in background
+      await window.store.fetchMeetingRoomsAvailability(data.date || this.selectedDate);
+      const freshRoom = window.store.getMeetingRoomById(roomId) || room;
+      const recentConflict = (freshRoom.bookings || []).find(b => {
+        return window.store.hasBookingConflict({ ...b, roomId }, { roomId, date: data.date, startTime: data.startTime, endTime: data.endTime });
+      });
+
+      if (recentConflict) {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalBtnHtml;
+        }
+        this.closeModal('modal-book-room');
+        const alternatives = window.store.findBookingAlternatives({ roomId, date: data.date, startTime: data.startTime, endTime: data.endTime, attendees: data.attendees, startupId: data.startupId });
+        this.showConflictAlternativesModal(
+          freshRoom,
+          data,
+          "This slot was just booked by another startup. Pick another time below.",
+          alternatives
+        );
+        return;
+      }
+
+      const res = await window.store.bookMeetingRoom(data);
+      this.closeModal('modal-book-room');
+
+      if (res.success) {
+        App.showToast(`✅ ${res.message}`, 'success');
+        this.render();
+        if (typeof DashboardModule !== 'undefined' && DashboardModule.render) {
+          DashboardModule.render();
+        }
+
+        const bookedRoom = window.store.getMeetingRoomById(data.roomId) || room;
+        if (bookedRoom && res.booking) {
+          this.showBookingSuccessModal(bookedRoom, res.booking, myStartup);
+        }
+      } else {
+        const alternatives = res.alternatives || window.store.findBookingAlternatives({ roomId: data.roomId, date: data.date, startTime: data.startTime, endTime: data.endTime, attendees: data.attendees, startupId: data.startupId });
+        this.showConflictAlternativesModal(
+          room,
+          data,
+          res.message || "This slot was just booked by another startup. Pick another time below.",
+          alternatives
+        );
+      }
+    } catch (err) {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnHtml;
+      }
+      App.showToast(`⚠️ Booking error: ${err.message}`, 'danger');
+    }
+  },
+
+  openBookingDetailsModal(roomId, bookingId) {
+    this.openPassModal(roomId, bookingId);
+  },
+
+  showConflictAlternativesModal(room, req, message, alternatives = []) {
+    const formatSlot12h = (slot24) => {
+      if (!slot24) return '';
+      const [h, m] = slot24.split(':').map(Number);
+      const period = h >= 12 ? 'PM' : 'AM';
+      const displayH = h % 12 || 12;
+      return `${displayH < 10 ? '0' : ''}${displayH}:${m < 10 ? '0' : ''}${m} ${period}`;
+    };
+
+    const requestedLabel = `${formatSlot12h(req.startTime)} – ${formatSlot12h(req.endTime)} on ${req.date}`;
+
+    const html = `
+      <div class="modal-overlay active" id="modal-conflict-alternatives" onclick="if(event.target === this) MeetingRoomsModule.closeModal('modal-conflict-alternatives')" style="display: flex; align-items: center; justify-content: center; z-index: 1060; padding: 16px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px);">
+        <div class="modal-content" style="max-width: 540px; width: 100%; border-radius: 20px; overflow: hidden; background: var(--bg-surface); border: 2px solid #ef4444; box-shadow: 0 25px 60px -12px rgba(239, 68, 68, 0.35); animation: scaleUp 0.2s ease;">
+          
+          <div style="background: linear-gradient(135deg, #7f1d1d 0%, #b91c1c 60%, #dc2626 100%); color: #ffffff; padding: 20px 24px; position: relative;">
+            <button type="button" class="modal-close-btn" onclick="MeetingRoomsModule.closeModal('modal-conflict-alternatives')" style="position: absolute; right: 16px; top: 16px; color: #ffffff; background: rgba(255,255,255,0.18); border: none; border-radius: 50%; width: 30px; height: 30px; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #fecaca; font-weight: 700;">
+              <span>⚠️ Scheduling Conflict Prevented</span>
+            </div>
+            <h2 style="font-size: 19px; font-weight: 800; margin: 6px 0 2px 0; color: #ffffff; display: flex; align-items: center; gap: 8px;">
+              <span>🔒</span> Slot Already Reserved
+            </h2>
+            <div style="font-size: 13px; color: #fee2e2; margin-top: 4px; line-height: 1.4;">
+              ${message}
+            </div>
+          </div>
+
+          <div style="padding: 20px 24px; max-height: calc(85vh - 120px); overflow-y: auto;">
+            <div style="background: rgba(239, 68, 68, 0.06); border: 1.5px solid rgba(239, 68, 68, 0.25); border-radius: 12px; padding: 12px 16px; margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+              <div>
+                <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #b91c1c;">Requested Slot:</div>
+                <div style="font-size: 13.5px; font-weight: 800; color: var(--text-primary); margin-top: 2px;">
+                  🏢 ${room ? room.name : 'Meeting Room'} • ⏰ ${requestedLabel}
+                </div>
+              </div>
+              <span class="badge" style="background: #dc2626; color: #ffffff; font-weight: 800; font-size: 11px; padding: 4px 9px;">Taken 🔒</span>
+            </div>
+
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+              <h4 style="font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-primary); margin: 0; display: flex; align-items: center; gap: 6px;">
+                <span>✨</span> Recommended Open Alternatives:
+              </h4>
+              <span style="font-size: 11px; color: var(--text-muted); font-weight: 600;">1-tap instant reservation</span>
+            </div>
+
+            ${alternatives.length === 0 ? `
+              <div style="background: var(--bg-surface-elevated); border: 1.5px dashed var(--border-medium); border-radius: 12px; padding: 24px; text-align: center; color: var(--text-muted); font-size: 13px;">
+                No matching alternative slots found for this time window. Please pick another date or view the full schedule.
+              </div>
+            ` : `
+              <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px;">
+                ${alternatives.map((alt) => {
+                  let badgeType = 'Next Free Slot Today';
+                  let badgeIcon = '🌅';
+                  if (alt.type === 'other_room_same_time') {
+                    badgeType = 'Different Room (Same Time)';
+                    badgeIcon = '🏢';
+                  } else if (alt.type === 'same_room_next_day') {
+                    badgeType = 'Tomorrow (Same Time)';
+                    badgeIcon = '📅';
+                  }
+
+                  const timeDisplay = `${formatSlot12h(alt.startTime)} – ${formatSlot12h(alt.endTime)}`;
+                  return `
+                    <div class="alt-option-card" style="background: var(--bg-surface-elevated); border: 1.5px solid var(--border-medium); border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; transition: all 0.15s ease;">
+                      <div style="min-width: 0; flex: 1;">
+                        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 3px;">
+                          <span class="badge" style="background: rgba(37, 99, 235, 0.12); color: #2563eb; font-size: 10px; font-weight: 700; padding: 2px 7px;">
+                            ${badgeIcon} ${badgeType}
+                          </span>
+                          <span style="font-size: 11px; color: var(--text-muted);">• ${alt.capacity} Pax</span>
+                        </div>
+                        <div style="font-size: 13.5px; font-weight: 800; color: var(--text-primary);">
+                          ${alt.roomName}
+                        </div>
+                        <div style="font-size: 12px; color: #16a34a; font-weight: 700; margin-top: 2px; font-family: var(--font-mono);">
+                          📅 ${alt.date} • ⏰ ${timeDisplay}
+                        </div>
+                      </div>
+
+                      <button class="btn btn-primary btn-sm" onclick="MeetingRoomsModule.quickBookAlternative('${alt.roomId}', '${alt.date}', '${alt.startTime}', '${alt.endTime}', ${req.attendees || 4}, '${encodeURIComponent(req.title || 'Strategic Planning Session')}')" style="background: #16a34a; border-color: #15803d; font-weight: 800; padding: 8px 14px; border-radius: 8px; font-size: 12px; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);">
+                        <span>⚡ Book</span>
+                      </button>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            `}
+
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 12px; border-top: 1px solid var(--border-subtle);">
+              <button type="button" class="btn btn-outline" onclick="MeetingRoomsModule.closeModal('modal-conflict-alternatives')" style="font-size: 12px; padding: 7px 16px; border-radius: 8px;">
+                Close
+              </button>
+              <button type="button" class="btn btn-secondary" onclick="MeetingRoomsModule.closeModal('modal-conflict-alternatives'); MeetingRoomsModule.setDate('${req.date}'); MeetingRoomsModule.switchTab('scheduler');" style="font-size: 12px; padding: 7px 16px; border-radius: 8px; font-weight: 700;">
+                View All Rooms Grid ➔
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('modal-mount').innerHTML = html;
+  },
+
+  async quickBookAlternative(roomId, date, startTime, endTime, attendees = 4, encodedTitle = '') {
+    const title = decodeURIComponent(encodedTitle || 'Strategic Planning Session');
+    const myStartup = this.getMyStartup();
+    this.closeModal('modal-conflict-alternatives');
+
+    App.showToast(`⚡ Reserving alternative slot in ${roomId}...`, 'info');
+
+    const res = await window.store.bookMeetingRoom({
+      roomId,
+      startupId: myStartup.id,
+      startupName: myStartup.name,
+      title,
+      date,
+      startTime,
+      endTime,
+      attendees: Number(attendees) || 4
+    });
 
     if (res.success) {
-      App.showToast(`✅ ${res.message}`, 'success');
+      this.selectedDate = date;
       this.render();
       if (typeof DashboardModule !== 'undefined' && DashboardModule.render) {
         DashboardModule.render();
       }
-
-      const rooms = window.store.getMeetingRooms();
-      const bookedRoom = rooms.find(r => r.id === data.roomId);
-      const myStartup = this.getMyStartup();
-      if (bookedRoom && res.booking) {
-        this.showBookingSuccessModal(bookedRoom, res.booking, myStartup);
+      const room = window.store.getMeetingRoomById(roomId);
+      if (room && res.booking) {
+        this.showBookingSuccessModal(room, res.booking, myStartup);
       }
+      App.showToast(`🎉 Booked alternative: ${room ? room.name : 'Meeting Room'} (${startTime} - ${endTime})!`, 'success');
     } else {
-      App.showToast(`⚠️ ${res.message}`, 'danger');
+      App.showToast(`⚠️ Could not book alternative: ${res.message}`, 'danger');
     }
   },
 
-  cancelBooking(roomId, bookingId) {
+  async cancelBooking(roomId, bookingId) {
     if (!confirm('Are you sure you want to cancel this room reservation? The time slot will immediately become available.')) return;
-    const res = window.store.cancelBooking(roomId, bookingId);
+    const res = await window.store.cancelBooking(roomId, bookingId);
     if (res.success) {
       App.showToast('Reservation successfully cancelled.', 'warning');
       this.render();

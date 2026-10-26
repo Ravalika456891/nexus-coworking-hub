@@ -29,6 +29,17 @@ function broadcastFileChange(file) {
   }
 }
 
+function broadcastMeetingRoomUpdate(data) {
+  const msg = JSON.stringify({ type: 'meeting_room_update', ...data });
+  for (const client of liveReloadClients) {
+    try {
+      client.write(`data: ${msg}\n\n`);
+    } catch (e) {
+      liveReloadClients.delete(client);
+    }
+  }
+}
+
 let watchDebounce = null;
 if (!process.env.VERCEL) {
   try {
@@ -214,6 +225,47 @@ async function handleApi(req, res, parsedUrl) {
     if (pathname === '/api/milestones' && req.method === 'GET') {
       const resData = await db.getTableRecords('milestones', { limit: 100 });
       return sendJson(res, 200, { ok: true, milestones: resData.records || [] });
+    }
+
+    // -----------------------------------------------------------
+    // Meeting Rooms & Conflict-Proof Scheduler Endpoints
+    // -----------------------------------------------------------
+    if (pathname === '/api/meeting-rooms/availability' && req.method === 'GET') {
+      const date = searchParams.get('date');
+      const availability = await db.getMeetingRoomsAvailability(date);
+      return sendJson(res, 200, availability);
+    }
+
+    if (pathname === '/api/meeting-rooms/book' && req.method === 'POST') {
+      const body = await parseJsonBody(req);
+      const result = await db.reserveMeetingRoomSlotsAtomic(body);
+      if (result.ok) {
+        broadcastMeetingRoomUpdate({ action: 'booked', roomId: body.roomId, date: body.date, booking: result.booking });
+        return sendJson(res, result.status || 201, result);
+      } else {
+        return sendJson(res, result.status || 409, {
+          ok: false,
+          code: result.code || 'SLOT_TAKEN',
+          message: result.message,
+          alternatives: result.alternatives || [],
+          conflictWith: result.conflictWith || null
+        });
+      }
+    }
+
+    if (pathname === '/api/meeting-rooms/cancel' && req.method === 'POST') {
+      const body = await parseJsonBody(req);
+      const { roomId, bookingId } = body;
+      if (!roomId || !bookingId) {
+        return sendJson(res, 400, { ok: false, error: 'roomId and bookingId are required' });
+      }
+      const result = await db.cancelMeetingRoomSlotsAtomic(roomId, bookingId);
+      if (result.ok) {
+        broadcastMeetingRoomUpdate({ action: 'cancelled', roomId, bookingId });
+        return sendJson(res, 200, result);
+      } else {
+        return sendJson(res, result.status || 400, result);
+      }
     }
 
     // -----------------------------------------------------------

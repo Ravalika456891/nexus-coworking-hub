@@ -455,6 +455,22 @@ async function saveAppState(state) {
         console.warn('Could not sync activity_logs collection:', err.message);
       }
     }
+
+    // 8. Meeting Rooms
+    if (Array.isArray(state.meetingRooms)) {
+      try {
+        const mrCol = database.collection('meeting_rooms');
+        for (const r of state.meetingRooms) {
+          if (!r.id) continue;
+          const copy = { ...r };
+          delete copy._id;
+          copy._syncedAt = new Date();
+          await mrCol.updateOne({ id: r.id }, { $set: copy }, { upsert: true });
+        }
+      } catch (err) {
+        console.warn('Could not sync meeting_rooms collection:', err.message);
+      }
+    }
   }
 
   return true;
@@ -525,6 +541,492 @@ async function updateInquiry(id, updates) {
   return res.matchedCount > 0;
 }
 
+// -------------------------------------------------------------
+// Meeting Room Booking & Race-Condition-Proof Atomic Operations
+// -------------------------------------------------------------
+
+class AsyncMutex {
+  constructor() {
+    this.queue = [];
+    this.locked = false;
+  }
+  async acquire() {
+    return new Promise(resolve => {
+      if (!this.locked) {
+        this.locked = true;
+        resolve();
+      } else {
+        this.queue.push(resolve);
+      }
+    });
+  }
+  release() {
+    if (this.queue.length > 0) {
+      const next = this.queue.shift();
+      next();
+    } else {
+      this.locked = false;
+    }
+  }
+}
+
+const bookingMutex = new AsyncMutex();
+
+// Strict Asia/Kolkata IST Clock
+function getISTClock() {
+  const now = new Date();
+  const dFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' });
+  const tFormatter = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: false });
+  const date = dFormatter.format(now);
+  const time = tFormatter.format(now);
+  const [h, m] = time.split(':').map(Number);
+  return { date, time, minutes: h * 60 + m, now };
+}
+
+function toMinutes(t) {
+  if (!t) return 0;
+  const parts = t.split(':').map(Number);
+  return (parts[0] || 0) * 60 + (parts[1] || 0);
+}
+
+// Canonical conflict rule:
+// Two bookings conflict if they are for the same room and same date and:
+// existing.startTime < new.endTime AND existing.endTime > new.startTime.
+// Cancelled bookings do not count as conflicts.
+function hasBookingConflict(existing, newB) {
+  if (!existing || !newB) return false;
+  if (existing.roomId !== newB.roomId) return false;
+  if (existing.date !== newB.date) return false;
+  if (existing.status === 'Cancelled') return false;
+  if (existing.id && newB.id && existing.id === newB.id) return false;
+  return (existing.startTime < newB.endTime && existing.endTime > newB.startTime);
+}
+
+// Same startup concurrent booking conflict check:
+// A startup cannot be booked in two different rooms at the same overlapping time.
+function hasStartupConcurrentConflict(existing, newB) {
+  if (!existing || !newB) return false;
+  if (existing.startupId !== newB.startupId) return false;
+  if (existing.roomId === newB.roomId) return false;
+  if (existing.date !== newB.date) return false;
+  if (existing.status === 'Cancelled') return false;
+  if (existing.id && newB.id && existing.id === newB.id) return false;
+  return (existing.startTime < newB.endTime && existing.endTime > newB.startTime);
+}
+
+// Initialize MongoDB indexes including partial unique index on meeting_room_slots
+let indexesInitialized = false;
+async function initMeetingRoomIndexes() {
+  if (indexesInitialized) return;
+  const database = await connectDB();
+  if (!database) return;
+  try {
+    const slotsCol = database.collection('meeting_room_slots');
+    await slotsCol.createIndex(
+      { roomId: 1, date: 1, slotHour: 1 },
+      { unique: true, partialFilterExpression: { status: 'Confirmed' }, name: 'uniq_confirmed_room_slot' }
+    );
+    const roomsCol = database.collection('meeting_rooms');
+    await roomsCol.createIndex({ id: 1 }, { unique: true });
+    indexesInitialized = true;
+    console.log('✅ [MongoDB] Meeting room indexes verified (partial unique slot index active).');
+  } catch (err) {
+    console.warn('⚠️ [MongoDB] Error initializing meeting room indexes:', err.message);
+  }
+}
+
+// Smart Alternatives Generator (Up to 3 smart options)
+function findBookingAlternatives(allRooms, req) {
+  const alternatives = [];
+  const startMin = toMinutes(req.startTime);
+  const endMin = toMinutes(req.endTime);
+
+  const targetRoom = allRooms.find(r => r.id === req.roomId) || allRooms[0];
+  const otherRooms = allRooms.filter(r => r.id !== targetRoom.id);
+
+  const ist = getISTClock();
+  const reqDate = req.date || ist.date;
+  const isToday = (reqDate === ist.date);
+
+  // Standard slot candidates:
+  const standardSlots = [
+    { start: '08:00', end: '09:00' },
+    { start: '09:00', end: '10:00' },
+    { start: '10:00', end: '11:00' },
+    { start: '15:00', end: '16:00' },
+    { start: '16:00', end: '17:00' },
+    { start: '17:00', end: '18:00' },
+    { start: '18:00', end: '19:00' }
+  ];
+
+  // 1. Next free slot in the same room on the same day
+  const targetBookings = (targetRoom.bookings || []).filter(b => b.date === reqDate && b.status !== 'Cancelled');
+  for (const s of standardSlots) {
+    if (alternatives.length >= 1) break;
+    if (s.start === req.startTime) continue;
+    if (isToday && toMinutes(s.start) <= ist.minutes) continue;
+
+    const conflicts = targetBookings.some(b => s.start < b.endTime && s.end > b.startTime);
+    if (!conflicts) {
+      alternatives.push({
+        type: 'same_room_next_slot',
+        roomId: targetRoom.id,
+        roomName: targetRoom.name,
+        date: reqDate,
+        startTime: s.start,
+        endTime: s.end,
+        label: `Next free slot in ${targetRoom.name} (${s.start} - ${s.end})`,
+        capacity: targetRoom.capacity,
+        hourlyRate: targetRoom.hourlyRate
+      });
+    }
+  }
+
+  // 2. Free slot at the same time in other room (if capacity fits attendees)
+  const reqAttendees = parseInt(req.attendees || 4, 10);
+  for (const other of otherRooms) {
+    if (alternatives.length >= 2) break;
+    if (other.capacity >= reqAttendees) {
+      const otherBookings = (other.bookings || []).filter(b => b.date === reqDate && b.status !== 'Cancelled');
+      const conflicts = otherBookings.some(b => req.startTime < b.endTime && req.endTime > b.startTime);
+      if (!conflicts) {
+        alternatives.push({
+          type: 'other_room_same_time',
+          roomId: other.id,
+          roomName: other.name,
+          date: reqDate,
+          startTime: req.startTime,
+          endTime: req.endTime,
+          label: `${other.name} (${other.capacity} pax) at ${req.startTime} - ${req.endTime}`,
+          capacity: other.capacity,
+          hourlyRate: other.hourlyRate
+        });
+      }
+    }
+  }
+
+  // 3. Same slot on the next day
+  if (alternatives.length < 3) {
+    const dParts = reqDate.split('-').map(Number);
+    const nextD = new Date(Date.UTC(dParts[0], dParts[1] - 1, dParts[2] + 1));
+    const nextDateStr = nextD.toISOString().split('T')[0];
+    const nextDayBookings = (targetRoom.bookings || []).filter(b => b.date === nextDateStr && b.status !== 'Cancelled');
+    const conflictsNextDay = nextDayBookings.some(b => req.startTime < b.endTime && req.endTime > b.startTime);
+
+    if (!conflictsNextDay) {
+      alternatives.push({
+        type: 'same_room_next_day',
+        roomId: targetRoom.id,
+        roomName: targetRoom.name,
+        date: nextDateStr,
+        startTime: req.startTime,
+        endTime: req.endTime,
+        label: `Tomorrow (${nextDateStr}) at ${req.startTime} - ${req.endTime} in ${targetRoom.name}`,
+        capacity: targetRoom.capacity,
+        hourlyRate: targetRoom.hourlyRate
+      });
+    }
+  }
+
+  // Fallback: fill up to 3 with any available slot on same or next day
+  if (alternatives.length < 3) {
+    for (const s of standardSlots) {
+      if (alternatives.length >= 3) break;
+      if (alternatives.some(a => a.roomId === targetRoom.id && a.date === reqDate && a.startTime === s.start)) continue;
+      if (isToday && toMinutes(s.start) <= ist.minutes) continue;
+      const conflicts = targetBookings.some(b => s.start < b.endTime && s.end > b.startTime);
+      if (!conflicts) {
+        alternatives.push({
+          type: 'same_room_additional_slot',
+          roomId: targetRoom.id,
+          roomName: targetRoom.name,
+          date: reqDate,
+          startTime: s.start,
+          endTime: s.end,
+          label: `${targetRoom.name} at ${s.start} - ${s.end}`,
+          capacity: targetRoom.capacity,
+          hourlyRate: targetRoom.hourlyRate
+        });
+      }
+    }
+  }
+
+  return alternatives.slice(0, 3);
+}
+
+// Atomic Reservation Function with In-Process Mutex + MongoDB Unique Slot Index
+async function reserveMeetingRoomSlotsAtomic(bookingReq) {
+  await bookingMutex.acquire();
+  try {
+    const { roomId, startupId, startupName, title, date, startTime, endTime, attendees, cost } = bookingReq;
+
+    if (!roomId || !startupId || !date || !startTime || !endTime) {
+      return { ok: false, status: 400, message: 'Missing required booking fields (roomId, startupId, date, startTime, endTime).' };
+    }
+
+    const ist = getISTClock();
+    const startMin = toMinutes(startTime);
+    const endMin = toMinutes(endTime);
+
+    if (endMin <= startMin) {
+      return { ok: false, status: 400, message: 'Invalid booking duration: End time must be later than start time.' };
+    }
+
+    // 1. Operating Window Rule Enforcement:
+    // Morning: 08:00 to 11:00 (480 to 660 mins)
+    // Afternoon: 15:00 to 19:00 (900 to 1140 mins)
+    // Break: 11:00 to 15:00 cannot be booked
+    const isMorning = (startMin >= 8 * 60 && endMin <= 11 * 60);
+    const isAfternoon = (startMin >= 15 * 60 && endMin <= 19 * 60);
+
+    if (!isMorning && !isAfternoon) {
+      return {
+        ok: false,
+        status: 400,
+        message: 'Operating Window Restriction: Bookings must fall entirely within Morning (08:00 – 11:00 AM) or Afternoon (03:00 – 07:00 PM). Midday break (11:00 AM – 03:00 PM) cannot be booked.'
+      };
+    }
+
+    // 2. Past Date / Slot Rejection (Using IST Server Clock):
+    if (date < ist.date) {
+      return { ok: false, status: 400, message: `Cannot book past dates. Current IST date is ${ist.date}.` };
+    }
+    if (date === ist.date && startMin < ist.minutes) {
+      return { ok: false, status: 400, message: `Cannot book past time slots. Current IST time is ${ist.time}.` };
+    }
+
+    // Load current rooms state
+    const appState = await getAppState();
+    let rooms = (appState && appState.meetingRooms) ? appState.meetingRooms : [];
+    if (!rooms.length) {
+      const seed = loadInitialSeedData();
+      rooms = seed.meetingRooms || [];
+    }
+
+    const room = rooms.find(r => r.id === roomId);
+    if (!room) {
+      return { ok: false, status: 404, message: `Room with ID "${roomId}" was not found.` };
+    }
+
+    // Check startup attendees vs capacity
+    const reqAttendees = parseInt(attendees || 4, 10);
+    if (reqAttendees > room.capacity) {
+      return { ok: false, status: 400, message: `Attendees (${reqAttendees}) exceed ${room.name} capacity of ${room.capacity} pax.` };
+    }
+
+    // 3. Multi-room concurrent user conflict check:
+    // "You already have a booking at this time in [Other Room]."
+    for (const r of rooms) {
+      if (r.id === roomId) continue;
+      const otherConflict = (r.bookings || []).find(b => {
+        return hasStartupConcurrentConflict({ ...b, roomId: r.id }, { roomId, startupId, date, startTime, endTime });
+      });
+      if (otherConflict) {
+        return {
+          ok: false,
+          status: 409,
+          code: 'USER_ALREADY_BOOKED',
+          message: `You already have a booking at this time in ${r.name}.`
+        };
+      }
+    }
+
+    // 4. Strict Room Slot Conflict Check:
+    // existing.startTime < new.endTime AND existing.endTime > new.startTime
+    const existingConflict = (room.bookings || []).find(b => {
+      return hasBookingConflict({ ...b, roomId }, { roomId, date, startTime, endTime });
+    });
+
+    if (existingConflict) {
+      const alternatives = findBookingAlternatives(rooms, { roomId, date, startTime, endTime, attendees: reqAttendees, startupId });
+      return {
+        ok: false,
+        status: 409,
+        code: 'SLOT_TAKEN',
+        message: `${room.name} is already booked from ${existingConflict.startTime} to ${existingConflict.endTime} by another startup.`,
+        alternatives,
+        conflictWith: {
+          id: existingConflict.id,
+          startTime: existingConflict.startTime,
+          endTime: existingConflict.endTime,
+          startupName: existingConflict.startupName
+        }
+      };
+    }
+
+    // 5. Construct Confirmed Booking Object:
+    const bookingId = `BKG-${Math.floor(100 + Math.random() * 900)}`;
+    const newBooking = {
+      id: bookingId,
+      startupId,
+      startupName: startupName || 'Partner Venture',
+      title: title || 'Strategic Planning Session',
+      date,
+      startTime,
+      endTime,
+      attendees: reqAttendees,
+      cost: Number(cost || 0),
+      status: 'Confirmed',
+      createdAt: new Date().toISOString()
+    };
+
+    if (!room.bookings) room.bookings = [];
+    room.bookings.push(newBooking);
+
+    // 6. Persist to MongoDB (both meeting_rooms collection and meeting_room_slots)
+    const database = await connectDB();
+    if (database) {
+      try {
+        await initMeetingRoomIndexes();
+        const slotsCol = database.collection('meeting_room_slots');
+
+        // Insert slot records for each 1-hr interval bucket covered
+        const startH = Math.floor(startMin / 60);
+        const endH = Math.ceil(endMin / 60);
+        const slotDocs = [];
+        for (let h = startH; h < endH; h++) {
+          const slotHour = `${h < 10 ? '0' : ''}${h}:00`;
+          slotDocs.push({
+            roomId,
+            date,
+            slotHour,
+            bookingId,
+            status: 'Confirmed',
+            startupId,
+            createdAt: new Date()
+          });
+        }
+
+        // Try inserting slot docs (partial unique index will abort on race condition)
+        for (const sDoc of slotDocs) {
+          await slotsCol.insertOne(sDoc);
+        }
+
+        // Update room document in meeting_rooms collection
+        const mrCol = database.collection('meeting_rooms');
+        await mrCol.updateOne({ id: roomId }, { $set: { bookings: room.bookings } }, { upsert: true });
+      } catch (dbErr) {
+        // If duplicate key error on slot hour
+        if (dbErr.code === 11000) {
+          const alternatives = findBookingAlternatives(rooms, { roomId, date, startTime, endTime, attendees: reqAttendees, startupId });
+          return {
+            ok: false,
+            status: 409,
+            code: 'SLOT_TAKEN',
+            message: 'This slot was just booked by another startup. Pick another time below.',
+            alternatives
+          };
+        }
+        console.warn('⚠️ [MongoDB] Slot insert warning:', dbErr.message);
+      }
+    }
+
+    // Persist to AppState
+    if (appState) {
+      appState.meetingRooms = rooms;
+      if (!appState.activityLog) appState.activityLog = [];
+      appState.activityLog.unshift({
+        id: `ACT-${Date.now()}`,
+        module: 'Meeting Rooms',
+        action: `${newBooking.startupName} booked ${room.name} on ${date} (${startTime}-${endTime}).`,
+        timestamp: new Date().toISOString(),
+        icon: '📅'
+      });
+      await saveAppState(appState);
+    }
+
+    return {
+      ok: true,
+      status: 201,
+      booking: newBooking,
+      message: `Successfully booked ${room.name}!`
+    };
+  } finally {
+    bookingMutex.release();
+  }
+}
+
+// Atomic Cancellation Function
+async function cancelMeetingRoomSlotsAtomic(roomId, bookingId) {
+  await bookingMutex.acquire();
+  try {
+    const appState = await getAppState();
+    let rooms = (appState && appState.meetingRooms) ? appState.meetingRooms : [];
+    if (!rooms.length) {
+      const seed = loadInitialSeedData();
+      rooms = seed.meetingRooms || [];
+    }
+
+    const room = rooms.find(r => r.id === roomId);
+    if (!room) return { ok: false, status: 404, message: 'Room not found.' };
+
+    const booking = (room.bookings || []).find(b => b.id === bookingId);
+    if (!booking) return { ok: false, status: 404, message: 'Booking not found.' };
+
+    booking.status = 'Cancelled';
+    booking.cancelledAt = new Date().toISOString();
+
+    const database = await connectDB();
+    if (database) {
+      try {
+        const slotsCol = database.collection('meeting_room_slots');
+        await slotsCol.updateMany({ roomId, bookingId }, { $set: { status: 'Cancelled' } });
+        const mrCol = database.collection('meeting_rooms');
+        await mrCol.updateOne({ id: roomId }, { $set: { bookings: room.bookings } });
+      } catch (dbErr) {
+        console.warn('⚠️ [MongoDB] Slot cancellation warning:', dbErr.message);
+      }
+    }
+
+    if (appState) {
+      appState.meetingRooms = rooms;
+      if (!appState.activityLog) appState.activityLog = [];
+      appState.activityLog.unshift({
+        id: `ACT-${Date.now()}`,
+        module: 'Meeting Rooms',
+        action: `Cancelled booking for ${room.name} (${booking.title}).`,
+        timestamp: new Date().toISOString(),
+        icon: '❌'
+      });
+      await saveAppState(appState);
+    }
+
+    return { ok: true, status: 200, message: 'Booking cancelled successfully.' };
+  } finally {
+    bookingMutex.release();
+  }
+}
+
+// Get Meeting Rooms Availability & Bookings for Date
+async function getMeetingRoomsAvailability(date) {
+  const ist = getISTClock();
+  const targetDate = date || ist.date;
+  const appState = await getAppState();
+  let rooms = (appState && appState.meetingRooms) ? appState.meetingRooms : [];
+  if (!rooms.length) {
+    const seed = loadInitialSeedData();
+    rooms = seed.meetingRooms || [];
+  }
+
+  const result = rooms.map(r => ({
+    id: r.id,
+    name: r.name,
+    capacity: r.capacity,
+    hourlyRate: r.hourlyRate,
+    amenities: r.amenities,
+    icon: r.icon,
+    badgeColor: r.badgeColor,
+    bookings: (r.bookings || []).filter(b => b.date === targetDate && b.status !== 'Cancelled')
+  }));
+
+  return {
+    ok: true,
+    date: targetDate,
+    istClock: { date: ist.date, time: ist.time },
+    rooms: result
+  };
+}
+
 module.exports = {
   connectDB,
   getStatus,
@@ -543,5 +1045,14 @@ module.exports = {
   deleteLead,
   saveInquiry,
   getInquiries,
-  updateInquiry
+  updateInquiry,
+  getISTClock,
+  hasBookingConflict,
+  hasStartupConcurrentConflict,
+  findBookingAlternatives,
+  initMeetingRoomIndexes,
+  reserveMeetingRoomSlotsAtomic,
+  cancelMeetingRoomSlotsAtomic,
+  getMeetingRoomsAvailability
 };
+

@@ -1315,10 +1315,184 @@ class NexusStore {
   }
 
   getMeetingRoomById(id) {
-    return this.state.meetingRooms.find(r => r.id === id);
+    return (this.state.meetingRooms || []).find(r => r.id === id);
   }
 
-  bookMeetingRoom({ roomId, startupId, title, date, startTime, endTime, attendees }) {
+  // Canonical conflict rule:
+  // Two bookings conflict if they are for the same room and same date and:
+  // existing.startTime < new.endTime AND existing.endTime > new.startTime.
+  // Cancelled bookings do not count as conflicts.
+  hasBookingConflict(existing, newB) {
+    if (!existing || !newB) return false;
+    if (existing.roomId !== newB.roomId) return false;
+    if (existing.date !== newB.date) return false;
+    if (existing.status === 'Cancelled') return false;
+    if (existing.id && newB.id && existing.id === newB.id) return false;
+    return (existing.startTime < newB.endTime && existing.endTime > newB.startTime);
+  }
+
+  // Same startup concurrent booking conflict check:
+  // A startup cannot be booked in two different rooms at the same overlapping time.
+  hasStartupConcurrentConflict(existing, newB) {
+    if (!existing || !newB) return false;
+    if (existing.startupId !== newB.startupId) return false;
+    if (existing.roomId === newB.roomId) return false;
+    if (existing.date !== newB.date) return false;
+    if (existing.status === 'Cancelled') return false;
+    if (existing.id && newB.id && existing.id === newB.id) return false;
+    return (existing.startTime < newB.endTime && existing.endTime > newB.startTime);
+  }
+
+  // Smart Alternatives Generator (Up to 3 smart options)
+  findBookingAlternatives(req) {
+    const allRooms = this.getMeetingRooms();
+    const alternatives = [];
+    const toMinutes = (t) => {
+      const parts = (t || '').split(':').map(Number);
+      return (parts[0] || 0) * 60 + (parts[1] || 0);
+    };
+
+    const targetRoom = allRooms.find(r => r.id === req.roomId) || allRooms[0];
+    const otherRooms = allRooms.filter(r => r.id !== targetRoom.id);
+
+    const now = new Date();
+    const pad = n => (n < 10 ? '0' : '') + n;
+    const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    const liveTimeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    const reqDate = req.date || todayStr;
+    const isToday = (reqDate === todayStr);
+
+    const standardSlots = [
+      { start: '08:00', end: '09:00' },
+      { start: '09:00', end: '10:00' },
+      { start: '10:00', end: '11:00' },
+      { start: '15:00', end: '16:00' },
+      { start: '16:00', end: '17:00' },
+      { start: '17:00', end: '18:00' },
+      { start: '18:00', end: '19:00' }
+    ];
+
+    // 1. Next free slot in the same room on the same day
+    const targetBookings = (targetRoom.bookings || []).filter(b => b.date === reqDate && b.status !== 'Cancelled');
+    for (const s of standardSlots) {
+      if (alternatives.length >= 1) break;
+      if (s.start === req.startTime) continue;
+      if (isToday && s.start <= liveTimeStr) continue;
+
+      const conflicts = targetBookings.some(b => s.start < b.endTime && s.end > b.startTime);
+      if (!conflicts) {
+        alternatives.push({
+          type: 'same_room_next_slot',
+          roomId: targetRoom.id,
+          roomName: targetRoom.name,
+          date: reqDate,
+          startTime: s.start,
+          endTime: s.end,
+          label: `Next free slot in ${targetRoom.name} (${s.start} - ${s.end})`,
+          capacity: targetRoom.capacity,
+          hourlyRate: targetRoom.hourlyRate
+        });
+      }
+    }
+
+    // 2. Free slot at the same time in other room (if capacity fits attendees)
+    const reqAttendees = parseInt(req.attendees || 4, 10);
+    for (const other of otherRooms) {
+      if (alternatives.length >= 2) break;
+      if (other.capacity >= reqAttendees) {
+        const otherBookings = (other.bookings || []).filter(b => b.date === reqDate && b.status !== 'Cancelled');
+        const conflicts = otherBookings.some(b => req.startTime < b.endTime && req.endTime > b.startTime);
+        if (!conflicts) {
+          alternatives.push({
+            type: 'other_room_same_time',
+            roomId: other.id,
+            roomName: other.name,
+            date: reqDate,
+            startTime: req.startTime,
+            endTime: req.endTime,
+            label: `${other.name} (${other.capacity} pax) at ${req.startTime} - ${req.endTime}`,
+            capacity: other.capacity,
+            hourlyRate: other.hourlyRate
+          });
+        }
+      }
+    }
+
+    // 3. Same slot on next day
+    if (alternatives.length < 3) {
+      const dParts = reqDate.split('-').map(Number);
+      const nextD = new Date(Date.UTC(dParts[0], dParts[1] - 1, dParts[2] + 1));
+      const nextDateStr = nextD.toISOString().split('T')[0];
+      const nextDayBookings = (targetRoom.bookings || []).filter(b => b.date === nextDateStr && b.status !== 'Cancelled');
+      const conflictsNextDay = nextDayBookings.some(b => req.startTime < b.endTime && req.endTime > b.startTime);
+
+      if (!conflictsNextDay) {
+        alternatives.push({
+          type: 'same_room_next_day',
+          roomId: targetRoom.id,
+          roomName: targetRoom.name,
+          date: nextDateStr,
+          startTime: req.startTime,
+          endTime: req.endTime,
+          label: `Tomorrow (${nextDateStr}) at ${req.startTime} - ${req.endTime} in ${targetRoom.name}`,
+          capacity: targetRoom.capacity,
+          hourlyRate: targetRoom.hourlyRate
+        });
+      }
+    }
+
+    // Fallback: fill up to 3 with any open slot
+    if (alternatives.length < 3) {
+      for (const s of standardSlots) {
+        if (alternatives.length >= 3) break;
+        if (alternatives.some(a => a.roomId === targetRoom.id && a.date === reqDate && a.startTime === s.start)) continue;
+        if (isToday && s.start <= liveTimeStr) continue;
+        const conflicts = targetBookings.some(b => s.start < b.endTime && s.end > b.startTime);
+        if (!conflicts) {
+          alternatives.push({
+            type: 'same_room_additional_slot',
+            roomId: targetRoom.id,
+            roomName: targetRoom.name,
+            date: reqDate,
+            startTime: s.start,
+            endTime: s.end,
+            label: `${targetRoom.name} at ${s.start} - ${s.end}`,
+            capacity: targetRoom.capacity,
+            hourlyRate: targetRoom.hourlyRate
+          });
+        }
+      }
+    }
+
+    return alternatives.slice(0, 3);
+  }
+
+  async fetchMeetingRoomsAvailability(date) {
+    try {
+      const url = `/api/meeting-rooms/availability${date ? '?date=' + encodeURIComponent(date) : ''}`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.ok && Array.isArray(data.rooms)) {
+          // Merge bookings for date
+          data.rooms.forEach(r => {
+            const localRoom = (this.state.meetingRooms || []).find(lr => lr.id === r.id);
+            if (localRoom) {
+              const otherDateBookings = (localRoom.bookings || []).filter(b => b.date !== data.date);
+              localRoom.bookings = [...otherDateBookings, ...(r.bookings || [])];
+            }
+          });
+          this.save();
+          return data;
+        }
+      }
+    } catch (e) {
+      // Offline fallback
+    }
+    return null;
+  }
+
+  async bookMeetingRoom({ roomId, startupId, startupName, title, date, startTime, endTime, attendees }) {
     const room = this.getMeetingRoomById(roomId);
     const startup = this.getStartupById(startupId);
     if (!room || !startup) return { success: false, message: 'Room or Startup not found' };
@@ -1345,16 +1519,37 @@ class NexusStore {
       };
     }
 
-    // Conflict Check
-    const hasConflict = (room.bookings || []).some(b => {
-      if (b.date !== date || b.status === 'Cancelled') return false;
-      const bStart = b.startTime;
-      const bEnd = b.endTime;
-      return (startTime < bEnd && endTime > bStart);
+    // Multi-room concurrent user conflict check:
+    // "You already have a booking at this time in [Other Room]."
+    const allRooms = this.getMeetingRooms();
+    for (const r of allRooms) {
+      if (r.id === roomId) continue;
+      const otherConflict = (r.bookings || []).find(b => {
+        return this.hasStartupConcurrentConflict({ ...b, roomId: r.id }, { roomId, startupId, date, startTime, endTime });
+      });
+      if (otherConflict) {
+        return {
+          success: false,
+          code: 'USER_ALREADY_BOOKED',
+          message: `You already have a booking at this time in ${r.name}.`
+        };
+      }
+    }
+
+    // Room Conflict Check using canonical rule
+    const existingConflict = (room.bookings || []).find(b => {
+      return this.hasBookingConflict({ ...b, roomId }, { roomId, date, startTime, endTime });
     });
 
-    if (hasConflict) {
-      return { success: false, message: `Conflict detected! ${room.name} is already booked during this time window on ${date}.` };
+    if (existingConflict) {
+      const alternatives = this.findBookingAlternatives({ roomId, date, startTime, endTime, attendees, startupId });
+      return { 
+        success: false, 
+        code: 'SLOT_TAKEN',
+        message: `${room.name} is already booked from ${existingConflict.startTime} to ${existingConflict.endTime} by another startup.`,
+        alternatives,
+        conflictWith: existingConflict
+      };
     }
 
     const startHour = parseFloat(startTime.split(':')[0]) + parseFloat(startTime.split(':')[1]) / 60;
@@ -1364,12 +1559,69 @@ class NexusStore {
     let cost = 0;
     const remainingCredits = Math.max(0, (startup.includedMeetingHours || 12) - (startup.usedMeetingHours || 0));
     if (remainingCredits >= duration) {
-      startup.usedMeetingHours = (startup.usedMeetingHours || 0) + duration;
       cost = 0;
     } else {
       const overageHours = duration - remainingCredits;
-      startup.usedMeetingHours = startup.includedMeetingHours;
       cost = Math.round(overageHours * room.hourlyRate);
+    }
+
+    const bookingPayload = {
+      roomId,
+      startupId: startup.id,
+      startupName: startupName || startup.name,
+      title: title || 'Strategic Planning Session',
+      date,
+      startTime,
+      endTime,
+      attendees: Number(attendees) || 4,
+      cost
+    };
+
+    // Attempt Server-Side Atomic Reservation
+    try {
+      const apiRes = await fetch('/api/meeting-rooms/book', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bookingPayload)
+      });
+
+      if (!apiRes.ok) {
+        const errorData = await apiRes.json().catch(() => ({}));
+        const alternatives = errorData.alternatives || this.findBookingAlternatives({ roomId, date, startTime, endTime, attendees, startupId });
+        return {
+          success: false,
+          code: errorData.code || 'SLOT_TAKEN',
+          message: errorData.message || 'This slot was just booked by another startup. Pick another time below.',
+          alternatives,
+          conflictWith: errorData.conflictWith || null
+        };
+      }
+
+      const serverData = await apiRes.json();
+      if (serverData && serverData.booking) {
+        // Sync credit deductions
+        if (remainingCredits >= duration) {
+          startup.usedMeetingHours = (startup.usedMeetingHours || 0) + duration;
+        } else {
+          startup.usedMeetingHours = startup.includedMeetingHours;
+        }
+
+        if (!room.bookings) room.bookings = [];
+        room.bookings.push(serverData.booking);
+        this.addActivity('Meeting Rooms', `${startup.name} booked ${room.name} on ${date} (${startTime}-${endTime}).`, '📅');
+        this.save();
+        return { success: true, booking: serverData.booking, message: `Successfully booked ${room.name}!` };
+      }
+    } catch (netErr) {
+      // Offline fallback: persist locally
+      console.warn('Meeting room booking server offline, persisting locally:', netErr.message);
+    }
+
+    // Local fallback creation
+    if (remainingCredits >= duration) {
+      startup.usedMeetingHours = (startup.usedMeetingHours || 0) + duration;
+    } else {
+      startup.usedMeetingHours = startup.includedMeetingHours;
     }
 
     const bookingId = `BKG-${Math.floor(100 + Math.random() * 900)}`;
@@ -1394,18 +1646,27 @@ class NexusStore {
     return { success: true, booking: newBooking, message: `Successfully booked ${room.name}!` };
   }
 
-  cancelBooking(roomId, bookingId) {
+  async cancelBooking(roomId, bookingId) {
     const room = this.getMeetingRoomById(roomId);
-    if (!room) return { success: false };
+    if (!room) return { success: false, message: 'Room not found' };
 
     const booking = (room.bookings || []).find(b => b.id === bookingId);
-    if (booking) {
-      booking.status = 'Cancelled';
-      this.addActivity('Meeting Rooms', `Cancelled booking for ${room.name} (${booking.title}).`, '❌');
-      this.save();
-      return { success: true, message: 'Booking cancelled.' };
+    if (!booking) return { success: false, message: 'Booking not found' };
+
+    try {
+      await fetch('/api/meeting-rooms/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomId, bookingId })
+      });
+    } catch (e) {
+      console.warn('Server offline on cancel booking:', e.message);
     }
-    return { success: false, message: 'Booking not found' };
+
+    booking.status = 'Cancelled';
+    this.addActivity('Meeting Rooms', `Cancelled booking for ${room.name} (${booking.title}).`, '❌');
+    this.save();
+    return { success: true, message: 'Booking cancelled.' };
   }
 
   // --- Rent & Billing Calculation Engine ---
