@@ -28,7 +28,7 @@ const PaymentsModule = {
       if (inv.status === 'Paid') return 'Paid';
       if (inv.status === 'Partially Paid' || inv.status === 'Partial') return 'Partially Paid';
       if (inv.status === 'Overdue') return 'Overdue';
-      if (inv.dueDate && new Date(inv.dueDate) < new Date('2026-10-06') && inv.status !== 'Paid') return 'Overdue';
+      if (inv.dueDate && new Date(inv.dueDate) < new Date('2026-10-26T23:59:59') && inv.status !== 'Paid') return 'Overdue';
       return 'Pending';
     };
 
@@ -349,7 +349,7 @@ const PaymentsModule = {
                   const invPayments = payments.filter(p => p.invoiceId === inv.id);
                   const paidSoFar = invPayments.reduce((s, p) => s + (p.amount || 0), 0);
                   const balanceDue = Math.max(0, inv.total - paidSoFar);
-                  const daysOverdue = inv.dueDate ? Math.floor((new Date('2026-10-06') - new Date(inv.dueDate)) / 86400000) : 0;
+                  const daysOverdue = inv.dueDate ? Math.max(0, Math.floor((new Date('2026-10-26T23:59:59') - new Date(inv.dueDate)) / 86400000)) : 0;
                   const pctPaid = Math.round((paidSoFar / inv.total) * 100);
                   const startup = window.store.getStartupById(inv.startupId) || {};
 

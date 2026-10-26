@@ -969,6 +969,11 @@ const InvoiceModule = {
                       </tbody>
                     </table>
                   </div>
+                ` : inv.status === 'Cancelled' ? `
+                  <div style="padding: 12px 14px; background: rgba(100, 116, 139, 0.08); border: 1px dashed #94a3b8; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; color: #475569;">
+                    <span>🚫 This invoice has been Cancelled / Voided (MCA Grant Fee Waiver Amendment). No payment is due.</span>
+                    <span class="badge" style="background: rgba(100, 116, 139, 0.2); color: #334155; font-weight: 700;">Voided (Fee Waived)</span>
+                  </div>
                 ` : `
                   <div style="padding: 12px 14px; background: #fff; border: 1px dashed #cbd5e1; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; color: #64748b;">
                     <span>⏳ Awaiting payment. No transaction records logged for this invoice yet.</span>
@@ -985,7 +990,7 @@ const InvoiceModule = {
           <div class="modal-footer" style="background: #f8fafc; border-top: 1px solid #e2e8f0;">
             <button class="btn btn-secondary" onclick="InvoiceModule.closeModal('modal-invoice-full-view')">Close</button>
             <button class="btn btn-outline" onclick="InvoiceModule._printExistingInvoice('${inv.id}')">🖨️ Print / Save as PDF</button>
-            ${inv.status !== 'Paid' ? `
+            ${inv.status !== 'Paid' && inv.status !== 'Cancelled' ? `
               <button class="btn btn-primary" onclick="InvoiceModule.closeModal('modal-invoice-full-view'); PaymentsModule.openCheckoutModal('${inv.id}')">
                 💳 Proceed to Payment — ₹${Number(inv.total || 0).toLocaleString('en-IN')}
               </button>

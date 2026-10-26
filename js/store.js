@@ -1,6 +1,6 @@
 // Store & State Management with LocalStorage Persistence
 
-const STORAGE_KEY = 'nexus_hub_coworking_v8'; // Bumped for 8. Milestone Management & Sequential Milestones
+const STORAGE_KEY = 'nexus_hub_coworking_v9'; // Bumped for financial reconciliation: rent, invoices, due dates, GST & KPI cards
 
 class NexusStore {
   constructor() {
@@ -183,6 +183,52 @@ class NexusStore {
         }
       });
     });
+
+    // Synchronize Rent Records, Invoices, and Payments with Seed Data
+    this.syncRentAndBillingData();
+  }
+
+  syncRentAndBillingData() {
+    if (!this.state.rentRecords || this.state.rentRecords.length < 5) {
+      this.state.rentRecords = JSON.parse(JSON.stringify(window.INITIAL_DATA.rentRecords || []));
+    } else {
+      // Reconcile seed entries if amounts or statuses differ
+      const seedRents = window.INITIAL_DATA.rentRecords || [];
+      seedRents.forEach(seedR => {
+        const idx = this.state.rentRecords.findIndex(r => r.id === seedR.id || r.startupId === seedR.startupId);
+        if (idx !== -1) {
+          this.state.rentRecords[idx] = JSON.parse(JSON.stringify(seedR));
+        } else {
+          this.state.rentRecords.push(JSON.parse(JSON.stringify(seedR)));
+        }
+      });
+    }
+
+    // Reconcile invoices with seed data (e.g. INV-2026-080 for XYZ, GST breakdowns)
+    if (!this.state.invoices) this.state.invoices = [];
+    if (window.INITIAL_DATA && window.INITIAL_DATA.invoices) {
+      window.INITIAL_DATA.invoices.forEach(seedInv => {
+        const idx = this.state.invoices.findIndex(i => i.id === seedInv.id);
+        if (idx !== -1) {
+          this.state.invoices[idx] = JSON.parse(JSON.stringify(seedInv));
+        } else {
+          this.state.invoices.unshift(JSON.parse(JSON.stringify(seedInv)));
+        }
+      });
+    }
+
+    // Reconcile payments (PAY-2026-103 Solarix ₹9,440, PAY-2026-106 XYZ ₹29,500)
+    if (!this.state.payments) this.state.payments = [];
+    if (window.INITIAL_DATA && window.INITIAL_DATA.payments) {
+      window.INITIAL_DATA.payments.forEach(seedPay => {
+        const idx = this.state.payments.findIndex(p => p.id === seedPay.id);
+        if (idx !== -1) {
+          this.state.payments[idx] = JSON.parse(JSON.stringify(seedPay));
+        } else {
+          this.state.payments.unshift(JSON.parse(JSON.stringify(seedPay)));
+        }
+      });
+    }
   }
 
   getContactInquiries() {
@@ -1736,7 +1782,7 @@ class NexusStore {
     if (inv.status === 'Paid') return 'Paid';
     if (inv.status === 'Partially Paid' || inv.status === 'Partial') return 'Partially Paid';
     if (inv.status === 'Overdue') return 'Overdue';
-    if (inv.dueDate && new Date(inv.dueDate) < new Date('2026-10-06')) return 'Overdue';
+    if (inv.dueDate && new Date(inv.dueDate) < new Date('2026-10-26T23:59:59')) return 'Overdue';
     return 'Pending';
   }
 

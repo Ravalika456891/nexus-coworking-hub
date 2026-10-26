@@ -12,26 +12,60 @@ const BillingModule = {
     if (!container) return;
 
     const role = window.store.normalizeRole(window.store.currentRole);
-    let rentRecords = window.store.getRentRecords();
-    const invoices = window.store.getAccessibleInvoices();
+    let allRentRecords = window.store.getRentRecords();
+    let allInvoices = window.store.getAccessibleInvoices();
     const payments = window.store.getAccessiblePayments();
     if (role === 'startup') {
-      rentRecords = rentRecords.filter(r => r.startupId === (window.store.activeFounderId || 'STP-XYZ'));
+      allRentRecords = allRentRecords.filter(r => r.startupId === (window.store.activeFounderId || 'STP-XYZ'));
+      allInvoices = allInvoices.filter(i => i.startupId === (window.store.activeFounderId || 'STP-XYZ'));
     }
 
-    // Aggregate Rent Metrics
-    const totalRentRoll = rentRecords.reduce((sum, r) => sum + (Number(r.rent) || 0), 0);
-    const paidRecords = rentRecords.filter(r => r.status === 'Paid');
-    const pendingRecords = rentRecords.filter(r => r.status === 'Pending');
-    const overdueRecords = rentRecords.filter(r => r.status === 'Overdue');
+    // Unified Single Source of Truth for KPIs from Active Invoices (Excluding Voided/Cancelled)
+    const activeInvoices = allInvoices.filter(i => i.status !== 'Cancelled');
+    const totalRentRoll = activeInvoices.reduce((sum, i) => sum + (Number(i.total) || 0), 0);
+    
+    // Collected & Paid: full invoice total for Paid, or amountPaid for partial
+    const totalPaid = activeInvoices.reduce((sum, i) => {
+      if (i.status === 'Paid') return sum + (Number(i.total) || 0);
+      return sum + (Number(i.amountPaid) || 0);
+    }, 0);
 
-    const totalPaid = paidRecords.reduce((sum, r) => sum + (Number(r.rent) || 0), 0);
-    const totalPending = pendingRecords.reduce((sum, r) => sum + (Number(r.rent) || 0), 0);
-    const totalOverdue = overdueRecords.reduce((sum, r) => sum + (Number(r.rent) || 0), 0);
+    // Overdue vs Pending: Dynamically calculated based on due date vs 26 Oct 2026
+    const todayEnd = new Date('2026-10-26T23:59:59').getTime();
+    const overdueInvoices = activeInvoices.filter(i => {
+      if (i.status === 'Paid') return false;
+      const d = new Date(i.dueDate || '2026-10-05').getTime();
+      return d < todayEnd;
+    });
+    const totalOverdue = overdueInvoices.reduce((sum, i) => {
+      const bal = i.balanceDue !== undefined ? i.balanceDue : (i.total - (i.amountPaid || 0));
+      return sum + Math.max(0, bal);
+    }, 0);
 
-    // Apply Filter to Rent Table
+    const pendingInvoices = activeInvoices.filter(i => {
+      if (i.status === 'Paid') return false;
+      const d = new Date(i.dueDate || '2026-10-05').getTime();
+      return d >= todayEnd;
+    });
+    const totalPending = pendingInvoices.reduce((sum, i) => {
+      const bal = i.balanceDue !== undefined ? i.balanceDue : (i.total - (i.amountPaid || 0));
+      return sum + Math.max(0, bal);
+    }, 0);
+
+    const paidInvoices = activeInvoices.filter(i => i.status === 'Paid');
+
+    // Filter Rent Table records
+    let rentRecords = [...allRentRecords];
     if (this.activeRentStatusFilter !== 'all') {
-      rentRecords = rentRecords.filter(r => r.status.toLowerCase() === this.activeRentStatusFilter.toLowerCase());
+      rentRecords = rentRecords.filter(r => {
+        const inv = allInvoices.find(i => i.id === r.invoiceId || i.startupId === r.startupId);
+        const resolved = this.calculateRentRecordStatus(r, inv);
+        if (this.activeRentStatusFilter === 'paid') return resolved.isPaid;
+        if (this.activeRentStatusFilter === 'pending') return resolved.isPending;
+        if (this.activeRentStatusFilter === 'overdue') return resolved.isOverdue;
+        if (this.activeRentStatusFilter === 'cancelled') return resolved.isCancelled;
+        return true;
+      });
     }
 
     container.innerHTML = `
@@ -126,9 +160,9 @@ const BillingModule = {
             <span class="kpi-title">Total Monthly Rent Roll</span>
             <div class="kpi-icon-wrap" style="color: var(--accent-primary);">🏢</div>
           </div>
-          <div class="kpi-value" style="font-size: 22px;">₹${totalRentRoll.toLocaleString('en-IN')}</div>
+          <div class="kpi-value" style="font-size: 22px;">₹${totalRentRoll.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
           <div class="kpi-footer">
-            <span>Gross Monthly License Revenue</span>
+            <span>Reconciled License Invoices</span>
           </div>
         </div>
 
@@ -137,9 +171,9 @@ const BillingModule = {
             <span class="kpi-title">Collected & Paid</span>
             <div class="kpi-icon-wrap" style="color: var(--status-success);">💰</div>
           </div>
-          <div class="kpi-value" style="font-size: 22px; color: var(--status-success);">₹${totalPaid.toLocaleString('en-IN')}</div>
+          <div class="kpi-value" style="font-size: 22px; color: var(--status-success);">₹${totalPaid.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
           <div class="kpi-footer">
-            <span class="trend-pill up">${paidRecords.length} Settled</span>
+            <span class="trend-pill up">${paidInvoices.length} Settled</span>
             <span>Via Verified Gateways</span>
           </div>
         </div>
@@ -149,10 +183,10 @@ const BillingModule = {
             <span class="kpi-title">Pending Due</span>
             <div class="kpi-icon-wrap" style="color: var(--status-warning);">⏳</div>
           </div>
-          <div class="kpi-value" style="font-size: 22px; color: var(--status-warning);">₹${totalPending.toLocaleString('en-IN')}</div>
+          <div class="kpi-value" style="font-size: 22px; color: var(--status-warning);">₹${totalPending.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
           <div class="kpi-footer">
-            <span class="trend-pill warning">${pendingRecords.length} Pending</span>
-            <span>Awaiting Settlement</span>
+            <span class="trend-pill warning">${pendingInvoices.length} Pending</span>
+            <span>Awaiting Due Date</span>
           </div>
         </div>
 
@@ -161,12 +195,12 @@ const BillingModule = {
             <span class="kpi-title">Overdue Rent</span>
             <div class="kpi-icon-wrap" style="color: var(--status-danger);">⚠️</div>
           </div>
-          <div class="kpi-value" style="font-size: 22px; color: var(--status-danger);">₹${totalOverdue.toLocaleString('en-IN')}</div>
+          <div class="kpi-value" style="font-size: 22px; color: var(--status-danger);">₹${totalOverdue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
           <div class="kpi-footer">
             <span class="trend-pill" style="background: var(--status-danger-bg); color: var(--status-danger);">
-              ${overdueRecords.length} Overdue
+              ${overdueInvoices.length} Overdue Account${overdueInvoices.length === 1 ? '' : 's'}
             </span>
-            <span>Follow-up Alert Active</span>
+            <span>21d / 8d Past Due</span>
           </div>
         </div>
       </div>
@@ -177,7 +211,7 @@ const BillingModule = {
           🏢 Monthly Rent Register (${rentRecords.length})
         </button>
         <button class="btn btn-sm btn-outline" onclick="BillingModule.scrollToSection('tax-invoices-ledger-card')" style="font-size: 11.5px; font-weight: 700; background: var(--bg-surface);">
-          🧾 Tax Invoices Ledger (${invoices.length})
+          🧾 Tax Invoices Ledger (${allInvoices.length})
         </button>
         <button class="btn btn-sm btn-outline" onclick="BillingModule.scrollToSection('payment-history-ledger-card')" style="font-size: 11.5px; font-weight: 700; background: var(--bg-surface);">
           💳 Payment History & Receipts (${payments.length})
@@ -198,16 +232,16 @@ const BillingModule = {
 
         <div style="display: flex; gap: 6px;">
             <button class="btn btn-sm ${this.activeRentStatusFilter === 'all' ? 'btn-primary' : 'btn-secondary'}" onclick="BillingModule.setRentFilter('all')">
-              All (${window.store.getRentRecords().length})
+              All (${allRentRecords.length})
             </button>
             <button class="btn btn-sm ${this.activeRentStatusFilter === 'paid' ? 'btn-primary' : 'btn-secondary'}" onclick="BillingModule.setRentFilter('paid')">
-              Paid (${paidRecords.length})
+              Paid (${paidInvoices.length})
             </button>
             <button class="btn btn-sm ${this.activeRentStatusFilter === 'pending' ? 'btn-primary' : 'btn-secondary'}" onclick="BillingModule.setRentFilter('pending')">
-              Pending (${pendingRecords.length})
+              Pending (${pendingInvoices.length})
             </button>
             <button class="btn btn-sm ${this.activeRentStatusFilter === 'overdue' ? 'btn-primary' : 'btn-secondary'}" onclick="BillingModule.setRentFilter('overdue')">
-              Overdue (${overdueRecords.length})
+              Overdue (${overdueInvoices.length})
             </button>
             <button class="btn btn-sm btn-outline" onclick="BillingModule.openInvoiceGeneratorForStartup()" title="Generate invoice for a startup">
               ⚡ Generate Invoice
@@ -308,11 +342,22 @@ const BillingModule = {
                   <td style="white-space: nowrap;"><strong style="font-family: var(--font-mono); color: var(--accent-primary);">${inv.id}</strong></td>
                   <td style="white-space: nowrap;"><strong>${inv.startupName}</strong></td>
                   <td style="white-space: nowrap;">${inv.billingPeriod}</td>
-                  <td style="white-space: nowrap;">${inv.dueDate}</td>
-                  <td style="font-weight: 700; font-family: var(--font-mono);">₹${inv.total.toLocaleString('en-IN')}</td>
+                  <td style="white-space: nowrap;">
+                    <div style="font-family: var(--font-mono); font-weight: 600;">${inv.dueDate}</div>
+                    ${inv.status === 'Cancelled' ? `
+                      <span style="font-size: 10px; color: #64748b; font-weight: 600;">Voided</span>
+                    ` : (new Date(inv.dueDate) < new Date('2026-10-26T23:59:59') && inv.status !== 'Paid') ? `
+                      <span style="font-size: 10.5px; color: var(--status-danger); font-weight: 700;">
+                        ⚠️ ${Math.max(0, Math.floor((new Date('2026-10-26T23:59:59') - new Date(inv.dueDate)) / 86400000))}d overdue
+                      </span>
+                    ` : `
+                      <span style="font-size: 10px; color: var(--text-muted);">Net 5 Days</span>
+                    `}
+                  </td>
+                  <td style="font-weight: 700; font-family: var(--font-mono);">₹${Number(inv.total || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                   <td>
-                    <span class="badge ${inv.status === 'Paid' ? 'badge-success' : inv.status === 'Overdue' ? 'badge-danger' : 'badge-warning'}">
-                      ${inv.status}
+                    <span class="badge ${inv.status === 'Paid' ? 'badge-success' : inv.status === 'Overdue' ? 'badge-danger' : inv.status === 'Cancelled' ? 'badge-subtle' : 'badge-warning'}" style="${inv.status === 'Cancelled' ? 'background: rgba(100, 116, 139, 0.12); color: #475569; border: 1px solid rgba(100, 116, 139, 0.25); font-weight: 700;' : ''}">
+                      ${inv.status === 'Cancelled' ? 'Cancelled / Voided' : inv.status}
                     </span>
                   </td>
                   <td>
@@ -320,7 +365,11 @@ const BillingModule = {
                       <button class="btn btn-secondary btn-sm" onclick="BillingModule.viewInvoice('${inv.id}')">
                         View Invoice
                       </button>
-                      ${inv.status !== 'Paid' ? `
+                      ${inv.status === 'Cancelled' ? `
+                        <span style="font-size: 11px; color: #64748b; font-weight: 600; display: inline-flex; align-items: center; gap: 3px; padding: 4px 8px; background: rgba(100, 116, 139, 0.08); border-radius: 4px;">
+                          🚫 Voided
+                        </span>
+                      ` : inv.status !== 'Paid' ? `
                         <button class="btn btn-primary btn-sm" onclick="PaymentsModule.openCheckoutModal('${inv.id}')">
                           💳 Pay Now
                         </button>
@@ -729,31 +778,93 @@ const BillingModule = {
     return list;
   },
 
+  calculateRentRecordStatus(r, inv) {
+    if (r.status === 'Cancelled' || (inv && inv.status === 'Cancelled')) {
+      return {
+        status: 'Cancelled',
+        isCancelled: true,
+        daysOverdue: 0,
+        badgeText: 'Voided (Fee Waived)',
+        badgeClass: 'badge-subtle'
+      };
+    }
+    if (r.status === 'Paid' || (inv && inv.status === 'Paid') || (r.balanceDue === 0 && r.paidAmount > 0)) {
+      return {
+        status: 'Paid',
+        isPaid: true,
+        daysOverdue: 0,
+        badgeText: '● Paid',
+        badgeClass: 'badge-success'
+      };
+    }
+    // Check due date against today (2026-10-26)
+    const dueDateStr = (inv && inv.dueDate) || r.dueDate || '2026-10-05';
+    const dueTime = new Date(dueDateStr).getTime();
+    const todayTime = new Date('2026-10-26T23:59:59').getTime();
+    const diffDays = Math.max(0, Math.floor((todayTime - dueTime) / (1000 * 60 * 60 * 24)));
+    const isPastDue = diffDays > 0;
+
+    const isPartiallyPaid = (r.paidAmount > 0 && r.balanceDue > 0) || (inv && inv.amountPaid > 0 && inv.balanceDue > 0);
+
+    if (isPastDue) {
+      return {
+        status: isPartiallyPaid ? 'Partially Paid' : 'Overdue',
+        isOverdue: true,
+        isPartiallyPaid: isPartiallyPaid,
+        daysOverdue: diffDays,
+        badgeText: isPartiallyPaid ? `● Partially Paid (${diffDays}d overdue)` : `● Overdue (${diffDays}d)`,
+        badgeClass: isPartiallyPaid ? 'badge-warning' : 'badge-danger'
+      };
+    }
+
+    return {
+      status: isPartiallyPaid ? 'Partially Paid' : 'Pending',
+      isPending: true,
+      isPartiallyPaid: isPartiallyPaid,
+      daysOverdue: 0,
+      badgeText: isPartiallyPaid ? '● Partially Paid' : '● Pending',
+      badgeClass: 'badge-warning'
+    };
+  },
+
   renderRentRow(r) {
     const isSelected = this.selectedStartupId === r.startupId;
     const allInvoices = window.store.getAccessibleInvoices();
-    const allPayments = window.store.getAccessiblePayments();
     const cleanName = (r.startupName || '').replace(/Startup\s+[A-Z]\s*\((.*?)\)/i, '$1').trim().toLowerCase();
     
-    const startupInvoices = allInvoices.filter(inv => {
+    const matchedInvoice = allInvoices.find(inv => {
+      if (inv.id && r.invoiceId && inv.id === r.invoiceId) return true;
       if (inv.startupId && inv.startupId === r.startupId) return true;
       if (cleanName && inv.startupName && inv.startupName.toLowerCase().includes(cleanName)) return true;
       return false;
     });
-    const invCount = startupInvoices.length;
 
-    const startupPayments = allPayments.filter(p => {
-      if (p.startupId && p.startupId === r.startupId) return true;
-      if (cleanName && p.startupName && p.startupName.toLowerCase().includes(cleanName)) return true;
-      return false;
-    });
-    const payCount = startupPayments.length;
+    const statusObj = this.calculateRentRecordStatus(r, matchedInvoice);
+    const isCancelled = statusObj.isCancelled;
+    const isPaid = statusObj.isPaid;
+    const isPartiallyPaid = statusObj.isPartiallyPaid;
+    const isOverdue = statusObj.isOverdue;
+    const daysOverdue = statusObj.daysOverdue;
 
-    const statusBadgeClass = r.status === 'Paid' 
-      ? 'badge-success' 
-      : r.status === 'Overdue' 
-      ? 'badge-danger' 
-      : 'badge-warning';
+    // Resolve accurate rent amount & breakdown
+    const rentAmount = r.rent !== undefined ? r.rent : (matchedInvoice ? matchedInvoice.total : 0);
+    const rentDisplayStr = isCancelled ? '₹0.00' : (r.rentDisplay || `₹${Number(rentAmount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+    const breakdown = (r.baseRent !== undefined) ? {
+      base: r.baseRent,
+      addons: r.addOns || 0,
+      subsidy: r.subsidyDeduction || 0,
+      gst: r.taxGst || 0,
+      total: r.rent
+    } : (r.breakdown || (matchedInvoice ? {
+      base: matchedInvoice.baseRent || matchedInvoice.subtotal,
+      addons: matchedInvoice.amenitiesCharges || 0,
+      subsidy: matchedInvoice.subsidyDeduction || 0,
+      gst: matchedInvoice.taxGst || matchedInvoice.gstAmount || 0,
+      total: matchedInvoice.total
+    } : null));
+
+    // Formatted due date
+    const rawDueDate = (matchedInvoice && matchedInvoice.dueDate) || r.dueDate || '2026-10-05';
 
     return `
       <tr style="${isSelected ? 'background: rgba(11, 8, 38, 0.05); outline: 2px solid #0B0826;' : ''} transition: all 0.2s ease;">
@@ -775,28 +886,81 @@ const BillingModule = {
           <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">${r.workspaceType || 'Dedicated Space'}</div>
         </td>
 
+        <!-- Itemized Rent Breakdown reconciling with Invoices -->
         <td style="white-space: nowrap;">
-          <strong style="font-family: var(--font-mono); font-size: 14px; color: var(--text-primary);">
-            ${r.rentDisplay}
-          </strong>
-          <span style="font-size: 10.5px; color: var(--text-muted); display: block;">/month</span>
+          <div style="font-family: var(--font-mono); font-size: 14.5px; font-weight: 800; color: var(--text-primary);">
+            ${rentDisplayStr}
+          </div>
+          ${isCancelled ? `
+            <div style="font-size: 11px; color: #64748b; font-weight: 600; margin-top: 2px;">
+              ✨ Fee Waived (MCA Grant)
+            </div>
+          ` : breakdown ? `
+            <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 3px; font-family: var(--font-mono); line-height: 1.35;">
+              <span>Base: ₹${Number(breakdown.base || 0).toLocaleString('en-IN')}</span>
+              ${breakdown.addons ? `<br><span style="color: var(--accent-primary);" title="Add-on Amenities & Infrastructure">+ Add-ons: ₹${Number(breakdown.addons).toLocaleString('en-IN')}</span>` : ''}
+              ${breakdown.subsidy ? `<br><span style="color: var(--status-success);" title="Incubation Subsidy">- Subsidy: ₹${Number(breakdown.subsidy).toLocaleString('en-IN')}</span>` : ''}
+              <br><span style="color: #6366f1;" title="18% Goods & Services Tax">+ 18% GST: ₹${Number(breakdown.gst || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
+          ` : `
+            <span style="font-size: 10.5px; color: var(--text-muted); display: block;">/month (inc. GST)</span>
+          `}
+        </td>
+
+        <!-- Due Date dynamically calculating Overdue days -->
+        <td style="white-space: nowrap;">
+          <div style="font-family: var(--font-mono); font-weight: 700; color: var(--text-primary); font-size: 13px;">${rawDueDate}</div>
+          ${isCancelled ? `
+            <span style="font-size: 10.5px; color: #64748b; font-weight: 600;">Waived (No Due)</span>
+          ` : isPaid ? `
+            <span style="font-size: 10.5px; color: var(--status-success); font-weight: 600;">✓ Settled on time</span>
+          ` : isOverdue ? `
+            <div style="display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 700; color: #dc2626; margin-top: 2px;">
+              <span>⚠️</span>
+              <span>${daysOverdue} days overdue</span>
+            </div>
+          ` : `
+            <span style="font-size: 10.5px; color: var(--text-muted);">Net 5 Days</span>
+          `}
         </td>
 
         <td style="white-space: nowrap;">
-          <div style="font-family: var(--font-mono); font-weight: 600; color: var(--text-primary);">${r.dueDate}</div>
-          <span style="font-size: 10.5px; color: var(--text-muted);">Net 5 Days</span>
-        </td>
-
-        <td style="white-space: nowrap;">
-          <span class="badge ${statusBadgeClass}" style="font-weight: 700; font-size: 12px;">
-            ${r.status}
-          </span>
+          ${isCancelled ? `
+            <span class="badge" style="background: rgba(100, 116, 139, 0.12); color: #475569; border: 1px solid rgba(100, 116, 139, 0.25); font-weight: 700; font-size: 11.5px;">
+              Voided (Fee Waived)
+            </span>
+          ` : isPaid ? `
+            <span class="badge badge-success" style="font-weight: 700; font-size: 11.5px;">
+              ● Paid
+            </span>
+          ` : isPartiallyPaid ? `
+            <div>
+              <span class="badge badge-warning" style="font-weight: 700; font-size: 11.5px; background: rgba(245, 158, 11, 0.15); color: #b45309; border: 1px solid rgba(245, 158, 11, 0.3);">
+                ● Partially Paid
+              </span>
+              <div style="font-size: 10.5px; font-family: var(--font-mono); color: #dc2626; font-weight: 700; margin-top: 3px;">
+                ₹${Number(r.balanceDue || (matchedInvoice ? matchedInvoice.balanceDue : 0)).toLocaleString('en-IN')} due
+              </div>
+            </div>
+          ` : isOverdue ? `
+            <span class="badge badge-danger" style="font-weight: 700; font-size: 11.5px;">
+              ● Overdue (${daysOverdue}d)
+            </span>
+          ` : `
+            <span class="badge badge-warning" style="font-weight: 700; font-size: 11.5px;">
+              ● Pending
+            </span>
+          `}
         </td>
 
         <td style="white-space: nowrap; text-align: right;">
           <div style="display: inline-flex; gap: 6px; align-items: center; white-space: nowrap;">
-            <!-- Primary Action: Pay Now / Receipt -->
-            ${r.status === 'Paid' ? `
+            <!-- Primary Action: Settle / Receipt / Suppressed for Cancelled -->
+            ${isCancelled ? `
+              <span class="badge" style="background: rgba(100, 116, 139, 0.08); color: #64748b; font-size: 11px; padding: 4px 8px; border: 1px solid rgba(100, 116, 139, 0.2);">
+                🚫 No Payment Due
+              </span>
+            ` : isPaid ? `
               <button class="btn btn-outline btn-sm" style="font-size: 11px; padding: 4px 10px; color: var(--status-success); border-color: rgba(34, 197, 94, 0.4); font-weight: 600; white-space: nowrap;" onclick="BillingModule.handleRentReceiptClick('${r.id}')" title="View Official Payment Receipt">
                 📄 Receipt
               </button>
@@ -855,7 +1019,17 @@ const BillingModule = {
     const rent = window.store.getRentRecordById(rentId);
     if (!rent) return;
 
+    if (rent.status === 'Cancelled' || rent.balanceDue === 0) {
+      if (typeof App !== 'undefined') App.showToast('This rent agreement is cancelled or has no balance due.', 'info');
+      return;
+    }
+
     if (rent.invoiceId) {
+      const inv = window.store.getInvoiceById(rent.invoiceId);
+      if (inv && inv.status === 'Cancelled') {
+        if (typeof App !== 'undefined') App.showToast('This invoice is cancelled / voided. No payment required.', 'warning');
+        return;
+      }
       PaymentsModule.openCheckoutModal(rent.invoiceId);
     } else {
       const res = window.store.generateInvoice(rent.startupId, 'October 2026');
