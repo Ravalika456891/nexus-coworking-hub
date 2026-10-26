@@ -702,6 +702,7 @@ const MeetingRoomsModule = {
     const pad = n => (n < 10 ? '0' : '') + n;
     const now = new Date();
     const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    const liveTimeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
 
     const monthNames = [
       'January', 'February', 'March', 'April', 'May', 'June',
