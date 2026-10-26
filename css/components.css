@@ -1119,6 +1119,41 @@
   color: var(--text-primary, #0f172a);
 }
 
+.clear-date-picker-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 10px;
+  background: var(--bg-surface, #ffffff);
+  border: 1.5px solid var(--border-medium, #cbd5e1);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  user-select: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.clear-date-picker-wrap:hover {
+  background: var(--bg-hover, #f8fafc);
+  border-color: var(--accent-primary, #6366f1);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
+  transform: translateY(-1px);
+}
+
+[data-theme="dark"] .clear-date-picker-wrap,
+[data-theme="navy"] .clear-date-picker-wrap {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+
+[data-theme="dark"] .clear-date-picker-wrap:hover,
+[data-theme="navy"] .clear-date-picker-wrap:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(99, 102, 241, 0.5);
+}
+
 .clear-date-quick-chips {
   display: flex;
   align-items: center;

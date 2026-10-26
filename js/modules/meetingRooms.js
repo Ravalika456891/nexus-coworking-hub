@@ -127,6 +127,10 @@ const MeetingRoomsModule = {
             `).join('')}
           </select>
 
+          <button class="btn btn-outline" onclick="MeetingRoomsModule.openCalendarModal()" style="font-size: 12.5px; font-weight: 700; padding: 7px 14px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;" title="Open Master Month Calendar">
+            <span>🗓️</span> <span>Month Calendar</span>
+          </button>
+
           <input type="date" class="form-control" style="width: auto; padding: 7px 14px; font-size: 13px; font-weight: 600; border-radius: 8px;" value="${this.selectedDate}" onchange="MeetingRoomsModule.setDate(this.value)">
           
           <button class="btn btn-primary" onclick="MeetingRoomsModule.openBookModal()" style="border-radius: 8px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
@@ -491,8 +495,205 @@ const MeetingRoomsModule = {
   },
 
   setDate(date) {
+    if (!date) return;
     this.selectedDate = date;
     this.render();
+  },
+
+  cycleDate(deltaDays) {
+    const base = this.selectedDate || new Date().toISOString().split('T')[0];
+    const parts = base.split('-').map(Number);
+    const d = new Date(parts[0], parts[1] - 1, parts[2]);
+    d.setDate(d.getDate() + deltaDays);
+    const pad = n => (n < 10 ? '0' : '') + n;
+    this.selectedDate = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    this.render();
+  },
+
+  openCalendarModal(yearMonthStr) {
+    let year, month;
+    if (yearMonthStr) {
+      const parts = yearMonthStr.split('-').map(Number);
+      year = parts[0];
+      month = parts[1] - 1;
+    } else {
+      const selParts = (this.selectedDate || new Date().toISOString().split('T')[0]).split('-').map(Number);
+      year = selParts[0];
+      month = selParts[1] - 1;
+    }
+
+    const pad = n => (n < 10 ? '0' : '') + n;
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    const currentMonthLabel = `${monthNames[month]} ${year}`;
+
+    // Prev / Next Month Strings
+    const prevMonthDate = new Date(year, month - 1, 1);
+    const prevMonthStr = `${prevMonthDate.getFullYear()}-${pad(prevMonthDate.getMonth() + 1)}`;
+    const nextMonthDate = new Date(year, month + 1, 1);
+    const nextMonthStr = `${nextMonthDate.getFullYear()}-${pad(nextMonthDate.getMonth() + 1)}`;
+
+    const firstDayIndex = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    const rooms = (window.store && window.store.getMeetingRooms) ? window.store.getMeetingRooms() : [];
+    const myStartup = this.getMyStartup();
+
+    // Map bookings by date for this month
+    const bookingsByDate = {};
+    rooms.forEach(r => {
+      (r.bookings || []).forEach(b => {
+        if (b.status !== 'Cancelled') {
+          if (!bookingsByDate[b.date]) bookingsByDate[b.date] = [];
+          bookingsByDate[b.date].push({ ...b, roomName: r.name });
+        }
+      });
+    });
+
+    // Generate day cells
+    let dayCellsHtml = '';
+    // Empty prefix cells
+    for (let i = 0; i < firstDayIndex; i++) {
+      dayCellsHtml += `<div style="background: rgba(0,0,0,0.02); min-height: 80px; border-radius: 8px; border: 1px dashed var(--border-subtle); opacity: 0.35;"></div>`;
+    }
+
+    // Days in current month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${year}-${pad(month + 1)}-${pad(day)}`;
+      const isToday = (dateStr === todayStr);
+      const isSelected = (dateStr === this.selectedDate);
+      const dayBookings = bookingsByDate[dateStr] || [];
+      const hasMyBooking = dayBookings.some(b => b.startupId === myStartup.id || (b.startupName && b.startupName.toLowerCase() === myStartup.name.toLowerCase()));
+      const totalBookedSessions = dayBookings.length;
+
+      dayCellsHtml += `
+        <div onclick="MeetingRoomsModule.setDate('${dateStr}'); MeetingRoomsModule.closeModal('modal-meeting-calendar')"
+             style="background: ${isSelected ? 'rgba(99, 102, 241, 0.08)' : isToday ? 'rgba(34, 197, 94, 0.05)' : 'var(--bg-surface)'};
+                    border: ${isSelected ? '2px solid #6366f1' : isToday ? '2px solid #22c55e' : '1px solid var(--border-subtle)'};
+                    border-radius: 10px;
+                    padding: 8px 10px;
+                    min-height: 80px;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: space-between;
+                    transition: all 0.18s ease;
+                    box-shadow: ${isSelected ? '0 0 12px rgba(99, 102, 241, 0.25)' : 'none'};"
+             onmouseenter="this.style.transform='translateY(-2px)'; this.style.borderColor='#6366f1';"
+             onmouseleave="this.style.transform='none'; this.style.borderColor='${isSelected ? '#6366f1' : isToday ? '#22c55e' : 'var(--border-subtle)'}';">
+          
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 13px; font-weight: 800; color: ${isSelected ? '#4f46e5' : isToday ? '#15803d' : 'var(--text-primary)'};">
+              ${day}
+            </span>
+            ${isToday ? `<span class="badge badge-success" style="font-size: 9.5px; padding: 1px 5px;">Today</span>` : ''}
+            ${isSelected && !isToday ? `<span class="badge badge-primary" style="font-size: 9.5px; padding: 1px 5px;">Active</span>` : ''}
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 3px; margin-top: 4px;">
+            ${hasMyBooking ? `
+              <span style="font-size: 9.5px; font-weight: 700; color: #1d4ed8; background: rgba(59, 130, 246, 0.12); padding: 1px 5px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                <span>🎟️</span> <span>My Pass</span>
+              </span>
+            ` : ''}
+            ${totalBookedSessions > 0 ? `
+              <span style="font-size: 9.5px; font-weight: 700; color: #dc2626; background: rgba(239, 68, 68, 0.1); padding: 1px 5px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;">
+                <span>🔴</span> <span>${totalBookedSessions} Booked</span>
+              </span>
+            ` : `
+              <span style="font-size: 9.5px; font-weight: 600; color: #16a34a; background: rgba(34, 197, 94, 0.08); padding: 1px 5px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;">
+                <span>🟢</span> <span>Open</span>
+              </span>
+            `}
+          </div>
+        </div>
+      `;
+    }
+
+    const modalHtml = `
+      <div class="modal-overlay active" id="modal-meeting-calendar" onclick="if(event.target===this) MeetingRoomsModule.closeModal('modal-meeting-calendar')">
+        <div class="modal-content" style="max-width: 740px; background: var(--bg-surface); color: var(--text-primary); border-radius: 16px; box-shadow: var(--shadow-xl); overflow: hidden; border: 1px solid var(--border-subtle);">
+          <!-- Modal Header -->
+          <div class="modal-header" style="background: var(--bg-surface-elevated); border-bottom: 1px solid var(--border-subtle); padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 20px;">🗓️</span>
+              <div>
+                <h3 style="font-size: 16px; font-weight: 800; margin: 0; color: var(--text-primary);">Meeting Room Master Calendar</h3>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Select any date to view operating sessions, book slots, or check passes</div>
+              </div>
+            </div>
+            <button class="modal-close-btn" onclick="MeetingRoomsModule.closeModal('modal-meeting-calendar')">&times;</button>
+          </div>
+
+          <!-- Month Selector Toolbar -->
+          <div style="padding: 14px 20px; background: var(--bg-surface); border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openCalendarModal('${prevMonthStr}')" style="font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 6px;">
+                ‹ Prev Month
+              </button>
+              <h4 style="font-size: 16px; font-weight: 800; margin: 0; min-width: 150px; text-align: center; color: var(--text-primary);">
+                ${currentMonthLabel}
+              </h4>
+              <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openCalendarModal('${nextMonthStr}')" style="font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 6px;">
+                Next Month ›
+              </button>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <button class="btn btn-secondary btn-sm" onclick="MeetingRoomsModule.setDate('${todayStr}'); MeetingRoomsModule.closeModal('modal-meeting-calendar')" style="font-size: 12px; font-weight: 700; padding: 5px 14px; border-radius: 6px;">
+                📅 Jump to Today
+              </button>
+            </div>
+          </div>
+
+          <!-- Calendar Body -->
+          <div style="padding: 16px 20px;">
+            <!-- Day Headers -->
+            <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 8px; text-align: center;">
+              ${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => `
+                <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em; padding: 4px 0;">
+                  ${d}
+                </div>
+              `).join('')}
+            </div>
+
+            <!-- Days Grid -->
+            <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px;">
+              ${dayCellsHtml}
+            </div>
+          </div>
+
+          <!-- Footer with Legend -->
+          <div style="padding: 12px 20px; background: var(--bg-surface-elevated); border-top: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; font-size: 12px;">
+            <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+              <span style="display: inline-flex; align-items: center; gap: 5px;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: #22c55e;"></span>
+                <span>Open Slots</span>
+              </span>
+              <span style="display: inline-flex; align-items: center; gap: 5px;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444;"></span>
+                <span>Booked Sessions</span>
+              </span>
+              <span style="display: inline-flex; align-items: center; gap: 5px;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: #2563eb;"></span>
+                <span>Your Reservations</span>
+              </span>
+            </div>
+
+            <button class="btn btn-secondary btn-sm" onclick="MeetingRoomsModule.closeModal('modal-meeting-calendar')" style="padding: 5px 14px; border-radius: 6px;">
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('modal-mount').innerHTML = modalHtml;
   },
 
   getBookingsCountForDate() {
@@ -1051,18 +1252,24 @@ const MeetingRoomsModule = {
         <!-- Date Navigation Bar (Prev / Next & Quick Selectors) -->
         <div class="clear-date-bar">
           <div class="clear-date-nav">
-            <button type="button" class="clear-date-btn" onclick="MeetingRoomsModule.cycleDate(-1)" title="Previous day">‹ Prev Day</button>
-            <div style="font-size: 12.5px; font-weight: 700; color: var(--text-primary, #0f172a); display: flex; align-items: center; gap: 6px;">
-              <span>📅</span>
-              <span>${formattedDateStr}</span>
+            <button type="button" class="clear-date-btn" onclick="MeetingRoomsModule.cycleDate(-1)" title="Previous day (‹)">‹ Prev Day</button>
+
+            <!-- Activated Interactive Calendar Date Picker Button -->
+            <label class="clear-date-picker-wrap" title="Click to open calendar and choose a date" onclick="try{this.querySelector('input').showPicker()}catch(e){}">
+              <span style="font-size: 13.5px;">📅</span>
+              <span style="font-size: 12.5px; font-weight: 800; color: var(--text-primary, #0f172a); white-space: nowrap;">${formattedDateStr}</span>
               ${isToday ? `<span class="badge badge-success" style="font-size: 10px; padding: 1px 6px;">Today</span>` : isTomorrow ? `<span class="badge badge-info" style="font-size: 10px; padding: 1px 6px;">Tomorrow</span>` : ''}
-            </div>
-            <button type="button" class="clear-date-btn" onclick="MeetingRoomsModule.cycleDate(1)" title="Next day">Next Day ›</button>
+              <span style="font-size: 10px; color: var(--text-muted); margin-left: 2px;">▾</span>
+              <input type="date" value="${this.selectedDate}" onchange="MeetingRoomsModule.setDate(this.value)" onclick="try{this.showPicker?.()}catch(e){}" style="position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer;" title="Pick a date from calendar">
+            </label>
+
+            <button type="button" class="clear-date-btn" onclick="MeetingRoomsModule.cycleDate(1)" title="Next day (›)">Next Day ›</button>
           </div>
 
           <div class="clear-date-quick-chips">
             <button type="button" class="clear-chip-btn ${isToday ? 'active' : ''}" onclick="MeetingRoomsModule.setDate('${todayStr}')">Today</button>
             <button type="button" class="clear-chip-btn ${isTomorrow ? 'active' : ''}" onclick="MeetingRoomsModule.setDate('${tomorrowStr}')">Tomorrow</button>
+            <button type="button" class="clear-chip-btn" onclick="MeetingRoomsModule.openCalendarModal()" title="Open full month calendar view">🗓️ Month View</button>
           </div>
         </div>
 
