@@ -399,7 +399,7 @@ const MeetingRoomsModule = {
             </div>
             <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px;">
               <span style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 6px rgba(239, 68, 68, 0.4);"></span>
-              <span style="color: #dc2626; font-weight: 700;">${otherSlotsCount} Booked (Red)</span>
+              <span style="color: #dc2626; font-weight: 700;">${otherSlotsCount} Booked</span>
             </div>
           `}
         </div>
