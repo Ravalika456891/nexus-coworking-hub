@@ -840,6 +840,9 @@ const MeetingRoomsModule = {
                                   <span>🖨️</span> <span>Print Entry Slip</span>
                                 </button>
                                 ${b.status !== 'Cancelled' ? `
+                                  <button class="row-menu-item" onclick="MeetingRoomsModule.closeAllRowMenus(); MeetingRoomsModule.openEditTimeWindowModal('${b.roomId}', '${b.id}')" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 10px; font-size: 12px; font-weight: 600; color: #2563eb; border: none; background: transparent; cursor: pointer; border-radius: 6px; text-align: left; transition: all 0.15s ease;">
+                                    <span>⏰</span> <span>Customize Time Window</span>
+                                  </button>
                                   <button class="row-menu-item" onclick="MeetingRoomsModule.closeAllRowMenus(); MeetingRoomsModule.cancelBooking('${b.roomId}', '${b.id}')" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 10px; font-size: 12px; font-weight: 600; color: #dc2626; border: none; background: transparent; cursor: pointer; border-radius: 6px; text-align: left; transition: all 0.15s ease;">
                                     <span>❌</span> <span>Cancel Reservation</span>
                                   </button>
@@ -920,9 +923,12 @@ const MeetingRoomsModule = {
                         <div>
                           Cost: <strong style="color: #16a34a;">${b.cost === 0 ? 'Covered by Plan (₹0)' : `₹${b.cost}`}</strong>
                         </div>
-                        <div style="display: flex; gap: 6px; align-items: center;">
+                        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
                           <button class="btn btn-sm btn-primary" onclick="MeetingRoomsModule.openPassModal('${b.roomId}', '${b.id}')" style="font-size: 11.5px; padding: 5px 12px; border-radius: 6px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;">
                             <span>🎫</span> Pass
+                          </button>
+                          <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openEditTimeWindowModal('${b.roomId}', '${b.id}')" style="font-size: 11.5px; padding: 5px 9px; border-radius: 6px; color: #2563eb; border-color: rgba(37,99,235,0.4);" title="Customize booking time window">
+                            ⏰ Time
                           </button>
                           <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.downloadBookingIcs('${b.id}')" style="font-size: 11.5px; padding: 5px 9px; border-radius: 6px; color: #2563eb; border-color: rgba(37,99,235,0.4);" title="Download calendar invite">
                             📅 .ics
@@ -1725,21 +1731,54 @@ const MeetingRoomsModule = {
 
           <form id="form-confirm-booking" onsubmit="MeetingRoomsModule.submitBookingConfirmation(event, '${room.id}')" style="display: flex; flex-direction: column; flex: 1; overflow: hidden; margin: 0;">
             <div class="modal-body" style="padding: 16px 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 12px;">
-              <!-- Selected Room & Timing Card -->
-              <div style="background: var(--bg-surface-elevated); border: 1.5px solid var(--border-subtle); border-radius: 12px; padding: 12px 14px;">
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+              <!-- Selected Room & Interactive Time Window Customizer -->
+              <div style="background: var(--bg-surface-elevated); border: 1.5px solid var(--border-subtle); border-radius: 12px; padding: 14px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
                   <div style="display: flex; align-items: center; gap: 8px;">
                     <span style="font-size: 18px;">${room.icon || '🏢'}</span>
                     <strong style="font-size: 14.5px; color: var(--text-primary);">${room.name}</strong>
+                    <span class="badge badge-info" style="font-size: 10px; padding: 1px 6px;">${room.capacity} Pax</span>
                   </div>
-                  <span class="badge ${isCovered ? 'badge-success' : 'badge-primary'}" style="font-weight: 800; font-size: 11px;">
+                  <span id="confirm-cost-badge" class="badge ${isCovered ? 'badge-success' : 'badge-primary'}" style="font-weight: 800; font-size: 11px;">
                     ${isCovered ? 'Covered by Plan (₹0)' : `₹${totalCost.toLocaleString('en-IN')}`}
                   </span>
                 </div>
-                <div style="font-size: 12px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 2px;">
-                  <div>📅 <strong>${formattedDate}</strong></div>
-                  <div>⏰ <strong>${formatSlot12h(startSlot)} – ${formatSlot12h(endSlotStr)}</strong> (${count} slot${count > 1 ? 's' : ''} · ${count} hr${count > 1 ? 's' : ''})</div>
-                  <div style="font-size: 11px; color: var(--text-muted);">👥 Room Capacity: up to ${room.capacity} Pax</div>
+
+                <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 10px;">
+                  📅 <strong>${formattedDate}</strong>
+                </div>
+
+                <!-- Interactive Time Window Customizer -->
+                <div style="background: var(--bg-surface); border: 1.5px solid var(--border-medium); border-radius: 10px; padding: 10px 12px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <label style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--accent-primary, #2563eb); margin: 0; display: flex; align-items: center; gap: 5px;">
+                      <span>⏰</span> Customize Time Window <span style="color: #ef4444;">*</span>
+                    </label>
+                    <span id="confirm-duration-label" style="font-size: 11.5px; font-family: var(--font-mono); font-weight: 800; color: #16a34a;">
+                      ${count} hr${count > 1 ? 's' : ''}
+                    </span>
+                  </div>
+
+                  <!-- Quick Duration Shortcut Chips -->
+                  <div style="display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 8px;">
+                    <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.setConfirmDuration(30, '${room.id}')" style="font-size: 10.5px; padding: 2px 8px; border-radius: 6px; font-weight: 600;">30 min</button>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.setConfirmDuration(45, '${room.id}')" style="font-size: 10.5px; padding: 2px 8px; border-radius: 6px; font-weight: 600;">45 min</button>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.setConfirmDuration(60, '${room.id}')" style="font-size: 10.5px; padding: 2px 8px; border-radius: 6px; font-weight: 600;">1 hr</button>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.setConfirmDuration(90, '${room.id}')" style="font-size: 10.5px; padding: 2px 8px; border-radius: 6px; font-weight: 600;">1.5 hr</button>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.setConfirmDuration(120, '${room.id}')" style="font-size: 10.5px; padding: 2px 8px; border-radius: 6px; font-weight: 600;">2 hr</button>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.setConfirmDuration(180, '${room.id}')" style="font-size: 10.5px; padding: 2px 8px; border-radius: 6px; font-weight: 600;">3 hr</button>
+                  </div>
+
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div>
+                      <label style="font-size: 10.5px; font-weight: 700; color: var(--text-secondary); margin-bottom: 3px; display: block;">Start Time</label>
+                      <input type="time" id="confirm-start-time" class="form-control" value="${startSlot}" onchange="MeetingRoomsModule.updateConfirmModalTiming('${room.id}')" style="font-size: 12.5px; font-weight: 700; font-family: var(--font-mono); padding: 5px 8px; border-radius: 6px;" required>
+                    </div>
+                    <div>
+                      <label style="font-size: 10.5px; font-weight: 700; color: var(--text-secondary); margin-bottom: 3px; display: block;">End Time</label>
+                      <input type="time" id="confirm-end-time" class="form-control" value="${endSlotStr}" onchange="MeetingRoomsModule.updateConfirmModalTiming('${room.id}')" style="font-size: 12.5px; font-weight: 700; font-family: var(--font-mono); padding: 5px 8px; border-radius: 6px;" required>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -1786,6 +1825,74 @@ const MeetingRoomsModule = {
     }, 100);
   },
 
+  setConfirmDuration(mins, roomId) {
+    const startInput = document.getElementById('confirm-start-time');
+    const endInput = document.getElementById('confirm-end-time');
+    if (!startInput || !endInput) return;
+    const startVal = startInput.value || '08:00';
+    const [h, m] = startVal.split(':').map(Number);
+    const startTotal = h * 60 + (m || 0);
+    const endTotal = startTotal + mins;
+    const endH = Math.floor(endTotal / 60);
+    const endM = endTotal % 60;
+    const pad = n => (n < 10 ? '0' : '') + n;
+    endInput.value = `${pad(endH)}:${pad(endM)}`;
+    this.updateConfirmModalTiming(roomId);
+  },
+
+  updateConfirmModalTiming(roomId) {
+    const startInput = document.getElementById('confirm-start-time');
+    const endInput = document.getElementById('confirm-end-time');
+    const durationLabel = document.getElementById('confirm-duration-label');
+    const costBadge = document.getElementById('confirm-cost-badge');
+    if (!startInput || !endInput) return;
+
+    const startVal = startInput.value;
+    const endVal = endInput.value;
+    if (!startVal || !endVal) return;
+
+    const [sh, sm] = startVal.split(':').map(Number);
+    const [eh, em] = endVal.split(':').map(Number);
+    const sMin = sh * 60 + (sm || 0);
+    const eMin = eh * 60 + (em || 0);
+    if (eMin <= sMin) {
+      if (durationLabel) {
+        durationLabel.textContent = 'Invalid time range';
+        durationLabel.style.color = '#ef4444';
+      }
+      return;
+    }
+
+    const durMinutes = eMin - sMin;
+    const durHours = durMinutes / 60;
+    const room = window.store.getMeetingRoomById(roomId);
+    const myStartup = this.getMyStartup();
+    const remainingCredits = Math.max(0, (myStartup.includedMeetingHours || 12) - (myStartup.usedMeetingHours || 0));
+    const isCovered = remainingCredits >= durHours;
+    const cost = isCovered ? 0 : Math.round((room ? room.hourlyRate : 1500) * durHours);
+
+    if (durationLabel) {
+      const hPart = Math.floor(durMinutes / 60);
+      const mPart = durMinutes % 60;
+      let text = '';
+      if (hPart > 0 && mPart > 0) text = `${hPart} hr ${mPart} min`;
+      else if (hPart > 0) text = `${hPart} hr${hPart > 1 ? 's' : ''}`;
+      else text = `${mPart} min`;
+      durationLabel.textContent = text;
+      durationLabel.style.color = '#16a34a';
+    }
+
+    if (costBadge) {
+      if (isCovered) {
+        costBadge.className = 'badge badge-success';
+        costBadge.textContent = 'Covered by Plan (₹0)';
+      } else {
+        costBadge.className = 'badge badge-primary';
+        costBadge.textContent = `₹${cost.toLocaleString('en-IN')}`;
+      }
+    }
+  },
+
   async submitBookingConfirmation(event, roomId) {
     if (event) event.preventDefault();
     const form = document.getElementById('form-confirm-booking');
@@ -1797,13 +1904,24 @@ const MeetingRoomsModule = {
     const title = (titleInput && titleInput.value.trim()) || 'Strategic Review & Team Sprint';
     const attendees = parseInt((attendeesInput && attendeesInput.value) || '4', 10);
 
-    const slots = (this.selectedSlotsByRoom && this.selectedSlotsByRoom[roomId]) ? [...this.selectedSlotsByRoom[roomId]].sort() : [];
-    if (!slots.length) return;
+    const startTimeInput = document.getElementById('confirm-start-time');
+    const endTimeInput = document.getElementById('confirm-end-time');
+    let startTime = startTimeInput ? startTimeInput.value.trim() : '';
+    let endTime = endTimeInput ? endTimeInput.value.trim() : '';
 
-    const startTime = slots[0];
-    const lastSlot = slots[slots.length - 1];
-    const lastH = parseInt(lastSlot.split(':')[0], 10) + 1;
-    const endTime = `${lastH < 10 ? '0' : ''}${lastH}:00`;
+    if (!startTime || !endTime) {
+      const slots = (this.selectedSlotsByRoom && this.selectedSlotsByRoom[roomId]) ? [...this.selectedSlotsByRoom[roomId]].sort() : [];
+      if (!slots.length) return;
+      startTime = slots[0];
+      const lastSlot = slots[slots.length - 1];
+      const lastH = parseInt(lastSlot.split(':')[0], 10) + 1;
+      endTime = `${lastH < 10 ? '0' : ''}${lastH}:00`;
+    }
+
+    if (startTime >= endTime) {
+      App.showToast('⚠️ End time must be later than start time', 'warning');
+      return;
+    }
 
     const myStartup = this.getMyStartup();
     const rooms = window.store.getMeetingRooms();
@@ -2015,9 +2133,14 @@ const MeetingRoomsModule = {
                 </div>
               </div>
 
-              <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 9px 12px;">
-                <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.04em;">
-                  ⏰ Time Window
+              <div style="background: var(--bg-surface-elevated); border: 1.5px solid rgba(37, 99, 235, 0.35); border-radius: 10px; padding: 9px 12px; position: relative;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.04em;">
+                    ⏰ Time Window
+                  </div>
+                  <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openEditTimeWindowModal('${room.id}', '${booking.id}')" style="font-size: 10.5px; padding: 2px 8px; border-radius: 5px; font-weight: 700; color: #2563eb; border-color: rgba(37, 99, 235, 0.4); background: rgba(37, 99, 235, 0.08); cursor: pointer; display: inline-flex; align-items: center; gap: 3px;" title="Customize / change booking time window">
+                    <span>✏️</span> <span>Customize</span>
+                  </button>
                 </div>
                 <div style="font-size: 12.5px; font-weight: 800; color: #2563eb; margin-top: 2px; font-family: var(--font-mono);">
                   ${formatSlot12h(booking.startTime)} – ${formatSlot12h(booking.endTime)}
@@ -2081,11 +2204,14 @@ const MeetingRoomsModule = {
 
           <!-- Fixed Action Footer (Always Visible & Accessible) -->
           <div style="flex-shrink: 0; background: var(--bg-surface-elevated); border-top: 1px solid var(--border-subtle); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <div style="display: flex; gap: 8px; align-items: center;">
-              <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openKioskModal('${room.id}'); MeetingRoomsModule.closeModal('modal-booking-success');" style="font-weight: 700; padding: 7px 13px; border-radius: 7px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 5px;">
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+              <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openEditTimeWindowModal('${room.id}', '${booking.id}')" style="font-weight: 700; padding: 7px 12px; border-radius: 7px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 5px; color: #2563eb; border-color: rgba(37, 99, 235, 0.4); background: rgba(37, 99, 235, 0.05);" title="Customize reservation time window">
+                <span>✏️</span> Time Window
+              </button>
+              <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openKioskModal('${room.id}'); MeetingRoomsModule.closeModal('modal-booking-success');" style="font-weight: 700; padding: 7px 12px; border-radius: 7px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 5px;">
                 <span>📱</span> Open door display
               </button>
-              <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openPassModal('${room.id}', '${booking.id}'); MeetingRoomsModule.closeModal('modal-booking-success');" style="font-weight: 700; padding: 7px 13px; border-radius: 7px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 5px; color: #2563eb; border-color: rgba(37, 99, 235, 0.35);">
+              <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openPassModal('${room.id}', '${booking.id}'); MeetingRoomsModule.closeModal('modal-booking-success');" style="font-weight: 700; padding: 7px 12px; border-radius: 7px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 5px; color: #16a34a; border-color: rgba(34, 197, 94, 0.35);">
                 <span>🎫</span> Digital Pass
               </button>
             </div>
@@ -2100,6 +2226,232 @@ const MeetingRoomsModule = {
     const mount = document.getElementById('modal-mount');
     if (mount) {
       mount.insertAdjacentHTML('beforeend', html);
+    }
+  },
+
+  openEditTimeWindowModal(roomId, bookingId) {
+    this.closeModal('modal-booking-success');
+    this.closeModal('modal-room-door-pass');
+    const rooms = window.store.getMeetingRooms();
+    const room = rooms.find(r => r.id === roomId);
+    if (!room) return;
+    const booking = (room.bookings || []).find(b => b.id === bookingId);
+    if (!booking) {
+      App.showToast('Reservation not found', 'warning');
+      return;
+    }
+
+    const myStartup = this.getMyStartup();
+    const [sh, sm] = booking.startTime.split(':').map(Number);
+    const [eh, em] = booking.endTime.split(':').map(Number);
+    const curMin = (eh * 60 + (em || 0)) - (sh * 60 + (sm || 0));
+    const curHours = Math.max(0.25, curMin / 60);
+
+    const html = `
+      <div class="modal-overlay active" id="modal-edit-time-window" onclick="if(event.target === this) MeetingRoomsModule.closeModal('modal-edit-time-window')" style="z-index: 1070; display: flex; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.78); backdrop-filter: blur(8px); padding: 16px; animation: fadeIn 0.2s ease;">
+        <div class="modal-content" style="max-width: 500px; width: 100%; border-radius: 20px; background: var(--bg-surface); border: 1.5px solid var(--border-medium); display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 60px -12px rgba(0,0,0,0.4); animation: scaleUp 0.22s ease;">
+          
+          <div style="background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); color: #ffffff; padding: 18px 20px; position: relative;">
+            <button class="modal-close-btn" onclick="MeetingRoomsModule.closeModal('modal-edit-time-window')" style="position: absolute; right: 14px; top: 14px; color: #ffffff; background: rgba(255,255,255,0.18); border: none; border-radius: 50%; width: 28px; height: 28px; font-size: 16px; cursor: pointer;">&times;</button>
+            <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #93c5fd; font-weight: 700;">
+              <span>⏰ Dynamic Time Window Customizer</span>
+            </div>
+            <h2 style="font-size: 18px; font-weight: 800; color: #ffffff; margin: 4px 0 0 0;">
+              Customize Booking Time Window
+            </h2>
+            <div style="font-size: 12px; color: #bfdbfe; margin-top: 2px;">
+              ${room.name} • 📅 ${booking.date}
+            </div>
+          </div>
+
+          <form id="form-edit-time-window" onsubmit="MeetingRoomsModule.submitEditTimeWindow(event, '${room.id}', '${booking.id}')" style="margin: 0; display: flex; flex-direction: column;">
+            <div style="padding: 18px 20px; display: flex; flex-direction: column; gap: 14px;">
+              
+              <!-- Room & Meeting Context -->
+              <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-size: 13px; font-weight: 800; color: var(--text-primary);">${booking.title}</div>
+                  <div style="font-size: 11px; color: var(--text-muted); margin-top: 1px;">
+                    Booking Ref: <code style="color: #2563eb; font-weight: 700;">${booking.id}</code>
+                  </div>
+                </div>
+                <span id="edit-cost-badge" class="badge ${booking.cost === 0 ? 'badge-success' : 'badge-primary'}" style="font-size: 11px; font-weight: 800;">
+                  ${booking.cost === 0 ? 'Covered by Plan (₹0)' : `₹${booking.cost}`}
+                </span>
+              </div>
+
+              <!-- Quick Duration Chips -->
+              <div>
+                <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; display: block;">
+                  Quick Duration Presets
+                </label>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                  <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.setEditDuration(30, '${room.id}')" style="font-size: 11px; padding: 3px 10px; border-radius: 6px; font-weight: 700;">30 min</button>
+                  <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.setEditDuration(45, '${room.id}')" style="font-size: 11px; padding: 3px 10px; border-radius: 6px; font-weight: 700;">45 min</button>
+                  <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.setEditDuration(60, '${room.id}')" style="font-size: 11px; padding: 3px 10px; border-radius: 6px; font-weight: 700;">1 hr</button>
+                  <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.setEditDuration(90, '${room.id}')" style="font-size: 11px; padding: 3px 10px; border-radius: 6px; font-weight: 700;">1.5 hr</button>
+                  <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.setEditDuration(120, '${room.id}')" style="font-size: 11px; padding: 3px 10px; border-radius: 6px; font-weight: 700;">2 hr</button>
+                  <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.setEditDuration(180, '${room.id}')" style="font-size: 11px; padding: 3px 10px; border-radius: 6px; font-weight: 700;">3 hr</button>
+                </div>
+              </div>
+
+              <!-- Start & End Time Inputs -->
+              <div style="background: var(--bg-surface-elevated); border: 1.5px solid var(--border-medium); border-radius: 12px; padding: 12px 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <span style="font-size: 11.5px; font-weight: 800; color: #2563eb;">Choose Custom Time Range</span>
+                  <span id="edit-duration-label" style="font-size: 12px; font-weight: 800; color: #16a34a; font-family: var(--font-mono);">
+                    ${curHours} hr${curHours > 1 ? 's' : ''}
+                  </span>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                  <div>
+                    <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary); margin-bottom: 3px; display: block;">Start Time</label>
+                    <input type="time" id="edit-start-time" class="form-control" value="${booking.startTime}" onchange="MeetingRoomsModule.updateEditModalTiming('${room.id}')" style="font-size: 13px; font-weight: 700; font-family: var(--font-mono); padding: 7px 10px; border-radius: 8px;" required>
+                  </div>
+                  <div>
+                    <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary); margin-bottom: 3px; display: block;">End Time</label>
+                    <input type="time" id="edit-end-time" class="form-control" value="${booking.endTime}" onchange="MeetingRoomsModule.updateEditModalTiming('${room.id}')" style="font-size: 13px; font-weight: 700; font-family: var(--font-mono); padding: 7px 10px; border-radius: 8px;" required>
+                  </div>
+                </div>
+              </div>
+
+              <div style="font-size: 11.5px; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+                <span>🔒</span> <span>Nexus instantly verifies zero double-booking before updating the reservation.</span>
+              </div>
+            </div>
+
+            <div style="padding: 12px 20px; background: var(--bg-surface-elevated); border-top: 1px solid var(--border-subtle); display: flex; justify-content: flex-end; gap: 10px;">
+              <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.closeModal('modal-edit-time-window')" style="padding: 7px 16px; border-radius: 8px; font-size: 12px;">
+                Cancel
+              </button>
+              <button type="submit" class="btn btn-primary btn-sm" style="font-weight: 800; padding: 7px 22px; border-radius: 8px; font-size: 12.5px; background: #2563eb; border-color: #1d4ed8; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);">
+                Update Time Window ➔
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+
+    const mount = document.getElementById('modal-mount');
+    if (mount) {
+      mount.insertAdjacentHTML('beforeend', html);
+    }
+  },
+
+  setEditDuration(mins, roomId) {
+    const startInput = document.getElementById('edit-start-time');
+    const endInput = document.getElementById('edit-end-time');
+    if (!startInput || !endInput) return;
+    const startVal = startInput.value || '08:00';
+    const [h, m] = startVal.split(':').map(Number);
+    const startTotal = h * 60 + (m || 0);
+    const endTotal = startTotal + mins;
+    const endH = Math.floor(endTotal / 60);
+    const endM = endTotal % 60;
+    const pad = n => (n < 10 ? '0' : '') + n;
+    endInput.value = `${pad(endH)}:${pad(endM)}`;
+    this.updateEditModalTiming(roomId);
+  },
+
+  updateEditModalTiming(roomId) {
+    const startInput = document.getElementById('edit-start-time');
+    const endInput = document.getElementById('edit-end-time');
+    const durationLabel = document.getElementById('edit-duration-label');
+    const costBadge = document.getElementById('edit-cost-badge');
+    if (!startInput || !endInput) return;
+
+    const startVal = startInput.value;
+    const endVal = endInput.value;
+    if (!startVal || !endVal) return;
+
+    const [sh, sm] = startVal.split(':').map(Number);
+    const [eh, em] = endVal.split(':').map(Number);
+    const sMin = sh * 60 + (sm || 0);
+    const eMin = eh * 60 + (em || 0);
+    if (eMin <= sMin) {
+      if (durationLabel) {
+        durationLabel.textContent = 'Invalid time range';
+        durationLabel.style.color = '#ef4444';
+      }
+      return;
+    }
+
+    const durMinutes = eMin - sMin;
+    const durHours = durMinutes / 60;
+    const room = window.store.getMeetingRoomById(roomId);
+    const myStartup = this.getMyStartup();
+    const remainingCredits = Math.max(0, (myStartup.includedMeetingHours || 12) - (myStartup.usedMeetingHours || 0));
+    const isCovered = remainingCredits >= durHours;
+    const cost = isCovered ? 0 : Math.round((room ? room.hourlyRate : 1500) * durHours);
+
+    if (durationLabel) {
+      const hPart = Math.floor(durMinutes / 60);
+      const mPart = durMinutes % 60;
+      let text = '';
+      if (hPart > 0 && mPart > 0) text = `${hPart} hr ${mPart} min`;
+      else if (hPart > 0) text = `${hPart} hr${hPart > 1 ? 's' : ''}`;
+      else text = `${mPart} min`;
+      durationLabel.textContent = text;
+      durationLabel.style.color = '#16a34a';
+    }
+
+    if (costBadge) {
+      if (isCovered) {
+        costBadge.className = 'badge badge-success';
+        costBadge.textContent = 'Covered by Plan (₹0)';
+      } else {
+        costBadge.className = 'badge badge-primary';
+        costBadge.textContent = `₹${cost.toLocaleString('en-IN')}`;
+      }
+    }
+  },
+
+  async submitEditTimeWindow(event, roomId, bookingId) {
+    if (event) event.preventDefault();
+    const startInput = document.getElementById('edit-start-time');
+    const endInput = document.getElementById('edit-end-time');
+    const startTime = startInput ? startInput.value.trim() : '';
+    const endTime = endInput ? endInput.value.trim() : '';
+
+    if (!startTime || !endTime) {
+      App.showToast('Please specify both start and end time', 'warning');
+      return;
+    }
+    if (startTime >= endTime) {
+      App.showToast('End time must be after start time', 'warning');
+      return;
+    }
+
+    const rooms = window.store.getMeetingRooms();
+    const room = rooms.find(r => r.id === roomId);
+    const booking = (room && room.bookings || []).find(b => b.id === bookingId);
+    if (!room || !booking) return;
+
+    try {
+      const res = await window.store.updateBookingTimeWindow(roomId, bookingId, {
+        date: booking.date,
+        startTime,
+        endTime
+      });
+
+      if (res.success) {
+        this.closeModal('modal-edit-time-window');
+        this.render();
+        if (typeof DashboardModule !== 'undefined' && DashboardModule.render) {
+          DashboardModule.render();
+        }
+        App.showToast(`✅ Time window updated to ${startTime} – ${endTime}!`, 'success');
+        const updatedRoom = window.store.getMeetingRoomById(roomId) || room;
+        const updatedBooking = res.booking || (updatedRoom.bookings || []).find(b => b.id === bookingId);
+        if (updatedBooking) {
+          this.showBookingSuccessModal(updatedRoom, updatedBooking, this.getMyStartup());
+        }
+      } else {
+        App.showToast(`⚠️ Cannot update time window: ${res.message || 'Conflict detected'}`, 'danger');
+      }
+    } catch (err) {
+      App.showToast(`⚠️ Update error: ${err.message}`, 'danger');
     }
   },
 
@@ -2870,7 +3222,10 @@ const MeetingRoomsModule = {
           </div>
 
           <!-- Fixed Footer -->
-          <div style="flex-shrink: 0; padding: 12px 20px; border-top: 1px solid var(--border-subtle); background: var(--bg-surface-elevated); display: flex; gap: 10px; justify-content: flex-end;">
+          <div style="flex-shrink: 0; padding: 12px 20px; border-top: 1px solid var(--border-subtle); background: var(--bg-surface-elevated); display: flex; gap: 10px; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
+            <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openEditTimeWindowModal('${room.id}', '${booking.id}')" style="font-weight: 700; font-size: 11.5px; border-radius: 7px; color: #2563eb; border-color: rgba(37,99,235,0.4); background: rgba(37,99,235,0.06);">
+              ⏰ Customize Time
+            </button>
             <button class="btn btn-outline btn-sm" onclick="window.print()" style="font-weight: 600; font-size: 12px; border-radius: 7px;">
               🖨️ Print Pass
             </button>
@@ -2911,19 +3266,24 @@ const MeetingRoomsModule = {
     if (!startVal) return [];
     const [h, m] = startVal.split(':').map(Number);
     const startMin = h * 60 + (m || 0);
-    const isMorning = (startMin < 12 * 60);
 
-    const maxEndMin = isMorning ? (11 * 60) : (19 * 60);
+    // Allow user-customized windows up to 4 hours or until 21:00
+    const maxEndMin = Math.min(startMin + 240, 21 * 60);
     const endSlots = [];
 
-    for (let cur = startMin + 30; cur <= maxEndMin; cur += 30) {
+    for (let cur = startMin + 15; cur <= maxEndMin; cur += 15) {
       const curH = Math.floor(cur / 60);
       const curM = cur % 60;
       const val = `${curH < 10 ? '0' : ''}${curH}:${curM < 10 ? '0' : ''}${curM}`;
-      const duration = (cur - startMin) / 60;
+      const durMinutes = cur - startMin;
+      const duration = durMinutes / 60;
       const displayHour = curH > 12 ? (curH - 12) : curH;
       const period = curH >= 12 ? 'PM' : 'AM';
-      const label = `${val} (${displayHour}:${curM < 10 ? '0' : ''}${curM} ${period} • ${duration} hr${duration > 1 ? 's' : ''})`;
+      let durText = '';
+      if (durMinutes < 60) durText = `${durMinutes}m`;
+      else if (durMinutes % 60 === 0) durText = `${duration}h`;
+      else durText = `${Math.floor(duration)}h ${durMinutes % 60}m`;
+      const label = `${val} (${displayHour}:${curM < 10 ? '0' : ''}${curM} ${period} • ${durText})`;
       endSlots.push({ value: val, label });
     }
     return endSlots;

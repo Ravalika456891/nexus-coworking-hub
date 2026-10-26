@@ -268,6 +268,21 @@ async function handleApi(req, res, parsedUrl) {
       }
     }
 
+    if (pathname === '/api/meeting-rooms/update-time' && req.method === 'POST') {
+      const body = await parseJsonBody(req);
+      const { roomId, bookingId, date, startTime, endTime } = body;
+      if (!roomId || !bookingId || !date || !startTime || !endTime) {
+        return sendJson(res, 400, { ok: false, error: 'roomId, bookingId, date, startTime, and endTime are required' });
+      }
+      const result = await db.updateMeetingRoomBookingTimeWindowAtomic(body);
+      if (result.ok) {
+        broadcastMeetingRoomUpdate({ action: 'updated', roomId, bookingId, booking: result.booking });
+        return sendJson(res, 200, result);
+      } else {
+        return sendJson(res, result.status || 400, result);
+      }
+    }
+
     // -----------------------------------------------------------
     // Existing State, Leads & Inquiries
     // -----------------------------------------------------------

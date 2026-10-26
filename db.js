@@ -771,20 +771,9 @@ async function reserveMeetingRoomSlotsAtomic(bookingReq) {
     if (endMin <= startMin) {
       return { ok: false, status: 400, message: 'Invalid booking duration: End time must be later than start time.' };
     }
-
-    // 1. Operating Window Rule Enforcement:
-    // Morning: 08:00 to 11:00 (480 to 660 mins)
-    // Afternoon: 15:00 to 19:00 (900 to 1140 mins)
-    // Break: 11:00 to 15:00 cannot be booked
-    const isMorning = (startMin >= 8 * 60 && endMin <= 11 * 60);
-    const isAfternoon = (startMin >= 15 * 60 && endMin <= 19 * 60);
-
-    if (!isMorning && !isAfternoon) {
-      return {
-        ok: false,
-        status: 400,
-        message: 'Operating Window Restriction: Bookings must fall entirely within Morning (08:00 – 11:00 AM) or Afternoon (03:00 – 07:00 PM). Midday break (11:00 AM – 03:00 PM) cannot be booked.'
-      };
+    const durationMin = endMin - startMin;
+    if (durationMin < 15) {
+      return { ok: false, status: 400, message: 'Minimum booking duration is 15 minutes.' };
     }
 
     // 2. Past Date / Slot Rejection (Using IST Server Clock):
@@ -1027,6 +1016,108 @@ async function getMeetingRoomsAvailability(date) {
   };
 }
 
+// Atomic Time Window Update for Existing Reservation
+async function updateMeetingRoomBookingTimeWindowAtomic({ roomId, bookingId, date, startTime, endTime }) {
+  await bookingMutex.acquire();
+  try {
+    const ist = getISTClock();
+    const startMin = toMinutes(startTime);
+    const endMin = toMinutes(endTime);
+
+    if (endMin <= startMin) {
+      return { ok: false, status: 400, message: 'Invalid booking duration: End time must be later than start time.' };
+    }
+    if ((endMin - startMin) < 15) {
+      return { ok: false, status: 400, message: 'Minimum booking duration is 15 minutes.' };
+    }
+
+    if (date < ist.date || (date === ist.date && startMin < ist.minutes)) {
+      return { ok: false, status: 400, message: 'Cannot adjust booking to a time in the past.' };
+    }
+
+    const appState = await getAppState();
+    let rooms = (appState && appState.meetingRooms) ? appState.meetingRooms : [];
+    if (!rooms.length) {
+      const seed = loadInitialSeedData();
+      rooms = seed.meetingRooms || [];
+    }
+
+    const room = rooms.find(r => r.id === roomId);
+    if (!room) return { ok: false, status: 404, message: 'Room not found.' };
+
+    const booking = (room.bookings || []).find(b => b.id === bookingId);
+    if (!booking) return { ok: false, status: 404, message: 'Booking not found.' };
+
+    // Check conflict against other bookings in this room (excluding current booking)
+    const conflict = (room.bookings || []).find(b => {
+      if (b.id === bookingId) return false;
+      return hasBookingConflict({ ...b, roomId }, { roomId, date, startTime, endTime });
+    });
+
+    if (conflict) {
+      const alternatives = findBookingAlternatives(rooms, { roomId, date, startTime, endTime, attendees: booking.attendees, startupId: booking.startupId });
+      return {
+        ok: false,
+        status: 409,
+        code: 'SLOT_TAKEN',
+        message: `${room.name} is already booked from ${conflict.startTime} to ${conflict.endTime} by another startup.`,
+        alternatives
+      };
+    }
+
+    // Check multi-room conflict for startup
+    for (const r of rooms) {
+      if (r.id === roomId) continue;
+      const otherConflict = (r.bookings || []).find(b => {
+        return hasStartupConcurrentConflict({ ...b, roomId: r.id }, { roomId, startupId: booking.startupId, date, startTime, endTime });
+      });
+      if (otherConflict) {
+        return {
+          ok: false,
+          status: 409,
+          code: 'USER_ALREADY_BOOKED',
+          message: `You already have a booking at this time in ${r.name}.`
+        };
+      }
+    }
+
+    // Update booking time window
+    booking.date = date;
+    booking.startTime = startTime;
+    booking.endTime = endTime;
+    booking.updatedAt = new Date().toISOString();
+
+    const durationHrs = Math.max(0.25, (endMin - startMin) / 60);
+    if (booking.cost > 0) {
+      booking.cost = Math.round(durationHrs * room.hourlyRate);
+    }
+
+    const database = await connectDB();
+    if (database) {
+      try {
+        const mrCol = database.collection('meeting_rooms');
+        await mrCol.updateOne({ id: roomId }, { $set: { bookings: room.bookings } });
+      } catch (err) {
+        console.warn('⚠️ [MongoDB] update warning:', err.message);
+      }
+    }
+
+    if (appState) {
+      appState.meetingRooms = rooms;
+      await saveAppState(appState);
+    }
+
+    return {
+      ok: true,
+      status: 200,
+      booking,
+      message: `Time window successfully updated to ${startTime} – ${endTime}!`
+    };
+  } finally {
+    bookingMutex.release();
+  }
+}
+
 module.exports = {
   connectDB,
   getStatus,
@@ -1053,6 +1144,7 @@ module.exports = {
   initMeetingRoomIndexes,
   reserveMeetingRoomSlotsAtomic,
   cancelMeetingRoomSlotsAtomic,
+  updateMeetingRoomBookingTimeWindowAtomic,
   getMeetingRoomsAvailability
 };
 

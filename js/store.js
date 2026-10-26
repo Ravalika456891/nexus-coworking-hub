@@ -1497,7 +1497,7 @@ class NexusStore {
     const startup = this.getStartupById(startupId);
     if (!room || !startup) return { success: false, message: 'Room or Startup not found' };
 
-    // Strict Operating Window Check: Morning (08:00 - 11:00 AM) and Afternoon (15:00 - 19:00 / 3:00 - 7:00 PM)
+    // Flexible User-Customized Time Window Check: Minimum 15 mins, end > start
     const toMinutes = (t) => {
       const parts = (t || '').split(':').map(Number);
       return (parts[0] || 0) * 60 + (parts[1] || 0);
@@ -1508,15 +1508,8 @@ class NexusStore {
     if (endMin <= startMin) {
       return { success: false, message: 'Invalid booking duration: End time must be later than start time.' };
     }
-
-    const isMorning = (startMin >= 8 * 60 && endMin <= 11 * 60);
-    const isAfternoon = (startMin >= 15 * 60 && endMin <= 19 * 60);
-
-    if (!isMorning && !isAfternoon) {
-      return { 
-        success: false, 
-        message: 'Operating Window Restriction: Meeting rooms can ONLY be booked during Morning (08:00 AM – 11:00 AM) or Afternoon (03:00 PM – 07:00 PM).' 
-      };
+    if ((endMin - startMin) < 15) {
+      return { success: false, message: 'Minimum booking duration is 15 minutes.' };
     }
 
     // Multi-room concurrent user conflict check:
@@ -1667,6 +1660,84 @@ class NexusStore {
     this.addActivity('Meeting Rooms', `Cancelled booking for ${room.name} (${booking.title}).`, '❌');
     this.save();
     return { success: true, message: 'Booking cancelled.' };
+  }
+
+  async updateBookingTimeWindow(roomId, bookingId, { date, startTime, endTime }) {
+    const room = this.getMeetingRoomById(roomId);
+    if (!room) return { success: false, message: 'Room not found' };
+
+    const booking = (room.bookings || []).find(b => b.id === bookingId);
+    if (!booking) return { success: false, message: 'Booking not found' };
+
+    const toMinutes = (t) => {
+      const parts = (t || '').split(':').map(Number);
+      return (parts[0] || 0) * 60 + (parts[1] || 0);
+    };
+    const startMin = toMinutes(startTime);
+    const endMin = toMinutes(endTime);
+
+    if (endMin <= startMin) {
+      return { success: false, message: 'Invalid booking duration: End time must be later than start time.' };
+    }
+    if ((endMin - startMin) < 15) {
+      return { success: false, message: 'Minimum booking duration is 15 minutes.' };
+    }
+
+    // Check conflict against other bookings in this room (excluding self)
+    const conflict = (room.bookings || []).find(b => {
+      if (b.id === bookingId) return false;
+      return this.hasBookingConflict({ ...b, roomId }, { roomId, date, startTime, endTime });
+    });
+
+    if (conflict) {
+      const alternatives = this.findBookingAlternatives({ roomId, date, startTime, endTime, attendees: booking.attendees, startupId: booking.startupId });
+      return {
+        success: false,
+        code: 'SLOT_TAKEN',
+        message: `${room.name} is already booked from ${conflict.startTime} to ${conflict.endTime} by another startup.`,
+        alternatives
+      };
+    }
+
+    // Multi-room conflict for startup
+    const allRooms = this.getMeetingRooms();
+    for (const r of allRooms) {
+      if (r.id === roomId) continue;
+      const otherConflict = (r.bookings || []).find(b => {
+        return this.hasStartupConcurrentConflict({ ...b, roomId: r.id }, { roomId, startupId: booking.startupId, date, startTime, endTime });
+      });
+      if (otherConflict) {
+        return {
+          success: false,
+          code: 'USER_ALREADY_BOOKED',
+          message: `You already have a booking at this time in ${r.name}.`
+        };
+      }
+    }
+
+    try {
+      const res = await fetch('/api/meeting-rooms/update-time', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomId, bookingId, date, startTime, endTime })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        booking.date = date;
+        booking.startTime = startTime;
+        booking.endTime = endTime;
+        this.save();
+        return { success: true, booking, message: `Time window updated to ${startTime} – ${endTime}!` };
+      }
+    } catch (e) {
+      console.warn('Server offline on update-time:', e.message);
+    }
+
+    booking.date = date;
+    booking.startTime = startTime;
+    booking.endTime = endTime;
+    this.save();
+    return { success: true, booking, message: `Time window updated to ${startTime} – ${endTime}!` };
   }
 
   // --- Rent & Billing Calculation Engine ---

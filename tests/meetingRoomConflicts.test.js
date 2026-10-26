@@ -201,6 +201,81 @@ async function runTests() {
     assert.strictEqual(arenaAlt.startTime, '09:00');
   });
 
+  // --- Test 9: User-Customized Arbitrary Time Window Booking & Minimum 15-min Enforcement ---
+  await testAsync('Test 9: User can book customized flexible time window (e.g. 45 mins: 10:15 to 11:00)', async () => {
+    const targetRoomId = 'MR-01';
+    const targetDate = '2026-11-25';
+    const customStart = '10:15';
+    const customEnd = '11:00';
+
+    const res = await db.reserveMeetingRoomSlotsAtomic({
+      roomId: targetRoomId,
+      startupId: 'STP-01',
+      startupName: 'NeuroPulse AI',
+      title: 'Custom 45-Min Sprint',
+      date: targetDate,
+      startTime: customStart,
+      endTime: customEnd,
+      attendees: 5
+    });
+
+    assert.strictEqual(res.ok, true, 'Custom time window must succeed');
+    assert.strictEqual(res.status, 201);
+    assert.strictEqual(res.booking.startTime, '10:15');
+    assert.strictEqual(res.booking.endTime, '11:00');
+
+    // Attempting overlapping booking (10:30 - 11:30) must conflict and fail
+    const conflictRes = await db.reserveMeetingRoomSlotsAtomic({
+      roomId: targetRoomId,
+      startupId: 'STP-02',
+      startupName: 'Solaris Robotics',
+      title: 'Conflicting Custom Booking',
+      date: targetDate,
+      startTime: '10:30',
+      endTime: '11:30',
+      attendees: 4
+    });
+    assert.strictEqual(conflictRes.ok, false, 'Overlapping custom window must conflict');
+    assert.strictEqual(conflictRes.status, 409);
+
+    // Clean up
+    await db.cancelMeetingRoomSlotsAtomic(targetRoomId, res.booking.id);
+  });
+
+  // --- Test 10: Dynamic Time Window Customization / Update for Existing Booking ---
+  await testAsync('Test 10: User can customize / update time window of an existing booking atomically', async () => {
+    const targetRoomId = 'MR-01';
+    const targetDate = '2026-11-28';
+
+    // 1. Initial 1-hour booking (09:00 - 10:00)
+    const initial = await db.reserveMeetingRoomSlotsAtomic({
+      roomId: targetRoomId,
+      startupId: 'STP-01',
+      startupName: 'NeuroPulse AI',
+      title: 'Executive Sync',
+      date: targetDate,
+      startTime: '09:00',
+      endTime: '10:00',
+      attendees: 6
+    });
+    assert.strictEqual(initial.ok, true);
+
+    // 2. User customizes time window to 09:00 - 10:45 (1h 45m)
+    const updateRes = await db.updateMeetingRoomBookingTimeWindowAtomic({
+      roomId: targetRoomId,
+      bookingId: initial.booking.id,
+      date: targetDate,
+      startTime: '09:00',
+      endTime: '10:45'
+    });
+    assert.strictEqual(updateRes.ok, true, 'Customized update must succeed');
+    assert.strictEqual(updateRes.booking.startTime, '09:00');
+    assert.strictEqual(updateRes.booking.endTime, '10:45');
+
+    // Clean up
+    await db.cancelMeetingRoomSlotsAtomic(targetRoomId, initial.booking.id);
+  });
+
   console.log(`\n========================================`);
   console.log(`Test Results: ${passed} Passed, ${failed} Failed`);
   console.log(`========================================\n`);
@@ -208,6 +283,7 @@ async function runTests() {
   if (failed > 0) {
     process.exit(1);
   }
+  process.exit(0);
 }
 
 runTests().catch(err => {
