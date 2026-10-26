@@ -222,9 +222,9 @@ const BillingModule = {
                 <th style="white-space: nowrap; min-width: 280px;">Startup</th>
                 <th style="white-space: nowrap;">Workspace</th>
                 <th style="white-space: nowrap;">Rent</th>
-                <th>Due Date</th>
-                <th>Status</th>
-                <th>Lifecycle Actions</th>
+                <th style="white-space: nowrap;">Due Date</th>
+                <th style="white-space: nowrap;">Status</th>
+                <th style="white-space: nowrap; text-align: right;">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -768,66 +768,56 @@ const BillingModule = {
           </div>
         </td>
 
-        <td>
+        <td style="white-space: nowrap;">
           <span class="badge badge-info" style="font-family: var(--font-mono); font-size: 12px; padding: 4px 10px;">
             ${r.workspace}
           </span>
           <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">${r.workspaceType || 'Dedicated Space'}</div>
         </td>
 
-        <td>
+        <td style="white-space: nowrap;">
           <strong style="font-family: var(--font-mono); font-size: 14px; color: var(--text-primary);">
             ${r.rentDisplay}
           </strong>
           <span style="font-size: 10.5px; color: var(--text-muted); display: block;">/month</span>
         </td>
 
-        <td>
+        <td style="white-space: nowrap;">
           <div style="font-family: var(--font-mono); font-weight: 600; color: var(--text-primary);">${r.dueDate}</div>
           <span style="font-size: 10.5px; color: var(--text-muted);">Net 5 Days</span>
         </td>
 
-        <td>
+        <td style="white-space: nowrap;">
           <span class="badge ${statusBadgeClass}" style="font-weight: 700; font-size: 12px;">
             ${r.status}
           </span>
         </td>
 
-        <td>
-          <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-            <!-- Filter Invoice History -->
-            <button class="btn btn-sm ${isSelected ? 'btn-primary' : 'btn-outline'}" style="font-size: 11px; padding: 4px 8px; font-weight: 700;" onclick="BillingModule.selectStartup('${r.startupId}', '${(r.startupName || '').replace(/'/g, "\\'")}', 'invoices')" title="Filter invoice ledger below for ${r.startupName}">
-              📜 Invoices (${invCount})
-            </button>
-
-            <!-- Filter Payment History -->
-            <button class="btn btn-sm ${isSelected ? 'btn-primary' : 'btn-outline'}" style="font-size: 11px; padding: 4px 8px; font-weight: 700;" onclick="BillingModule.selectStartup('${r.startupId}', '${(r.startupName || '').replace(/'/g, "\\'")}', 'payments')" title="Filter payment history below for ${r.startupName}">
-              💳 Payments (${payCount})
-            </button>
-
-            <!-- Complete Payment History Dossier Modal -->
-            <button class="btn btn-sm btn-outline" style="font-size: 11px; padding: 4px 8px; color: #8b5cf6; border-color: rgba(139,92,246,0.4);" onclick="BillingModule.openStartupPaymentHistoryModal('${r.startupId}')" title="Open complete payment ledger dossier for ${r.startupName}">
-              📊 History Dossier
-            </button>
-
-            <!-- View Invoice -->
-            <button class="btn btn-secondary btn-sm" onclick="BillingModule.handleRentInvoiceClick('${r.id}')" title="View Itemized Invoice">
-              🧾 Invoice
-            </button>
-
-            <!-- Pay Now / View Receipt -->
+        <td style="white-space: nowrap; text-align: right;">
+          <div style="display: inline-flex; gap: 6px; align-items: center; white-space: nowrap;">
+            <!-- Primary Action: Pay Now / Receipt -->
             ${r.status === 'Paid' ? `
-              <button class="btn btn-outline btn-sm" style="color: var(--status-success); border-color: var(--status-success);" onclick="BillingModule.handleRentReceiptClick('${r.id}')">
+              <button class="btn btn-outline btn-sm" style="font-size: 11px; padding: 4px 10px; color: var(--status-success); border-color: rgba(34, 197, 94, 0.4); font-weight: 600; white-space: nowrap;" onclick="BillingModule.handleRentReceiptClick('${r.id}')" title="View Official Payment Receipt">
                 📄 Receipt
               </button>
             ` : `
-              <button class="btn btn-primary btn-sm" onclick="BillingModule.handleRentPayClick('${r.id}')">
+              <button class="btn btn-primary btn-sm" style="font-size: 11px; padding: 4px 12px; font-weight: 700; white-space: nowrap;" onclick="BillingModule.handleRentPayClick('${r.id}')" title="Process Rent Payment">
                 💳 Pay Now
               </button>
             `}
 
-            <!-- 7-Stage Lifecycle Trace Modal Trigger -->
-            <button class="btn btn-outline btn-sm" title="Trace 7-Stage Rent Journey" onclick="BillingModule.openRentLifecycleTrace('${r.id}')">
+            <!-- View Itemized Invoice -->
+            <button class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 4px 10px; font-weight: 600; white-space: nowrap;" onclick="BillingModule.handleRentInvoiceClick('${r.id}')" title="View Itemized GST Invoice">
+              🧾 Invoice
+            </button>
+
+            <!-- Complete History Dossier -->
+            <button class="btn btn-outline btn-sm" style="font-size: 11px; padding: 4px 10px; color: #8b5cf6; border-color: rgba(139,92,246,0.35); font-weight: 600; white-space: nowrap;" onclick="BillingModule.openStartupPaymentHistoryModal('${r.startupId}')" title="View Complete Ledger Dossier for ${r.startupName}">
+              📊 Dossier
+            </button>
+
+            <!-- 7-Stage Lifecycle Trace -->
+            <button class="btn btn-outline btn-sm" style="font-size: 11px; padding: 4px 9px; color: var(--text-muted); border-color: var(--border-medium); font-weight: 600; white-space: nowrap;" onclick="BillingModule.openRentLifecycleTrace('${r.id}')" title="Trace 7-Stage Rent Journey">
               🔍 Trace
             </button>
           </div>
