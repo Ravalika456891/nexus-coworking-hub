@@ -466,7 +466,7 @@
 
           <div class="search-box">
             <span class="search-icon">🔍</span>
-            <input type="text" class="search-input" id="global-search-input" placeholder="Search startups, desks, milestones (e.g. XYZ Technologies, MVP)...">
+            <input type="text" class="search-input" id="global-search-input" placeholder="Search startups, desks, invoices...">
           </div>
         </div>
 
@@ -478,85 +478,65 @@
             <span style="color: var(--accent-primary); font-weight: 700;">₹3.6L MRR</span>
           </div>
 
-          <!-- Super Admin Portal Login Button -->
-          <button class="btn btn-outline btn-sm" id="header-admin-login-btn" onclick="App.openAdminLoginModal()" style="font-size: 11.5px; font-weight: 700; padding: 5px 10px; gap: 4px; border-radius: var(--radius-md); border-color: #f59e0b; color: #f59e0b; white-space: nowrap; flex-shrink: 0;" title="Super Admin Authentication Portal">
-            <span>👑</span>
-            <span id="header-admin-login-btn-text">Admin</span>
-          </button>
-
-          <!-- Startup Portal Login Button -->
-          <button class="btn btn-outline btn-sm" id="header-startup-login-btn" onclick="App.openStartupLoginModal()" style="font-size: 11.5px; font-weight: 700; padding: 5px 10px; gap: 4px; border-radius: var(--radius-md); border-color: var(--accent-primary); color: var(--accent-primary); white-space: nowrap; flex-shrink: 0;" title="Startup Founder Portal Login">
-            <span>🚀</span>
-            <span id="header-startup-login-btn-text">Startup</span>
-          </button>
-
-          <!-- Role Perspective Dropdown Selector -->
-          <div class="role-dropdown-wrapper" id="role-dropdown-wrapper">
-            <button class="role-selector-pill" id="role-selector-pill" onclick="App.toggleRoleDropdown(event)" title="Switch User Role Perspective">
-              <span class="role-pill-avatar" id="header-role-avatar">👑</span>
-              <span class="role-pill-text" id="header-role-text">Super Admin</span>
-              <span class="role-pill-arrow">▾</span>
+          <!-- Developer Tools Dropdown Menu (Hides dev items in production) -->
+          <div class="dev-tools-wrapper" style="position: relative; display: inline-block;">
+            <button class="btn btn-outline btn-sm" id="header-dev-tools-btn" onclick="App.toggleDevToolsMenu(event)" style="font-size: 11.5px; font-weight: 700; padding: 5px 11px; gap: 5px; border-color: rgba(148, 163, 184, 0.4); color: var(--text-secondary); white-space: nowrap; border-radius: var(--radius-md); display: inline-flex; align-items: center;" title="Developer & System Management Tools">
+              <span>🛠️</span>
+              <span>Dev tools</span>
+              <span style="font-size: 10px; opacity: 0.8;">▾</span>
             </button>
-            <div class="role-dropdown-panel" id="role-dropdown-panel">
-              <div class="role-panel-header">Switch Perspective</div>
-              <div class="role-panel-list">
-                <button class="role-panel-item active" id="role-opt-super_admin" onclick="App.setRole('super_admin'); App.closeRoleDropdown();">
-                  <span class="role-item-icon">👑</span>
-                  <div class="role-item-details">
-                    <div class="role-item-title">Super Admin</div>
-                    <div class="role-item-desc">Full access to all 9 modules</div>
-                  </div>
-                </button>
-                <button class="role-panel-item" id="role-opt-incubator_admin" onclick="App.setRole('incubator_admin'); App.closeRoleDropdown();">
-                  <span class="role-item-icon">🌱</span>
-                  <div class="role-item-details">
-                    <div class="role-item-title">Incubator Admin</div>
-                    <div class="role-item-desc">Startups, Mentors, Workspaces</div>
-                  </div>
-                </button>
-                <button class="role-panel-item" id="role-opt-finance_admin" onclick="App.setRole('finance_admin'); App.closeRoleDropdown();">
-                  <span class="role-item-icon">💰</span>
-                  <div class="role-item-details">
-                    <div class="role-item-title">Finance Admin</div>
-                    <div class="role-item-desc">Invoices, Rent, GST Ledgers</div>
-                  </div>
-                </button>
-                <button class="role-panel-item" id="role-opt-startup" onclick="App.setRole('startup'); App.closeRoleDropdown();">
-                  <span class="role-item-icon">🚀</span>
-                  <div class="role-item-details">
-                    <div class="role-item-title">Startup Founder</div>
-                    <div class="role-item-desc">Cabin, Bookings, Milestones</div>
-                  </div>
-                </button>
-                <button class="role-panel-item" id="role-opt-mentor" onclick="App.setRole('mentor'); App.closeRoleDropdown();">
-                  <span class="role-item-icon">🧠</span>
-                  <div class="role-item-details">
-                    <div class="role-item-title">Lead Mentor</div>
-                    <div class="role-item-desc">Mentees, Sessions, Feedback</div>
-                  </div>
-                </button>
+
+            <div class="dev-tools-panel" id="dev-tools-dropdown-panel" style="display: none; position: absolute; right: 0; top: 100%; margin-top: 6px; width: 310px; background: var(--bg-surface); border: 1px solid var(--border-medium); border-radius: var(--radius-md); box-shadow: 0 14px 35px rgba(0,0,0,0.18); z-index: 1000; padding: 12px; text-align: left;">
+              <div style="font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+                <span>🛠️ Developer &amp; System Tools</span>
+                <span class="badge badge-subtle" style="font-size: 9.5px;">Sandbox Mode</span>
               </div>
-              <div class="role-panel-footer">
-                <button class="btn btn-primary btn-sm" onclick="App.openStartupLoginModal(); App.closeRoleDropdown();" style="width: 100%; justify-content: center; font-size: 11px; margin-bottom: 6px;">
-                  🚀 Sign In as Specific Startup
+
+              <!-- MongoDB Atlas Live Connection Pill -->
+              <div id="mongo-status-header" style="display: flex; align-items: center; justify-content: space-between; padding: 7px 10px; background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.25); border-radius: var(--radius-sm); margin-bottom: 10px;" title="Connected to MongoDB Atlas cluster h-hub.uyc1vpr.mongodb.net">
+                <div style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700; color: #16a34a;">
+                  <span style="width: 7px; height: 7px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 5px #22c55e;"></span>
+                  <span>MongoDB Atlas</span>
+                </div>
+                <span style="font-size: 10.5px; color: var(--text-muted); font-family: var(--font-mono);">Cluster Live</span>
+              </div>
+
+              <!-- Perspective Switcher -->
+              <div style="margin-bottom: 10px;">
+                <div style="font-size: 11px; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">Role Perspective:</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
+                  <button type="button" class="btn btn-outline btn-sm" onclick="App.setRole('super_admin'); App.closeDevToolsMenu();" style="font-size: 11px; justify-content: flex-start; padding: 4px 6px;">
+                    👑 Admin
+                  </button>
+                  <button type="button" class="btn btn-outline btn-sm" onclick="App.setRole('incubator_admin'); App.closeDevToolsMenu();" style="font-size: 11px; justify-content: flex-start; padding: 4px 6px;">
+                    🌱 Incubator
+                  </button>
+                  <button type="button" class="btn btn-outline btn-sm" onclick="App.setRole('finance_admin'); App.closeDevToolsMenu();" style="font-size: 11px; justify-content: flex-start; padding: 4px 6px;">
+                    💰 Finance
+                  </button>
+                  <button type="button" class="btn btn-outline btn-sm" onclick="App.setRole('startup'); App.closeDevToolsMenu();" style="font-size: 11px; justify-content: flex-start; padding: 4px 6px;">
+                    🚀 Founder
+                  </button>
+                </div>
+              </div>
+
+              <!-- Developer Action Buttons -->
+              <div style="display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--border-subtle); padding-top: 8px;">
+                <button class="btn btn-outline btn-sm" id="header-admin-login-btn" onclick="App.openAdminLoginModal(); App.closeDevToolsMenu();" style="width: 100%; justify-content: flex-start; gap: 8px; font-size: 11.5px; color: #f59e0b; border-color: rgba(245,158,11,0.3);">
+                  <span>👑</span> <span id="header-admin-login-btn-text">Super Admin Auth</span>
                 </button>
-                <button class="btn btn-outline btn-sm" onclick="App.openRbacMatrixModal(); App.closeRoleDropdown();" style="width: 100%; justify-content: center; font-size: 11px;">
-                  🛡️ Full RBAC Permission Matrix
+                <button class="btn btn-outline btn-sm" id="header-startup-login-btn" onclick="App.openStartupLoginModal(); App.closeDevToolsMenu();" style="width: 100%; justify-content: flex-start; gap: 8px; font-size: 11.5px; color: var(--accent-primary); border-color: var(--border-medium);">
+                  <span>🚀</span> <span id="header-startup-login-btn-text">Startup Founder Login</span>
+                </button>
+                <button class="btn btn-outline btn-sm" id="header-rbac-btn" onclick="App.openRbacMatrixModal(); App.closeDevToolsMenu();" style="width: 100%; justify-content: flex-start; gap: 8px; font-size: 11.5px;">
+                  <span>🛡️</span> <span>RBAC Permissions Matrix</span>
+                </button>
+                <button class="btn btn-outline btn-sm" onclick="App.togglePersonaBanner(); App.closeDevToolsMenu();" style="width: 100%; justify-content: flex-start; gap: 8px; font-size: 11.5px;">
+                  <span>👤</span> <span>Toggle Persona Banner</span>
                 </button>
               </div>
             </div>
           </div>
-
-          <!-- MongoDB Atlas Live Connection Pill -->
-          <div id="mongo-status-header" style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.35); border-radius: 999px; font-size: 11.5px; font-weight: 700; color: #16a34a; white-space: nowrap; flex-shrink: 0;" title="Connected to MongoDB Atlas cluster h-hub.uyc1vpr.mongodb.net">
-            <span style="width: 7px; height: 7px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 6px #22c55e;"></span>
-            <span>MongoDB Atlas</span>
-          </div>
-
-          <!-- RBAC Quick Matrix Button -->
-          <button class="btn btn-outline btn-sm" id="header-rbac-btn" onclick="App.openRbacMatrixModal()" style="font-size: 11.5px; padding: 6px 12px; gap: 5px; white-space: nowrap; flex-shrink: 0;" title="View Role-Based Access Control Permission Matrix">
-            🛡️ RBAC
-          </button>
 
           <!-- T-Hub Theme Toggle (Compact Icon) -->
           <button class="btn-icon" id="thub-theme-toggle-btn" onclick="App.toggleThubTheme()" title="Toggle T-Hub Flame Theme (#ED441B)">
@@ -576,8 +556,8 @@
         </div>
       </header>
 
-      <!-- Dynamic RBAC Persona & Scope Banner -->
-      <div id="dynamic-persona-banner" class="persona-banner-bar"></div>
+      <!-- Dynamic RBAC Persona & Scope Banner (Hidden by default in production) -->
+      <div id="dynamic-persona-banner" class="persona-banner-bar" style="display: none;"></div>
 
       <!-- Lifecycle Views Containers -->
       <div class="view-container active" id="view-dashboard"></div>
@@ -609,7 +589,7 @@
   <script src="js/modules/workspace.js?v=20261026_05"></script>
   <script src="js/modules/meetingRooms.js?v=20261026_12"></script>
   <script src="js/modules/invoice.js?v=20261026_01"></script>
-  <script src="js/modules/billing.js?v=20261026_03"></script>
+  <script src="js/modules/billing.js?v=20261026_04"></script>
   <script src="js/modules/payments.js?v=20261026_05"></script>
   <script src="js/modules/incubation.js?v=20261026_01"></script>
   <script src="js/modules/milestones.js?v=20261025_04"></script>
@@ -618,7 +598,7 @@
   <script src="js/modules/leads.js?v=20261025_04"></script>
   <script src="js/modules/database.js?v=20261025_04"></script>
   <script src="js/authGate.js?v=20261025_04"></script>
-  <script src="js/main.js?v=20261026_05"></script>
+  <script src="js/main.js?v=20261026_06"></script>
   <script src="js/liveReload.js?v=20261025_04"></script>
 </body>
 </html>

@@ -54,11 +54,25 @@ const App = {
       });
     }
 
-    // Close role dropdown when clicking outside
+    // Close role dropdown and dev tools panel when clicking outside
     document.addEventListener('click', (e) => {
       const wrapper = document.getElementById('role-dropdown-wrapper');
       if (wrapper && !wrapper.contains(e.target)) {
         wrapper.classList.remove('open');
+      }
+
+      const devPanel = document.getElementById('dev-tools-dropdown-panel');
+      const devBtn = document.getElementById('header-dev-tools-btn');
+      if (devPanel && devPanel.style.display === 'block') {
+        if (!devPanel.contains(e.target) && (!devBtn || !devBtn.contains(e.target))) {
+          devPanel.style.display = 'none';
+        }
+      }
+
+      if (typeof BillingModule !== 'undefined' && BillingModule.closeAllRowMenus) {
+        if (!e.target.closest('.row-menu-wrapper')) {
+          BillingModule.closeAllRowMenus();
+        }
       }
     });
 
@@ -333,13 +347,28 @@ const App = {
     if (wrapper) wrapper.classList.remove('open');
   },
 
+  toggleDevToolsMenu(e) {
+    if (e) e.stopPropagation();
+    const panel = document.getElementById('dev-tools-dropdown-panel');
+    if (panel) {
+      const isVisible = panel.style.display === 'block';
+      panel.style.display = isVisible ? 'none' : 'block';
+    }
+  },
+
+  closeDevToolsMenu() {
+    const panel = document.getElementById('dev-tools-dropdown-panel');
+    if (panel) panel.style.display = 'none';
+  },
+
   togglePersonaBanner(show) {
     const banner = document.getElementById('dynamic-persona-banner');
     if (banner) {
       if (show === undefined) {
-        banner.classList.toggle('hidden');
+        const isHidden = banner.style.display === 'none';
+        banner.style.display = isHidden ? 'flex' : 'none';
       } else {
-        banner.classList.toggle('hidden', !show);
+        banner.style.display = show ? 'flex' : 'none';
       }
     }
   },

@@ -1,6 +1,8 @@
 // Module: 4. Rent Management & Invoicing System
 
 const BillingModule = {
+  activeTab: 'rentRegister', // 'rentRegister' | 'taxInvoices' | 'paymentHistory'
+  showWorkflowGuide: false,
   activeRentStatusFilter: 'all',
   invoiceFilter: 'all',
   paymentFilter: 'all',
@@ -19,6 +21,7 @@ const BillingModule = {
       allRentRecords = allRentRecords.filter(r => r.startupId === (window.store.activeFounderId || 'STP-XYZ'));
       allInvoices = allInvoices.filter(i => i.startupId === (window.store.activeFounderId || 'STP-XYZ'));
     }
+    const invoices = allInvoices;
 
     // Unified Single Source of Truth for KPIs from Active Invoices (Excluding Voided/Cancelled)
     const activeInvoices = allInvoices.filter(i => i.status !== 'Cancelled');
@@ -81,16 +84,22 @@ const BillingModule = {
           </p>
         </div>
 
-        <div style="display: flex; gap: 10px;">
-          <button class="btn btn-outline" onclick="BillingModule.openBatchGeneratorForAll()">
-            🧾 Generate All Invoices
-          </button>
-          <button class="btn btn-primary" onclick="BillingModule.handleBatchGenerate()">
-            ⚡ Run October Invoicing Batch
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <button class="btn btn-primary" onclick="BillingModule.openGenerateInvoicesModal()" style="display: inline-flex; align-items: center; gap: 7px; font-weight: 700;">
+            <span>⚡</span> <span>Generate invoices</span>
           </button>
         </div>
       </div>
 
+      <!-- Collapsible "How billing works" Toggle -->
+      <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
+        <button class="btn btn-sm btn-outline" onclick="BillingModule.toggleWorkflowGuide()" style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; color: var(--text-secondary); background: var(--bg-surface); padding: 5px 12px; border-radius: 999px;">
+          <span>ℹ️ How billing works</span>
+          <span style="font-size: 9px;">${this.showWorkflowGuide ? '▲' : '▼'}</span>
+        </button>
+      </div>
+
+      ${this.showWorkflowGuide ? `
       <!-- 7-Stage Rent Lifecycle Journey Visualizer -->
       <div class="card" style="margin-bottom: 22px; padding: 18px 22px; background: var(--bg-surface);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
@@ -152,6 +161,7 @@ const BillingModule = {
           </div>
         </div>
       </div>
+      ` : ''}
 
       <!-- Financial Metrics Summary -->
       <div class="kpi-grid" style="margin-bottom: 22px;">
@@ -205,20 +215,21 @@ const BillingModule = {
         </div>
       </div>
 
-      <!-- 3-Table Financial Lifecycle Navigator Quick Bar -->
-      <div style="display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap;">
-        <button class="btn btn-sm btn-outline" onclick="BillingModule.scrollToSection('rent-register-table-card')" style="font-size: 11.5px; font-weight: 700; background: var(--bg-surface);">
+      <!-- 3-Table Financial Lifecycle Real Tabs Navigator -->
+      <div class="billing-tabs-nav" style="display: flex; gap: 8px; margin-bottom: 22px; border-bottom: 2px solid var(--border-subtle); padding-bottom: 10px; flex-wrap: wrap;">
+        <button class="btn btn-sm ${this.activeTab === 'rentRegister' ? 'btn-primary' : 'btn-outline'}" onclick="BillingModule.setActiveTab('rentRegister')" style="font-size: 12px; font-weight: 700; padding: 7px 14px; border-radius: 8px;">
           🏢 Monthly Rent Register (${rentRecords.length})
         </button>
-        <button class="btn btn-sm btn-outline" onclick="BillingModule.scrollToSection('tax-invoices-ledger-card')" style="font-size: 11.5px; font-weight: 700; background: var(--bg-surface);">
+        <button class="btn btn-sm ${this.activeTab === 'taxInvoices' ? 'btn-primary' : 'btn-outline'}" onclick="BillingModule.setActiveTab('taxInvoices')" style="font-size: 12px; font-weight: 700; padding: 7px 14px; border-radius: 8px;">
           🧾 Tax Invoices Ledger (${allInvoices.length})
         </button>
-        <button class="btn btn-sm btn-outline" onclick="BillingModule.scrollToSection('payment-history-ledger-card')" style="font-size: 11.5px; font-weight: 700; background: var(--bg-surface);">
+        <button class="btn btn-sm ${this.activeTab === 'paymentHistory' ? 'btn-primary' : 'btn-outline'}" onclick="BillingModule.setActiveTab('paymentHistory')" style="font-size: 12px; font-weight: 700; padding: 7px 14px; border-radius: 8px;">
           💳 Payment History & Receipts (${payments.length})
         </button>
       </div>
 
-      <!-- Prominent Rent Management Table (Exact Format as requested) -->
+      ${this.activeTab === 'rentRegister' ? `
+      <!-- Prominent Rent Management Table -->
       <div class="card" id="rent-register-table-card" style="margin-bottom: 26px;">
         <div class="card-header">
           <div>
@@ -230,7 +241,7 @@ const BillingModule = {
             </span>
           </div>
 
-        <div style="display: flex; gap: 6px;">
+          <div style="display: flex; gap: 6px;">
             <button class="btn btn-sm ${this.activeRentStatusFilter === 'all' ? 'btn-primary' : 'btn-secondary'}" onclick="BillingModule.setRentFilter('all')">
               All (${allRentRecords.length})
             </button>
@@ -242,9 +253,6 @@ const BillingModule = {
             </button>
             <button class="btn btn-sm ${this.activeRentStatusFilter === 'overdue' ? 'btn-primary' : 'btn-secondary'}" onclick="BillingModule.setRentFilter('overdue')">
               Overdue (${overdueInvoices.length})
-            </button>
-            <button class="btn btn-sm btn-outline" onclick="BillingModule.openInvoiceGeneratorForStartup()" title="Generate invoice for a startup">
-              ⚡ Generate Invoice
             </button>
           </div>
         </div>
@@ -267,7 +275,9 @@ const BillingModule = {
           </table>
         </div>
       </div>
+      ` : ''}
 
+      ${this.activeTab === 'taxInvoices' ? `
       <!-- Tax Invoices Ledger Section -->
       <div class="card" id="tax-invoices-ledger-card">
         <div class="card-header">
@@ -407,9 +417,11 @@ const BillingModule = {
           </table>
         </div>
       </div>
+      ` : ''}
 
+      ${this.activeTab === 'paymentHistory' ? `
       <!-- 💳 Reconciled Payment History & Receipts Ledger Section -->
-      <div class="card" id="payment-history-ledger-card" style="margin-top: 22px;">
+      <div class="card" id="payment-history-ledger-card">
         <div class="card-header">
           <div>
             <div class="card-title" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
@@ -607,6 +619,7 @@ const BillingModule = {
           </table>
         </div>
       </div>
+      ` : ''}
     `;
   },
 
@@ -682,14 +695,215 @@ const BillingModule = {
     document.getElementById('modal-mount').innerHTML = html;
   },
 
-  // Open generator for all incubated startups (quick batch)
-  openBatchGeneratorForAll() {
-    const startups = window.store.getStartups().filter(s => s.status === 'Incubated');
-    if (startups.length === 0) { App.showToast('No incubated startups found.', 'info'); return; }
-    // Default to first one
-    if (typeof InvoiceModule !== 'undefined') {
-      InvoiceModule.openGenerator(startups[0].id, 'combined');
+  setActiveTab(tab) {
+    this.activeTab = tab;
+    this.render();
+  },
+
+  toggleWorkflowGuide() {
+    this.showWorkflowGuide = !this.showWorkflowGuide;
+    this.render();
+  },
+
+  toggleRowMenu(e, rentId) {
+    if (e) e.stopPropagation();
+    const menu = document.getElementById(`row-menu-${rentId}`);
+    if (!menu) return;
+    const isCurrentlyOpen = menu.style.display === 'block';
+    this.closeAllRowMenus();
+    if (!isCurrentlyOpen) {
+      menu.style.display = 'block';
+      const rect = menu.getBoundingClientRect();
+      if (rect.bottom > window.innerHeight - 30) {
+        menu.style.top = 'auto';
+        menu.style.bottom = '100%';
+        menu.style.marginTop = '0';
+        menu.style.marginBottom = '4px';
+      } else {
+        menu.style.top = '100%';
+        menu.style.bottom = 'auto';
+        menu.style.marginTop = '4px';
+        menu.style.marginBottom = '0';
+      }
     }
+  },
+
+  closeAllRowMenus() {
+    document.querySelectorAll('.rent-row-menu').forEach(el => {
+      el.style.display = 'none';
+    });
+  },
+
+  openGenerateInvoicesModal(selectedPeriod = 'November 2026') {
+    const allStartups = window.store.getStartups();
+    const eligibleStartups = allStartups.filter(s => s.status === 'Incubated' && s.allocatedSeats && s.allocatedSeats.length > 0);
+    const existingInvoices = window.store.getInvoices().filter(inv => inv.billingPeriod === selectedPeriod && inv.status !== 'Cancelled');
+    
+    let totalRoll = 0;
+    const candidates = eligibleStartups.map(s => {
+      const calc = window.store.calculateStartupMonthlyBilling(s.id);
+      const existing = existingInvoices.find(inv => inv.startupId === s.id);
+      const amount = calc ? calc.total : 0;
+      totalRoll += amount;
+      return {
+        startup: s,
+        calc,
+        amount,
+        alreadyGenerated: existing
+      };
+    });
+
+    const newCandidates = candidates.filter(c => !c.alreadyGenerated);
+    const newCount = newCandidates.length;
+    const totalCount = candidates.length;
+    
+    const parts = selectedPeriod.split(' ');
+    const shortMonth = parts[0] ? parts[0].substring(0, 3) : 'Nov';
+    const year = parts[1] || '2026';
+    const shortPeriod = `${shortMonth} ${year}`;
+    const totalLakhs = (totalRoll / 100000).toFixed(1);
+    const summaryBadgeText = `${totalCount} invoices · ₹${totalLakhs}L · ${shortPeriod}`;
+
+    const html = `
+      <div class="modal-overlay active" id="modal-generate-invoices-preview">
+        <div class="modal-content modal-wide" style="max-width: 780px;">
+          <div class="modal-header" style="display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 24px;">⚡</span>
+              <div>
+                <h3 class="modal-title" style="margin: 0; font-size: 17px; font-weight: 800;">Generate Invoices Batch</h3>
+                <span style="font-size: 12px; color: var(--text-muted);">Preview automated monthly billing run before confirmation</span>
+              </div>
+            </div>
+            <button class="modal-close-btn" onclick="BillingModule.closeModal('modal-generate-invoices-preview')">&times;</button>
+          </div>
+
+          <div class="modal-body" style="padding: 20px;">
+            <!-- Summary Banner with Preview Chip -->
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; background: rgba(99, 102, 241, 0.06); border: 1px solid rgba(99, 102, 241, 0.22); border-radius: var(--radius-md); padding: 14px 18px; margin-bottom: 18px;">
+              <div>
+                <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--accent-primary); letter-spacing: 0.5px;">Batch Preview Summary</div>
+                <div style="margin-top: 5px;">
+                  <span class="badge" id="invoices-batch-summary-chip" style="background: #4338ca; color: #ffffff; font-size: 13.5px; font-weight: 800; padding: 6px 14px; border-radius: 999px; letter-spacing: 0.2px;">
+                    ${summaryBadgeText}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Cycle Selector -->
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <label style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">Cycle:</label>
+                <select id="generate-period-selector" onchange="BillingModule.openGenerateInvoicesModal(this.value)" style="padding: 6px 10px; font-size: 12px; font-weight: 700; border-radius: var(--radius-sm); border: 1px solid var(--border-medium); background: var(--bg-surface); color: var(--text-primary); cursor: pointer;">
+                  <option value="November 2026" ${selectedPeriod === 'November 2026' ? 'selected' : ''}>November 2026</option>
+                  <option value="December 2026" ${selectedPeriod === 'December 2026' ? 'selected' : ''}>December 2026</option>
+                  <option value="October 2026" ${selectedPeriod === 'October 2026' ? 'selected' : ''}>October 2026</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Idempotency & Duplicate Protection Callout -->
+            <div style="display: flex; align-items: flex-start; gap: 10px; background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.25); border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 18px; font-size: 12px; color: #166534;">
+              <span style="font-size: 16px; flex-shrink: 0;">🛡️</span>
+              <div>
+                <strong>Safe &amp; Idempotent Execution:</strong>
+                Startups that already have an invoice for <u>${selectedPeriod}</u> are detected and safely skipped. Running this batch twice will never create duplicate invoices.
+              </div>
+            </div>
+
+            <!-- Invoices Candidates List Table -->
+            <div class="table-wrapper" style="max-height: 280px; overflow-y: auto;">
+              <table class="nexus-table" style="font-size: 12.5px;">
+                <thead>
+                  <tr>
+                    <th>Startup</th>
+                    <th>Workspace</th>
+                    <th>Calculated Rent</th>
+                    <th style="text-align: right;">Batch Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${candidates.map(c => `
+                    <tr>
+                      <td style="white-space: nowrap;">
+                        <div style="display: inline-flex; align-items: center; gap: 8px;">
+                          <span style="font-size: 18px;">${c.startup.logoEmoji || '🚀'}</span>
+                          <div>
+                            <strong>${c.startup.name}</strong>
+                            <div style="font-size: 11px; color: var(--text-muted);">${c.startup.category || 'Tech'}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td style="white-space: nowrap;">
+                        <span class="badge badge-info" style="font-size: 11px; font-family: var(--font-mono);">
+                          ${c.startup.allocatedSeats ? (c.startup.allocatedSeats[0] || 'Cabin') : 'Desk'}
+                        </span>
+                      </td>
+                      <td style="white-space: nowrap; font-family: var(--font-mono); font-weight: 700;">
+                        ₹${Number(c.amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td style="white-space: nowrap; text-align: right;">
+                        ${c.alreadyGenerated ? `
+                          <span class="badge badge-success" style="font-size: 11px; font-weight: 700; padding: 3px 8px;" title="Invoice ${c.alreadyGenerated.id} already exists for this cycle">
+                            ✓ Already Generated (${c.alreadyGenerated.id}) · Safe Skip
+                          </span>
+                        ` : `
+                          <span class="badge badge-info" style="font-size: 11px; font-weight: 700; padding: 3px 8px;">
+                            🟢 Ready to Generate
+                          </span>
+                        `}
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-size: 12px; color: var(--text-muted);">
+              ${newCount > 0 ? `<strong>${newCount}</strong> new invoice(s) will be created.` : `All ${totalCount} invoices are already generated for this period.`}
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-secondary" onclick="BillingModule.closeModal('modal-generate-invoices-preview')">Cancel</button>
+              <button class="btn btn-primary" onclick="BillingModule.confirmGenerateInvoices('${selectedPeriod}')" ${newCount === 0 ? 'disabled style="opacity: 0.6; cursor: not-allowed;"' : ''}>
+                ${newCount > 0 ? `⚡ Confirm & Generate (${newCount} Invoices)` : `✓ All Invoices Generated`}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const mount = document.getElementById('modal-mount');
+    if (mount) mount.innerHTML = html;
+  },
+
+  confirmGenerateInvoices(period) {
+    const generatedCount = window.store.generateAllMonthlyInvoices(period);
+    this.closeModal('modal-generate-invoices-preview');
+    if (generatedCount > 0) {
+      if (typeof App !== 'undefined') {
+        App.showToast(`⚡ Successfully generated ${generatedCount} invoice(s) for ${period}!`, 'success');
+      }
+    } else {
+      if (typeof App !== 'undefined') {
+        App.showToast(`All startups already have invoices for ${period}. Safely skipped (0 duplicates).`, 'info');
+      }
+    }
+    this.activeTab = 'taxInvoices';
+    this.render();
+    if (typeof DashboardModule !== 'undefined' && DashboardModule.render) {
+      DashboardModule.render();
+    }
+  },
+
+  // Backward-compatible triggers
+  openBatchGeneratorForAll() {
+    this.openGenerateInvoicesModal('November 2026');
+  },
+
+  handleBatchGenerate() {
+    this.openGenerateInvoicesModal('October 2026');
   },
 
   selectStartup(startupId, startupName, targetTable = 'invoices') {
@@ -700,16 +914,8 @@ const BillingModule = {
       this.selectedStartupId = startupId;
       this.selectedStartupName = startupName;
     }
+    this.activeTab = targetTable === 'payments' ? 'paymentHistory' : 'taxInvoices';
     this.render();
-    if (this.selectedStartupId) {
-      setTimeout(() => {
-        const targetId = targetTable === 'payments' ? 'payment-history-ledger-card' : 'tax-invoices-ledger-card';
-        const card = document.getElementById(targetId);
-        if (card) {
-          card.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }, 50);
-    }
   },
 
   scrollToSection(sectionId) {
@@ -954,11 +1160,11 @@ const BillingModule = {
         </td>
 
         <td style="white-space: nowrap; text-align: right;">
-          <div style="display: inline-flex; gap: 6px; align-items: center; white-space: nowrap;">
-            <!-- Primary Action: Settle / Receipt / Suppressed for Cancelled -->
+          <div style="display: inline-flex; gap: 6px; align-items: center; justify-content: flex-end; white-space: nowrap;">
+            <!-- Primary Action per row -->
             ${isCancelled ? `
-              <span class="badge" style="background: rgba(100, 116, 139, 0.08); color: #64748b; font-size: 11px; padding: 4px 8px; border: 1px solid rgba(100, 116, 139, 0.2);">
-                🚫 No Payment Due
+              <span class="badge" style="background: rgba(100, 116, 139, 0.08); color: #64748b; font-size: 11px; padding: 4px 8px; border: 1px solid rgba(100, 116, 139, 0.2); white-space: nowrap;">
+                🚫 Voided
               </span>
             ` : isPaid ? `
               <button class="btn btn-outline btn-sm" style="font-size: 11px; padding: 4px 10px; color: var(--status-success); border-color: rgba(34, 197, 94, 0.4); font-weight: 600; white-space: nowrap;" onclick="BillingModule.handleRentReceiptClick('${r.id}')" title="View Official Payment Receipt">
@@ -970,20 +1176,28 @@ const BillingModule = {
               </button>
             `}
 
-            <!-- View Itemized Invoice -->
-            <button class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 4px 10px; font-weight: 600; white-space: nowrap;" onclick="BillingModule.handleRentInvoiceClick('${r.id}')" title="View Itemized GST Invoice">
-              🧾 Invoice
-            </button>
-
-            <!-- Complete History Dossier -->
-            <button class="btn btn-outline btn-sm" style="font-size: 11px; padding: 4px 10px; color: #8b5cf6; border-color: rgba(139,92,246,0.35); font-weight: 600; white-space: nowrap;" onclick="BillingModule.openStartupPaymentHistoryModal('${r.startupId}')" title="View Complete Ledger Dossier for ${r.startupName}">
-              📊 Dossier
-            </button>
-
-            <!-- 7-Stage Lifecycle Trace -->
-            <button class="btn btn-outline btn-sm" style="font-size: 11px; padding: 4px 9px; color: var(--text-muted); border-color: var(--border-medium); font-weight: 600; white-space: nowrap;" onclick="BillingModule.openRentLifecycleTrace('${r.id}')" title="Trace 7-Stage Rent Journey">
-              🔍 Trace
-            </button>
+            <!-- Compact "⋯" Action Menu (Invoice, Startup profile, Activity log) -->
+            <div class="row-menu-wrapper" style="position: relative; display: inline-block;">
+              <button class="btn btn-outline btn-sm row-menu-trigger" onclick="BillingModule.toggleRowMenu(event, '${r.id}')" style="font-size: 14px; padding: 3px 8px; line-height: 1; border-color: var(--border-medium); color: var(--text-secondary); min-width: 28px;" title="More options for ${r.startupName}">
+                ⋯
+              </button>
+              <div id="row-menu-${r.id}" class="rent-row-menu" style="display: none; position: absolute; right: 0; top: 100%; margin-top: 4px; z-index: 1000; min-width: 170px; background: var(--bg-surface); border: 1px solid var(--border-medium); border-radius: var(--radius-md); box-shadow: 0 10px 25px rgba(0,0,0,0.18); padding: 5px; text-align: left;">
+                <button class="row-menu-item" onclick="BillingModule.closeAllRowMenus(); BillingModule.handleRentInvoiceClick('${r.id}')" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 10px; font-size: 12px; font-weight: 600; color: var(--text-primary); border: none; background: transparent; cursor: pointer; border-radius: 6px; text-align: left; transition: all 0.15s ease;">
+                  <span>🧾</span> <span>View Invoice</span>
+                </button>
+                <button class="row-menu-item" onclick="BillingModule.closeAllRowMenus(); BillingModule.openStartupPaymentHistoryModal('${r.startupId}')" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 10px; font-size: 12px; font-weight: 600; color: var(--text-primary); border: none; background: transparent; cursor: pointer; border-radius: 6px; text-align: left; transition: all 0.15s ease;">
+                  <span>👤</span> <span>Startup profile</span>
+                </button>
+                <button class="row-menu-item" onclick="BillingModule.closeAllRowMenus(); BillingModule.openRentLifecycleTrace('${r.id}')" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 10px; font-size: 12px; font-weight: 600; color: var(--text-primary); border: none; background: transparent; cursor: pointer; border-radius: 6px; text-align: left; transition: all 0.15s ease;">
+                  <span>📋</span> <span>Activity log</span>
+                </button>
+                ${isPaid ? `
+                  <button class="row-menu-item" onclick="BillingModule.closeAllRowMenus(); BillingModule.handleRentReceiptClick('${r.id}')" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 10px; font-size: 12px; font-weight: 600; color: var(--status-success); border: none; background: transparent; cursor: pointer; border-radius: 6px; text-align: left; transition: all 0.15s ease;">
+                    <span>📄</span> <span>Receipt Voucher</span>
+                  </button>
+                ` : ''}
+              </div>
+            </div>
           </div>
         </td>
       </tr>
@@ -1209,17 +1423,6 @@ const BillingModule = {
     document.getElementById('modal-mount').innerHTML = html;
   },
 
-  handleBatchGenerate() {
-    const count = window.store.generateAllMonthlyInvoices('October 2026');
-    if (count > 0) {
-      App.showToast(`⚡ Generated ${count} monthly invoices for October!`, 'success');
-      this.render();
-      DashboardModule.render();
-    } else {
-      App.showToast('All active startups already have invoices generated for this cycle.', 'info');
-    }
-  },
-
   _legacyViewInvoice(invoiceId) {
     const inv = window.store.getInvoiceById(invoiceId);
     if (!inv) return;
@@ -1396,3 +1599,6 @@ const BillingModule = {
     if (el) el.remove();
   }
 };
+
+window.BillingModule = BillingModule;
+
