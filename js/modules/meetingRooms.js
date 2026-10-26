@@ -123,10 +123,23 @@ const MeetingRoomsModule = {
     let mySlotsCount = 0;
     let otherSlotsCount = 0;
 
+    const now = new Date();
+    const pad = n => (n < 10 ? '0' : '') + n;
+    const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    const liveTimeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    const isPastDate = (this.selectedDate < todayStr);
+    const isToday = (this.selectedDate === todayStr);
+
+    let activeSlotsCount = 0;
+
     rooms.forEach(r => {
       const bList = (r.bookings || []).filter(b => b.date === this.selectedDate && b.status !== 'Cancelled');
       timeSlots.forEach(slot => {
         const curHour = parseInt(slot.split(':')[0], 10);
+        const endHour = curHour + 1;
+        const endSlotStr = `${endHour < 10 ? '0' : ''}${endHour}:00`;
+        const isSlotPassed = isPastDate || (isToday && endSlotStr <= liveTimeStr);
+
         const booked = bList.find(b => {
           const bHour = parseInt(b.startTime.split(':')[0], 10);
           const eHour = parseInt(b.endTime.split(':')[0], 10);
@@ -138,11 +151,13 @@ const MeetingRoomsModule = {
           } else {
             otherSlotsCount++;
           }
+        } else if (!isSlotPassed) {
+          activeSlotsCount++;
         }
       });
     });
 
-    const availableSlotsCount = Math.max(0, totalSlotsCount - mySlotsCount - otherSlotsCount);
+    const availableSlotsCount = isPastDate ? 0 : activeSlotsCount;
     const remainingCredits = Math.max(0, (myStartup.includedMeetingHours || 12) - (myStartup.usedMeetingHours || 0));
 
     container.innerHTML = `
@@ -356,18 +371,37 @@ const MeetingRoomsModule = {
 
         <!-- Legend & Realtime Summary -->
         <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-          <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px;">
-            <span style="width: 8px; height: 8px; border-radius: 50%; background: #22c55e;"></span>
-            <span style="color: #15803d; font-weight: 700;">${availableSlotsCount} Available</span>
-          </div>
-          <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px;">
-            <span style="width: 8px; height: 8px; border-radius: 50%; background: #2563eb;"></span>
-            <span style="color: #1d4ed8; font-weight: 700;">${mySlotsCount} Reserved by You</span>
-          </div>
-          <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px;">
-            <span style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 6px rgba(239, 68, 68, 0.4);"></span>
-            <span style="color: #dc2626; font-weight: 700;">${otherSlotsCount} Booked (Red)</span>
-          </div>
+          ${(this.selectedDate < todayStr) ? `
+            <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px;">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: #94a3b8;"></span>
+              <span style="color: #64748b; font-weight: 700;">Past Date (${mySlotsCount + otherSlotsCount} Completed Bookings)</span>
+            </div>
+            ${otherSlotsCount > 0 ? `
+              <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444;"></span>
+                <span style="color: #dc2626; font-weight: 700;">${otherSlotsCount} Booked (Completed)</span>
+              </div>
+            ` : ''}
+            ${mySlotsCount > 0 ? `
+              <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: #2563eb;"></span>
+                <span style="color: #1d4ed8; font-weight: 700;">${mySlotsCount} Reserved by You</span>
+              </div>
+            ` : ''}
+          ` : `
+            <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px;">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: #22c55e;"></span>
+              <span style="color: #15803d; font-weight: 700;">${availableSlotsCount} Available ${isToday ? 'Remaining Today' : ''}</span>
+            </div>
+            <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px;">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: #2563eb;"></span>
+              <span style="color: #1d4ed8; font-weight: 700;">${mySlotsCount} Reserved by You</span>
+            </div>
+            <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px;">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 6px rgba(239, 68, 68, 0.4);"></span>
+              <span style="color: #dc2626; font-weight: 700;">${otherSlotsCount} Booked (Red)</span>
+            </div>
+          `}
         </div>
       </div>
 
@@ -711,6 +745,7 @@ const MeetingRoomsModule = {
     for (let day = 1; day <= daysInMonth; day++) {
       const dateStr = `${year}-${pad(month + 1)}-${pad(day)}`;
       const isToday = (dateStr === todayStr);
+      const isPast = (dateStr < todayStr);
       const isSelected = (dateStr === this.selectedDate);
       const dayBookings = bookingsByDate[dateStr] || [];
       const hasMyBooking = dayBookings.some(b => b.startupId === myStartup.id || (b.startupName && b.startupName.toLowerCase() === myStartup.name.toLowerCase()));
@@ -718,6 +753,74 @@ const MeetingRoomsModule = {
       const maxSlotsForDay = targetRoom ? 7 : (rooms.length * 7);
       const isRoomFull = totalBookedSessions >= maxSlotsForDay;
       const openCount = Math.max(0, maxSlotsForDay - totalBookedSessions);
+
+      // Past days: grey tile, label "Past" or "Completed", no click, show bookings history but NEVER "Open"
+      if (isPast) {
+        dayCellsHtml += `
+          <div style="background: var(--bg-hover, #f1f5f9);
+                      border: 1px solid var(--border-subtle, #e2e8f0);
+                      border-radius: 10px;
+                      padding: 8px 10px;
+                      min-height: 80px;
+                      cursor: not-allowed;
+                      opacity: 0.65;
+                      display: flex;
+                      flex-direction: column;
+                      justify-content: space-between;"
+               title="${dateStr} • Past date (Completed)">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 13px; font-weight: 700; color: var(--text-muted, #94a3b8); text-decoration: line-through;">
+                ${day}
+              </span>
+              <span class="badge" style="font-size: 9px; padding: 1px 5px; background: #e2e8f0; color: #64748b; font-weight: 700;">Past</span>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 3px; margin-top: 4px;">
+              ${hasMyBooking ? `
+                <span style="font-size: 9.5px; font-weight: 700; color: #64748b; background: rgba(0, 0, 0, 0.06); padding: 1px 5px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                  <span>🎟️</span> <span>My Pass</span>
+                </span>
+              ` : ''}
+              ${totalBookedSessions > 0 ? `
+                <span style="font-size: 9.5px; font-weight: 700; color: #64748b; background: rgba(0, 0, 0, 0.06); padding: 1px 5px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;">
+                  <span>📅</span> <span>${totalBookedSessions} Booked</span>
+                </span>
+              ` : `
+                <span style="font-size: 9.5px; font-weight: 600; color: #94a3b8;">
+                  Completed
+                </span>
+              `}
+            </div>
+          </div>
+        `;
+        continue;
+      }
+
+      // Today: calculate remaining open slots that haven't ended yet
+      let todayActiveRemainingOpen = openCount;
+      if (isToday) {
+        const operatingSlots = ['08:00', '09:00', '10:00', '15:00', '16:00', '17:00', '18:00'];
+        const passedOperatingSlots = operatingSlots.filter(s => {
+          const endH = parseInt(s.split(':')[0], 10) + 1;
+          const endStr = `${endH < 10 ? '0' : ''}${endH}:00`;
+          return endStr <= liveTimeStr;
+        });
+        let passedUnbooked = 0;
+        const targetRoomsList = targetRoom ? [targetRoom] : rooms;
+        targetRoomsList.forEach(r => {
+          const rBookings = (r.bookings || []).filter(b => b.date === todayStr && b.status !== 'Cancelled');
+          passedOperatingSlots.forEach(s => {
+            const sH = parseInt(s.split(':')[0], 10);
+            const isB = rBookings.some(b => {
+              const bH = parseInt(b.startTime.split(':')[0], 10);
+              const eH = parseInt(b.endTime.split(':')[0], 10);
+              return sH >= bH && sH < eH;
+            });
+            if (!isB) passedUnbooked++;
+          });
+        });
+        todayActiveRemainingOpen = Math.max(0, openCount - passedUnbooked);
+      }
 
       dayCellsHtml += `
         <div onclick="MeetingRoomsModule.setDate('${dateStr}'); MeetingRoomsModule.closeModal('modal-meeting-calendar')"
@@ -754,11 +857,19 @@ const MeetingRoomsModule = {
                 <span>🔴</span> <span>${isRoomFull ? 'Fully Booked' : totalBookedSessions + ' Booked'}</span>
               </span>
             ` : ''}
-            ${openCount > 0 ? `
+            ${isToday ? (todayActiveRemainingOpen > 0 ? `
+              <span style="font-size: 9.5px; font-weight: 600; color: #16a34a; background: rgba(34, 197, 94, 0.08); padding: 1px 5px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;">
+                <span>🟢</span> <span>${todayActiveRemainingOpen} Open</span>
+              </span>
+            ` : `
+              <span style="font-size: 9.5px; font-weight: 600; color: #94a3b8;">
+                Closed for today
+              </span>
+            `) : (openCount > 0 ? `
               <span style="font-size: 9.5px; font-weight: 600; color: #16a34a; background: rgba(34, 197, 94, 0.08); padding: 1px 5px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;">
                 <span>🟢</span> <span>${openCount} Open</span>
               </span>
-            ` : ''}
+            ` : '')}
           </div>
         </div>
       `;
@@ -866,6 +977,22 @@ const MeetingRoomsModule = {
   },
 
   toggleSlotSelection(roomId, slot) {
+    const now = new Date();
+    const pad = n => (n < 10 ? '0' : '') + n;
+    const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    const liveTimeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    const isPastDate = (this.selectedDate < todayStr);
+    const isToday = (this.selectedDate === todayStr);
+
+    const sHour = parseInt(slot.split(':')[0], 10);
+    const endHour = sHour + 1;
+    const endSlotStr = `${endHour < 10 ? '0' : ''}${endHour}:00`;
+
+    if (isPastDate || (isToday && endSlotStr <= liveTimeStr)) {
+      App.showToast('This session time has already passed and cannot be booked.', 'warning');
+      return;
+    }
+
     if (!this.selectedSlotsByRoom) this.selectedSlotsByRoom = {};
     if (!this.selectedSlotsByRoom[roomId]) {
       this.selectedSlotsByRoom[roomId] = [];
@@ -962,17 +1089,26 @@ const MeetingRoomsModule = {
     const afternoonSlots = ['15:00', '16:00', '17:00', '18:00'];
     const allSlots = [...morningSlots, ...afternoonSlots];
 
-    const bookings = (room.bookings || []).filter(b => b.date === this.selectedDate && b.status !== 'Cancelled');
-
     const now = new Date();
     const pad = n => (n < 10 ? '0' : '') + n;
     const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    const liveTimeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    const isPastDate = (this.selectedDate < todayStr);
+
+    // If viewing a past date, switch to today
+    if (isPastDate) {
+      this.selectedDate = todayStr;
+      App.showToast(`Switched from past date to today for booking.`, 'info');
+    }
+
     const isToday = (this.selectedDate === todayStr);
-    const curHour = now.getHours();
+    const bookings = (room.bookings || []).filter(b => b.date === this.selectedDate && b.status !== 'Cancelled');
 
     let nextSlot = allSlots.find(slot => {
       const sHour = parseInt(slot.split(':')[0], 10);
-      if (isToday && sHour < curHour) return false;
+      const endHour = sHour + 1;
+      const endSlotStr = `${endHour < 10 ? '0' : ''}${endHour}:00`;
+      if (isToday && endSlotStr <= liveTimeStr) return false;
       const isBooked = bookings.some(b => {
         const bHour = parseInt(b.startTime.split(':')[0], 10);
         const eHour = parseInt(b.endTime.split(':')[0], 10);
@@ -1565,11 +1701,24 @@ const MeetingRoomsModule = {
     const activeSession = this.roomActiveSession[room.id] || 'morning';
     const sessionSlots = (activeSession === 'morning') ? morningSlots : afternoonSlots;
 
+    // Calculate intelligent real-time operating availability
+    const now = new Date();
+    const pad = n => (n < 10 ? '0' : '') + n;
+    const liveTimeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    const isToday = (this.selectedDate === todayStr);
+    const isPastDay = (this.selectedDate < todayStr);
+
     let myBookedHours = 0;
     let otherBookedHours = 0;
+    let passedUnbookedHours = 0;
 
     timeSlots.forEach(slot => {
       const curHour = parseInt(slot.split(':')[0], 10);
+      const endHour = curHour + 1;
+      const endSlotStr = `${endHour < 10 ? '0' : ''}${endHour}:00`;
+      const isSlotPassed = isPastDay || (isToday && endSlotStr <= liveTimeStr);
+
       const booked = bookings.find(b => {
         const bHour = parseInt(b.startTime.split(':')[0], 10);
         const eHour = parseInt(b.endTime.split(':')[0], 10);
@@ -1581,13 +1730,15 @@ const MeetingRoomsModule = {
         } else {
           otherBookedHours++;
         }
+      } else if (isSlotPassed) {
+        passedUnbookedHours++;
       }
     });
 
     const totalBookedHours = myBookedHours + otherBookedHours;
     const isFullyBooked = (totalBookedHours === timeSlots.length);
     const hasMyBookings = myBookedHours > 0;
-    const availableHours = timeSlots.length - totalBookedHours;
+    const availableHours = isPastDay ? 0 : Math.max(0, timeSlots.length - totalBookedHours - passedUnbookedHours);
 
     const formatSlot12h = (slot24) => {
       if (!slot24) return '';
@@ -1611,13 +1762,6 @@ const MeetingRoomsModule = {
       return '✦';
     };
 
-    // Calculate intelligent real-time operating availability
-    const now = new Date();
-    const pad = n => (n < 10 ? '0' : '') + n;
-    const liveTimeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
-    const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-    const isToday = (this.selectedDate === todayStr);
-
     const curHour = now.getHours();
     const curMin = now.getMinutes();
     const curTotalMin = curHour * 60 + curMin;
@@ -1632,7 +1776,12 @@ const MeetingRoomsModule = {
     let headlineText = '';
     let nextMeetingText = '';
 
-    if (isToday) {
+    if (isPastDay) {
+      statusType = 'closed';
+      statusPillText = 'Completed';
+      headlineText = `${totalBookedHours > 0 ? totalBookedHours + ' Completed Reservation' + (totalBookedHours === 1 ? '' : 's') : 'Past Operating Log'} for ${this.selectedDate}`;
+      nextMeetingText = totalBookedHours > 0 ? 'Historical day record • All sessions completed' : 'No reservations recorded for this date';
+    } else if (isToday) {
       if (curTotalMin >= 19 * 60) {
         // After 07:00 PM: Hub is closed for the day
         statusType = 'closed';
@@ -1738,6 +1887,41 @@ const MeetingRoomsModule = {
         return curHour >= bHour && curHour < eHour;
       });
 
+      const isPassed = isPastDay || (isToday && endSlotStr <= liveTimeStr);
+
+      if (isPassed) {
+        if (booked) {
+          const isMine = booked.startupId === myStartup.id || (booked.startupName && booked.startupName.toLowerCase() === myStartup.name.toLowerCase());
+          if (isMine) {
+            return `
+              <div class="clear-slot-card past booked-mine" 
+                   onclick="MeetingRoomsModule.openPassModal('${room.id}', '${booked.id}')"
+                   title="Past session (${timeRangeLabel}) • Reserved by your team • Click to view history pass">
+                <div class="slot-time">${timeRangeLabel}</div>
+                <div class="slot-status">🎟️ Booked by you (Past)</div>
+              </div>
+            `;
+          } else {
+            return `
+              <div class="clear-slot-card past booked-other" 
+                   title="Past booking (${timeRangeLabel}) • Reserved by ${booked.startupName || 'Startup'}${booked.title ? ': ' + booked.title : ''}">
+                <div class="slot-time">${timeRangeLabel}</div>
+                <div class="slot-status">🔴 Booked (Past)</div>
+              </div>
+            `;
+          }
+        } else {
+          return `
+            <div class="clear-slot-card past unbooked" 
+                 title="${timeRangeLabel} • This session time has passed">
+              <div class="slot-time">${timeRangeLabel}</div>
+              <div class="slot-status">⌛ Passed</div>
+            </div>
+          `;
+        }
+      }
+
+      // Slot is active / future (Today upcoming or Future date)
       if (booked) {
         const isMine = booked.startupId === myStartup.id || (booked.startupName && booked.startupName.toLowerCase() === myStartup.name.toLowerCase());
         if (isMine) {
@@ -1833,8 +2017,14 @@ const MeetingRoomsModule = {
               <div class="exec-meta-row">
                 <span class="exec-pill-badge">👥 ${room.capacity} Pax Capacity</span>
                 <span class="exec-pill-badge" style="background: rgba(99, 102, 241, 0.08); color: #4f46e5; border: 1px solid rgba(99, 102, 241, 0.25); font-weight: 800;">₹${room.hourlyRate}/hr</span>
-                <span style="font-size: 11px; color: ${availableHours === 0 ? '#dc2626' : otherBookedHours > 0 ? '#dc2626' : statusType === 'available' ? '#16a34a' : 'var(--text-secondary, #64748b)'}; font-weight: 700;">
-                  ${availableHours === 0 ? '0 Slots Open (🔴 Fully Booked)' : otherBookedHours > 0 ? `${availableHours} of 7 Slots Open • <span style="color: #dc2626; font-weight: 800;">🔴 ${otherBookedHours} Booked</span>` : `${availableHours} of 7 Slots Open`}
+                <span style="font-size: 11px; color: ${isPastDay ? 'var(--text-muted, #94a3b8)' : availableHours === 0 ? '#dc2626' : otherBookedHours > 0 ? '#dc2626' : statusType === 'available' ? '#16a34a' : 'var(--text-secondary, #64748b)'}; font-weight: 700;">
+                  ${isPastDay 
+                    ? `History • ${totalBookedHours > 0 ? totalBookedHours + ' Booked (Completed)' : 'Completed'}`
+                    : (availableHours === 0 
+                        ? (totalBookedHours > 0 ? `0 Slots Open (🔴 Fully Booked)` : `All sessions ended for today`)
+                        : (otherBookedHours > 0 
+                            ? `${availableHours} Open Remaining • <span style="color: #dc2626; font-weight: 800;">🔴 ${otherBookedHours} Booked</span>` 
+                            : `${availableHours} of 7 Slots Open`))}
                 </span>
               </div>
             </div>
@@ -1856,7 +2046,7 @@ const MeetingRoomsModule = {
             <label class="room-cal-date-picker" title="Click to open calendar and pick any date for ${room.name}">
               <span class="room-cal-icon">📅</span>
               <span class="room-cal-date-text">${formattedDateStr}</span>
-              ${isToday ? `<span class="room-cal-badge today">Today</span>` : isTomorrow ? `<span class="room-cal-badge tomorrow">Tomorrow</span>` : ''}
+              ${isToday ? `<span class="room-cal-badge today">Today</span>` : isTomorrow ? `<span class="room-cal-badge tomorrow">Tomorrow</span>` : isPastDay ? `<span class="room-cal-badge" style="background: #e2e8f0; color: #64748b;">Past</span>` : ''}
               <span class="room-cal-arrow">▾</span>
               <input type="date" value="${this.selectedDate}" onchange="MeetingRoomsModule.setDate(this.value)" onclick="try{this.showPicker?.()}catch(e){}" class="room-cal-native-input" title="Pick date for ${room.name}">
             </label>

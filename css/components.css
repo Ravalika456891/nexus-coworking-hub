@@ -1506,6 +1506,65 @@
   gap: 4px;
 }
 
+/* Past / Passed Time Slots (Grey Tile, Non-bookable, History Visible) */
+.clear-slot-card.past {
+  background: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: none !important;
+  cursor: default !important;
+  opacity: 0.72;
+  transition: none;
+}
+
+.clear-slot-card.past:hover {
+  transform: none !important;
+  box-shadow: none !important;
+  border-color: #cbd5e1 !important;
+}
+
+.clear-slot-card.past .slot-time {
+  color: #94a3b8 !important;
+  font-weight: 600;
+  text-decoration: line-through;
+}
+
+.clear-slot-card.past .slot-status {
+  color: #64748b !important;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.clear-slot-card.past.booked-mine {
+  background: #eff6ff !important;
+  border-color: #bfdbfe !important;
+  cursor: pointer !important;
+}
+
+.clear-slot-card.past.booked-mine .slot-status {
+  color: #2563eb !important;
+}
+
+.clear-slot-card.past.booked-other {
+  background: #fef2f2 !important;
+  border-color: #fecaca !important;
+}
+
+.clear-slot-card.past.booked-other .slot-status {
+  color: #b91c1c !important;
+}
+
+.clear-slot-card.past.unbooked {
+  cursor: not-allowed !important;
+  background: #f8fafc !important;
+  border: 1px dashed #cbd5e1 !important;
+}
+
+.clear-slot-card.past.unbooked .slot-status {
+  color: #94a3b8 !important;
+}
+
 /* Dark Mode Overrides */
 [data-theme="dark"] .clear-date-bar,
 [data-theme="navy"] .clear-date-bar {
@@ -1674,6 +1733,45 @@
 [data-theme="navy"] .clear-slot-card.booked .slot-status {
   color: #f87171 !important;
   font-weight: 700;
+}
+
+[data-theme="dark"] .clear-slot-card.past,
+[data-theme="navy"] .clear-slot-card.past {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  opacity: 0.65;
+}
+
+[data-theme="dark"] .clear-slot-card.past .slot-time,
+[data-theme="navy"] .clear-slot-card.past .slot-time {
+  color: #64748b !important;
+}
+
+[data-theme="dark"] .clear-slot-card.past .slot-status,
+[data-theme="navy"] .clear-slot-card.past .slot-status {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .clear-slot-card.past.booked-mine,
+[data-theme="navy"] .clear-slot-card.past.booked-mine {
+  background: rgba(59, 130, 246, 0.08) !important;
+  border-color: rgba(59, 130, 246, 0.25) !important;
+}
+
+[data-theme="dark"] .clear-slot-card.past.booked-mine .slot-status,
+[data-theme="navy"] .clear-slot-card.past.booked-mine .slot-status {
+  color: #93c5fd !important;
+}
+
+[data-theme="dark"] .clear-slot-card.past.booked-other,
+[data-theme="navy"] .clear-slot-card.past.booked-other {
+  background: rgba(239, 68, 68, 0.08) !important;
+  border-color: rgba(239, 68, 68, 0.25) !important;
+}
+
+[data-theme="dark"] .clear-slot-card.past.booked-other .slot-status,
+[data-theme="navy"] .clear-slot-card.past.booked-other .slot-status {
+  color: #fca5a5 !important;
 }
 
 /* Meeting Rooms Top Filter Bar */
