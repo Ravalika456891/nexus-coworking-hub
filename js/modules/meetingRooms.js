@@ -896,71 +896,72 @@ const MeetingRoomsModule = {
     const formattedDate = `${dayName}, ${dayNum} ${monthName}`;
 
     const modalHtml = `
-      <div class="modal-overlay active" id="modal-confirm-booking" onclick="if(event.target===this) MeetingRoomsModule.closeModal('modal-confirm-booking')">
-        <div class="modal-content" style="max-width: 520px; width: 100%; border-radius: 18px; background: var(--bg-surface); color: var(--text-primary); border: 1.5px solid var(--border-medium); overflow: hidden; box-shadow: var(--shadow-xl); animation: scaleUp 0.2s ease;">
+      <div class="modal-overlay active" id="modal-confirm-booking" onclick="if(event.target===this) MeetingRoomsModule.closeModal('modal-confirm-booking')" style="z-index: 1050; display: flex; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(6px); padding: 16px;">
+        <div class="modal-content" style="max-width: 520px; width: 100%; max-height: min(92vh, 620px); border-radius: 18px; background: var(--bg-surface); color: var(--text-primary); border: 1.5px solid var(--border-medium); display: flex; flex-direction: column; overflow: hidden; box-shadow: var(--shadow-xl); animation: scaleUp 0.2s ease;">
           
-          <div class="modal-header" style="background: var(--bg-surface-elevated); border-bottom: 1px solid var(--border-subtle); padding: 18px 22px; display: flex; align-items: center; justify-content: space-between;">
+          <div class="modal-header" style="background: var(--bg-surface-elevated); border-bottom: 1px solid var(--border-subtle); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;">
             <div style="display: flex; align-items: center; gap: 10px;">
-              <span style="font-size: 22px;">🔒</span>
+              <span style="font-size: 20px;">🔒</span>
               <div>
-                <h3 style="font-size: 16px; font-weight: 800; margin: 0; color: var(--text-primary);">Confirm Room Reservation</h3>
-                <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">Step 2 of 2: Finalize meeting details</div>
+                <h3 style="font-size: 15px; font-weight: 800; margin: 0; color: var(--text-primary);">Confirm Room Reservation</h3>
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 1px;">Step 2 of 2: Finalize meeting details</div>
               </div>
             </div>
             <button class="modal-close-btn" onclick="MeetingRoomsModule.closeModal('modal-confirm-booking')">&times;</button>
           </div>
 
-          <div class="modal-body" style="padding: 22px;">
-            <!-- Selected Room & Timing Card -->
-            <div style="background: var(--bg-surface-elevated); border: 1.5px solid var(--border-subtle); border-radius: 12px; padding: 14px 16px; margin-bottom: 18px;">
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <span style="font-size: 20px;">${room.icon || '🏢'}</span>
-                  <strong style="font-size: 15px; color: var(--text-primary);">${room.name}</strong>
+          <form id="form-confirm-booking" onsubmit="MeetingRoomsModule.submitBookingConfirmation(event, '${room.id}')" style="display: flex; flex-direction: column; flex: 1; overflow: hidden; margin: 0;">
+            <div class="modal-body" style="padding: 16px 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 12px;">
+              <!-- Selected Room & Timing Card -->
+              <div style="background: var(--bg-surface-elevated); border: 1.5px solid var(--border-subtle); border-radius: 12px; padding: 12px 14px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 18px;">${room.icon || '🏢'}</span>
+                    <strong style="font-size: 14.5px; color: var(--text-primary);">${room.name}</strong>
+                  </div>
+                  <span class="badge ${isCovered ? 'badge-success' : 'badge-primary'}" style="font-weight: 800; font-size: 11px;">
+                    ${isCovered ? 'Covered by Plan (₹0)' : `₹${totalCost.toLocaleString('en-IN')}`}
+                  </span>
                 </div>
-                <span class="badge ${isCovered ? 'badge-success' : 'badge-primary'}" style="font-weight: 800;">
-                  ${isCovered ? 'Covered by Plan (₹0)' : `₹${totalCost.toLocaleString('en-IN')}`}
-                </span>
+                <div style="font-size: 12px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 2px;">
+                  <div>📅 <strong>${formattedDate}</strong></div>
+                  <div>⏰ <strong>${formatSlot12h(startSlot)} – ${formatSlot12h(endSlotStr)}</strong> (${count} slot${count > 1 ? 's' : ''} · ${count} hr${count > 1 ? 's' : ''})</div>
+                  <div style="font-size: 11px; color: var(--text-muted);">👥 Room Capacity: up to ${room.capacity} Pax</div>
+                </div>
               </div>
-              <div style="font-size: 12.5px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 3px;">
-                <div>📅 <strong>${formattedDate}</strong></div>
-                <div>⏰ <strong>${formatSlot12h(startSlot)} – ${formatSlot12h(endSlotStr)}</strong> (${count} slot${count > 1 ? 's' : ''} · ${count} hr${count > 1 ? 's' : ''})</div>
-                <div style="font-size: 11.5px; color: var(--text-muted);">👥 Room Capacity: up to ${room.capacity} Pax</div>
-              </div>
-            </div>
 
-            <!-- Form Fields -->
-            <form id="form-confirm-booking" onsubmit="MeetingRoomsModule.submitBookingConfirmation(event, '${room.id}')">
-              <div class="form-group" style="margin-bottom: 14px;">
-                <label class="form-label" style="font-weight: 700; font-size: 12.5px; margin-bottom: 5px; display: block;">
+              <!-- Form Fields -->
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="font-weight: 700; font-size: 12px; margin-bottom: 4px; display: block;">
                   Meeting Title / Purpose <span class="required-star">*</span>
                 </label>
-                <input type="text" id="confirm-meeting-title" class="form-control" required placeholder="e.g. Product Sprint & Architecture Sync" value="Executive Strategy & Client Sprint" style="font-size: 13px; padding: 9px 12px; border-radius: 8px;">
+                <input type="text" id="confirm-meeting-title" class="form-control" required placeholder="e.g. Product Sprint & Architecture Sync" value="Executive Strategy & Client Sprint" style="font-size: 12.5px; padding: 8px 12px; border-radius: 8px;">
               </div>
 
-              <div class="form-group" style="margin-bottom: 18px;">
-                <label class="form-label" style="font-weight: 700; font-size: 12.5px; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="font-weight: 700; font-size: 12px; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center;">
                   <span>Number of Attendees <span class="required-star">*</span></span>
                   <span style="font-size: 11px; font-weight: 600; color: var(--text-muted);">Max: ${room.capacity} Pax</span>
                 </label>
-                <input type="number" id="confirm-attendees" class="form-control" required min="1" max="${room.capacity}" value="4" style="font-size: 13px; padding: 9px 12px; border-radius: 8px;">
+                <input type="number" id="confirm-attendees" class="form-control" required min="1" max="${room.capacity}" value="4" style="font-size: 12.5px; padding: 8px 12px; border-radius: 8px;">
               </div>
 
-              <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 10px; padding: 10px 14px; margin-bottom: 20px; font-size: 11.5px; color: #065f46; display: flex; align-items: center; gap: 8px;">
+              <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px; padding: 8px 12px; font-size: 11px; color: #065f46; display: flex; align-items: center; gap: 6px;">
                 <span>💡</span>
-                <span>Once confirmed, your booking is instantly locked and a smart 4-digit PIN is provisioned on the door display tablet.</span>
+                <span>Once confirmed, your booking is locked and a 4-digit PIN is activated on the door tablet.</span>
               </div>
+            </div>
 
-              <div style="display: flex; gap: 10px; justify-content: flex-end; align-items: center;">
-                <button type="button" class="btn btn-outline" onclick="MeetingRoomsModule.closeModal('modal-confirm-booking')" style="padding: 9px 16px; border-radius: 8px; font-size: 12.5px;">
-                  Cancel
-                </button>
-                <button type="submit" class="btn btn-primary" style="background: #16a34a; border-color: #15803d; font-weight: 800; font-size: 13px; padding: 9px 24px; border-radius: 8px; box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35);">
-                  Confirm &amp; Reserve Room ➔
-                </button>
-              </div>
-            </form>
-          </div>
+            <!-- Sticky Form Footer -->
+            <div style="flex-shrink: 0; padding: 12px 20px; border-top: 1px solid var(--border-subtle); background: var(--bg-surface-elevated); display: flex; gap: 10px; justify-content: flex-end; align-items: center;">
+              <button type="button" class="btn btn-outline" onclick="MeetingRoomsModule.closeModal('modal-confirm-booking')" style="padding: 8px 14px; border-radius: 8px; font-size: 12px;">
+                Cancel
+              </button>
+              <button type="submit" class="btn btn-primary" style="background: #16a34a; border-color: #15803d; font-weight: 800; font-size: 12.5px; padding: 8px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.35);">
+                Confirm &amp; Reserve Room ➔
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     `;
@@ -1096,131 +1097,133 @@ const MeetingRoomsModule = {
     const pinDigits = String(Math.abs((booking.id || 'BKG100').split('').reduce((acc, c) => acc + c.charCodeAt(0), 1234)) % 9000 + 1000);
 
     const html = `
-      <div class="modal-overlay active" id="modal-booking-success" onclick="if(event.target === this) MeetingRoomsModule.closeModal('modal-booking-success')" style="z-index: 1060; display: flex; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.78); backdrop-filter: blur(8px); padding: 20px; animation: fadeIn 0.2s ease;">
-        <div class="modal-content" style="max-width: 520px; width: 100%; border-radius: 22px; background: var(--bg-surface); border: 1.5px solid rgba(34, 197, 94, 0.4); overflow: hidden; box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6); animation: scaleUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);">
+      <div class="modal-overlay active" id="modal-booking-success" onclick="if(event.target === this) MeetingRoomsModule.closeModal('modal-booking-success')" style="z-index: 1060; display: flex; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.78); backdrop-filter: blur(8px); padding: 16px; animation: fadeIn 0.2s ease;">
+        <div class="modal-content" style="max-width: 520px; width: 100%; max-height: min(92vh, 660px); border-radius: 20px; background: var(--bg-surface); border: 1.5px solid rgba(34, 197, 94, 0.4); display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6); animation: scaleUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);">
           
-          <!-- Celebratory Header Banner -->
-          <div style="background: linear-gradient(135deg, #064e3b 0%, #065f46 50%, #047857 100%); color: #ffffff; padding: 28px 24px 22px 24px; text-align: center; position: relative;">
-            <button class="modal-close-btn" onclick="MeetingRoomsModule.closeModal('modal-booking-success')" style="position: absolute; right: 16px; top: 16px; color: #ffffff; background: rgba(255,255,255,0.15); border: none; border-radius: 50%; width: 30px; height: 30px; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s;">&times;</button>
+          <!-- Celebratory Header Banner (Fixed) -->
+          <div style="background: linear-gradient(135deg, #064e3b 0%, #065f46 50%, #047857 100%); color: #ffffff; padding: 18px 20px 14px 20px; text-align: center; position: relative; flex-shrink: 0;">
+            <button class="modal-close-btn" onclick="MeetingRoomsModule.closeModal('modal-booking-success')" style="position: absolute; right: 14px; top: 14px; color: #ffffff; background: rgba(255,255,255,0.18); border: none; border-radius: 50%; width: 28px; height: 28px; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s;">&times;</button>
             
-            <div style="width: 64px; height: 64px; border-radius: 50%; background: #22c55e; color: #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 32px; box-shadow: 0 0 0 8px rgba(34, 197, 94, 0.25), 0 8px 24px rgba(34, 197, 94, 0.5); margin-bottom: 12px;">
+            <div style="width: 44px; height: 44px; border-radius: 50%; background: #22c55e; color: #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 900; box-shadow: 0 0 0 6px rgba(34, 197, 94, 0.25), 0 6px 18px rgba(34, 197, 94, 0.45); margin-bottom: 8px;">
               ✓
             </div>
             
-            <h2 style="font-size: 22px; font-weight: 800; color: #ffffff; margin: 0 0 4px 0; letter-spacing: -0.01em;">
+            <h2 style="font-size: 19px; font-weight: 800; color: #ffffff; margin: 0 0 3px 0; letter-spacing: -0.01em;">
               Room Successfully Booked!
             </h2>
-            <p style="font-size: 13px; color: #a7f3d0; margin: 0;">
-              Your reservation is confirmed & synced to the door display tablet.
+            <p style="font-size: 12px; color: #a7f3d0; margin: 0;">
+              Your reservation is confirmed &amp; synced to the door display tablet.
             </p>
           </div>
 
-          <!-- Booking Summary Card -->
-          <div style="padding: 22px 24px;">
+          <!-- Scrollable Body Container -->
+          <div style="padding: 16px 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 11px;">
             <!-- Room Info Card -->
-            <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-              <div style="display: flex; align-items: center; gap: 12px;">
-                <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(34, 197, 94, 0.12); border: 1.5px solid rgba(34, 197, 94, 0.35); display: flex; align-items: center; justify-content: center; font-size: 22px;">
+            <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 38px; height: 38px; border-radius: 8px; background: rgba(34, 197, 94, 0.12); border: 1.5px solid rgba(34, 197, 94, 0.35); display: flex; align-items: center; justify-content: center; font-size: 20px;">
                   ${room.icon || '🏢'}
                 </div>
                 <div>
-                  <h3 style="font-size: 16px; font-weight: 800; color: var(--text-primary); margin: 0;">${room.name}</h3>
-                  <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">
+                  <h3 style="font-size: 14.5px; font-weight: 800; color: var(--text-primary); margin: 0;">${room.name}</h3>
+                  <div style="font-size: 11px; color: var(--text-muted); margin-top: 1px;">
                     👥 ${room.capacity} Pax Capacity • ₹${room.hourlyRate}/hr
                   </div>
                 </div>
               </div>
-              <span class="badge badge-success" style="font-size: 11px; padding: 4px 10px; font-weight: 800;">
+              <span class="badge badge-success" style="font-size: 10.5px; padding: 3px 8px; font-weight: 800;">
                 ● Locked In
               </span>
             </div>
 
             <!-- Bento Details Grid -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;">
-              <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 12px 14px;">
-                <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.04em;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+              <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 9px 12px;">
+                <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.04em;">
                   📅 Date
                 </div>
-                <div style="font-size: 13px; font-weight: 800; color: var(--text-primary); margin-top: 4px;">
+                <div style="font-size: 12.5px; font-weight: 800; color: var(--text-primary); margin-top: 2px;">
                   ${formattedDate}
                 </div>
               </div>
 
-              <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 12px 14px;">
-                <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.04em;">
+              <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 9px 12px;">
+                <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.04em;">
                   ⏰ Time Window
                 </div>
-                <div style="font-size: 13px; font-weight: 800; color: #2563eb; margin-top: 4px; font-family: var(--font-mono);">
+                <div style="font-size: 12.5px; font-weight: 800; color: #2563eb; margin-top: 2px; font-family: var(--font-mono);">
                   ${formatSlot12h(booking.startTime)} – ${formatSlot12h(booking.endTime)}
                 </div>
               </div>
 
-              <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 12px 14px;">
-                <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.04em;">
+              <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 9px 12px;">
+                <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.04em;">
                   🎯 Meeting Agenda
                 </div>
-                <div style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                <div style="font-size: 12.5px; font-weight: 700; color: var(--text-primary); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${booking.title}">
                   ${booking.title}
                 </div>
               </div>
 
-              <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 12px 14px;">
-                <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.04em;">
+              <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 9px 12px;">
+                <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.04em;">
                   💳 Billing / Plan
                 </div>
-                <div style="font-size: 13px; font-weight: 800; color: #16a34a; margin-top: 4px;">
+                <div style="font-size: 12.5px; font-weight: 800; color: #16a34a; margin-top: 2px;">
                   ${booking.cost === 0 ? 'Covered by Plan (₹0)' : `₹${booking.cost}`}
                 </div>
               </div>
             </div>
 
             <!-- Smart Keypad Door Access PIN Strip -->
-            <div style="background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(99, 102, 241, 0.08) 100%); border: 1.5px dashed rgba(37, 99, 235, 0.4); border-radius: 14px; padding: 14px 16px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+            <div style="background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(99, 102, 241, 0.08) 100%); border: 1.5px dashed rgba(37, 99, 235, 0.4); border-radius: 12px; padding: 9px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
               <div>
-                <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #1d4ed8;">
+                <div style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #1d4ed8;">
                   🔑 Smart Door Keypad PIN
                 </div>
-                <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">
-                  Enter on the Condeco tablet keypad outside ${room.name}
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 1px;">
+                  Enter on the tablet keypad outside ${room.name}
                 </div>
               </div>
-              <div style="font-family: var(--font-mono); font-size: 18px; font-weight: 900; letter-spacing: 0.2em; color: #1e40af; background: var(--bg-surface); padding: 4px 14px; border-radius: 8px; border: 1px solid rgba(37, 99, 235, 0.25);">
+              <div style="font-family: var(--font-mono); font-size: 16px; font-weight: 900; letter-spacing: 0.18em; color: #1e40af; background: var(--bg-surface); padding: 3px 12px; border-radius: 6px; border: 1px solid rgba(37, 99, 235, 0.25);">
                 * ${pinDigits} #
               </div>
             </div>
 
             <!-- Add to Calendar Bar -->
-            <div style="background: rgba(37, 99, 235, 0.08); border: 1.5px solid rgba(37, 99, 235, 0.3); border-radius: 12px; padding: 12px 16px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+            <div style="background: rgba(37, 99, 235, 0.06); border: 1.5px solid rgba(37, 99, 235, 0.25); border-radius: 12px; padding: 9px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
               <div>
-                <div style="font-size: 12.5px; font-weight: 800; color: #1d4ed8; display: flex; align-items: center; gap: 6px;">
+                <div style="font-size: 12px; font-weight: 800; color: #1d4ed8; display: flex; align-items: center; gap: 5px;">
                   <span>📅</span> <span>Add to Personal Calendar</span>
                 </div>
-                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+                <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 1px;">
                   Sync reservation with Google Calendar, Outlook, or Apple Calendar
                 </div>
               </div>
               <div style="display: flex; gap: 6px; align-items: center;">
-                <button class="btn btn-sm" onclick="MeetingRoomsModule.addToGoogleCalendar('${booking.id}', '${room.id}')" style="background: #ffffff; color: #1e293b; border: 1.5px solid #cbd5e1; font-weight: 700; font-size: 11.5px; padding: 5px 12px; border-radius: 7px; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+                <button class="btn btn-sm" onclick="MeetingRoomsModule.addToGoogleCalendar('${booking.id}', '${room.id}')" style="background: #ffffff; color: #1e293b; border: 1.5px solid #cbd5e1; font-weight: 700; font-size: 11px; padding: 5px 12px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); cursor: pointer;">
                   <span>🌐</span> Google Calendar
                 </button>
-                <button class="btn btn-sm" onclick="MeetingRoomsModule.downloadIcs('${booking.id}', '${room.id}')" style="background: #ffffff; color: #1e293b; border: 1.5px solid #cbd5e1; font-weight: 700; font-size: 11.5px; padding: 5px 12px; border-radius: 7px; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+                <button class="btn btn-sm" onclick="MeetingRoomsModule.downloadIcs('${booking.id}', '${room.id}')" style="background: #ffffff; color: #1e293b; border: 1.5px solid #cbd5e1; font-weight: 700; font-size: 11px; padding: 5px 12px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); cursor: pointer;">
                   <span>📥</span> iCal (.ics)
                 </button>
               </div>
             </div>
+          </div>
 
-            <!-- Action Buttons -->
-            <div style="display: flex; gap: 8px; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
-              <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openKioskModal('${room.id}'); MeetingRoomsModule.closeModal('modal-booking-success');" style="font-weight: 700; padding: 8px 14px; border-radius: 8px; font-size: 12px; display: inline-flex; align-items: center; gap: 5px;">
+          <!-- Fixed Action Footer (Always Visible & Accessible) -->
+          <div style="flex-shrink: 0; background: var(--bg-surface-elevated); border-top: 1px solid var(--border-subtle); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openKioskModal('${room.id}'); MeetingRoomsModule.closeModal('modal-booking-success');" style="font-weight: 700; padding: 7px 13px; border-radius: 7px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 5px;">
                 <span>📱</span> Open door display
               </button>
-              <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openPassModal('${room.id}', '${booking.id}'); MeetingRoomsModule.closeModal('modal-booking-success');" style="font-weight: 700; padding: 8px 14px; border-radius: 8px; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; color: #2563eb; border-color: rgba(37, 99, 235, 0.35);">
+              <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openPassModal('${room.id}', '${booking.id}'); MeetingRoomsModule.closeModal('modal-booking-success');" style="font-weight: 700; padding: 7px 13px; border-radius: 7px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 5px; color: #2563eb; border-color: rgba(37, 99, 235, 0.35);">
                 <span>🎫</span> Digital Pass
               </button>
-              <button class="btn btn-primary btn-sm" onclick="MeetingRoomsModule.closeModal('modal-booking-success')" style="font-weight: 800; padding: 8px 20px; border-radius: 8px; font-size: 12px; background: #16a34a; border-color: #15803d; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);">
-                ✓ Done
-              </button>
             </div>
+            <button class="btn btn-primary btn-sm" onclick="MeetingRoomsModule.closeModal('modal-booking-success')" style="font-weight: 800; padding: 7px 22px; border-radius: 7px; font-size: 12px; background: #16a34a; border-color: #15803d; box-shadow: 0 3px 10px rgba(22, 163, 74, 0.35); cursor: pointer;">
+              ✓ Done
+            </button>
           </div>
         </div>
       </div>
@@ -1730,30 +1733,30 @@ const MeetingRoomsModule = {
     if (!booking) return;
 
     const html = `
-      <div class="modal-overlay active" id="modal-room-door-pass" onclick="if(event.target === this) MeetingRoomsModule.closeModal('modal-room-door-pass')" style="z-index: 1050; display: flex; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(6px); padding: 20px;">
-        <div class="modal-content" style="max-width: 480px; width: 100%; border-radius: 18px; background: var(--bg-surface); border: 1px solid var(--border-subtle); overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+      <div class="modal-overlay active" id="modal-room-door-pass" onclick="if(event.target === this) MeetingRoomsModule.closeModal('modal-room-door-pass')" style="z-index: 1050; display: flex; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(6px); padding: 16px;">
+        <div class="modal-content" style="max-width: 480px; width: 100%; max-height: min(92vh, 640px); border-radius: 18px; background: var(--bg-surface); border: 1px solid var(--border-subtle); display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
           
           <!-- Pass Top Banner -->
-          <div style="background: linear-gradient(135deg, #0b2545 0%, #001f54 60%, #1d4ed8 100%); color: #ffffff; padding: 22px 24px; position: relative;">
-            <button class="modal-close-btn" onclick="MeetingRoomsModule.closeModal('modal-room-door-pass')" style="position: absolute; right: 16px; top: 16px; color: #ffffff; background: rgba(255,255,255,0.15); border: none; border-radius: 50%; width: 28px; height: 28px; font-size: 16px; cursor: pointer;">&times;</button>
+          <div style="background: linear-gradient(135deg, #0b2545 0%, #001f54 60%, #1d4ed8 100%); color: #ffffff; padding: 18px 22px; position: relative; flex-shrink: 0;">
+            <button class="modal-close-btn" onclick="MeetingRoomsModule.closeModal('modal-room-door-pass')" style="position: absolute; right: 14px; top: 14px; color: #ffffff; background: rgba(255,255,255,0.15); border: none; border-radius: 50%; width: 28px; height: 28px; font-size: 16px; cursor: pointer;">&times;</button>
             <div style="display: flex; align-items: center; gap: 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #93c5fd; font-weight: 700;">
               <span>⚡ Nexus Incubation OS</span> • <span>Digital Entry Pass</span>
             </div>
-            <h2 style="font-size: 20px; font-weight: 800; margin: 8px 0 0 0; color: #ffffff; display: flex; align-items: center; gap: 8px;">
+            <h2 style="font-size: 19px; font-weight: 800; margin: 6px 0 0 0; color: #ffffff; display: flex; align-items: center; gap: 8px;">
               <span>${room.icon || '🏢'}</span> ${room.name}
             </h2>
-            <div style="font-size: 12px; color: #bfdbfe; margin-top: 3px;">
-              ${room.capacity} Pax Capacity • Smart Glass & Cisco Access Enabled
+            <div style="font-size: 11.5px; color: #bfdbfe; margin-top: 2px;">
+              ${room.capacity} Pax Capacity • Smart Glass &amp; Cisco Access Enabled
             </div>
           </div>
 
-          <!-- Pass Details Body -->
-          <div style="padding: 24px;">
-            <div style="background: var(--bg-surface-elevated); border: 1.5px dashed var(--border-medium); border-radius: 14px; padding: 18px; margin-bottom: 20px; text-align: center;">
+          <!-- Pass Details Body (Scrollable) -->
+          <div style="padding: 16px 20px; overflow-y: auto; flex: 1;">
+            <div style="background: var(--bg-surface-elevated); border: 1.5px dashed var(--border-medium); border-radius: 14px; padding: 14px; margin-bottom: 14px; text-align: center;">
               
               <!-- QR Code Mockup -->
-              <div style="display: inline-flex; align-items: center; justify-content: center; width: 130px; height: 130px; background: #ffffff; border-radius: 12px; padding: 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.06); margin-bottom: 12px; border: 1px solid #e2e8f0;">
-                <svg width="114" height="114" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <div style="display: inline-flex; align-items: center; justify-content: center; width: 116px; height: 116px; background: #ffffff; border-radius: 10px; padding: 6px; box-shadow: 0 4px 14px rgba(0,0,0,0.06); margin-bottom: 10px; border: 1px solid #e2e8f0;">
+                <svg width="104" height="104" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <!-- QR Code Pattern -->
                   <rect width="100" height="100" fill="white"/>
                   <rect x="10" y="10" width="25" height="25" fill="#0f172a"/>
@@ -1779,44 +1782,45 @@ const MeetingRoomsModule = {
               <div style="font-family: var(--font-mono); font-size: 13px; font-weight: 800; color: #2563eb; letter-spacing: 0.05em;">
                 ENTRY PIN: NX-${booking.id.replace('BKG-', '')}
               </div>
-              <div style="font-size: 11px; color: var(--text-muted); margin-top: 3px;">
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
                 Scan QR or enter PIN at the boardroom door console
               </div>
             </div>
 
             <!-- Booking Metadata Grid -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 12.5px; margin-bottom: 20px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12px; margin-bottom: 14px;">
               <div>
-                <div style="font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Reserving Venture</div>
+                <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Reserving Venture</div>
                 <div style="font-weight: 700; color: var(--text-primary); margin-top: 2px;">${booking.startupName}</div>
               </div>
               <div>
-                <div style="font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Session Date</div>
+                <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Session Date</div>
                 <div style="font-weight: 700; color: var(--text-primary); margin-top: 2px;">📅 ${booking.date}</div>
               </div>
               <div>
-                <div style="font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Time Slot Window</div>
+                <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Time Slot Window</div>
                 <div style="font-weight: 800; color: #2563eb; font-family: var(--font-mono); margin-top: 2px;">⏰ ${booking.startTime} - ${booking.endTime}</div>
               </div>
               <div>
-                <div style="font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Attendees Expected</div>
+                <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Attendees Expected</div>
                 <div style="font-weight: 700; color: var(--text-primary); margin-top: 2px;">👥 ${booking.attendees} Pax</div>
               </div>
             </div>
 
-            <div style="background: var(--bg-surface-elevated); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border-subtle); margin-bottom: 20px;">
-              <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Session Agenda</div>
-              <div style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin-top: 2px;">${booking.title}</div>
+            <div style="background: var(--bg-surface-elevated); padding: 9px 12px; border-radius: 8px; border: 1px solid var(--border-subtle);">
+              <div style="font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Session Agenda</div>
+              <div style="font-size: 12.5px; font-weight: 700; color: var(--text-primary); margin-top: 2px;">${booking.title}</div>
             </div>
+          </div>
 
-            <div style="display: flex; gap: 10px; justify-content: flex-end;">
-              <button class="btn btn-outline" onclick="window.print()" style="font-weight: 600; font-size: 12.5px; border-radius: 8px;">
-                🖨️ Print Pass
-              </button>
-              <button class="btn btn-primary" onclick="MeetingRoomsModule.closeModal('modal-room-door-pass')" style="font-weight: 700; font-size: 12.5px; border-radius: 8px;">
-                Done
-              </button>
-            </div>
+          <!-- Fixed Footer -->
+          <div style="flex-shrink: 0; padding: 12px 20px; border-top: 1px solid var(--border-subtle); background: var(--bg-surface-elevated); display: flex; gap: 10px; justify-content: flex-end;">
+            <button class="btn btn-outline btn-sm" onclick="window.print()" style="font-weight: 600; font-size: 12px; border-radius: 7px;">
+              🖨️ Print Pass
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="MeetingRoomsModule.closeModal('modal-room-door-pass')" style="font-weight: 700; font-size: 12px; border-radius: 7px; padding: 7px 18px;">
+              Done
+            </button>
           </div>
         </div>
       </div>
