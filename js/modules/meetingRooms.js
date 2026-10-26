@@ -391,15 +391,15 @@ const MeetingRoomsModule = {
           <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em; display: inline-flex; align-items: center; gap: 4px;">
             <span>⏰</span> Windows:
           </span>
-          <span class="badge" style="background: rgba(34, 197, 94, 0.12); color: #15803d; border: 1px solid rgba(34, 197, 94, 0.35); font-weight: 700; font-size: 11px; padding: 3px 10px; border-radius: 999px;">
-            🌅 Morning (08:00 – 11:00 AM)
-          </span>
+          <button type="button" class="badge" onclick="MeetingRoomsModule.openQuickSessionModal('morning')" style="background: rgba(34, 197, 94, 0.15); color: #15803d; border: 1.5px solid rgba(34, 197, 94, 0.4); font-weight: 800; font-size: 11px; padding: 4px 12px; border-radius: 999px; cursor: pointer; transition: all 0.15s ease;" title="Click to open 'How long do you need?' for Morning Session">
+            🌅 Morning (08:00 – 11:00 AM) ⚡
+          </button>
           <span style="font-size: 11px; color: var(--text-muted); font-weight: 600; padding: 3px 8px; background: var(--bg-surface); border-radius: 6px; border: 1px solid var(--border-subtle);">
             ☕ 11:00 AM – 03:00 PM Break
           </span>
-          <span class="badge" style="background: rgba(99, 102, 241, 0.12); color: #4338ca; border: 1px solid rgba(99, 102, 241, 0.35); font-weight: 700; font-size: 11px; padding: 3px 10px; border-radius: 999px;">
-            🌆 Afternoon (03:00 – 07:00 PM)
-          </span>
+          <button type="button" class="badge" onclick="MeetingRoomsModule.openQuickSessionModal('afternoon')" style="background: rgba(99, 102, 241, 0.15); color: #4338ca; border: 1.5px solid rgba(99, 102, 241, 0.4); font-weight: 800; font-size: 11px; padding: 4px 12px; border-radius: 999px; cursor: pointer; transition: all 0.15s ease;" title="Click to open 'How long do you need?' for Afternoon Session">
+            🌆 Afternoon (03:00 – 07:00 PM) ⚡
+          </button>
         </div>
 
         <!-- Legend & Realtime Summary -->
@@ -2455,6 +2455,454 @@ const MeetingRoomsModule = {
     }
   },
 
+  // --- New User Flow: "How long do you need?" Session & Duration Flow ---
+  quickFlowState: {
+    session: 'morning', // 'morning' | 'afternoon'
+    durationMins: 60,
+    customMins: 45,
+    isCustom: false,
+    attendees: 4,
+    title: 'Executive Strategy & Team Sprint',
+    selectedRoomId: null,
+    selectedStartTime: null,
+    selectedEndTime: null
+  },
+
+  getDurationLabel(mins) {
+    if (mins === 30) return '30 min';
+    if (mins === 45) return '45 min';
+    if (mins === 60) return '1 hr';
+    if (mins === 90) return '1.5 hrs';
+    if (mins === 120) return '2 hrs';
+    if (mins === 180) return '3 hrs';
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    if (h > 0 && m > 0) return `${h}h ${m}m`;
+    if (h > 0) return `${h} hr${h > 1 ? 's' : ''}`;
+    return `${m} min`;
+  },
+
+  openQuickSessionModal(session = 'morning', targetRoomId = null) {
+    this.quickFlowState.session = session;
+    this.quickFlowState.durationMins = 60;
+    this.quickFlowState.isCustom = false;
+    this.quickFlowState.selectedRoomId = targetRoomId || null;
+    this.quickFlowState.selectedStartTime = null;
+    this.quickFlowState.selectedEndTime = null;
+
+    this.renderQuickSessionModal();
+  },
+
+  setQuickSession(session) {
+    this.quickFlowState.session = session;
+    this.quickFlowState.selectedStartTime = null;
+    this.quickFlowState.selectedEndTime = null;
+    this.renderQuickSessionModal();
+  },
+
+  setQuickDuration(mins) {
+    this.quickFlowState.durationMins = mins;
+    this.quickFlowState.isCustom = false;
+    this.quickFlowState.selectedStartTime = null;
+    this.quickFlowState.selectedEndTime = null;
+    this.renderQuickSessionModal();
+  },
+
+  setQuickCustomDuration(mins) {
+    const val = parseInt(mins, 10) || 45;
+    this.quickFlowState.durationMins = val;
+    this.quickFlowState.customMins = val;
+    this.quickFlowState.isCustom = true;
+    this.quickFlowState.selectedStartTime = null;
+    this.quickFlowState.selectedEndTime = null;
+    this.renderQuickSessionModal();
+  },
+
+  setQuickAttendees(count) {
+    const parsed = parseInt(count, 10);
+    this.quickFlowState.attendees = isNaN(parsed) || parsed < 1 ? 1 : parsed;
+    this.renderQuickSessionModal();
+  },
+
+  selectQuickSlot(roomId, startTime, endTime) {
+    this.quickFlowState.selectedRoomId = roomId;
+    this.quickFlowState.selectedStartTime = startTime;
+    this.quickFlowState.selectedEndTime = endTime;
+    this.updateQuickSummaryBar();
+
+    const modal = document.getElementById('modal-quick-duration-book');
+    if (modal) {
+      modal.querySelectorAll('.quick-slot-pill').forEach(btn => {
+        const isMatch = btn.getAttribute('data-room-id') === roomId && btn.getAttribute('data-start') === startTime;
+        if (isMatch) {
+          btn.style.background = '#2563eb';
+          btn.style.color = '#ffffff';
+          btn.style.borderColor = '#1d4ed8';
+          btn.style.boxShadow = '0 0 0 3px rgba(37, 99, 235, 0.35)';
+        } else {
+          btn.style.background = 'var(--bg-surface)';
+          btn.style.color = 'var(--text-primary)';
+          btn.style.borderColor = 'var(--border-medium)';
+          btn.style.boxShadow = 'none';
+        }
+      });
+    }
+  },
+
+  updateQuickSummaryBar() {
+    const container = document.getElementById('quick-summary-mount');
+    if (!container) return;
+    const { selectedRoomId, selectedStartTime, selectedEndTime, durationMins } = this.quickFlowState;
+    if (!selectedRoomId || !selectedStartTime || !selectedEndTime) {
+      container.innerHTML = `
+        <div style="font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+          <span>💡</span> <span>Tap any available start time above to review summary &amp; lock in instantly.</span>
+        </div>
+      `;
+      return;
+    }
+
+    const rooms = window.store.getMeetingRooms();
+    const room = rooms.find(r => r.id === selectedRoomId);
+    if (!room) return;
+
+    const myStartup = this.getMyStartup();
+    const durationHours = durationMins / 60;
+    const remainingCredits = Math.max(0, (myStartup.includedMeetingHours || 12) - (myStartup.usedMeetingHours || 0));
+    const isCovered = remainingCredits >= durationHours;
+    const cost = isCovered ? 0 : Math.round(room.hourlyRate * durationHours);
+
+    const formatSlot12h = (slot24) => {
+      const [h, m] = slot24.split(':').map(Number);
+      const period = h >= 12 ? 'PM' : 'AM';
+      const displayH = h % 12 || 12;
+      return `${displayH}:${m < 10 ? '0' : ''}${m} ${period}`;
+    };
+
+    const startLabel = formatSlot12h(selectedStartTime);
+    const endLabel = formatSlot12h(selectedEndTime);
+    const priceText = isCovered ? 'Covered by Plan (₹0)' : `₹${cost.toLocaleString('en-IN')}`;
+
+    container.innerHTML = `
+      <div style="background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(34, 197, 94, 0.08) 100%); border: 1.5px solid rgba(37, 99, 235, 0.35); border-radius: 12px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; width: 100%; box-shadow: 0 4px 14px rgba(0,0,0,0.06);">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 24px;">${room.icon || '🏢'}</span>
+          <div>
+            <div style="font-size: 14px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.01em;">
+              ${room.name} · ${startLabel} to ${endLabel} · <span style="color: ${isCovered ? '#16a34a' : '#2563eb'}; font-weight: 800;">${priceText}</span>
+            </div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 1px;">
+              ${durationHours >= 1 ? `${durationHours} hr${durationHours > 1 ? 's' : ''}` : `${durationMins} min`} duration • 📅 ${this.selectedDate} • Keypad PIN automatically synced
+            </div>
+          </div>
+        </div>
+
+        <button type="button" class="btn btn-primary" onclick="MeetingRoomsModule.confirmQuickSessionBooking('${room.id}', '${selectedStartTime}', '${selectedEndTime}')" style="background: #16a34a; border-color: #15803d; font-weight: 800; font-size: 13px; padding: 8px 22px; border-radius: 8px; box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35); cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+          <span>✓ Confirm</span> <span>➔</span>
+        </button>
+      </div>
+    `;
+  },
+
+  async confirmQuickSessionBooking(roomId, startTime, endTime) {
+    const rooms = window.store.getMeetingRooms();
+    const room = rooms.find(r => r.id === roomId);
+    if (!room) return;
+    const myStartup = this.getMyStartup();
+    const title = this.quickFlowState.title || 'Executive Strategy & Team Sprint';
+    const attendees = this.quickFlowState.attendees || 4;
+
+    const modal = document.getElementById('modal-quick-duration-book');
+    const confirmBtn = modal ? modal.querySelector('#quick-summary-mount button') : null;
+    if (confirmBtn) {
+      confirmBtn.disabled = true;
+      confirmBtn.innerHTML = `<span style="display: inline-block; width: 14px; height: 14px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; margin-right: 6px; vertical-align: middle;"></span> Reserving...`;
+    }
+
+    try {
+      const res = await window.store.bookMeetingRoom({
+        roomId,
+        startupId: myStartup.id,
+        startupName: myStartup.name,
+        title,
+        date: this.selectedDate,
+        startTime,
+        endTime,
+        attendees
+      });
+
+      if (res.success) {
+        this.closeModal('modal-quick-duration-book');
+        this.render();
+        if (typeof DashboardModule !== 'undefined' && DashboardModule.render) {
+          DashboardModule.render();
+        }
+        const bookedRoom = window.store.getMeetingRoomById(roomId) || room;
+        if (bookedRoom && res.booking) {
+          this.showBookingSuccessModal(bookedRoom, res.booking, myStartup);
+        }
+        App.showToast(`🎉 Reservation confirmed for ${bookedRoom ? bookedRoom.name : 'Meeting Room'}!`, 'success');
+      } else {
+        if (confirmBtn) {
+          confirmBtn.disabled = false;
+          confirmBtn.innerHTML = '<span>✓ Confirm</span> <span>➔</span>';
+        }
+        this.closeModal('modal-quick-duration-book');
+        const alternatives = res.alternatives || window.store.findBookingAlternatives({ roomId, date: this.selectedDate, startTime, endTime, attendees, startupId: myStartup.id });
+        this.showConflictAlternativesModal(
+          room,
+          { startTime, endTime, date: this.selectedDate, attendees, title },
+          res.message || "This slot was just booked by another startup. Pick another time below.",
+          alternatives
+        );
+      }
+    } catch (err) {
+      if (confirmBtn) {
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = '<span>✓ Confirm</span> <span>➔</span>';
+      }
+      App.showToast(`⚠️ Booking error: ${err.message}`, 'danger');
+    }
+  },
+
+  renderQuickSessionModal() {
+    const { session, durationMins, isCustom, customMins, attendees, title, selectedRoomId, selectedStartTime } = this.quickFlowState;
+    const rooms = window.store.getMeetingRooms();
+    const myStartup = this.getMyStartup();
+
+    const dParts = this.selectedDate.split('-').map(Number);
+    const dObj = new Date(dParts[0], dParts[1] - 1, dParts[2]);
+    const dayName = dObj.toLocaleDateString('en-US', { weekday: 'long' });
+    const dayNum = dObj.getDate();
+    const monthName = dObj.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    const formattedDate = `${dayName}, ${dayNum} ${monthName}`;
+
+    const now = new Date();
+    const pad = n => (n < 10 ? '0' : '') + n;
+    const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    const isToday = (this.selectedDate === todayStr);
+    const liveTimeMin = now.getHours() * 60 + now.getMinutes();
+
+    // Session Bounds
+    const isMorning = (session === 'morning');
+    const sessionStartMin = isMorning ? (8 * 60) : (15 * 60);
+    const sessionEndMin = isMorning ? (11 * 60) : (19 * 60);
+
+    const durLabel = this.getDurationLabel(durationMins);
+    const otherSessionLabel = isMorning ? 'Afternoon' : 'Morning';
+    const otherSessionKey = isMorning ? 'afternoon' : 'morning';
+
+    const formatSlot12h = (slot24) => {
+      const [h, m] = slot24.split(':').map(Number);
+      const period = h >= 12 ? 'PM' : 'AM';
+      const displayH = h % 12 || 12;
+      return `${displayH}:${m < 10 ? '0' : ''}${m} ${period}`;
+    };
+
+    // Calculate room availability
+    const roomsHtml = rooms.map(room => {
+      const bookings = (room.bookings || []).filter(b => b.date === this.selectedDate && b.status !== 'Cancelled');
+      const isCapacityOk = !attendees || room.capacity >= attendees;
+
+      // Candidate start times: 30-min steps (or 15-min if duration is custom and not multiple of 30)
+      const step = (durationMins % 30 !== 0) ? 15 : 30;
+      const validStarts = [];
+
+      for (let cur = sessionStartMin; cur + durationMins <= sessionEndMin; cur += step) {
+        if (isToday && cur <= liveTimeMin) {
+          continue; // Slot has already passed today
+        }
+
+        const endCur = cur + durationMins;
+        const curStartStr = `${pad(Math.floor(cur / 60))}:${pad(cur % 60)}`;
+        const curEndStr = `${pad(Math.floor(endCur / 60))}:${pad(endCur % 60)}`;
+
+        // Check conflicts
+        const hasConflict = bookings.some(b => {
+          const [bsh, bsm] = b.startTime.split(':').map(Number);
+          const [beh, bem] = b.endTime.split(':').map(Number);
+          const bStart = bsh * 60 + (bsm || 0);
+          const bEnd = beh * 60 + (bem || 0);
+          return bStart < endCur && bEnd > cur;
+        });
+
+        if (!hasConflict) {
+          validStarts.push({
+            startStr: curStartStr,
+            endStr: curEndStr,
+            startDisplay: formatSlot12h(curStartStr),
+            endDisplay: formatSlot12h(curEndStr)
+          });
+        }
+      }
+
+      return `
+        <div style="background: var(--bg-surface-elevated); border: 1.5px solid var(--border-subtle); border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px;">
+          <!-- Room Title & Badges -->
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 20px;">${room.icon || '🏢'}</span>
+              <strong style="font-size: 14px; color: var(--text-primary);">${room.name}</strong>
+              <span class="badge badge-info" style="font-size: 10.5px; padding: 2px 7px;">${room.capacity} Pax</span>
+            </div>
+            <div style="font-size: 11.5px; font-weight: 700; color: var(--text-secondary); font-family: var(--font-mono);">
+              ₹${room.hourlyRate}/hr
+            </div>
+          </div>
+
+          <!-- Capacity Alert if attendee count exceeds room size -->
+          ${!isCapacityOk ? `
+            <div style="font-size: 11px; color: #dc2626; background: rgba(239, 68, 68, 0.08); padding: 6px 10px; border-radius: 6px;">
+              ⚠️ Room capacity (${room.capacity} Pax) is less than your ${attendees} attendees.
+            </div>
+          ` : ''}
+
+          <!-- Available Start Times or Fallback Notice -->
+          ${validStarts.length > 0 ? `
+            <div>
+              <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; letter-spacing: 0.04em;">
+                Available Start Times (${durLabel}):
+              </div>
+              <div style="display: flex; gap: 7px; flex-wrap: wrap;">
+                ${validStarts.map(s => {
+                  const isSelected = (selectedRoomId === room.id && selectedStartTime === s.startStr);
+                  return `
+                    <button type="button" 
+                            class="quick-slot-pill" 
+                            data-room-id="${room.id}" 
+                            data-start="${s.startStr}" 
+                            onclick="MeetingRoomsModule.selectQuickSlot('${room.id}', '${s.startStr}', '${s.endStr}')"
+                            style="${isSelected ? 'background: #2563eb; color: #ffffff; border-color: #1d4ed8; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.35);' : 'background: var(--bg-surface); color: var(--text-primary); border-color: var(--border-medium);'} font-size: 12px; font-weight: 700; padding: 6px 13px; border-radius: 8px; border: 1.5px solid; cursor: pointer; transition: all 0.15s ease; font-family: var(--font-mono);">
+                      ${s.startDisplay}
+                    </button>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          ` : `
+            <div style="background: rgba(245, 158, 11, 0.08); border: 1px dashed rgba(245, 158, 11, 0.35); border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #b45309; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span>⚠️</span>
+                <span>No slot for ${durLabel}. Try <button type="button" onclick="MeetingRoomsModule.setQuickDuration(60)" style="background: none; border: none; color: #2563eb; text-decoration: underline; font-weight: 700; cursor: pointer; padding: 0;">1 hr</button> or the <button type="button" onclick="MeetingRoomsModule.setQuickSession('${otherSessionKey}')" style="background: none; border: none; color: #2563eb; text-decoration: underline; font-weight: 700; cursor: pointer; padding: 0;">${otherSessionLabel}</button>.</span>
+              </div>
+              <div style="display: flex; gap: 6px;">
+                <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.setQuickDuration(60)" style="font-size: 10.5px; padding: 2px 8px; border-radius: 5px; font-weight: 600;">Try 1 hr</button>
+                <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.setQuickSession('${otherSessionKey}')" style="font-size: 10.5px; padding: 2px 8px; border-radius: 5px; font-weight: 600;">Try ${otherSessionLabel}</button>
+              </div>
+            </div>
+          `}
+        </div>
+      `;
+    }).join('');
+
+    const modalHtml = `
+      <div class="modal-overlay active" id="modal-quick-duration-book" onclick="if(event.target === this) MeetingRoomsModule.closeModal('modal-quick-duration-book')" style="z-index: 1060; display: flex; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.78); backdrop-filter: blur(8px); padding: 16px; animation: fadeIn 0.2s ease;">
+        <div class="modal-content" style="max-width: 580px; width: 100%; max-height: min(94vh, 720px); border-radius: 20px; background: var(--bg-surface); border: 1.5px solid var(--border-medium); display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 30px 60px -12px rgba(0,0,0,0.45); animation: scaleUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);">
+          
+          <!-- Header -->
+          <div style="background: linear-gradient(135deg, #0b2545 0%, #1e3a8a 60%, #2563eb 100%); color: #ffffff; padding: 18px 22px; position: relative; flex-shrink: 0;">
+            <button class="modal-close-btn" onclick="MeetingRoomsModule.closeModal('modal-quick-duration-book')" style="position: absolute; right: 14px; top: 14px; color: #ffffff; background: rgba(255,255,255,0.18); border: none; border-radius: 50%; width: 28px; height: 28px; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;">&times;</button>
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #93c5fd; font-weight: 700;">
+              <span>⚡ Nexus Fast Booker</span> • <span>📅 ${formattedDate}</span>
+            </div>
+            <h2 style="font-size: 19px; font-weight: 800; color: #ffffff; margin: 4px 0 2px 0;">
+              How long do you need?
+            </h2>
+            <div style="font-size: 12px; color: #bfdbfe;">
+              Select session, duration, and tap any available start time to reserve instantly.
+            </div>
+          </div>
+
+          <!-- Scrollable Body -->
+          <div style="padding: 16px 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 14px;">
+            
+            <!-- Session Switcher Tabs (Morning vs Afternoon) -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: var(--bg-surface-elevated); padding: 4px; border-radius: 12px; border: 1px solid var(--border-medium);">
+              <button type="button" class="btn btn-sm ${isMorning ? 'btn-primary' : 'btn-outline'}" onclick="MeetingRoomsModule.setQuickSession('morning')" style="font-size: 12px; font-weight: 800; padding: 8px 12px; border-radius: 8px; border: none; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <span>🌅</span> <span>Morning (08:00 – 11:00 AM)</span>
+              </button>
+              <button type="button" class="btn btn-sm ${!isMorning ? 'btn-primary' : 'btn-outline'}" onclick="MeetingRoomsModule.setQuickSession('afternoon')" style="font-size: 12px; font-weight: 800; padding: 8px 12px; border-radius: 8px; border: none; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <span>🌆</span> <span>Afternoon (03:00 – 07:00 PM)</span>
+              </button>
+            </div>
+
+            <!-- Duration Chips & Custom Selector -->
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.04em; margin: 0;">
+                  ⏱️ Duration Needed
+                </label>
+                <span style="font-size: 12px; font-weight: 800; color: #2563eb; font-family: var(--font-mono);">
+                  ${durLabel} selected
+                </span>
+              </div>
+              
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <button type="button" class="btn btn-sm ${(!isCustom && durationMins === 30) ? 'btn-primary' : 'btn-outline'}" onclick="MeetingRoomsModule.setQuickDuration(30)" style="font-size: 11.5px; font-weight: 700; padding: 5px 12px; border-radius: 8px;">30 min</button>
+                <button type="button" class="btn btn-sm ${(!isCustom && durationMins === 60) ? 'btn-primary' : 'btn-outline'}" onclick="MeetingRoomsModule.setQuickDuration(60)" style="font-size: 11.5px; font-weight: 700; padding: 5px 12px; border-radius: 8px;">1 hr</button>
+                <button type="button" class="btn btn-sm ${(!isCustom && durationMins === 90) ? 'btn-primary' : 'btn-outline'}" onclick="MeetingRoomsModule.setQuickDuration(90)" style="font-size: 11.5px; font-weight: 700; padding: 5px 12px; border-radius: 8px;">1.5 hr</button>
+                <button type="button" class="btn btn-sm ${(!isCustom && durationMins === 120) ? 'btn-primary' : 'btn-outline'}" onclick="MeetingRoomsModule.setQuickDuration(120)" style="font-size: 11.5px; font-weight: 700; padding: 5px 12px; border-radius: 8px;">2 hr</button>
+                <button type="button" class="btn btn-sm ${(!isCustom && durationMins === 180) ? 'btn-primary' : 'btn-outline'}" onclick="MeetingRoomsModule.setQuickDuration(180)" style="font-size: 11.5px; font-weight: 700; padding: 5px 12px; border-radius: 8px;">3 hr</button>
+                <button type="button" class="btn btn-sm ${isCustom ? 'btn-primary' : 'btn-outline'}" onclick="MeetingRoomsModule.setQuickCustomDuration(${customMins})" style="font-size: 11.5px; font-weight: 700; padding: 5px 12px; border-radius: 8px;">Custom ✎</button>
+              </div>
+
+              ${isCustom ? `
+                <div style="margin-top: 8px; display: flex; align-items: center; gap: 8px; background: var(--bg-surface-elevated); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-subtle);">
+                  <span style="font-size: 11.5px; font-weight: 600; color: var(--text-secondary);">Custom Duration:</span>
+                  <input type="number" min="15" max="240" step="15" value="${customMins}" onchange="MeetingRoomsModule.setQuickCustomDuration(this.value)" style="width: 70px; padding: 4px 8px; font-size: 12px; font-weight: 700; font-family: var(--font-mono); border-radius: 6px; border: 1px solid var(--border-medium); background: var(--bg-surface); color: var(--text-primary);">
+                  <span style="font-size: 11.5px; color: var(--text-muted);">minutes</span>
+                  <div style="display: flex; gap: 4px; margin-left: auto;">
+                    <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.setQuickCustomDuration(45)" style="font-size: 10.5px; padding: 2px 6px;">45m</button>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.setQuickCustomDuration(75)" style="font-size: 10.5px; padding: 2px 6px;">75m</button>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.setQuickCustomDuration(105)" style="font-size: 10.5px; padding: 2px 6px;">105m</button>
+                  </div>
+                </div>
+              ` : ''}
+            </div>
+
+            <!-- Optional Attendees & Title -->
+            <div style="display: grid; grid-template-columns: 140px 1fr; gap: 10px;">
+              <div>
+                <label style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 3px; display: block;">
+                  👥 Attendees
+                </label>
+                <input type="number" min="1" max="40" value="${attendees}" onchange="MeetingRoomsModule.setQuickAttendees(this.value)" class="form-control" style="font-size: 12px; font-weight: 700; padding: 5px 8px; border-radius: 6px;">
+              </div>
+              <div>
+                <label style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 3px; display: block;">
+                  🎯 Purpose / Agenda
+                </label>
+                <input type="text" id="quick-agenda-title" value="${title}" oninput="MeetingRoomsModule.quickFlowState.title = this.value" placeholder="e.g. Executive Strategy &amp; Team Sprint" class="form-control" style="font-size: 12px; font-weight: 600; padding: 5px 10px; border-radius: 6px;">
+              </div>
+            </div>
+
+            <!-- Room Start Times List -->
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              ${roomsHtml}
+            </div>
+          </div>
+
+          <!-- Sticky Live Summary Bar & Confirm Footer -->
+          <div id="quick-summary-mount" style="flex-shrink: 0; padding: 12px 20px; background: var(--bg-surface-elevated); border-top: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between; min-height: 64px;">
+            <!-- Populated reactively by updateQuickSummaryBar() -->
+          </div>
+        </div>
+      </div>
+    `;
+
+    let mount = document.getElementById('modal-mount');
+    if (!mount) {
+      mount = document.body;
+    }
+    const existing = document.getElementById('modal-quick-duration-book');
+    if (existing) {
+      existing.outerHTML = modalHtml;
+    } else {
+      mount.insertAdjacentHTML('beforeend', modalHtml);
+    }
+    this.updateQuickSummaryBar();
+  },
+
   openWaitlistModal(roomId, slot, bookedBookingId) {
     const rooms = window.store.getMeetingRooms();
     const room = rooms.find(r => r.id === roomId);
@@ -2998,12 +3446,13 @@ const MeetingRoomsModule = {
           ${showMorning ? `
             <!-- Morning Session -->
             <div class="clear-session-block">
-              <div class="clear-session-header">
+              <div class="clear-session-header" onclick="MeetingRoomsModule.openQuickSessionModal('morning', '${room.id}')" style="cursor: pointer; transition: background 0.15s ease;" title="Click to open 'How long do you need?' for Morning Session">
                 <div class="clear-session-title">
                   <span>🌅</span>
                   <span>Morning Session</span>
+                  <span class="badge" style="font-size: 10px; font-weight: 700; background: rgba(37, 99, 235, 0.1); color: #2563eb; border: 1px solid rgba(37, 99, 235, 0.3); margin-left: 6px;">⚡ Quick Book</span>
                 </div>
-                <span class="clear-session-hours">08:00 AM – 11:00 AM</span>
+                <span class="clear-session-hours" style="color: #2563eb; font-weight: 700;">08:00 AM – 11:00 AM ➔</span>
               </div>
               <div class="clear-slots-grid">
                 ${morningSlots.map(renderSlotCard).join('')}
@@ -3014,12 +3463,13 @@ const MeetingRoomsModule = {
           ${showAfternoon ? `
             <!-- Afternoon Session -->
             <div class="clear-session-block">
-              <div class="clear-session-header">
+              <div class="clear-session-header" onclick="MeetingRoomsModule.openQuickSessionModal('afternoon', '${room.id}')" style="cursor: pointer; transition: background 0.15s ease;" title="Click to open 'How long do you need?' for Afternoon Session">
                 <div class="clear-session-title">
                   <span>🌆</span>
                   <span>Afternoon Session</span>
+                  <span class="badge" style="font-size: 10px; font-weight: 700; background: rgba(37, 99, 235, 0.1); color: #2563eb; border: 1px solid rgba(37, 99, 235, 0.3); margin-left: 6px;">⚡ Quick Book</span>
                 </div>
-                <span class="clear-session-hours">03:00 PM – 07:00 PM</span>
+                <span class="clear-session-hours" style="color: #2563eb; font-weight: 700;">03:00 PM – 07:00 PM ➔</span>
               </div>
               <div class="clear-slots-grid">
                 ${afternoonSlots.map(renderSlotCard).join('')}
@@ -3042,17 +3492,20 @@ const MeetingRoomsModule = {
           </div>
 
           <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+            <button class="btn btn-sm" onclick="MeetingRoomsModule.openQuickSessionModal('morning', '${room.id}')" style="background: rgba(37, 99, 235, 0.12); color: #1d4ed8; border: 1.5px solid rgba(37, 99, 235, 0.35); font-weight: 800; font-size: 11px; padding: 5px 11px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;" title="Book by duration (30m, 1h, 1.5h, 2h, 3h)">
+              <span>⚡</span> Quick Book
+            </button>
             <button class="btn btn-sm" onclick="MeetingRoomsModule.bookNextAvailable('${room.id}')" style="background: rgba(34, 197, 94, 0.12); color: #15803d; border: 1.5px solid rgba(34, 197, 94, 0.35); font-weight: 800; font-size: 11px; padding: 5px 11px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;" title="Pick the nearest open slot and book in one tap">
-              <span>⚡</span> Book next available
+              <span>🚀</span> Next Open
             </button>
             <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openCalendarModal(null, '${room.id}')" style="font-size: 11px; padding: 5px 11px; border-radius: 6px; color: var(--text-primary, #1e293b); border-color: var(--border-medium, #cbd5e1); background: var(--bg-surface, #ffffff); font-weight: 700; display: inline-flex; align-items: center; gap: 5px;" title="View ${room.name} full month calendar">
               <span>📅</span> Calendar
             </button>
             <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openKioskModal('${room.id}')" style="font-size: 11px; padding: 5px 11px; border-radius: 6px; color: var(--text-primary, #1e293b); border-color: var(--border-medium, #cbd5e1); background: var(--bg-surface, #ffffff);" title="View Wall-Mounted Digital Room Display">
-              <span>📱</span> Open door display
+              <span>📱</span> Door display
             </button>
             <button class="btn btn-primary btn-sm" onclick="MeetingRoomsModule.openBookModal('${room.id}', null, '${myStartup.id}')" style="background: var(--accent-primary, #4f46e5); color: #ffffff; font-weight: 800; border: none; padding: 6px 14px; border-radius: 7px; box-shadow: 0 2px 8px rgba(79, 70, 229, 0.35);" title="Open custom booking form">
-              <span>+</span> Custom Book
+              <span>+</span> Custom
             </button>
           </div>
         </div>
