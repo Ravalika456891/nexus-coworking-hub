@@ -1320,30 +1320,32 @@
   color: #2563eb;
 }
 
-/* Booked by other - Distinct Bold Red */
+/* Booked by other - Muted Subtle Grey Tile */
 .clear-slot-card.booked {
-  background: #fef2f2 !important;
-  border: 1.5px solid #fca5a5 !important;
-  box-shadow: 0 1px 3px rgba(239, 68, 68, 0.08) !important;
-  cursor: not-allowed;
-  opacity: 1 !important;
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: none !important;
+  cursor: pointer;
+  opacity: 0.88;
+  transition: all 0.18s ease;
 }
 
 .clear-slot-card.booked:hover {
-  background: #fee2e2 !important;
-  border-color: #ef4444 !important;
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  opacity: 1;
   transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important;
 }
 
 .clear-slot-card.booked .slot-time {
-  color: #991b1b !important;
-  font-weight: 800;
-  text-decoration: none;
+  color: #64748b !important;
+  font-weight: 600;
 }
 
 .clear-slot-card.booked .slot-status {
-  color: #dc2626 !important;
-  font-weight: 700;
+  color: #94a3b8 !important;
+  font-weight: 600;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -1458,18 +1460,150 @@
 
 [data-theme="dark"] .clear-slot-card.booked,
 [data-theme="navy"] .clear-slot-card.booked {
-  background: rgba(239, 68, 68, 0.14) !important;
-  border-color: rgba(239, 68, 68, 0.4) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
 [data-theme="dark"] .clear-slot-card.booked .slot-time,
 [data-theme="navy"] .clear-slot-card.booked .slot-time {
-  color: #fca5a5 !important;
+  color: #94a3b8 !important;
 }
 
 [data-theme="dark"] .clear-slot-card.booked .slot-status,
 [data-theme="navy"] .clear-slot-card.booked .slot-status {
-  color: #f87171 !important;
+  color: #64748b !important;
+}
+
+/* Meeting Rooms Top Filter Bar */
+.meeting-filters-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-surface, #ffffff);
+  border: 1px solid var(--border-subtle, #e2e8f0);
+  border-radius: 14px;
+  padding: 10px 16px;
+  margin-bottom: 20px;
+  gap: 12px;
+  flex-wrap: wrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.meeting-filters-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.meeting-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.meeting-filter-label {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--text-secondary, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.meeting-filter-pills {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-primary, #f1f5f9);
+  padding: 3px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle, #e2e8f0);
+}
+
+.meeting-filter-pill {
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-secondary, #64748b);
+  cursor: pointer;
+  transition: all 0.16s ease;
+  white-space: nowrap;
+}
+
+.meeting-filter-pill:hover:not(.active) {
+  color: var(--text-primary, #0f172a);
+}
+
+.meeting-filter-pill.active {
+  background: var(--bg-surface, #ffffff);
+  color: var(--accent-primary, #4f46e5);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="dark"] .meeting-filters-bar,
+[data-theme="navy"] .meeting-filters-bar {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .meeting-filter-pills,
+[data-theme="navy"] .meeting-filter-pills {
+  background: rgba(0, 0, 0, 0.25);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .meeting-filter-pill.active,
+[data-theme="navy"] .meeting-filter-pill.active {
+  background: rgba(255, 255, 255, 0.12);
+  color: #93c5fd;
+}
+
+/* Door Kiosk Mount Dark Overrides */
+.condeco-kiosk-mount .exec-room-card {
+  background: linear-gradient(150deg, #17212b 0%, #0d1319 100%) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6) !important;
+}
+
+.condeco-kiosk-mount .exec-room-title,
+.condeco-kiosk-mount .exec-digital-clock {
+  color: #ffffff !important;
+}
+
+.condeco-kiosk-mount .clear-session-block {
+  background: rgba(0, 0, 0, 0.3) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Responsive Overrides for Mobile Views */
+@media (max-width: 768px) {
+  .meeting-filters-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .meeting-filter-group {
+    justify-content: space-between;
+  }
+  .clear-slots-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+  .clear-slot-card {
+    min-height: 48px !important;
+    padding: 8px 10px !important;
+  }
+  .exec-room-card {
+    padding: 16px !important;
+  }
 }
 
 /* Sticky Booking Bar for Multi-Slot Selection */

@@ -6,6 +6,48 @@ const MeetingRoomsModule = {
   activeStartupFilter: null, // null = defaults to active startup
   myBookingsFilterDate: 'all', // 'all' | 'selected'
   selectedSlotsByRoom: {}, // { [roomId]: ['09:00', '10:00'] }
+  filterCapacity: 'all', // 'all' | '4' | '8' | '16'
+  filterAmenity: 'all',  // 'all' | 'projector' | 'video' | 'audio'
+  filterSession: 'all',  // 'all' | 'morning' | 'afternoon'
+  waitlist: [],
+
+  setFilterCapacity(cap) {
+    this.filterCapacity = cap;
+    this.render();
+  },
+
+  setFilterAmenity(amenity) {
+    this.filterAmenity = amenity;
+    this.render();
+  },
+
+  setFilterSession(session) {
+    this.filterSession = session;
+    this.render();
+  },
+
+  resetFilters() {
+    this.filterCapacity = 'all';
+    this.filterAmenity = 'all';
+    this.filterSession = 'all';
+    this.render();
+  },
+
+  getFilteredRooms(rooms) {
+    return (rooms || []).filter(room => {
+      if (this.filterCapacity !== 'all') {
+        const minCap = parseInt(this.filterCapacity, 10);
+        if (room.capacity < minCap) return false;
+      }
+      if (this.filterAmenity !== 'all') {
+        const str = (room.amenities || []).join(' ').toLowerCase();
+        if (this.filterAmenity === 'projector' && !str.includes('projector') && !str.includes('display') && !str.includes('screen')) return false;
+        if (this.filterAmenity === 'video' && !str.includes('video') && !str.includes('cisco') && !str.includes('webex') && !str.includes('camera')) return false;
+        if (this.filterAmenity === 'audio' && !str.includes('audio') && !str.includes('mic') && !str.includes('polycom') && !str.includes('speaker')) return false;
+      }
+      return true;
+    });
+  },
 
   getMyStartupId() {
     if (this.activeStartupFilter) return this.activeStartupFilter;
@@ -182,6 +224,24 @@ const MeetingRoomsModule = {
   },
 
   renderSchedulerView({ rooms, myStartup, myBookingsToday, availableSlotsCount, mySlotsCount, otherSlotsCount }) {
+    const now = new Date();
+    const pad = n => (n < 10 ? '0' : '') + n;
+    const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    const isToday = (this.selectedDate === todayStr);
+    const tomorrowObj = new Date(now);
+    tomorrowObj.setDate(now.getDate() + 1);
+    const tomorrowStr = `${tomorrowObj.getFullYear()}-${pad(tomorrowObj.getMonth() + 1)}-${pad(tomorrowObj.getDate())}`;
+    const isTomorrow = (this.selectedDate === tomorrowStr);
+
+    const dParts = this.selectedDate.split('-').map(Number);
+    const dObj = new Date(dParts[0], dParts[1] - 1, dParts[2]);
+    const dayName = dObj.toLocaleDateString('en-US', { weekday: 'long' });
+    const dayNum = dObj.getDate();
+    const monthName = dObj.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    const formattedDateLabel = `${dayName}, ${dayNum} ${monthName}`;
+
+    const filteredRooms = this.getFilteredRooms(rooms);
+
     return `
       <!-- If My Startup has bookings today, show prominent Quick Shelf -->
       ${myBookingsToday.length > 0 ? `
@@ -209,48 +269,123 @@ const MeetingRoomsModule = {
         </div>
       ` : ''}
 
-      <!-- Unified Modern Scheduler Toolbar (Operating Windows + Status Legend) -->
-      <div style="background: var(--bg-surface-elevated); border: 1.5px solid var(--border-subtle); border-radius: 14px; padding: 12px 18px; margin-bottom: 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.03);">
+      <!-- Top Master Date Navigation Bar & Calendar Picker -->
+      <div class="clear-date-bar" style="margin-bottom: 14px;">
+        <div class="clear-date-nav">
+          <button type="button" class="clear-date-btn" onclick="MeetingRoomsModule.cycleDate(-1)" title="Previous day (‹)">‹ Prev Day</button>
+
+          <!-- Interactive Calendar Date Picker Button -->
+          <label class="clear-date-picker-wrap" title="Click to choose a date from calendar">
+            <span style="font-size: 13.5px;">📅</span>
+            <span style="font-size: 12.5px; font-weight: 800; color: var(--text-primary, #0f172a); white-space: nowrap;">${formattedDateLabel}</span>
+            ${isToday ? `<span class="badge badge-success" style="font-size: 10px; padding: 1px 6px;">Today</span>` : isTomorrow ? `<span class="badge badge-info" style="font-size: 10px; padding: 1px 6px;">Tomorrow</span>` : ''}
+            <span style="font-size: 10px; color: var(--text-muted); margin-left: 2px;">▾</span>
+            <input type="date" value="${this.selectedDate}" onchange="MeetingRoomsModule.setDate(this.value)" onclick="try{this.showPicker?.()}catch(e){}" style="position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer;" title="Pick a date from calendar">
+          </label>
+
+          <button type="button" class="clear-date-btn" onclick="MeetingRoomsModule.cycleDate(1)" title="Next day (›)">Next Day ›</button>
+        </div>
+
+        <div class="clear-date-quick-chips">
+          <button type="button" class="clear-chip-btn ${isToday ? 'active' : ''}" onclick="MeetingRoomsModule.setDate('${todayStr}')">Today</button>
+          <button type="button" class="clear-chip-btn ${isTomorrow ? 'active' : ''}" onclick="MeetingRoomsModule.setDate('${tomorrowStr}')">Tomorrow</button>
+          <button type="button" class="clear-chip-btn" onclick="MeetingRoomsModule.openCalendarModal()" title="Open month calendar view">🗓️ Month View</button>
+        </div>
+      </div>
+
+      <!-- Filters Bar: Capacity, Amenities & Time of Day -->
+      <div class="meeting-filters-bar">
+        <div class="meeting-filters-left">
+          <!-- Capacity Filter -->
+          <div class="meeting-filter-group">
+            <span class="meeting-filter-label">👥 Capacity:</span>
+            <div class="meeting-filter-pills">
+              <button class="meeting-filter-pill ${this.filterCapacity === 'all' ? 'active' : ''}" onclick="MeetingRoomsModule.setFilterCapacity('all')">All</button>
+              <button class="meeting-filter-pill ${this.filterCapacity === '4' ? 'active' : ''}" onclick="MeetingRoomsModule.setFilterCapacity('4')">4+ Pax</button>
+              <button class="meeting-filter-pill ${this.filterCapacity === '8' ? 'active' : ''}" onclick="MeetingRoomsModule.setFilterCapacity('8')">8+ Pax</button>
+              <button class="meeting-filter-pill ${this.filterCapacity === '16' ? 'active' : ''}" onclick="MeetingRoomsModule.setFilterCapacity('16')">16+ Pax</button>
+            </div>
+          </div>
+
+          <!-- Amenities Filter -->
+          <div class="meeting-filter-group">
+            <span class="meeting-filter-label">✨ Amenities:</span>
+            <div class="meeting-filter-pills">
+              <button class="meeting-filter-pill ${this.filterAmenity === 'all' ? 'active' : ''}" onclick="MeetingRoomsModule.setFilterAmenity('all')">All</button>
+              <button class="meeting-filter-pill ${this.filterAmenity === 'projector' ? 'active' : ''}" onclick="MeetingRoomsModule.setFilterAmenity('projector')">📽️ Projector</button>
+              <button class="meeting-filter-pill ${this.filterAmenity === 'video' ? 'active' : ''}" onclick="MeetingRoomsModule.setFilterAmenity('video')">📹 Video Kit</button>
+              <button class="meeting-filter-pill ${this.filterAmenity === 'audio' ? 'active' : ''}" onclick="MeetingRoomsModule.setFilterAmenity('audio')">🎙️ Audio/Mic</button>
+            </div>
+          </div>
+
+          <!-- Time of Day Session Filter -->
+          <div class="meeting-filter-group">
+            <span class="meeting-filter-label">⏰ Time of Day:</span>
+            <div class="meeting-filter-pills">
+              <button class="meeting-filter-pill ${this.filterSession === 'all' ? 'active' : ''}" onclick="MeetingRoomsModule.setFilterSession('all')">All Day</button>
+              <button class="meeting-filter-pill ${this.filterSession === 'morning' ? 'active' : ''}" onclick="MeetingRoomsModule.setFilterSession('morning')">🌅 Morning</button>
+              <button class="meeting-filter-pill ${this.filterSession === 'afternoon' ? 'active' : ''}" onclick="MeetingRoomsModule.setFilterSession('afternoon')">🌆 Afternoon</button>
+            </div>
+          </div>
+        </div>
+
+        ${(this.filterCapacity !== 'all' || this.filterAmenity !== 'all' || this.filterSession !== 'all') ? `
+          <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.resetFilters()" style="font-size: 11px; padding: 4px 10px; border-radius: 7px; color: var(--text-muted);">
+            ✕ Clear Filters
+          </button>
+        ` : ''}
+      </div>
+
+      <!-- Operating Windows & Legend Strip -->
+      <div style="background: var(--bg-surface-elevated); border: 1.5px solid var(--border-subtle); border-radius: 14px; padding: 10px 16px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.02);">
         <!-- Windows -->
         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
           <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em; display: inline-flex; align-items: center; gap: 4px;">
-            <span>⏰</span> Operating Windows:
+            <span>⏰</span> Windows:
           </span>
-          <span class="badge" style="background: rgba(34, 197, 94, 0.12); color: #15803d; border: 1px solid rgba(34, 197, 94, 0.35); font-weight: 700; font-size: 11.5px; padding: 4px 12px; border-radius: 999px;">
-            🌅 Morning: 08:00 – 11:00 AM
+          <span class="badge" style="background: rgba(34, 197, 94, 0.12); color: #15803d; border: 1px solid rgba(34, 197, 94, 0.35); font-weight: 700; font-size: 11px; padding: 3px 10px; border-radius: 999px;">
+            🌅 Morning (08:00 – 11:00 AM)
           </span>
-          <span style="font-size: 11px; color: var(--text-muted); font-weight: 600; padding: 4px 10px; background: var(--bg-surface); border-radius: 6px; border: 1px solid var(--border-subtle);">
+          <span style="font-size: 11px; color: var(--text-muted); font-weight: 600; padding: 3px 8px; background: var(--bg-surface); border-radius: 6px; border: 1px solid var(--border-subtle);">
             ☕ 11:00 AM – 03:00 PM Break
           </span>
-          <span class="badge" style="background: rgba(99, 102, 241, 0.12); color: #4338ca; border: 1px solid rgba(99, 102, 241, 0.35); font-weight: 700; font-size: 11.5px; padding: 4px 12px; border-radius: 999px;">
-            🌆 Afternoon: 03:00 – 07:00 PM
+          <span class="badge" style="background: rgba(99, 102, 241, 0.12); color: #4338ca; border: 1px solid rgba(99, 102, 241, 0.35); font-weight: 700; font-size: 11px; padding: 3px 10px; border-radius: 999px;">
+            🌆 Afternoon (03:00 – 07:00 PM)
           </span>
         </div>
 
         <!-- Legend & Realtime Summary -->
         <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-          <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px;">
-            <span style="width: 8px; height: 8px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.6);"></span>
-            <span style="color: #15803d; font-weight: 800;">${availableSlotsCount} Available</span>
+          <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px;">
+            <span style="width: 8px; height: 8px; border-radius: 50%; background: #22c55e;"></span>
+            <span style="color: #15803d; font-weight: 700;">${availableSlotsCount} Available</span>
           </div>
-          <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px;">
-            <span style="width: 8px; height: 8px; border-radius: 50%; background: #2563eb; box-shadow: 0 0 6px rgba(37,99,235,0.6);"></span>
-            <span style="color: #1d4ed8; font-weight: 800;">${mySlotsCount} Reserved (Mine)</span>
+          <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px;">
+            <span style="width: 8px; height: 8px; border-radius: 50%; background: #2563eb;"></span>
+            <span style="color: #1d4ed8; font-weight: 700;">${mySlotsCount} Reserved by You</span>
           </div>
-          <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px;">
-            <span style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);"></span>
-            <span style="color: #dc2626; font-weight: 800;">${otherSlotsCount} Booked (Red)</span>
-          </div>
-          <div style="font-size: 11.5px; font-family: var(--font-mono); font-weight: 700; color: var(--text-secondary); background: var(--bg-surface); padding: 4px 12px; border-radius: 999px; border: 1px solid var(--border-subtle); margin-left: 2px;">
-            📅 ${this.selectedDate}
+          <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px;">
+            <span style="width: 8px; height: 8px; border-radius: 50%; background: #94a3b8;"></span>
+            <span style="color: #64748b; font-weight: 700;">${otherSlotsCount} Booked (Occupied)</span>
           </div>
         </div>
       </div>
 
       <!-- Room Cards Grid -->
-      <div class="grid-2col" style="margin-bottom: 26px;">
-        ${rooms.map(r => this.renderRoomCard(r, myStartup)).join('')}
-      </div>
+      ${filteredRooms.length === 0 ? `
+        <div style="background: var(--bg-surface-elevated); border: 1.5px dashed var(--border-medium); border-radius: 16px; padding: 40px 20px; text-align: center; margin-bottom: 26px;">
+          <div style="font-size: 32px; margin-bottom: 10px;">🔍</div>
+          <h4 style="font-size: 16px; font-weight: 800; color: var(--text-primary); margin: 0 0 6px 0;">No matching rooms found</h4>
+          <p style="font-size: 12.5px; color: var(--text-muted); margin: 0 0 16px 0;">Try adjusting your capacity, amenities, or session filters.</p>
+          <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.resetFilters()" style="font-weight: 700; border-radius: 8px;">
+            Reset Filters
+          </button>
+        </div>
+      ` : `
+        <div class="grid-2col" style="margin-bottom: 26px;">
+          ${filteredRooms.map(r => this.renderRoomCard(r, myStartup)).join('')}
+        </div>
+      `}
 
       <!-- Confirmed Bookings for Selected Date -->
       <div class="card" style="border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); background: var(--bg-surface); overflow: hidden;">
@@ -1235,6 +1370,129 @@ const MeetingRoomsModule = {
     }
   },
 
+  openWaitlistModal(roomId, slot, bookedBookingId) {
+    const rooms = window.store.getMeetingRooms();
+    const room = rooms.find(r => r.id === roomId);
+    if (!room) return;
+    const booking = (room.bookings || []).find(b => b.id === bookedBookingId) || {};
+    const myStartup = this.getMyStartup();
+
+    const curHour = parseInt(slot.split(':')[0], 10);
+    const endHour = curHour + 1;
+    const endSlotStr = `${endHour < 10 ? '0' : ''}${endHour}:00`;
+
+    const formatSlot12h = (slot24) => {
+      if (!slot24) return '';
+      const [h, m] = slot24.split(':').map(Number);
+      const period = h >= 12 ? 'PM' : 'AM';
+      const displayH = h % 12 || 12;
+      return `${displayH < 10 ? '0' : ''}${displayH}:${m < 10 ? '0' : ''}${m} ${period}`;
+    };
+
+    const timeRangeLabel = `${formatSlot12h(slot)} – ${formatSlot12h(endSlotStr)}`;
+
+    const dParts = this.selectedDate.split('-').map(Number);
+    const dObj = new Date(dParts[0], dParts[1] - 1, dParts[2]);
+    const dayName = dObj.toLocaleDateString('en-US', { weekday: 'long' });
+    const dayNum = dObj.getDate();
+    const monthName = dObj.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    const formattedDate = `${dayName}, ${dayNum} ${monthName}`;
+
+    const html = `
+      <div class="modal-overlay active" id="modal-waitlist" onclick="if(event.target === this) MeetingRoomsModule.closeModal('modal-waitlist')" style="z-index: 1060; display: flex; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(6px); padding: 16px;">
+        <div class="modal-content" style="max-width: 480px; width: 100%; max-height: min(92vh, 600px); border-radius: 18px; background: var(--bg-surface); border: 1.5px solid var(--border-medium); display: flex; flex-direction: column; overflow: hidden; box-shadow: var(--shadow-xl); animation: scaleUp 0.2s ease;">
+          
+          <div class="modal-header" style="background: var(--bg-surface-elevated); border-bottom: 1px solid var(--border-subtle); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 20px;">🔔</span>
+              <div>
+                <h3 style="font-size: 15px; font-weight: 800; margin: 0; color: var(--text-primary);">Join Waitlist / Notify Me</h3>
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 1px;">Get alerted if this slot becomes available</div>
+              </div>
+            </div>
+            <button class="modal-close-btn" onclick="MeetingRoomsModule.closeModal('modal-waitlist')">&times;</button>
+          </div>
+
+          <form id="form-waitlist" onsubmit="MeetingRoomsModule.submitWaitlist(event, '${room.id}', '${slot}')" style="display: flex; flex-direction: column; flex: 1; overflow: hidden; margin: 0;">
+            <div class="modal-body" style="padding: 16px 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 12px;">
+              <!-- Slot Overview Card -->
+              <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 12px 14px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 18px;">${room.icon || '🏢'}</span>
+                    <strong style="font-size: 14.5px; color: var(--text-primary);">${room.name}</strong>
+                  </div>
+                  <span class="badge" style="background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; font-weight: 700; font-size: 11px;">
+                    🔒 Currently Booked
+                  </span>
+                </div>
+                <div style="font-size: 12px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 2px;">
+                  <div>📅 <strong>${formattedDate}</strong></div>
+                  <div>⏰ <strong>${timeRangeLabel}</strong> (1 hr)</div>
+                  <div style="color: var(--text-muted); font-size: 11px; margin-top: 2px;">
+                    Reserved by: <strong>${booking.startupName || 'Another venture'}</strong>${booking.title ? ` • ${booking.title}` : ''}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Notice -->
+              <div style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 10px; padding: 10px 14px; font-size: 11.5px; color: #1e40af; display: flex; align-items: center; gap: 8px;">
+                <span>💡</span>
+                <span>If the reserving team releases or reschedules this slot, you will be notified immediately via email and portal alert.</span>
+              </div>
+
+              <!-- Inputs -->
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="font-weight: 700; font-size: 12px; margin-bottom: 4px; display: block;">
+                  Alert Email Address <span class="required-star">*</span>
+                </label>
+                <input type="email" id="waitlist-email" class="form-control" required value="founder@${myStartup.name.toLowerCase().replace(/[^a-z0-9]/g, '')}.io" style="font-size: 12.5px; padding: 8px 12px; border-radius: 8px;">
+              </div>
+
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="font-weight: 700; font-size: 12px; margin-bottom: 4px; display: block;">
+                  Mobile / WhatsApp (Optional)
+                </label>
+                <input type="text" id="waitlist-phone" class="form-control" placeholder="+91 98765 43210" value="+91 98765 43210" style="font-size: 12.5px; padding: 8px 12px; border-radius: 8px;">
+              </div>
+            </div>
+
+            <div style="flex-shrink: 0; padding: 12px 20px; border-top: 1px solid var(--border-subtle); background: var(--bg-surface-elevated); display: flex; gap: 10px; justify-content: flex-end; align-items: center;">
+              <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.closeModal('modal-waitlist')" style="padding: 8px 14px; border-radius: 8px; font-size: 12px;">
+                Cancel
+              </button>
+              <button type="submit" class="btn btn-primary btn-sm" style="background: #2563eb; border-color: #1d4ed8; font-weight: 800; font-size: 12.5px; padding: 8px 20px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
+                <span>🔔</span> Join Waitlist
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('modal-mount').insertAdjacentHTML('beforeend', html);
+  },
+
+  submitWaitlist(event, roomId, slot) {
+    if (event) event.preventDefault();
+    const rooms = window.store.getMeetingRooms();
+    const room = rooms.find(r => r.id === roomId);
+    const email = document.getElementById('waitlist-email')?.value || 'founder@venture.io';
+
+    if (!this.waitlist) this.waitlist = [];
+    this.waitlist.push({
+      roomId,
+      roomName: room ? room.name : roomId,
+      date: this.selectedDate,
+      slot,
+      email,
+      timestamp: new Date().toISOString()
+    });
+
+    this.closeModal('modal-waitlist');
+    App.showToast(`🔔 Added to waitlist! We will alert ${email} the moment ${room ? room.name : 'this slot'} opens up.`, 'success');
+  },
+
   switchRoomWindow(roomId, session) {
     if (!this.roomActiveSession) this.roomActiveSession = {};
     this.roomActiveSession[roomId] = session;
@@ -1474,10 +1732,10 @@ const MeetingRoomsModule = {
         } else {
           return `
             <div class="clear-slot-card booked" 
-                 onclick="App.showToast('Slot already booked: ${booked.title} (${booked.startupName})', 'warning')"
-                 title="Already Reserved by ${booked.startupName || 'Startup'} (${timeRangeLabel}) • Slot unavailable">
+                 onclick="MeetingRoomsModule.openWaitlistModal('${room.id}', '${slot}', '${booked.id}')"
+                 title="${timeRangeLabel} • Reserved by ${booked.startupName || 'Startup'}${booked.title ? ': ' + booked.title : ''} • Tap to join waitlist / get notified">
               <div class="slot-time">${timeRangeLabel}</div>
-              <div class="slot-status">🔴 Booked: ${booked.startupName || 'Reserved'}</div>
+              <div class="slot-status">🔒 Booked</div>
             </div>
           `;
         }
@@ -1489,7 +1747,7 @@ const MeetingRoomsModule = {
                title="${isSelected ? '✓ Selected: Click to unselect' : 'Click to select ' + timeRangeLabel}">
             <div class="slot-time">${timeRangeLabel}</div>
             <div class="slot-status">
-              ${isSelected ? '✓ Selected' : `🟢 Open • ₹${room.hourlyRate}`}
+              ${isSelected ? '✓ Selected' : '🟢 Available'}
             </div>
           </div>
         `;
@@ -1538,6 +1796,9 @@ const MeetingRoomsModule = {
       `;
     }
 
+    const showMorning = this.filterSession === 'all' || this.filterSession === 'morning';
+    const showAfternoon = this.filterSession === 'all' || this.filterSession === 'afternoon';
+
     return `
       <div class="exec-room-card" id="exec-card-${room.id}">
         <!-- Top Row: Room Header + Live Clock & Company Brand -->
@@ -1551,9 +1812,9 @@ const MeetingRoomsModule = {
               </div>
               <div class="exec-meta-row">
                 <span class="exec-pill-badge">👥 ${room.capacity} Pax Capacity</span>
-                <span class="exec-pill-badge">₹${room.hourlyRate}/hr</span>
+                <span class="exec-pill-badge" style="background: rgba(99, 102, 241, 0.08); color: #4f46e5; border: 1px solid rgba(99, 102, 241, 0.25); font-weight: 800;">₹${room.hourlyRate}/hr</span>
                 <span style="font-size: 11px; color: ${availableHours === 0 ? '#dc2626' : otherBookedHours > 0 ? '#ea580c' : statusType === 'available' ? '#16a34a' : 'var(--text-secondary, #64748b)'}; font-weight: 700;">
-                  ${availableHours === 0 ? '🔴 0 Slots Open (Fully Booked)' : otherBookedHours > 0 ? `${availableHours} of 7 Slots Open • <span style="color: #dc2626; font-weight: 800;">${otherBookedHours} Booked</span>` : `${availableHours} of 7 Slots Open`}
+                  ${availableHours === 0 ? '0 Slots Open (Fully Booked)' : otherBookedHours > 0 ? `${availableHours} of 7 Slots Open • ${otherBookedHours} Booked` : `${availableHours} of 7 Slots Open`}
                 </span>
               </div>
             </div>
@@ -1568,59 +1829,39 @@ const MeetingRoomsModule = {
           </div>
         </div>
 
-        <!-- Date Navigation Bar (Prev / Next & Quick Selectors) -->
-        <div class="clear-date-bar">
-          <div class="clear-date-nav">
-            <button type="button" class="clear-date-btn" onclick="MeetingRoomsModule.cycleDate(-1)" title="Previous day (‹)">‹ Prev Day</button>
-
-            <!-- Activated Interactive Calendar Date Picker Button -->
-            <label class="clear-date-picker-wrap" title="Click to open calendar and choose a date" onclick="try{this.querySelector('input').showPicker()}catch(e){}">
-              <span style="font-size: 13.5px;">📅</span>
-              <span style="font-size: 12.5px; font-weight: 800; color: var(--text-primary, #0f172a); white-space: nowrap;">${formattedDateStr}</span>
-              ${isToday ? `<span class="badge badge-success" style="font-size: 10px; padding: 1px 6px;">Today</span>` : isTomorrow ? `<span class="badge badge-info" style="font-size: 10px; padding: 1px 6px;">Tomorrow</span>` : ''}
-              <span style="font-size: 10px; color: var(--text-muted); margin-left: 2px;">▾</span>
-              <input type="date" value="${this.selectedDate}" onchange="MeetingRoomsModule.setDate(this.value)" onclick="try{this.showPicker?.()}catch(e){}" style="position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer;" title="Pick a date from calendar">
-            </label>
-
-            <button type="button" class="clear-date-btn" onclick="MeetingRoomsModule.cycleDate(1)" title="Next day (›)">Next Day ›</button>
-          </div>
-
-          <div class="clear-date-quick-chips">
-            <button type="button" class="clear-chip-btn ${isToday ? 'active' : ''}" onclick="MeetingRoomsModule.setDate('${todayStr}')">Today</button>
-            <button type="button" class="clear-chip-btn ${isTomorrow ? 'active' : ''}" onclick="MeetingRoomsModule.setDate('${tomorrowStr}')">Tomorrow</button>
-            <button type="button" class="clear-chip-btn" onclick="MeetingRoomsModule.openCalendarModal()" title="Open full month calendar view">🗓️ Month View</button>
-          </div>
-        </div>
-
         <!-- The Clear Way: Intuitive Time Slots Grid -->
         <div class="clear-sessions-wrap">
-          <!-- Morning Session -->
-          <div class="clear-session-block">
-            <div class="clear-session-header">
-              <div class="clear-session-title">
-                <span>🌅</span>
-                <span>Morning Session</span>
+          ${showMorning ? `
+            <!-- Morning Session -->
+            <div class="clear-session-block">
+              <div class="clear-session-header">
+                <div class="clear-session-title">
+                  <span>🌅</span>
+                  <span>Morning Session</span>
+                </div>
+                <span class="clear-session-hours">08:00 AM – 11:00 AM</span>
               </div>
-              <span class="clear-session-hours">08:00 AM – 11:00 AM</span>
+              <div class="clear-slots-grid">
+                ${morningSlots.map(renderSlotCard).join('')}
+              </div>
             </div>
-            <div class="clear-slots-grid">
-              ${morningSlots.map(renderSlotCard).join('')}
-            </div>
-          </div>
+          ` : ''}
 
-          <!-- Afternoon Session -->
-          <div class="clear-session-block">
-            <div class="clear-session-header">
-              <div class="clear-session-title">
-                <span>🌆</span>
-                <span>Afternoon Session</span>
+          ${showAfternoon ? `
+            <!-- Afternoon Session -->
+            <div class="clear-session-block">
+              <div class="clear-session-header">
+                <div class="clear-session-title">
+                  <span>🌆</span>
+                  <span>Afternoon Session</span>
+                </div>
+                <span class="clear-session-hours">03:00 PM – 07:00 PM</span>
               </div>
-              <span class="clear-session-hours">03:00 PM – 07:00 PM</span>
+              <div class="clear-slots-grid">
+                ${afternoonSlots.map(renderSlotCard).join('')}
+              </div>
             </div>
-            <div class="clear-slots-grid">
-              ${afternoonSlots.map(renderSlotCard).join('')}
-            </div>
-          </div>
+          ` : ''}
         </div>
 
         <!-- Inline Lock-In Strip (Slides down when slot selected) -->
