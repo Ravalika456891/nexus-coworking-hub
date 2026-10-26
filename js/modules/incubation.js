@@ -354,35 +354,41 @@ const IncubationModule = {
 
     return `
       <div class="kanban-board-wrapper">
-        <!-- Kanban Top Bar with View Mode Switcher and Summary -->
+        <!-- Kanban Top Bar with View Mode Switcher and Smooth Glide -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
-          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-            <div style="font-size: 15px; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-              <span>📊 8-Stage Incubation Pipeline Flow</span>
-              <span class="badge badge-subtle" style="font-size: 11px; padding: 3px 9px;">
-                ${startups.length} Total Ventures
+          <div>
+            <div style="font-size: 16px; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+              <span>🌱 8-Stage Incubation Pipeline</span>
+              <span class="badge badge-success" style="font-size: 11px; padding: 2px 8px; font-weight: 700;">
+                ${startups.length} Active Ventures
               </span>
             </div>
-            <div style="font-size: 11.5px; color: var(--text-muted);">
-              (Scroll horizontally to inspect all 8 incubation stages)
+            <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+              Accelerating cohort founders from Genesis to Institutional Series A & Graduation
             </div>
           </div>
 
           <div style="display: flex; align-items: center; gap: 8px;">
+            <!-- Smooth Glide Navigation Buttons -->
+            <div style="display: inline-flex; gap: 4px;">
+              <button class="btn btn-outline btn-sm" style="padding: 4px 10px; font-size: 13px; font-weight: 800; border-radius: 8px;" onclick="IncubationModule.scrollKanban(-340)" title="Glide Left">‹</button>
+              <button class="btn btn-outline btn-sm" style="padding: 4px 10px; font-size: 13px; font-weight: 800; border-radius: 8px;" onclick="IncubationModule.scrollKanban(340)" title="Glide Right">›</button>
+            </div>
+
             <!-- View Mode Switcher -->
             <div style="display: inline-flex; background: var(--bg-surface); padding: 3px; border-radius: 8px; border: 1px solid var(--border-subtle);">
               <button class="btn btn-sm ${isKanbanMode ? 'btn-primary' : 'btn-outline'}" style="font-size: 11.5px; padding: 4px 12px; border-radius: 6px; font-weight: 700;" onclick="IncubationModule.setPipelineViewMode('kanban')">
-                📊 Board View
+                🎴 Board View
               </button>
               <button class="btn btn-sm ${!isKanbanMode ? 'btn-primary' : 'btn-outline'}" style="font-size: 11.5px; padding: 4px 12px; border-radius: 6px; font-weight: 700;" onclick="IncubationModule.setPipelineViewMode('table')">
-                📋 Table Matrix
+                📑 Table Matrix
               </button>
             </div>
           </div>
         </div>
 
         <!-- Horizontal Stage Jump Filter Pills -->
-        <div style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 12px; margin-bottom: 14px; border-bottom: 1px solid var(--border-subtle);">
+        <div style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 14px; border-bottom: 1px solid var(--border-subtle);">
           <button class="btn btn-sm ${this.activeStageFilter === 'all' ? 'btn-primary' : 'btn-outline'}" style="font-size: 11px; padding: 4px 12px; border-radius: 999px; white-space: nowrap; font-weight: 700;" onclick="IncubationModule.setStageFilter('all')">
             All Stages (${startups.length})
           </button>
@@ -404,6 +410,11 @@ const IncubationModule = {
         ${isKanbanMode ? this.renderKanbanColumns(startups, stages) : this.renderKanbanTableMatrix(startups, stages)}
       </div>
     `;
+  },
+
+  scrollKanban(delta) {
+    const el = document.getElementById('kanban-scroll-container');
+    if (el) el.scrollBy({ left: delta, behavior: 'smooth' });
   },
 
   setPipelineViewMode(mode) {
@@ -476,10 +487,10 @@ const IncubationModule = {
       ? stages 
       : stages.filter(st => st.id.toLowerCase() === this.activeStageFilter.toLowerCase());
 
-    const minWidth = visibleStages.length <= 4 ? '100%' : `${visibleStages.length * 280}px`;
+    const minWidth = visibleStages.length <= 4 ? '100%' : `${visibleStages.length * 285}px`;
 
     return `
-      <div class="kanban-scroll-track">
+      <div class="kanban-scroll-track" id="kanban-scroll-container">
         <div class="kanban-columns-row" style="min-width: ${minWidth};">
           ${visibleStages.map(st => {
             const inStage = startups.filter(s => (s.incubationJourneyStage || '').toLowerCase() === st.id.toLowerCase());
@@ -489,10 +500,10 @@ const IncubationModule = {
                   <div class="kanban-col-stripe" style="background: ${st.color || 'var(--accent-primary)'};"></div>
                   <div class="kanban-col-top">
                     <span class="kanban-stage-pill" style="background: ${st.color}18; color: ${st.color}; border: 1px solid ${st.color}40;">
-                      <span>${st.icon}</span> <span>Stage ${st.stageNumber} of 8</span>
+                      <span>${st.icon}</span> <span>Stage ${st.stageNumber}</span>
                     </span>
                     <span class="kanban-count-badge">
-                      ${inStage.length} ${inStage.length === 1 ? 'Startup' : 'Startups'}
+                      ${inStage.length}
                     </span>
                   </div>
                   <h3 class="kanban-col-title">
@@ -506,12 +517,9 @@ const IncubationModule = {
 
                   ${!inStage.length ? `
                     <div class="kanban-empty-slot">
-                      <div style="font-size: 28px; opacity: 0.65;">${st.icon}</div>
-                      <div style="font-size: 12px; font-weight: 800; color: var(--text-secondary);">No ventures in ${st.name}</div>
-                      <div style="font-size: 11px; color: var(--text-muted); line-height: 1.4; max-width: 200px;">
-                        ${st.kpi ? `Goal: ${st.kpi}` : 'Awaiting cohort progress'}
-                      </div>
-                      <button class="btn btn-outline btn-sm" style="font-size: 11px; padding: 4px 10px; margin-top: 6px; border-radius: 6px;" onclick="IncubationModule.openAssignStageModal('${st.id}')">
+                      <div style="font-size: 22px; opacity: 0.45;">${st.icon}</div>
+                      <div style="font-size: 11.5px; font-weight: 700; color: var(--text-secondary);">No ventures in ${st.name}</div>
+                      <button class="btn btn-outline btn-sm" style="font-size: 10.5px; padding: 3px 8px; margin-top: 4px; border-radius: 6px;" onclick="IncubationModule.openAssignStageModal('${st.id}')">
                         + Move Startup Here
                       </button>
                     </div>
@@ -544,14 +552,20 @@ const IncubationModule = {
     }
 
     return `
-      <div class="kanban-venture-card" id="kcard-${s.id}">
+      <div class="kanban-venture-card" id="kcard-${s.id}" onclick="IncubationModule.viewStartupJourneyModal('${s.id}')" title="Click to inspect full venture dossier for ${s.name}">
         <!-- Top Identity Row -->
         <div class="kanban-card-top">
-          <div class="kanban-card-brand" onclick="IncubationModule.viewStartupJourneyModal('${s.id}')" title="Click to view full dossier">
-            <div class="kanban-card-avatar">${s.logoEmoji || '🚀'}</div>
-            <div style="min-width: 0;">
+          <div class="kanban-card-brand">
+            <div class="kanban-card-avatar" style="border: 1px solid ${st.color || 'var(--accent-primary)'}33; background: ${st.color || 'var(--accent-primary)'}12;">
+              ${s.logoEmoji || '🚀'}
+            </div>
+            <div style="min-width: 0; flex: 1;">
               <h4 class="kanban-card-name" title="${s.name}">${s.name}</h4>
-              <div class="kanban-card-sector">${s.category || s.sector || 'DeepTech'}</div>
+              <div class="kanban-card-sector">
+                <span>${s.category || s.sector || 'DeepTech'}</span>
+                <span style="opacity: 0.5;">•</span>
+                <span>${s.cohort || 'Cohort 2026'}</span>
+              </div>
             </div>
           </div>
 
@@ -560,65 +574,35 @@ const IncubationModule = {
           </span>
         </div>
 
-        <!-- Current Sub-Stage Badge -->
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
-          <span class="badge badge-subtle" style="font-size: 10.5px; padding: 2px 8px; border-radius: 4px; font-weight: 600; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 170px;">
-            ${s.currentStage || s.stage || 'In Incubation'}
-          </span>
-          <span style="font-size: 10.5px; color: var(--text-muted); font-weight: 600;">
-            ${s.cohort || 'Cohort 2026-A'}
-          </span>
+        <!-- Sleek Gradient Progress Track -->
+        <div class="kanban-progress-track">
+          <div class="kanban-progress-bar" style="width: ${s.progressPercent}%; background: linear-gradient(90deg, ${st.color || 'var(--accent-primary)'}, #38bdf8);"></div>
         </div>
 
-        <!-- Visual Progress Bar -->
-        <div>
-          <div class="kanban-progress-track">
-            <div class="kanban-progress-bar" style="width: ${s.progressPercent}%; background: ${st.color || 'var(--accent-primary)'};"></div>
-          </div>
-          <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); margin-top: 3px; font-family: var(--font-mono);">
-            <span>Stage ${st.stageNumber} of 8</span>
-            <span>${s.progressPercent}% Complete</span>
-          </div>
-        </div>
-
-        <!-- Next Milestone Target -->
-        <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 6px 8px; font-size: 11px; display: flex; align-items: center; gap: 6px;">
+        <!-- Next Milestone Target Chip -->
+        <div class="kanban-target-chip" title="Next Sprint Target: ${s.nextMilestone || 'Sprint Deliverable'}">
           <span>🎯</span>
-          <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">
-            <strong style="color: var(--text-primary);">${s.nextMilestone || 'Sprint Deliverable'}</strong>
-          </div>
+          <span class="kanban-target-text">${s.nextMilestone || 'Sprint Deliverable'}</span>
         </div>
 
-        <!-- Mentor & View Link Row -->
-        <div class="kanban-meta-row">
-          <div class="kanban-mentor-info" title="Assigned Mentor: ${mentor.name}">
+        <!-- Footer: Founder / Mentor info + Quick Action -->
+        <div class="kanban-card-footer">
+          <div class="kanban-founder-pill" title="Assigned Mentor: ${mentor.name}">
             <span>${mentor.avatarEmoji || '👨‍💼'}</span>
-            <span style="font-weight: 700; color: var(--text-secondary);">${mentor.name}</span>
+            <span>${mentor.name ? mentor.name.split(' ')[0] : 'Mentor'}</span>
           </div>
-          <button class="kanban-view-btn" onclick="IncubationModule.viewStartupJourneyModal('${s.id}')" title="Inspect full founder dossier">
-            View Dossier ➔
-          </button>
-        </div>
 
-        <!-- Quick Stage Movement Selector & Advance Button -->
-        <div class="kanban-card-quick-actions">
-          <select class="kanban-stage-select" onchange="IncubationModule.moveToStage('${s.id}', this.value)" title="Move directly to any incubation stage">
-            ${stages.map(x => `
-              <option value="${x.id}" ${x.id.toLowerCase() === st.id.toLowerCase() ? 'selected' : ''}>
-                ${x.stageNumber}. ${x.name}
-              </option>
-            `).join('')}
-          </select>
-
-          ${!isGraduated ? `
-            <button class="kanban-advance-btn" onclick="IncubationModule.advanceStageQuick('${s.id}')" title="Advance to next incubation stage">
-              ⚡ Advance
-            </button>
-          ` : `
-            <button class="btn btn-sm btn-primary" style="font-size: 10.5px; padding: 3px 8px; border-radius: 6px;" onclick="IncubationModule.viewGraduationCertificate('${s.id}')" title="View Graduation Certificate">
-              🎓 Cert
-            </button>
-          `}
+          <div onclick="event.stopPropagation()">
+            ${!isGraduated ? `
+              <button class="kanban-advance-btn" onclick="IncubationModule.advanceStageQuick('${s.id}')" title="Advance to next incubation stage">
+                ⚡ Advance →
+              </button>
+            ` : `
+              <button class="btn btn-sm btn-primary" style="font-size: 10px; padding: 3px 8px; border-radius: 6px; font-weight: 700;" onclick="IncubationModule.viewGraduationCertificate('${s.id}')" title="View Graduation Certificate">
+                🎓 Cert
+              </button>
+            `}
+          </div>
         </div>
       </div>
     `;
