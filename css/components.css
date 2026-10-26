@@ -1472,6 +1472,96 @@
   color: #f87171 !important;
 }
 
+/* Sticky Booking Bar for Multi-Slot Selection */
+.sticky-booking-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1050;
+  width: calc(100% - 40px);
+  max-width: 860px;
+  background: var(--bg-surface, #ffffff);
+  border: 2px solid var(--accent-primary, #6366f1);
+  border-radius: 16px;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.22), 0 0 0 1px rgba(99, 102, 241, 0.2);
+  animation: slideUpSticky 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+  color: var(--text-primary, #0f172a);
+}
+
+@keyframes slideUpSticky {
+  from {
+    transform: translate(-50%, 40px);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+}
+
+.sticky-booking-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.sticky-room-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(99, 102, 241, 0.1);
+  color: #4f46e5;
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 800;
+}
+
+.sticky-details {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-primary, #0f172a);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sticky-booking-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+[data-theme="dark"] .sticky-booking-bar,
+[data-theme="navy"] .sticky-booking-bar {
+  background: #17212b;
+  border-color: #3b82f6;
+  color: #ffffff;
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(59, 130, 246, 0.35);
+}
+
+[data-theme="dark"] .sticky-details,
+[data-theme="navy"] .sticky-details {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .sticky-room-badge,
+[data-theme="navy"] .sticky-room-badge {
+  background: rgba(59, 130, 246, 0.18);
+  color: #93c5fd;
+  border-color: rgba(59, 130, 246, 0.35);
+}
+
 /* Fullscreen Door Tablet Kiosk Modal */
 .condeco-kiosk-backdrop {
   position: fixed;

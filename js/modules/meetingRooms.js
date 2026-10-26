@@ -264,6 +264,9 @@ const MeetingRoomsModule = {
         </div>
         ${this.renderBookingsTable(rooms, myStartup)}
       </div>
+
+      <!-- Sticky Multi-Select Booking Action Bar -->
+      ${this.renderStickyBookingBar(rooms, myStartup)}
     `;
   },
 
@@ -736,9 +739,247 @@ const MeetingRoomsModule = {
     }
   },
 
-  lockInSelectedSlots(roomId) {
-    if (!this.selectedSlotsByRoom || !this.selectedSlotsByRoom[roomId]) return;
+  renderStickyBookingBar(rooms, myStartup) {
+    if (!this.selectedSlotsByRoom) return '';
+    const roomId = Object.keys(this.selectedSlotsByRoom).find(id => this.selectedSlotsByRoom[id] && this.selectedSlotsByRoom[id].length > 0);
+    if (!roomId) return '';
+
+    const room = rooms.find(r => r.id === roomId);
+    if (!room) return '';
+
     const slots = [...this.selectedSlotsByRoom[roomId]].sort();
+    const count = slots.length;
+    if (count === 0) return '';
+
+    const startSlot = slots[0];
+    const lastSlot = slots[slots.length - 1];
+    const endH = parseInt(lastSlot.split(':')[0], 10) + 1;
+    const endSlotStr = `${endH < 10 ? '0' : ''}${endH}:00`;
+
+    const formatSlot12h = (slot24) => {
+      const [h, m] = slot24.split(':').map(Number);
+      const period = h >= 12 ? 'PM' : 'AM';
+      const displayH = h % 12 || 12;
+      return `${displayH < 10 ? '0' : ''}${displayH}:${m < 10 ? '0' : ''}${m} ${period}`;
+    };
+
+    const remainingCredits = Math.max(0, (myStartup.includedMeetingHours || 12) - (myStartup.usedMeetingHours || 0));
+    const isCovered = remainingCredits >= count;
+    const totalCost = room.hourlyRate * count;
+    const costText = isCovered ? 'Covered by Plan (₹0)' : `₹${totalCost.toLocaleString('en-IN')}`;
+
+    return `
+      <div id="sticky-booking-bar" class="sticky-booking-bar">
+        <div class="sticky-booking-info">
+          <div class="sticky-room-badge">
+            <span>${room.icon || '🏢'}</span>
+            <strong>${room.name}</strong>
+          </div>
+          <div class="sticky-details">
+            <strong>${count} slot${count > 1 ? 's' : ''}</strong>
+            <span style="color: var(--text-muted);">·</span>
+            <span style="font-family: var(--font-mono); font-weight: 800; color: #2563eb;">${formatSlot12h(startSlot)} to ${formatSlot12h(endSlotStr)}</span>
+            <span style="color: var(--text-muted);">·</span>
+            <span class="badge ${isCovered ? 'badge-success' : 'badge-primary'}" style="font-size: 11.5px; padding: 3px 9px; font-weight: 800;">
+              ${costText}
+            </span>
+          </div>
+        </div>
+
+        <div class="sticky-booking-actions">
+          <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.clearSlotSelection('${room.id}')" style="font-size: 12px; padding: 7px 14px; border-radius: 8px;">
+            ✕ Clear
+          </button>
+          <button type="button" class="btn btn-primary" onclick="MeetingRoomsModule.openConfirmBookingModal('${room.id}')" style="background: #16a34a; border-color: #15803d; font-weight: 800; font-size: 13px; padding: 8px 20px; border-radius: 8px; box-shadow: 0 4px 14px rgba(22, 163, 74, 0.4); display: inline-flex; align-items: center; gap: 6px;">
+            <span>Confirm Booking</span> ➔
+          </button>
+        </div>
+      </div>
+    `;
+  },
+
+  bookNextAvailable(roomId) {
+    const rooms = window.store.getMeetingRooms();
+    const room = rooms.find(r => r.id === roomId);
+    if (!room) return;
+
+    const morningSlots = ['08:00', '09:00', '10:00'];
+    const afternoonSlots = ['15:00', '16:00', '17:00', '18:00'];
+    const allSlots = [...morningSlots, ...afternoonSlots];
+
+    const bookings = (room.bookings || []).filter(b => b.date === this.selectedDate && b.status !== 'Cancelled');
+
+    const now = new Date();
+    const pad = n => (n < 10 ? '0' : '') + n;
+    const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    const isToday = (this.selectedDate === todayStr);
+    const curHour = now.getHours();
+
+    let nextSlot = allSlots.find(slot => {
+      const sHour = parseInt(slot.split(':')[0], 10);
+      if (isToday && sHour < curHour) return false;
+      const isBooked = bookings.some(b => {
+        const bHour = parseInt(b.startTime.split(':')[0], 10);
+        const eHour = parseInt(b.endTime.split(':')[0], 10);
+        return sHour >= bHour && sHour < eHour;
+      });
+      return !isBooked;
+    });
+
+    if (!nextSlot && isToday) {
+      const tomorrowObj = new Date(now);
+      tomorrowObj.setDate(now.getDate() + 1);
+      const tomorrowStr = `${tomorrowObj.getFullYear()}-${pad(tomorrowObj.getMonth() + 1)}-${pad(tomorrowObj.getDate())}`;
+      const tomorrowBookings = (room.bookings || []).filter(b => b.date === tomorrowStr && b.status !== 'Cancelled');
+      nextSlot = allSlots.find(slot => {
+        const sHour = parseInt(slot.split(':')[0], 10);
+        return !tomorrowBookings.some(b => {
+          const bHour = parseInt(b.startTime.split(':')[0], 10);
+          const eHour = parseInt(b.endTime.split(':')[0], 10);
+          return sHour >= bHour && sHour < eHour;
+        });
+      });
+      if (nextSlot) {
+        this.selectedDate = tomorrowStr;
+        App.showToast(`Switched to tomorrow for ${room.name} as today's slots are completed.`, 'info');
+      }
+    }
+
+    if (!nextSlot) {
+      App.showToast(`No open slots found for ${room.name}. Please select another date from the calendar.`, 'warning');
+      return;
+    }
+
+    this.selectedSlotsByRoom = { [roomId]: [nextSlot] };
+    this.render();
+    this.openConfirmBookingModal(roomId);
+  },
+
+  lockInSelectedSlots(roomId) {
+    this.openConfirmBookingModal(roomId);
+  },
+
+  openConfirmBookingModal(roomId) {
+    const rooms = window.store.getMeetingRooms();
+    const room = rooms.find(r => r.id === roomId);
+    if (!room) return;
+
+    const slots = (this.selectedSlotsByRoom && this.selectedSlotsByRoom[roomId]) ? [...this.selectedSlotsByRoom[roomId]].sort() : [];
+    if (!slots.length) {
+      App.showToast('Please select at least one open time slot first.', 'warning');
+      return;
+    }
+
+    const startSlot = slots[0];
+    const lastSlot = slots[slots.length - 1];
+    const endH = parseInt(lastSlot.split(':')[0], 10) + 1;
+    const endSlotStr = `${endH < 10 ? '0' : ''}${endH}:00`;
+    const count = slots.length;
+
+    const formatSlot12h = (slot24) => {
+      const [h, m] = slot24.split(':').map(Number);
+      const period = h >= 12 ? 'PM' : 'AM';
+      const displayH = h % 12 || 12;
+      return `${displayH < 10 ? '0' : ''}${displayH}:${m < 10 ? '0' : ''}${m} ${period}`;
+    };
+
+    const myStartup = this.getMyStartup();
+    const remainingCredits = Math.max(0, (myStartup.includedMeetingHours || 12) - (myStartup.usedMeetingHours || 0));
+    const isCovered = remainingCredits >= count;
+    const totalCost = room.hourlyRate * count;
+
+    const dParts = this.selectedDate.split('-').map(Number);
+    const dObj = new Date(dParts[0], dParts[1] - 1, dParts[2]);
+    const dayName = dObj.toLocaleDateString('en-US', { weekday: 'long' });
+    const dayNum = dObj.getDate();
+    const monthName = dObj.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    const formattedDate = `${dayName}, ${dayNum} ${monthName}`;
+
+    const modalHtml = `
+      <div class="modal-overlay active" id="modal-confirm-booking" onclick="if(event.target===this) MeetingRoomsModule.closeModal('modal-confirm-booking')">
+        <div class="modal-content" style="max-width: 520px; width: 100%; border-radius: 18px; background: var(--bg-surface); color: var(--text-primary); border: 1.5px solid var(--border-medium); overflow: hidden; box-shadow: var(--shadow-xl); animation: scaleUp 0.2s ease;">
+          
+          <div class="modal-header" style="background: var(--bg-surface-elevated); border-bottom: 1px solid var(--border-subtle); padding: 18px 22px; display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 22px;">🔒</span>
+              <div>
+                <h3 style="font-size: 16px; font-weight: 800; margin: 0; color: var(--text-primary);">Confirm Room Reservation</h3>
+                <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">Step 2 of 2: Finalize meeting details</div>
+              </div>
+            </div>
+            <button class="modal-close-btn" onclick="MeetingRoomsModule.closeModal('modal-confirm-booking')">&times;</button>
+          </div>
+
+          <div class="modal-body" style="padding: 22px;">
+            <!-- Selected Room & Timing Card -->
+            <div style="background: var(--bg-surface-elevated); border: 1.5px solid var(--border-subtle); border-radius: 12px; padding: 14px 16px; margin-bottom: 18px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 20px;">${room.icon || '🏢'}</span>
+                  <strong style="font-size: 15px; color: var(--text-primary);">${room.name}</strong>
+                </div>
+                <span class="badge ${isCovered ? 'badge-success' : 'badge-primary'}" style="font-weight: 800;">
+                  ${isCovered ? 'Covered by Plan (₹0)' : `₹${totalCost.toLocaleString('en-IN')}`}
+                </span>
+              </div>
+              <div style="font-size: 12.5px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 3px;">
+                <div>📅 <strong>${formattedDate}</strong></div>
+                <div>⏰ <strong>${formatSlot12h(startSlot)} – ${formatSlot12h(endSlotStr)}</strong> (${count} slot${count > 1 ? 's' : ''} · ${count} hr${count > 1 ? 's' : ''})</div>
+                <div style="font-size: 11.5px; color: var(--text-muted);">👥 Room Capacity: up to ${room.capacity} Pax</div>
+              </div>
+            </div>
+
+            <!-- Form Fields -->
+            <form id="form-confirm-booking" onsubmit="MeetingRoomsModule.submitBookingConfirmation(event, '${room.id}')">
+              <div class="form-group" style="margin-bottom: 14px;">
+                <label class="form-label" style="font-weight: 700; font-size: 12.5px; margin-bottom: 5px; display: block;">
+                  Meeting Title / Purpose <span class="required-star">*</span>
+                </label>
+                <input type="text" id="confirm-meeting-title" class="form-control" required placeholder="e.g. Product Sprint & Architecture Sync" value="Executive Strategy & Client Sprint" style="font-size: 13px; padding: 9px 12px; border-radius: 8px;">
+              </div>
+
+              <div class="form-group" style="margin-bottom: 18px;">
+                <label class="form-label" style="font-weight: 700; font-size: 12.5px; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center;">
+                  <span>Number of Attendees <span class="required-star">*</span></span>
+                  <span style="font-size: 11px; font-weight: 600; color: var(--text-muted);">Max: ${room.capacity} Pax</span>
+                </label>
+                <input type="number" id="confirm-attendees" class="form-control" required min="1" max="${room.capacity}" value="4" style="font-size: 13px; padding: 9px 12px; border-radius: 8px;">
+              </div>
+
+              <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 10px; padding: 10px 14px; margin-bottom: 20px; font-size: 11.5px; color: #065f46; display: flex; align-items: center; gap: 8px;">
+                <span>💡</span>
+                <span>Once confirmed, your booking is instantly locked and a smart 4-digit PIN is provisioned on the door display tablet.</span>
+              </div>
+
+              <div style="display: flex; gap: 10px; justify-content: flex-end; align-items: center;">
+                <button type="button" class="btn btn-outline" onclick="MeetingRoomsModule.closeModal('modal-confirm-booking')" style="padding: 9px 16px; border-radius: 8px; font-size: 12.5px;">
+                  Cancel
+                </button>
+                <button type="submit" class="btn btn-primary" style="background: #16a34a; border-color: #15803d; font-weight: 800; font-size: 13px; padding: 9px 24px; border-radius: 8px; box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35);">
+                  Confirm &amp; Reserve Room ➔
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('modal-mount').innerHTML = modalHtml;
+    setTimeout(() => {
+      const input = document.getElementById('confirm-meeting-title');
+      if (input) input.focus();
+    }, 100);
+  },
+
+  submitBookingConfirmation(event, roomId) {
+    if (event) event.preventDefault();
+    const titleInput = document.getElementById('confirm-meeting-title');
+    const attendeesInput = document.getElementById('confirm-attendees');
+    const title = (titleInput && titleInput.value.trim()) || 'Strategic Review & Team Sprint';
+    const attendees = parseInt((attendeesInput && attendeesInput.value) || '4', 10);
+
+    const slots = (this.selectedSlotsByRoom && this.selectedSlotsByRoom[roomId]) ? [...this.selectedSlotsByRoom[roomId]].sort() : [];
     if (!slots.length) return;
 
     const startTime = slots[0];
@@ -747,9 +988,6 @@ const MeetingRoomsModule = {
     const endTime = `${lastH < 10 ? '0' : ''}${lastH}:00`;
 
     const myStartup = this.getMyStartup();
-    const titleInput = document.getElementById(`lockin-title-${roomId}`);
-    const title = (titleInput && titleInput.value.trim()) || 'Strategic Review & Team Sprint';
-
     const res = window.store.bookMeetingRoom({
       roomId,
       startupId: myStartup.id,
@@ -757,26 +995,84 @@ const MeetingRoomsModule = {
       date: this.selectedDate,
       startTime,
       endTime,
-      attendees: 4
+      attendees
     });
 
     if (res.success) {
-      App.showToast(`🔒 Locked In! Reserved ${startTime} – ${endTime} for ${myStartup.name}`, 'success');
+      this.closeModal('modal-confirm-booking');
       delete this.selectedSlotsByRoom[roomId];
       this.render();
       if (typeof DashboardModule !== 'undefined' && DashboardModule.render) {
         DashboardModule.render();
       }
 
-      // Show the requested "Successfully Booked Room" confirmation modal
       const rooms = window.store.getMeetingRooms();
       const bookedRoom = rooms.find(r => r.id === roomId);
       if (bookedRoom && res.booking) {
         this.showBookingSuccessModal(bookedRoom, res.booking, myStartup);
       }
+      App.showToast(`🎉 Reservation confirmed for ${bookedRoom ? bookedRoom.name : 'Meeting Room'}!`, 'success');
     } else {
       App.showToast(`⚠️ ${res.message}`, 'danger');
     }
+  },
+
+  addToGoogleCalendar(bookingId, roomId) {
+    const rooms = window.store.getMeetingRooms();
+    const room = rooms.find(r => r.id === roomId);
+    if (!room) return;
+    const booking = (room.bookings || []).find(b => b.id === bookingId);
+    if (!booking) return;
+
+    const cleanDate = booking.date.replace(/-/g, '');
+    const startH = booking.startTime.replace(/:/g, '');
+    const endH = booking.endTime.replace(/:/g, '');
+    const startIso = `${cleanDate}T${startH}00`;
+    const endIso = `${cleanDate}T${endH}00`;
+    const details = `Room: ${room.name} (${room.capacity} Pax)\nReserved by: ${booking.startupName || 'Your Team'}\nAgenda: ${booking.title}\nSmart Keypad Door Access PIN is active on the door display.\nNexus Co-Working & Incubation Hub`;
+    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(booking.title + ' (' + room.name + ')')}&dates=${startIso}/${endIso}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(room.name + ', Nexus Hub')}`;
+    window.open(url, '_blank');
+  },
+
+  downloadIcs(bookingId, roomId) {
+    const rooms = window.store.getMeetingRooms();
+    const room = rooms.find(r => r.id === roomId);
+    if (!room) return;
+    const booking = (room.bookings || []).find(b => b.id === bookingId);
+    if (!booking) return;
+
+    const cleanDate = booking.date.replace(/-/g, '');
+    const startH = booking.startTime.replace(/:/g, '');
+    const endH = booking.endTime.replace(/:/g, '');
+    const startIso = `${cleanDate}T${startH}00`;
+    const endIso = `${cleanDate}T${endH}00`;
+    const icsContent = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Nexus Hub//Meeting Room Scheduler//EN',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+      'BEGIN:VEVENT',
+      `UID:${booking.id || Date.now()}@nexushub.io`,
+      `DTSTAMP:${cleanDate}T000000Z`,
+      `DTSTART:${startIso}`,
+      `DTEND:${endIso}`,
+      `SUMMARY:${booking.title} (${room.name})`,
+      `DESCRIPTION:Reserved in ${room.name} by ${booking.startupName || 'Your Team'}. Nexus Co-Working Hub.`,
+      `LOCATION:${room.name}, Nexus Hub`,
+      'STATUS:CONFIRMED',
+      'END:VEVENT',
+      'END:VCALENDAR'
+    ].join('\r\n');
+
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `meeting_${room.name.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${booking.date}.ics`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    App.showToast('📅 Calendar event (.ics) downloaded!', 'success');
   },
 
   showBookingSuccessModal(room, booking, myStartup) {
@@ -893,10 +1189,30 @@ const MeetingRoomsModule = {
               </div>
             </div>
 
+            <!-- Add to Calendar Bar -->
+            <div style="background: rgba(37, 99, 235, 0.08); border: 1.5px solid rgba(37, 99, 235, 0.3); border-radius: 12px; padding: 12px 16px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+              <div>
+                <div style="font-size: 12.5px; font-weight: 800; color: #1d4ed8; display: flex; align-items: center; gap: 6px;">
+                  <span>📅</span> <span>Add to Personal Calendar</span>
+                </div>
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+                  Sync reservation with Google Calendar, Outlook, or Apple Calendar
+                </div>
+              </div>
+              <div style="display: flex; gap: 6px; align-items: center;">
+                <button class="btn btn-sm" onclick="MeetingRoomsModule.addToGoogleCalendar('${booking.id}', '${room.id}')" style="background: #ffffff; color: #1e293b; border: 1.5px solid #cbd5e1; font-weight: 700; font-size: 11.5px; padding: 5px 12px; border-radius: 7px; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+                  <span>🌐</span> Google Calendar
+                </button>
+                <button class="btn btn-sm" onclick="MeetingRoomsModule.downloadIcs('${booking.id}', '${room.id}')" style="background: #ffffff; color: #1e293b; border: 1.5px solid #cbd5e1; font-weight: 700; font-size: 11.5px; padding: 5px 12px; border-radius: 7px; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+                  <span>📥</span> iCal (.ics)
+                </button>
+              </div>
+            </div>
+
             <!-- Action Buttons -->
             <div style="display: flex; gap: 8px; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
               <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openKioskModal('${room.id}'); MeetingRoomsModule.closeModal('modal-booking-success');" style="font-weight: 700; padding: 8px 14px; border-radius: 8px; font-size: 12px; display: inline-flex; align-items: center; gap: 5px;">
-                <span>📱</span> Door Tablet View
+                <span>📱</span> Open door display
               </button>
               <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openPassModal('${room.id}', '${booking.id}'); MeetingRoomsModule.closeModal('modal-booking-success');" style="font-weight: 700; padding: 8px 14px; border-radius: 8px; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; color: #2563eb; border-color: rgba(37, 99, 235, 0.35);">
                 <span>🎫</span> Digital Pass
@@ -1147,9 +1463,9 @@ const MeetingRoomsModule = {
           return `
             <div class="clear-slot-card mine" 
                  onclick="MeetingRoomsModule.openPassModal('${room.id}', '${booked.id}')"
-                 title="Reserved by Your Team (${timeRangeLabel}) • Click to view Door Pass">
+                 title="Reserved by you (${timeRangeLabel}) • Click to view Door Pass">
               <div class="slot-time">${timeRangeLabel}</div>
-              <div class="slot-status">🎟️ Your Team (Pass)</div>
+              <div class="slot-status">🎟️ Booked by you</div>
             </div>
           `;
         } else {
@@ -1317,11 +1633,14 @@ const MeetingRoomsModule = {
             `).join('')}
           </div>
 
-          <div style="display: flex; gap: 6px; align-items: center;">
-            <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openKioskModal('${room.id}')" style="font-size: 11px; padding: 5px 11px; border-radius: 6px; color: var(--text-primary, #1e293b); border-color: var(--border-medium, #cbd5e1); background: var(--bg-surface, #ffffff);" title="View 1:1 Wall-Mounted Tablet Kiosk">
-              <span>📱</span> Door Tablet
+          <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+            <button class="btn btn-sm" onclick="MeetingRoomsModule.bookNextAvailable('${room.id}')" style="background: rgba(34, 197, 94, 0.12); color: #15803d; border: 1.5px solid rgba(34, 197, 94, 0.35); font-weight: 800; font-size: 11px; padding: 5px 11px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;" title="Pick the nearest open slot and book in one tap">
+              <span>⚡</span> Book next available
             </button>
-            <button class="btn btn-primary btn-sm" onclick="MeetingRoomsModule.openBookModal('${room.id}', null, '${myStartup.id}')" style="font-size: 11px; font-weight: 700; padding: 5px 13px; border-radius: 6px;">
+            <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openKioskModal('${room.id}')" style="font-size: 11px; padding: 5px 11px; border-radius: 6px; color: var(--text-primary, #1e293b); border-color: var(--border-medium, #cbd5e1); background: var(--bg-surface, #ffffff);" title="View Wall-Mounted Digital Room Display">
+              <span>📱</span> Open door display
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="MeetingRoomsModule.openBookModal('${room.id}', null, '${myStartup.id}')" style="background: var(--accent-primary, #4f46e5); color: #ffffff; font-weight: 800; border: none; padding: 6px 14px; border-radius: 7px; box-shadow: 0 2px 8px rgba(79, 70, 229, 0.35);" title="Open custom booking form">
               <span>+</span> Custom Book
             </button>
           </div>
