@@ -1184,7 +1184,7 @@ class NexusStore {
     return this.state.spaces.find(sp => sp.id === id);
   }
 
-  allocateSpace(spaceId, startupId) {
+  allocateSpace(spaceId, startupId, details = {}) {
     const space = this.getSpaceById(spaceId);
     const startup = this.getStartupById(startupId);
     if (!space || !startup) return { success: false, message: 'Invalid space or startup' };
@@ -1192,8 +1192,15 @@ class NexusStore {
     space.status = 'occupied';
     space.allocatedStartupId = startup.id;
     space.allocatedStartupName = startup.name;
-    space.allocatedSince = new Date().toISOString().split('T')[0];
+    space.allocatedSince = details.startDate || new Date().toISOString().split('T')[0];
+    space.bookingTerm = details.term || 'daily';
+    space.duration = details.duration || 1;
+    space.allocatedMemberName = details.memberName || (startup.founders && startup.founders.name) || startup.name;
+    space.totalAmount = details.totalAmount || (space.bookingTerm === 'daily' ? (space.dailyRate || 450) * (details.duration || 1) : space.monthlyRate);
+    space.accessPin = details.accessPin || Math.floor(1000 + Math.random() * 9000).toString();
+    space.bookingId = details.bookingId || `DSK-${Math.floor(10000 + Math.random() * 90000)}`;
 
+    if (!startup.allocatedSeats) startup.allocatedSeats = [];
     if (!startup.allocatedSeats.includes(spaceId)) {
       startup.allocatedSeats.push(spaceId);
     }
@@ -1203,9 +1210,18 @@ class NexusStore {
       startup.status = 'Incubated';
     }
 
-    this.addActivity('Workspace', `Allocated ${space.label} to ${startup.name}. Startup is now officially Incubated.`, '🏢');
+    // Keep workspaces inventory in sync
+    const ws = (this.state.workspaces || []).find(w => w.id === spaceId || w.code === space.label || w.name === space.label);
+    if (ws) {
+      ws.status = 'Occupied';
+      ws.currentOccupant = startup.name;
+      ws.allocatedStartupId = startup.id;
+      ws.allocatedSince = space.allocatedSince;
+    }
+
+    this.addActivity('Workspace', `Reserved ${space.label} (${space.type}, ${(space.bookingTerm || 'daily').toUpperCase()} Pass) for ${startup.name}.`, '🏢');
     this.save();
-    return { success: true, message: `Allocated ${space.label} to ${startup.name}` };
+    return { success: true, message: `Allocated ${space.label} to ${startup.name}`, space };
   }
 
   deallocateSpace(spaceId) {
@@ -1218,7 +1234,7 @@ class NexusStore {
     if (startupId) {
       const startup = this.getStartupById(startupId);
       if (startup && startup.allocatedSeats) {
-        startup.allocatedSeats = startup.allocatedSeats.filter(sId => sId !== spaceId);
+        startup.allocatedSeats = startup.allocatedSeats.filter(sId => sId !== spaceId && sId !== space.label);
       }
     }
 
@@ -1226,6 +1242,21 @@ class NexusStore {
     space.allocatedStartupId = null;
     space.allocatedStartupName = null;
     space.allocatedSince = null;
+    space.bookingTerm = null;
+    space.duration = null;
+    space.allocatedMemberName = null;
+    space.totalAmount = null;
+    space.accessPin = null;
+    space.bookingId = null;
+
+    // Keep workspaces inventory in sync
+    const ws = (this.state.workspaces || []).find(w => w.id === spaceId || w.code === space.label || w.name === space.label);
+    if (ws) {
+      ws.status = 'Available';
+      ws.currentOccupant = null;
+      ws.allocatedStartupId = null;
+      ws.allocatedSince = null;
+    }
 
     this.addActivity('Workspace', `Released ${space.label} from ${startupName || 'Occupant'}.`, '🔄');
     this.save();

@@ -369,7 +369,7 @@
 .floorplan-legend {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 16px;
   flex-wrap: wrap;
   margin-bottom: 20px;
   padding-bottom: 14px;
@@ -381,6 +381,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  font-weight: 600;
   color: var(--text-secondary);
 }
 
@@ -388,140 +389,332 @@
   width: 14px;
   height: 14px;
   border-radius: 4px;
+  display: inline-block;
 }
 
+.swatch-free,
 .swatch-available {
-  background: var(--status-success);
+  background: #22c55e;
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.4);
 }
 
+.swatch-yours,
+.swatch-mine {
+  background: #2563eb;
+  box-shadow: 0 0 6px rgba(37, 99, 235, 0.4);
+}
+
+.swatch-taken,
 .swatch-occupied {
-  background: var(--accent-primary);
+  background: #ef4444;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.4);
 }
 
 .swatch-reserved {
-  background: var(--status-warning);
+  background: #f59e0b;
 }
 
 .swatch-maintenance {
-  background: var(--text-muted);
+  background: #94a3b8;
 }
 
 .floorplan-zone-title {
   font-size: 14px;
   font-weight: 700;
   color: var(--text-primary);
-  margin: 18px 0 12px;
+  margin: 22px 0 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding-bottom: 8px;
+  border-bottom: 1.5px dashed var(--border-subtle);
 }
 
 .seats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
-  gap: 12px;
-  margin-bottom: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 14px;
+  margin-bottom: 22px;
 }
 
+/* Desk Card & Tile Styles (Meeting Rooms Parity) */
+.desk-card,
 .seat-card {
-  background: var(--bg-surface-elevated);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  padding: 12px;
+  border-radius: 12px;
+  padding: 12px 14px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   display: flex;
   flex-direction: column;
   gap: 6px;
+  user-select: none;
+  border: 1.5px solid transparent;
 }
 
+.desk-card:hover,
 .seat-card:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--border-medium);
+  box-shadow: 0 6px 18px -4px rgba(0, 0, 0, 0.1);
 }
 
-.seat-card.status-available {
-  border-left: 4px solid var(--status-success);
+/* 🟢 Free (Available to Book) */
+.desk-card.status-available,
+.desk-card.status-free,
+.seat-card.status-available,
+.seat-card.status-free {
+  background: #f0fdf4;
+  border-color: #86efac;
+  color: #15803d;
 }
 
-.seat-card.status-occupied {
-  border-left: 4px solid var(--accent-primary);
-  background: rgba(99, 102, 241, 0.08);
+.desk-card.status-available:hover,
+.desk-card.status-free:hover,
+.seat-card.status-available:hover,
+.seat-card.status-free:hover {
+  border-color: #22c55e;
+  box-shadow: 0 6px 20px -2px rgba(34, 197, 94, 0.25);
 }
 
+/* 🔵 Yours (Booked by You) */
+.desk-card.status-mine,
+.desk-card.status-yours,
+.seat-card.status-mine,
+.seat-card.status-yours {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+}
+
+.desk-card.status-mine:hover,
+.desk-card.status-yours:hover,
+.seat-card.status-mine:hover,
+.seat-card.status-yours:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 6px 20px -2px rgba(59, 130, 246, 0.25);
+}
+
+/* 🔴 Taken (Booked by Others) */
+.desk-card.status-occupied,
+.desk-card.status-taken,
+.seat-card.status-occupied,
+.seat-card.status-taken {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #991b1b;
+}
+
+.desk-card.status-occupied:hover,
+.desk-card.status-taken:hover,
+.seat-card.status-occupied:hover,
+.seat-card.status-taken:hover {
+  border-color: #ef4444;
+  box-shadow: 0 6px 20px -2px rgba(239, 68, 68, 0.25);
+}
+
+/* Reserved & Maintenance */
+.desk-card.status-reserved,
 .seat-card.status-reserved {
-  border-left: 4px solid var(--status-warning);
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #b45309;
 }
 
+.desk-card.status-maintenance,
 .seat-card.status-maintenance {
-  border-left: 4px solid var(--text-muted);
-  opacity: 0.7;
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: #64748b;
+  opacity: 0.75;
 }
 
+/* ✨ Selected State (When user taps a Free desk) */
+.desk-card.selected,
+.seat-card.selected,
+.cabin-card.selected {
+  border: 2.5px solid #16a34a !important;
+  box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.25), 0 10px 25px -4px rgba(22, 163, 74, 0.3) !important;
+  transform: translateY(-3px) scale(1.02);
+  z-index: 10;
+}
+
+.desk-header,
 .seat-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
+.desk-id,
 .seat-id {
-  font-size: 12px;
+  font-size: 13px;
   font-family: var(--font-mono);
-  font-weight: 700;
-  color: var(--text-primary);
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
+.desk-type-tag,
 .seat-type-tag {
-  font-size: 10px;
-  color: var(--text-muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.85;
 }
 
+.desk-occupant,
 .seat-occupant {
   font-size: 11.5px;
-  font-weight: 600;
-  color: var(--accent-secondary);
+  font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  margin-top: 2px;
 }
 
+.desk-rate,
 .seat-rate {
   font-size: 11px;
   font-family: var(--font-mono);
-  color: var(--text-muted);
+  font-weight: 600;
+  opacity: 0.8;
 }
 
 /* Cabins Grid */
 .cabins-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
   gap: 16px;
+  margin-bottom: 22px;
 }
 
 .cabin-card {
-  background: var(--bg-surface-elevated);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
+  border-radius: 14px;
   padding: 16px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
+  border: 1.5px solid transparent;
 }
 
 .cabin-card:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.1);
 }
 
-.cabin-card.status-occupied {
-  border-top: 4px solid var(--accent-primary);
-  background: rgba(99, 102, 241, 0.06);
+.cabin-card.status-available,
+.cabin-card.status-free {
+  background: #f0fdf4;
+  border-color: #86efac;
 }
 
-.cabin-card.status-available {
-  border-top: 4px solid var(--status-success);
+.cabin-card.status-available:hover,
+.cabin-card.status-free:hover {
+  border-color: #22c55e;
+}
+
+.cabin-card.status-mine,
+.cabin-card.status-yours {
+  background: #eff6ff;
+  border-color: #93c5fd;
+}
+
+.cabin-card.status-mine:hover,
+.cabin-card.status-yours:hover {
+  border-color: #3b82f6;
+}
+
+.cabin-card.status-occupied,
+.cabin-card.status-taken {
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+
+.cabin-card.status-occupied:hover,
+.cabin-card.status-taken:hover {
+  border-color: #ef4444;
+}
+
+/* Dark mode overrides for Desk & Cabin cards */
+[data-theme="dark"] .desk-card.status-available,
+[data-theme="dark"] .desk-card.status-free,
+[data-theme="dark"] .cabin-card.status-available,
+[data-theme="dark"] .cabin-card.status-free,
+[data-theme="navy"] .desk-card.status-available,
+[data-theme="navy"] .desk-card.status-free,
+[data-theme="navy"] .cabin-card.status-available,
+[data-theme="navy"] .cabin-card.status-free {
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.45);
+  color: #4ade80;
+}
+
+[data-theme="dark"] .desk-card.status-mine,
+[data-theme="dark"] .desk-card.status-yours,
+[data-theme="dark"] .cabin-card.status-mine,
+[data-theme="dark"] .cabin-card.status-yours,
+[data-theme="navy"] .desk-card.status-mine,
+[data-theme="navy"] .desk-card.status-yours,
+[data-theme="navy"] .cabin-card.status-mine,
+[data-theme="navy"] .cabin-card.status-yours {
+  background: rgba(59, 130, 246, 0.14);
+  border-color: rgba(59, 130, 246, 0.45);
+  color: #60a5fa;
+}
+
+[data-theme="dark"] .desk-card.status-occupied,
+[data-theme="dark"] .desk-card.status-taken,
+[data-theme="dark"] .cabin-card.status-occupied,
+[data-theme="dark"] .cabin-card.status-taken,
+[data-theme="navy"] .desk-card.status-occupied,
+[data-theme="navy"] .desk-card.status-taken,
+[data-theme="navy"] .cabin-card.status-occupied,
+[data-theme="navy"] .cabin-card.status-taken {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #f87171;
+}
+
+[data-theme="dark"] .desk-card.status-reserved,
+[data-theme="navy"] .desk-card.status-reserved {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.4);
+  color: #fbbf24;
+}
+
+[data-theme="dark"] .desk-card.status-maintenance,
+[data-theme="navy"] .desk-card.status-maintenance {
+  background: rgba(148, 163, 184, 0.1);
+  border-color: rgba(148, 163, 184, 0.3);
+  color: #94a3b8;
+}
+
+/* Term Pill Buttons in Sticky Desk Bar */
+.term-pill-btn {
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 8px;
+  border: 1.5px solid var(--border-medium);
+  background: var(--bg-surface-elevated);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.term-pill-btn:hover {
+  border-color: var(--accent-primary);
+  color: var(--text-primary);
+}
+
+.term-pill-btn.active {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
 }
 
 /* 7. Meeting Rooms & Scheduler */
