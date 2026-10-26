@@ -219,9 +219,9 @@ const BillingModule = {
           <table class="nexus-table">
             <thead>
               <tr>
-                <th>Startup</th>
-                <th>Workspace</th>
-                <th>Rent</th>
+                <th style="white-space: nowrap; min-width: 280px;">Startup</th>
+                <th style="white-space: nowrap;">Workspace</th>
+                <th style="white-space: nowrap;">Rent</th>
                 <th>Due Date</th>
                 <th>Status</th>
                 <th>Lifecycle Actions</th>
@@ -757,15 +757,13 @@ const BillingModule = {
 
     return `
       <tr style="${isSelected ? 'background: rgba(11, 8, 38, 0.05); outline: 2px solid #0B0826;' : ''} transition: all 0.2s ease;">
-        <td>
-          <div style="cursor: pointer; display: flex; align-items: center; gap: 10px;" onclick="BillingModule.selectStartup('${r.startupId}', '${(r.startupName || '').replace(/'/g, "\\'")}', 'invoices')" title="Click to view full invoice & payment history for ${r.startupName}">
-            <span style="font-size: 20px;">${r.logoEmoji || '🚀'}</span>
-            <div>
-              <div style="display: flex; align-items: center; gap: 6px;">
-                <strong style="color: var(--text-primary); font-size: 13.5px; ${isSelected ? 'color: #0B0826; font-weight: 800;' : ''}">${r.startupName}</strong>
-                ${isSelected ? `<span class="badge" style="background: #0B0826; color: #fff; font-size: 9.5px; font-weight: 700; padding: 2px 6px;">● Active</span>` : ''}
-              </div>
-              <div style="font-size: 11px; color: var(--accent-secondary); font-weight: 600;">${r.category || 'Tech Startup'}</div>
+        <td style="white-space: nowrap;">
+          <div style="cursor: pointer; display: inline-flex; align-items: center; gap: 10px; white-space: nowrap;" onclick="BillingModule.selectStartup('${r.startupId}', '${(r.startupName || '').replace(/'/g, "\\'")}', 'invoices')" title="Click to view full invoice & payment history for ${r.startupName}">
+            <span style="font-size: 19px; flex-shrink: 0; line-height: 1;">${r.logoEmoji || '🚀'}</span>
+            <div style="display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;">
+              <strong style="color: var(--text-primary); font-size: 13.5px; white-space: nowrap; ${isSelected ? 'color: #0B0826; font-weight: 800;' : ''}">${r.startupName}</strong>
+              <span class="badge" style="font-size: 10.5px; padding: 2px 8px; font-weight: 600; white-space: nowrap; color: var(--accent-secondary); background: rgba(11, 8, 38, 0.06); border: 1px solid rgba(11, 8, 38, 0.14); border-radius: 999px;">${r.category || 'Tech Startup'}</span>
+              ${isSelected ? `<span class="badge" style="background: #0B0826; color: #fff; font-size: 9.5px; font-weight: 700; padding: 2px 6px; white-space: nowrap;">● Active</span>` : ''}
             </div>
           </div>
         </td>

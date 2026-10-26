@@ -919,15 +919,21 @@ const MeetingRoomsModule = {
     const monthName = dObj.toLocaleDateString('en-US', { month: 'long' });
     const formattedDateStr = `${dayName}, ${dayNum} ${monthName}`;
 
+    // Tomorrow date string for quick switcher
+    const tomorrowObj = new Date(now);
+    tomorrowObj.setDate(now.getDate() + 1);
+    const tomorrowStr = `${tomorrowObj.getFullYear()}-${pad(tomorrowObj.getMonth() + 1)}-${pad(tomorrowObj.getDate())}`;
+    const isTomorrow = (this.selectedDate === tomorrowStr);
+
     // Selected slots for inline lock-in
     const selectedSlots = (this.selectedSlotsByRoom && this.selectedSlotsByRoom[room.id]) || [];
 
-    // Render Timeline ribbon blocks for active session (Merging multi-hour consecutive bookings)
-    let timelineBlocksHtml = '';
-    let i = 0;
-    while (i < sessionSlots.length) {
-      const slot = sessionSlots[i];
+    const renderSlotCard = (slot) => {
       const curHour = parseInt(slot.split(':')[0], 10);
+      const endHour = curHour + 1;
+      const endSlotStr = `${endHour < 10 ? '0' : ''}${endHour}:00`;
+      const timeRangeLabel = `${formatSlot12h(slot)} – ${formatSlot12h(endSlotStr)}`;
+
       const booked = bookings.find(b => {
         const bHour = parseInt(b.startTime.split(':')[0], 10);
         const eHour = parseInt(b.endTime.split(':')[0], 10);
@@ -936,61 +942,39 @@ const MeetingRoomsModule = {
 
       if (booked) {
         const isMine = booked.startupId === myStartup.id || (booked.startupName && booked.startupName.toLowerCase() === myStartup.name.toLowerCase());
-        
-        // Count consecutive hours booked by the same startup to merge into one continuous span
-        let span = 1;
-        while (i + span < sessionSlots.length) {
-          const nextSlot = sessionSlots[i + span];
-          const nextCurH = parseInt(nextSlot.split(':')[0], 10);
-          const nextBooked = bookings.find(b => {
-            const bH = parseInt(b.startTime.split(':')[0], 10);
-            const eH = parseInt(b.endTime.split(':')[0], 10);
-            return nextCurH >= bH && nextCurH < eH;
-          });
-          if (nextBooked && (nextBooked.id === booked.id || nextBooked.startupId === booked.startupId)) {
-            span++;
-          } else {
-            break;
-          }
+        if (isMine) {
+          return `
+            <div class="clear-slot-card mine" 
+                 onclick="MeetingRoomsModule.openPassModal('${room.id}', '${booked.id}')"
+                 title="Reserved by Your Team (${timeRangeLabel}) • Click to view Door Pass">
+              <div class="slot-time">${timeRangeLabel}</div>
+              <div class="slot-status">🎟️ Your Team (Pass)</div>
+            </div>
+          `;
+        } else {
+          return `
+            <div class="clear-slot-card booked" 
+                 onclick="App.showToast('Slot booked: ${booked.title} (${booked.startupName})', 'warning')"
+                 title="Reserved by ${booked.startupName || 'Startup'} (${timeRangeLabel})">
+              <div class="slot-time">${timeRangeLabel}</div>
+              <div class="slot-status">🔒 ${booked.startupName || 'Reserved'}</div>
+            </div>
+          `;
         }
-
-        const spanStartH = curHour;
-        const spanEndH = curHour + span;
-        const startStr = `${spanStartH < 10 ? '0' : ''}${spanStartH}:00`;
-        const endStr = `${spanEndH < 10 ? '0' : ''}${spanEndH}:00`;
-
-        const durationText = span > 1 ? `${span} hrs` : '1 hr';
-        const labelCenter = isMine 
-          ? `<span style="font-size: 10px; background: rgba(255,255,255,0.22); padding: 2px 7px; border-radius: 4px; white-space: nowrap; font-weight: 800;">🎟️ Mine (${durationText})</span>`
-          : `<span style="font-size: 10px; background: rgba(0,0,0,0.25); padding: 2px 7px; border-radius: 4px; white-space: nowrap; font-weight: 700;">${booked.startupName || 'Reserved'} (${durationText})</span>`;
-
-        timelineBlocksHtml += `
-          <div class="exec-slot-item ${isMine ? 'mine' : 'booked'}" 
-               style="flex: ${span};"
-               onclick="${isMine ? `MeetingRoomsModule.openPassModal('${room.id}', '${booked.id}')` : `App.showToast('Reserved by ${booked.startupName}: ${booked.title} (${startStr} - ${endStr})', 'warning')`}"
-               title="${booked.title} • ${startStr} - ${endStr} (${booked.startupName})">
-            <span>${startStr}</span>
-            <span class="exec-slot-line"></span>
-            ${labelCenter}
-            <span class="exec-slot-line"></span>
-            <span>${endStr}</span>
-          </div>
-        `;
-
-        i += span;
       } else {
         const isSelected = selectedSlots.includes(slot);
-        timelineBlocksHtml += `
-          <div class="exec-slot-item available ${isSelected ? 'selected' : ''}" 
-               style="flex: 1;"
+        return `
+          <div class="clear-slot-card available ${isSelected ? 'selected' : ''}"
                onclick="MeetingRoomsModule.toggleSlotSelection('${room.id}', '${slot}')"
-               title="${isSelected ? '✓ Selected: Click to unselect' : '🟢 Click to select and lock in ' + formatSlot12h(slot)}">
-            ${isSelected ? `<span>✓ ${slot}</span>` : `<span>${slot}</span>`}
+               title="${isSelected ? '✓ Selected: Click to unselect' : 'Click to select ' + timeRangeLabel}">
+            <div class="slot-time">${timeRangeLabel}</div>
+            <div class="slot-status">
+              ${isSelected ? '✓ Selected' : `🟢 Open • ₹${room.hourlyRate}`}
+            </div>
           </div>
         `;
-        i++;
       }
-    }
+    };
 
     // Dynamic Lock-In Action Strip
     let lockInBarHtml = '';
@@ -1007,26 +991,26 @@ const MeetingRoomsModule = {
       const costBadge = isCovered ? 'Covered by Plan (₹0)' : `₹${room.hourlyRate * duration}`;
 
       lockInBarHtml = `
-        <div class="lockin-action-bar" style="background: rgba(16, 185, 129, 0.16); border: 1.5px solid rgba(16, 185, 129, 0.55); color: #ffffff; margin-top: 10px;">
+        <div class="lockin-action-bar" style="background: rgba(16, 185, 129, 0.16); border: 1.5px solid rgba(16, 185, 129, 0.55); color: #ffffff; margin-top: 10px; border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;">
           <div style="min-width: 0; flex: 1;">
             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-              <span style="font-size: 12.5px; font-weight: 800; color: #ffffff; display: flex; align-items: center; gap: 5px;">
+              <span style="font-size: 13px; font-weight: 800; color: #ffffff; display: flex; align-items: center; gap: 5px;">
                 <span>🔒</span> <span>Lock In:</span> <strong style="color: #4ade80; font-family: var(--font-mono);">${formatSlot12h(startSlot)} – ${formatSlot12h(endSlotStr)}</strong> <span style="color: #cbd5e1; font-size: 11px;">(${duration} hr${duration > 1 ? 's' : ''})</span>
               </span>
               <span class="badge ${isCovered ? 'badge-success' : 'badge-primary'}" style="font-size: 10.5px; padding: 2px 8px; font-weight: 700;">
                 ${costBadge}
               </span>
             </div>
-            <div style="margin-top: 6px;">
-              <input type="text" id="lockin-title-${room.id}" class="form-control" style="font-size: 11.5px; padding: 4px 10px; height: 28px; width: 100%; max-width: 290px; background: rgba(0,0,0,0.3); color: #ffffff; border-color: rgba(255,255,255,0.2);" placeholder="Meeting title / agenda..." value="Executive Strategy & Client Sprint">
+            <div style="margin-top: 8px;">
+              <input type="text" id="lockin-title-${room.id}" class="form-control" style="font-size: 12px; padding: 6px 12px; height: 32px; width: 100%; max-width: 320px; background: rgba(0,0,0,0.35); color: #ffffff; border-color: rgba(255,255,255,0.22); border-radius: 6px;" placeholder="Meeting title / agenda..." value="Executive Strategy & Client Sprint">
             </div>
           </div>
 
-          <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
-            <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.clearSlotSelection('${room.id}')" style="font-size: 11px; padding: 5px 9px; border-radius: 6px; color: #cbd5e1; border-color: rgba(255,255,255,0.25);" title="Clear selection">
-              ✕
+          <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+            <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.clearSlotSelection('${room.id}')" style="font-size: 11.5px; padding: 6px 12px; border-radius: 6px; color: #cbd5e1; border-color: rgba(255,255,255,0.25);" title="Clear selection">
+              ✕ Cancel
             </button>
-            <button class="btn btn-sm" onclick="MeetingRoomsModule.lockInSelectedSlots('${room.id}')" style="font-size: 11.5px; font-weight: 800; padding: 6px 14px; border-radius: 8px; background: #22c55e; color: #ffffff; border: 1px solid #16a34a; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 4px 14px rgba(34, 197, 94, 0.45);" title="Lock in this reservation immediately">
+            <button class="btn btn-sm" onclick="MeetingRoomsModule.lockInSelectedSlots('${room.id}')" style="font-size: 12px; font-weight: 800; padding: 7px 16px; border-radius: 8px; background: #22c55e; color: #ffffff; border: 1px solid #16a34a; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 14px rgba(34, 197, 94, 0.45);" title="Lock in this reservation immediately">
               <span>🔒</span> <span>Lock In Now</span>
             </button>
           </div>
@@ -1049,7 +1033,7 @@ const MeetingRoomsModule = {
                 <span class="exec-pill-badge">👥 ${room.capacity} Pax Capacity</span>
                 <span class="exec-pill-badge">₹${room.hourlyRate}/hr</span>
                 <span style="font-size: 11px; color: ${statusType === 'available' ? '#4ade80' : '#cbd5e1'}; font-weight: 700;">
-                  ${availableHours} of ${timeSlots.length} Slots Open
+                  ${availableHours} of 7 Slots Open
                 </span>
               </div>
             </div>
@@ -1064,47 +1048,60 @@ const MeetingRoomsModule = {
           </div>
         </div>
 
-        <!-- Big Headline Availability Status -->
-        <div>
-          <div class="exec-headline">${headlineText}</div>
-          <div class="exec-next-meeting">
-            <span style="color: #64748b; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">Schedule</span>
-            <span style="color: #cbd5e1; font-size: 13px; font-weight: 600;">${nextMeetingText}</span>
+        <!-- Date Navigation Bar (Prev / Next & Quick Selectors) -->
+        <div class="clear-date-bar">
+          <div class="clear-date-nav">
+            <button type="button" class="clear-date-btn" onclick="MeetingRoomsModule.cycleDate(-1)" title="Previous day">‹ Prev Day</button>
+            <div style="font-size: 12.5px; font-weight: 700; color: #ffffff; display: flex; align-items: center; gap: 6px;">
+              <span>📅</span>
+              <span>${formattedDateStr}</span>
+              ${isToday ? `<span class="badge badge-success" style="font-size: 10px; padding: 1px 6px;">Today</span>` : isTomorrow ? `<span class="badge badge-info" style="font-size: 10px; padding: 1px 6px;">Tomorrow</span>` : ''}
+            </div>
+            <button type="button" class="clear-date-btn" onclick="MeetingRoomsModule.cycleDate(1)" title="Next day">Next Day ›</button>
+          </div>
+
+          <div class="clear-date-quick-chips">
+            <button type="button" class="clear-chip-btn ${isToday ? 'active' : ''}" onclick="MeetingRoomsModule.setDate('${todayStr}')">Today</button>
+            <button type="button" class="clear-chip-btn ${isTomorrow ? 'active' : ''}" onclick="MeetingRoomsModule.setDate('${tomorrowStr}')">Tomorrow</button>
           </div>
         </div>
 
-        <!-- Clean Glassmorphic Session Tabs (No duplicate text) -->
-        <div class="exec-session-tabs">
-          <button type="button" class="exec-tab-btn ${activeSession === 'morning' ? 'active' : ''}" 
-                  onclick="MeetingRoomsModule.switchRoomWindow('${room.id}', 'morning')">
-            <span>🌅</span> <span>Morning Window (08:00 – 11:00 AM)</span>
-          </button>
-          <button type="button" class="exec-tab-btn ${activeSession === 'afternoon' ? 'active' : ''}" 
-                  onclick="MeetingRoomsModule.switchRoomWindow('${room.id}', 'afternoon')">
-            <span>🌆</span> <span>Afternoon Window (03:00 – 07:00 PM)</span>
-          </button>
-        </div>
-
-        <!-- Unified Continuous Timeline Ribbon (No repeated hours) -->
-        <div class="exec-timeline-wrap">
-          <div class="exec-timeline-bar">
-            <div class="exec-nav-arrow" onclick="MeetingRoomsModule.switchRoomWindow('${room.id}', 'morning')" title="Morning session (08:00 - 11:00 AM)">‹</div>
-            ${timelineBlocksHtml}
-            <div class="exec-nav-arrow" onclick="MeetingRoomsModule.switchRoomWindow('${room.id}', 'afternoon')" title="Afternoon session (03:00 - 07:00 PM)">›</div>
+        <!-- The Clear Way: Intuitive Time Slots Grid -->
+        <div class="clear-sessions-wrap">
+          <!-- Morning Session -->
+          <div class="clear-session-block">
+            <div class="clear-session-header">
+              <div class="clear-session-title">
+                <span>🌅</span>
+                <span>Morning Session</span>
+              </div>
+              <span class="clear-session-hours">08:00 AM – 11:00 AM</span>
+            </div>
+            <div class="clear-slots-grid">
+              ${morningSlots.map(renderSlotCard).join('')}
+            </div>
           </div>
 
-          <!-- Date Indicator below Timeline -->
-          <div class="exec-date-row" onclick="MeetingRoomsModule.cycleDate(1)" title="Click to cycle to next day">
-            <span>${formattedDateStr}</span>
-            <span style="font-size: 13px;">›</span>
+          <!-- Afternoon Session -->
+          <div class="clear-session-block">
+            <div class="clear-session-header">
+              <div class="clear-session-title">
+                <span>🌆</span>
+                <span>Afternoon Session</span>
+              </div>
+              <span class="clear-session-hours">03:00 PM – 07:00 PM</span>
+            </div>
+            <div class="clear-slots-grid">
+              ${afternoonSlots.map(renderSlotCard).join('')}
+            </div>
           </div>
-
-          <!-- Inline Lock-In Strip (Slides down when slot selected) -->
-          ${lockInBarHtml}
         </div>
+
+        <!-- Inline Lock-In Strip (Slides down when slot selected) -->
+        ${lockInBarHtml}
 
         <!-- Amenities Chips & Quick Actions Footer -->
-        <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding-top: 4px; border-top: 1px solid rgba(255, 255, 255, 0.06);">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding-top: 4px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
           <div style="display: flex; flex-wrap: wrap; gap: 5px;">
             ${room.amenities.map(a => `
               <span class="amenity-tag" style="background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1); color: #cbd5e1; font-size: 10.5px; padding: 2px 7px;">
