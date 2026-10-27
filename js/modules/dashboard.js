@@ -596,6 +596,51 @@ const DashboardModule = {
 
             <!-- Responsive SVG Bar Chart -->
             ${this.renderRevenueSvgChart(s.charts.sixMonthRevenue)}
+
+            <!-- Revenue Category Breakdown Stream Cards -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border-subtle);">
+              <!-- Stream 1 -->
+              <div class="revenue-stream-card stream-workspace">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 10.5px; color: var(--text-secondary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;">Workspace Licenses</span>
+                  <span style="font-size: 11px; font-weight: 800; color: #4f46e5;" class="tabular-nums">69%</span>
+                </div>
+                <div style="font-size: 18px; font-weight: 900; color: #4338ca; margin: 4px 0 8px; font-family: 'Inter', sans-serif;" class="tabular-nums">
+                  ₹5,80,000 <span style="font-size: 11px; color: var(--text-muted); font-weight: 500;">/ mo</span>
+                </div>
+                <div class="progress-track" style="height: 5px; background: rgba(99, 102, 241, 0.15); border-radius: 999px; overflow: hidden;">
+                  <div class="progress-fill" style="width: 69%; height: 100%; background: #6366f1; border-radius: 999px;"></div>
+                </div>
+              </div>
+
+              <!-- Stream 2 -->
+              <div class="revenue-stream-card stream-incubation">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 10.5px; color: var(--text-secondary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;">Incubation & Mentorship</span>
+                  <span style="font-size: 11px; font-weight: 800; color: #059669;" class="tabular-nums">19%</span>
+                </div>
+                <div style="font-size: 18px; font-weight: 900; color: #047857; margin: 4px 0 8px; font-family: 'Inter', sans-serif;" class="tabular-nums">
+                  ₹1,60,000 <span style="font-size: 11px; color: var(--text-muted); font-weight: 500;">/ mo</span>
+                </div>
+                <div class="progress-track" style="height: 5px; background: rgba(16, 185, 129, 0.15); border-radius: 999px; overflow: hidden;">
+                  <div class="progress-fill" style="width: 19%; height: 100%; background: #10b981; border-radius: 999px;"></div>
+                </div>
+              </div>
+
+              <!-- Stream 3 -->
+              <div class="revenue-stream-card stream-meeting">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 10.5px; color: var(--text-secondary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;">Meeting Rooms & Credits</span>
+                  <span style="font-size: 11px; font-weight: 800; color: #0891b2;" class="tabular-nums">12%</span>
+                </div>
+                <div style="font-size: 18px; font-weight: 900; color: #0e7490; margin: 4px 0 8px; font-family: 'Inter', sans-serif;" class="tabular-nums">
+                  ₹1,00,000 <span style="font-size: 11px; color: var(--text-muted); font-weight: 500;">/ mo</span>
+                </div>
+                <div class="progress-track" style="height: 5px; background: rgba(6, 182, 212, 0.15); border-radius: 999px; overflow: hidden;">
+                  <div class="progress-fill" style="width: 12%; height: 100%; background: #06b6d4; border-radius: 999px;"></div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Chart 2: Startup Pipeline Funnel -->

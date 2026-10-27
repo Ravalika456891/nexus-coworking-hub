@@ -6271,3 +6271,75 @@ body.is-production [data-dev-tool],
 body.is-production #btn-reset-demo-data {
   display: none !important;
 }
+
+/* Revenue Category Breakdown Stream Cards (Light & Dark Theme adaptive) */
+.revenue-stream-card {
+  padding: 14px 16px;
+  border-radius: var(--radius-md, 10px);
+  background: var(--bg-surface, #ffffff);
+  border: 1px solid var(--border-subtle, #e2e8f0);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+}
+
+.revenue-stream-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+}
+
+.revenue-stream-card.stream-workspace {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.06) 0%, var(--bg-surface, #ffffff) 100%);
+  border-color: rgba(99, 102, 241, 0.25);
+}
+
+.revenue-stream-card.stream-incubation {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.06) 0%, var(--bg-surface, #ffffff) 100%);
+  border-color: rgba(16, 185, 129, 0.25);
+}
+
+.revenue-stream-card.stream-meeting {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.06) 0%, var(--bg-surface, #ffffff) 100%);
+  border-color: rgba(6, 182, 212, 0.25);
+}
+
+/* Light theme overrides for any previous inline dark styles */
+[data-theme="light"] div[style*="background: rgba(15, 23, 42, 0.6)"],
+[data-theme="light"] div[style*="background:rgba(15, 23, 42, 0.6)"],
+[data-theme="light"] div[style*="rgba(15, 23, 42, 0.6)"] {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-theme="light"] div[style*="background: rgba(15, 23, 42, 0.6)"] span[style*="text-transform: uppercase"],
+[data-theme="light"] div[style*="rgba(15, 23, 42, 0.6)"] span[style*="text-transform: uppercase"] {
+  color: #475569 !important;
+  font-weight: 700 !important;
+}
+
+[data-theme="light"] div[style*="rgba(15, 23, 42, 0.6)"] span[style*="color: #a5b4fc"] {
+  color: #4f46e5 !important;
+}
+
+[data-theme="light"] div[style*="rgba(15, 23, 42, 0.6)"] div[style*="color: #a5b4fc"] {
+  color: #4338ca !important;
+}
+
+[data-theme="light"] div[style*="rgba(15, 23, 42, 0.6)"] div[style*="color: #10b981"] {
+  color: #047857 !important;
+}
+
+[data-theme="light"] div[style*="rgba(15, 23, 42, 0.6)"] div[style*="color: #22d3ee"] {
+  color: #0e7490 !important;
+}
+
+[data-theme="light"] div[style*="rgba(15, 23, 42, 0.6)"] .progress-track {
+  background: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .revenue-stream-card,
+[data-theme="navy"] .revenue-stream-card,
+[data-theme="thub-dark"] .revenue-stream-card {
+  background: rgba(30, 41, 59, 0.6);
+  border-color: rgba(255, 255, 255, 0.1);
+}
