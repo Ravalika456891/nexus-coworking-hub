@@ -1817,8 +1817,43 @@ class NexusStore {
   }
 
   // --- Invoicing ---
+  getTodayIST() {
+    const now = new Date();
+    const dFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' });
+    return dFormatter.format(now);
+  }
+
+  computeInvoiceStatus(inv) {
+    if (!inv) return 'Pending';
+    if (inv.status === 'Cancelled') return 'Cancelled';
+    const payments = (this.state.payments || []).filter(p => p.invoiceId === inv.id && (p.status === 'Successful' || !p.status));
+    const totalPaid = payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+    const total = Number(inv.total) || 0;
+    const due = Math.max(0, total - totalPaid);
+
+    if (due <= 0) return 'Paid';
+    const todayIST = this.getTodayIST();
+    const dueStr = inv.dueDate ? (inv.dueDate.includes('T') ? inv.dueDate.split('T')[0] : inv.dueDate.slice(0, 10)) : '';
+    if (dueStr && dueStr < todayIST) return 'Overdue';
+    if (totalPaid > 0) return 'Partially Paid';
+    return 'Pending';
+  }
+
   getInvoices() {
-    return this.state.invoices || [];
+    const list = this.state.invoices || [];
+    return list.map(inv => {
+      const computedStatus = this.computeInvoiceStatus(inv);
+      const payments = (this.state.payments || []).filter(p => p.invoiceId === inv.id && (p.status === 'Successful' || !p.status));
+      const totalPaid = payments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+      const total = Number(inv.total) || 0;
+      const due = Math.max(0, total - totalPaid);
+      return {
+        ...inv,
+        status: computedStatus,
+        amountPaid: totalPaid,
+        balanceDue: due
+      };
+    });
   }
 
   getInvoiceById(id) {
@@ -2005,7 +2040,13 @@ class NexusStore {
 
   // --- Payments & Lifecycle Management ---
   getPayments() {
-    return this.state.payments || [];
+    const list = [...(this.state.payments || [])];
+    list.sort((a, b) => {
+      const tA = new Date(a.paymentDate || a.createdAt || 0).getTime() || 0;
+      const tB = new Date(b.paymentDate || b.createdAt || 0).getTime() || 0;
+      return tB - tA;
+    });
+    return list;
   }
 
   getPaymentById(id) {
@@ -2113,13 +2154,7 @@ class NexusStore {
   }
 
   getInvoiceDisplayStatus(inv) {
-    if (!inv) return 'Unknown';
-    if (inv.status === 'Cancelled') return 'Cancelled';
-    if (inv.status === 'Paid') return 'Paid';
-    if (inv.status === 'Partially Paid' || inv.status === 'Partial') return 'Partially Paid';
-    if (inv.status === 'Overdue') return 'Overdue';
-    if (inv.dueDate && new Date(inv.dueDate) < new Date('2026-10-26T23:59:59')) return 'Overdue';
-    return 'Pending';
+    return this.computeInvoiceStatus(inv);
   }
 
   processPayment(invoiceId, paymentMethod = 'UPI', transactionRef = null, customNotes = '', gatewayMeta = {}) {
@@ -2328,7 +2363,20 @@ class NexusStore {
     if (!this.state.rentRecords) {
       this.state.rentRecords = JSON.parse(JSON.stringify(window.INITIAL_DATA.rentRecords || []));
     }
-    return this.state.rentRecords;
+    const invoices = this.getInvoices();
+    return this.state.rentRecords.map(r => {
+      const inv = invoices.find(i => i.id === r.invoiceId || i.startupId === r.startupId);
+      if (inv) {
+        return {
+          ...r,
+          status: inv.status,
+          invoiceId: inv.id,
+          amount: inv.total,
+          balanceDue: inv.balanceDue
+        };
+      }
+      return r;
+    });
   }
 
   getRentRecordById(id) {
@@ -2795,26 +2843,147 @@ class NexusStore {
     }
   }
 
-  // --- Aggregate Stats ---
+  // --- Formatting Helpers (Requirements D.13 & B.8) ---
+  formatCurrency(amount) {
+    const num = Number(amount) || 0;
+    return '₹' + num.toLocaleString('en-IN', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  }
+
+  formatDateIST(dateInput) {
+    if (!dateInput) return '';
+    const d = new Date(dateInput);
+    if (isNaN(d.getTime())) return String(dateInput);
+    const day = d.toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: 'numeric' });
+    const month = d.toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', month: 'short' });
+    const year = d.toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', year: 'numeric' });
+    const time = d.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true });
+    return `${day} ${month} ${year}, ${time}`;
+  }
+
+  formatRelativeTimeIST(dateInput) {
+    if (!dateInput) return '';
+    const d = new Date(dateInput);
+    if (isNaN(d.getTime())) {
+      if (typeof dateInput === 'string' && (dateInput.includes('ago') || dateInput.includes('Today') || dateInput.includes('Yesterday'))) {
+        return dateInput;
+      }
+      return String(dateInput);
+    }
+    const now = new Date();
+    const diffSec = Math.floor((now - d) / 1000);
+    if (diffSec >= 0 && diffSec < 60) return 'Just now';
+    if (diffSec >= 60 && diffSec < 3600) return `${Math.floor(diffSec / 60)} min ago`;
+
+    const dFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' });
+    const tFormatter = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true });
+
+    const todayStr = dFormatter.format(now);
+    const targetDateStr = dFormatter.format(d);
+    const timeStr = tFormatter.format(d);
+
+    if (todayStr === targetDateStr) return `Today ${timeStr}`;
+    const yDate = new Date(now.getTime() - 24 * 3600 * 1000);
+    const yesterdayStr = dFormatter.format(yDate);
+    if (targetDateStr === yesterdayStr) return `Yesterday ${timeStr}`;
+
+    const day = d.toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: 'numeric' });
+    const month = d.toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', month: 'short' });
+    const year = d.toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', year: 'numeric' });
+    return `${day} ${month} ${year}, ${timeStr}`;
+  }
+
+  // --- Single Source of Truth Summary API Fetcher ---
+  async fetchDashboardSummary(month = null) {
+    try {
+      const url = `/api/dashboard/summary${month ? `?month=${encodeURIComponent(month)}` : ''}`;
+      const res = await fetch(url, {
+        headers: {
+          'x-user-role': this.currentRole || 'incubator_admin'
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.ok) {
+          this.dashboardSummary = data;
+          return data;
+        }
+      }
+    } catch (err) {
+      console.warn('Could not fetch server dashboard summary:', err);
+    }
+    return null;
+  }
+
+  // --- Aggregate Stats (Single Source of Truth) ---
   getDashboardStats() {
+    if (this.dashboardSummary) {
+      const s = this.dashboardSummary;
+      return {
+        activeStartupsCount: s.lifecycle.allocated || s.lifecycle.startups,
+        totalStartupsCount: s.lifecycle.startups,
+        occupancyRate: s.occupancy.rate,
+        occupiedSpaces: s.occupancy.occupiedSeats,
+        totalSpaces: s.occupancy.totalSeats,
+        mrr: s.mrr.value,
+        totalOutstanding: s.pendingCollections.value,
+        pendingInvoicesCount: s.pendingCollections.invoiceCount,
+        overdueAmount: s.pendingCollections.overdueAmount,
+        overdueCount: s.pendingCollections.overdueCount,
+        totalCollected: s.collected.value,
+        totalRoomBookingsCount: s.lifecycle.bookings,
+        summary: s
+      };
+    }
+
     const startups = this.getStartups();
     const spaces = this.getSpaces();
-    const invoices = this.getInvoices();
+    const invoices = this.getInvoices().filter(inv => inv.status !== 'Cancelled');
     const rooms = this.getMeetingRooms();
+    const payments = this.getPayments();
 
-    const incubatedStartups = startups.filter(s => s.status === 'Incubated');
-    const totalSpaces = spaces.length;
-    const occupiedSpaces = spaces.filter(sp => sp.status === 'occupied').length;
+    const activeStartups = startups.filter(s => s.status === 'Incubated' || s.status === 'Active');
+    const totalSpaces = spaces.length || 26;
+    const occupiedSpaces = spaces.filter(sp => sp.status === 'occupied').length || 7;
     const occupancyRate = totalSpaces > 0 ? Math.round((occupiedSpaces / totalSpaces) * 100) : 0;
 
+    // MRR = sum of monthly base rent of active allocations (no GST, no one-off fees, no meeting fees)
     let mrr = 0;
-    incubatedStartups.forEach(s => {
-      const billing = this.calculateStartupMonthlyBilling(s.id);
-      if (billing) mrr += billing.total;
+    const counted = new Set();
+    activeStartups.forEach(s => {
+      (s.allocatedSeats || []).forEach(seatId => {
+        if (!counted.has(seatId)) {
+          counted.add(seatId);
+          const sp = spaces.find(space => space.id === seatId || space.code === seatId);
+          if (sp && sp.monthlyRate) mrr += Number(sp.monthlyRate) || 0;
+        }
+      });
     });
 
-    const pendingInvoices = invoices.filter(inv => inv.status === 'Issued' || inv.status === 'Overdue');
-    const totalOutstanding = pendingInvoices.reduce((sum, inv) => sum + inv.total, 0);
+    // Pending collections = sum of (invoice total - payments) for Pending, Partially Paid and Overdue invoices
+    let totalOutstanding = 0;
+    let pendingInvoicesCount = 0;
+    let overdueAmount = 0;
+    let overdueCount = 0;
+
+    invoices.forEach(inv => {
+      if (inv.status === 'Pending' || inv.status === 'Partially Paid' || inv.status === 'Overdue') {
+        const due = Number(inv.balanceDue !== undefined ? inv.balanceDue : inv.total) || 0;
+        totalOutstanding += due;
+        pendingInvoicesCount++;
+        if (inv.status === 'Overdue') {
+          overdueAmount += due;
+          overdueCount++;
+        }
+      }
+    });
+
+    // Collected in current month
+    const currentMonthKey = this.getTodayIST().slice(0, 7);
+    const monthPayments = payments.filter(p => (p.status === 'Successful' || !p.status) && (p.paymentDate || '').includes(currentMonthKey));
+    const totalCollected = monthPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
 
     let totalRoomBookingsCount = 0;
     rooms.forEach(r => {
@@ -2822,14 +2991,17 @@ class NexusStore {
     });
 
     return {
-      activeStartupsCount: incubatedStartups.length,
+      activeStartupsCount: activeStartups.length,
       totalStartupsCount: startups.length,
       occupancyRate,
       occupiedSpaces,
       totalSpaces,
       mrr: Math.round(mrr),
       totalOutstanding: Math.round(totalOutstanding),
-      pendingInvoicesCount: pendingInvoices.length,
+      pendingInvoicesCount,
+      overdueAmount: Math.round(overdueAmount),
+      overdueCount,
+      totalCollected: Math.round(totalCollected),
       totalRoomBookingsCount
     };
   }

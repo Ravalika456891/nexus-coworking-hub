@@ -1,1366 +1,859 @@
-// Module: Dashboard Overview & Lifecycle Command Center
+// Module: Executive Dashboard & Single Source of Truth Command Center
 
 const DashboardModule = {
-  viewStyle: 'classic', // 'classic' (Before Style) | 'showcase' (Wireframe 10) | 'combined'
-  isDemoMode: true,
-  revenueTimeframe: '6m',
+  summaryData: null,
+  isLoading: false,
+  selectedMonth: null, // 'YYYY-MM'
 
-  setViewStyle(style) {
-    this.viewStyle = style;
+  init() {
+    if (!this.selectedMonth) {
+      const now = new Date();
+      const dFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit' });
+      this.selectedMonth = dFormatter.format(now);
+    }
+  },
+
+  async loadSummary(month = null) {
+    this.isLoading = true;
+    if (month) this.selectedMonth = month;
+    this.init();
+
+    // Fetch from single source of truth endpoint
+    const summary = await window.store.fetchDashboardSummary(this.selectedMonth);
+    if (summary && summary.ok) {
+      this.summaryData = summary;
+    }
+    this.isLoading = false;
     this.render();
   },
 
-  toggleDemoMode(val) {
-    this.isDemoMode = val;
-    this.render();
-  },
-
-  setRevenueTimeframe(tf) {
-    this.revenueTimeframe = tf;
-    this.render();
+  sendOverdueReminder(invoiceId, startupName) {
+    if (window.App && window.App.showToast) {
+      window.App.showToast(`📲 Automated WhatsApp & Email payment reminder dispatched to ${startupName} for invoice #${invoiceId}.`, 'success');
+    }
   },
 
   sendInvoiceNudge() {
     if (window.App && window.App.showToast) {
-      window.App.showToast('📲 Automated WhatsApp & Email payment nudges dispatched to 4 founders with outstanding invoices (Total: ₹1.25L).', 'success');
+      window.App.showToast('📲 Automated payment nudges dispatched to founders with outstanding invoices.', 'success');
     }
+  },
+
+  navigateToUnpaidInvoices() {
+    if (window.App && window.App.switchTab) {
+      window.App.switchTab('billing');
+      // Set filter to unpaid if billing module supports it
+      setTimeout(() => {
+        const filterEl = document.getElementById('billing-filter-status');
+        if (filterEl) {
+          filterEl.value = 'Overdue';
+          filterEl.dispatchEvent(new Event('change'));
+        }
+      }, 100);
+    }
+  },
+
+  navigateToWorkspaces() {
+    if (window.App && window.App.switchTab) {
+      window.App.switchTab('workspace');
+    }
+  },
+
+  navigateToPayments() {
+    if (window.App && window.App.switchTab) {
+      window.App.switchTab('payments');
+    }
+  },
+
+  navigateToMeetingRooms() {
+    if (window.App && window.App.switchTab) {
+      window.App.switchTab('meetingRooms');
+    }
+  },
+
+  navigateToModule(tabId) {
+    if (window.App && window.App.switchTab) {
+      window.App.switchTab(tabId);
+    }
+  },
+
+  // Modal: Single "Generate Invoices" Action (Requirement E.16)
+  async openGenerateInvoicesModal(selectedPeriod = 'November 2026') {
+    const modalId = 'modal-generate-invoices-preview';
+    let overlay = document.getElementById(modalId);
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = modalId;
+      overlay.className = 'modal-overlay active';
+      document.body.appendChild(overlay);
+    } else {
+      overlay.className = 'modal-overlay active';
+    }
+
+    overlay.innerHTML = `
+      <div class="modal-content modal-wide" style="max-width: 680px; padding: 24px;">
+        <div class="modal-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 24px;">⚡</span>
+            <div>
+              <h3 class="modal-title" style="margin: 0; font-size: 18px; font-weight: 800;">Generate Invoices Batch</h3>
+              <span style="font-size: 12px; color: var(--text-muted);">Preview automated monthly billing run before confirmation</span>
+            </div>
+          </div>
+          <button class="modal-close-btn" onclick="DashboardModule.closeModal('${modalId}')">&times;</button>
+        </div>
+        <div style="text-align: center; padding: 30px;">
+          <div class="skeleton-box" style="width: 100%; height: 120px; border-radius: 8px;"></div>
+          <p style="margin-top: 12px; font-size: 13px; color: var(--text-muted);">Calculating eligible active allocations & verifying duplicate prevention index...</p>
+        </div>
+      </div>
+    `;
+
+    try {
+      const res = await fetch('/api/invoices/generate-batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-user-role': window.store.currentRole || 'incubator_admin' },
+        body: JSON.stringify({ billingPeriod: selectedPeriod, previewOnly: true })
+      });
+      const data = await res.json();
+
+      if (!data.ok) {
+        overlay.innerHTML = `
+          <div class="modal-content" style="max-width: 500px; padding: 24px;">
+            <h3 style="color: #ef4444; margin-bottom: 12px;">Batch Generation Error</h3>
+            <p style="font-size: 13px; color: var(--text-muted);">${data.error || 'Failed to fetch invoice preview.'}</p>
+            <div style="margin-top: 20px; text-align: right;">
+              <button class="btn btn-secondary" onclick="DashboardModule.closeModal('${modalId}')">Close</button>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      overlay.innerHTML = `
+        <div class="modal-content modal-wide" style="max-width: 680px; padding: 24px;">
+          <div class="modal-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 24px;">⚡</span>
+              <div>
+                <h3 class="modal-title" style="margin: 0; font-size: 18px; font-weight: 800;">Generate Invoices Batch Preview</h3>
+                <span style="font-size: 12px; color: var(--text-muted);">Period: <strong>${data.billingPeriod}</strong></span>
+              </div>
+            </div>
+            <button class="modal-close-btn" onclick="DashboardModule.closeModal('${modalId}')">&times;</button>
+          </div>
+
+          <div class="modal-body" style="padding: 10px 0;">
+            <div style="display: flex; gap: 14px; background: rgba(99, 102, 241, 0.06); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+              <div style="flex: 1;">
+                <div style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Eligible Startups</div>
+                <div style="font-size: 22px; font-weight: 800; color: var(--text-primary); font-family: 'Inter', sans-serif;" class="tabular-nums">${data.eligibleCount} ventures</div>
+              </div>
+              <div style="flex: 1;">
+                <div style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Projected Roll</div>
+                <div style="font-size: 22px; font-weight: 800; color: #10b981; font-family: 'Inter', sans-serif;" class="tabular-nums">${data.totalAmountFormatted}</div>
+              </div>
+              <div style="flex: 1;">
+                <div style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Skipped (Duplicates)</div>
+                <div style="font-size: 22px; font-weight: 800; color: #f59e0b; font-family: 'Inter', sans-serif;" class="tabular-nums">${data.skippedCount}</div>
+              </div>
+            </div>
+
+            ${data.candidates && data.candidates.length > 0 ? `
+              <div style="font-size: 12.5px; font-weight: 700; margin-bottom: 8px; color: var(--text-primary);">Eligible Startups for ${data.billingPeriod}:</div>
+              <div style="max-height: 180px; overflow-y: auto; border: 1px solid var(--border-subtle); border-radius: 6px; margin-bottom: 14px;">
+                <table style="width: 100%; font-size: 12px; border-collapse: collapse;">
+                  <thead style="background: var(--bg-canvas); border-bottom: 1px solid var(--border-subtle);">
+                    <tr>
+                      <th style="padding: 8px 12px; text-align: left;">Startup</th>
+                      <th style="padding: 8px 12px; text-align: center;">Seats</th>
+                      <th style="padding: 8px 12px; text-align: right;">Amount (incl. GST)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${data.candidates.map(c => `
+                      <tr style="border-bottom: 1px solid var(--border-subtle);">
+                        <td style="padding: 8px 12px; font-weight: 600;">${c.startupName}</td>
+                        <td style="padding: 8px 12px; text-align: center;" class="tabular-nums">${c.seatsCount}</td>
+                        <td style="padding: 8px 12px; text-align: right; font-weight: 700;" class="tabular-nums">${c.amountFormatted}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            ` : '<p style="color: var(--text-muted); font-size: 13px; margin-bottom: 12px;">No new startups require billing for this period.</p>'}
+
+            ${data.skipped && data.skipped.length > 0 ? `
+              <div style="font-size: 12px; font-weight: 700; color: #f59e0b; margin-bottom: 6px;">
+                ⚠️ Skipped Duplicates (${data.skipped.length}):
+              </div>
+              <ul style="font-size: 11.5px; color: var(--text-muted); margin: 0 0 14px 20px; line-height: 1.5;">
+                ${data.skipped.map(sk => `
+                  <li><strong>${sk.startupName}</strong>: ${sk.reason}</li>
+                `).join('')}
+              </ul>
+            ` : ''}
+          </div>
+
+          <div class="modal-footer" style="display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-top: 16px; border-top: 1px solid var(--border-subtle); padding-top: 14px;">
+            <button class="btn btn-secondary" onclick="DashboardModule.closeModal('${modalId}')">Cancel</button>
+            <button class="btn btn-primary" ${data.eligibleCount === 0 ? 'disabled' : ''} onclick="DashboardModule.confirmGenerateInvoices('${data.billingPeriod}', '${modalId}')">
+              Confirm & Dispatch (${data.eligibleCount} Invoices)
+            </button>
+          </div>
+        </div>
+      `;
+    } catch (err) {
+      console.error('Error opening generate invoices preview:', err);
+    }
+  },
+
+  async confirmGenerateInvoices(billingPeriod, modalId) {
+    try {
+      const res = await fetch('/api/invoices/generate-batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-user-role': window.store.currentRole || 'incubator_admin' },
+        body: JSON.stringify({ billingPeriod, previewOnly: false })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        if (window.App && window.App.showToast) {
+          window.App.showToast(`✅ ${data.message}`, 'success');
+        }
+        this.closeModal(modalId);
+        // Refresh dashboard summary and store
+        await window.store.init();
+        await this.loadSummary();
+      } else {
+        alert(data.error || 'Failed to generate invoices.');
+      }
+    } catch (err) {
+      console.error('Error confirming invoice generation:', err);
+    }
+  },
+
+  closeModal(modalId) {
+    const el = document.getElementById(modalId);
+    if (el) el.remove();
   },
 
   render() {
     const container = document.getElementById('view-dashboard');
     if (!container) return;
 
-    const role = window.store.normalizeRole(window.store.currentRole);
-    const roleInfo = window.store.getCurrentRoleInfo();
-    const stats = window.store.getDashboardStats();
-    const startups = window.store.getStartups();
-    const rooms = window.store.getMeetingRooms();
-    const activities = window.store.state.activityLog || [];
-    const invoices = window.store.getInvoices();
-    const milestones = window.store.getMilestones();
-    const payments = window.store.getAccessiblePayments ? window.store.getAccessiblePayments() : (window.store.getPayments ? window.store.getPayments() : []);
+    this.init();
 
-    // Count for lifecycle pipeline nodes
-    const onboardingCount = startups.filter(s => s.status === 'Applied' || s.status === 'Under Review').length;
-    const allocatedCount = startups.filter(s => s.allocatedSeats && s.allocatedSeats.length > 0).length;
-    const bookedRoomsCount = stats.totalRoomBookingsCount;
-    const billedStartupsCount = allocatedCount;
-    const invoicedCount = invoices.length;
-    const paidCount = invoices.filter(i => i.status === 'Paid').length;
-    const incubationTrackingCount = milestones.filter(m => m.status === 'In Progress').length;
-
-    // Role-specific KPI Grid rendering
-    let kpiHtml = '';
-    if (role === 'incubator_admin') {
-      kpiHtml = `
-        <div class="kpi-grid">
-          <div class="kpi-card">
-            <div class="kpi-header">
-              <span class="kpi-title">Active Incubated Startups</span>
-              <div class="kpi-icon-wrap" style="color: #10b981;">🚀</div>
-            </div>
-            <div class="kpi-value">${stats.activeStartupsCount}</div>
-            <div class="kpi-footer">
-              <span class="trend-pill up">Batch 2026</span>
-              <span>${stats.totalStartupsCount} total registered ventures</span>
-            </div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-header">
-              <span class="kpi-title">Applications In Pipeline</span>
-              <div class="kpi-icon-wrap" style="color: #6366f1;">📋</div>
-            </div>
-            <div class="kpi-value">${onboardingCount}</div>
-            <div class="kpi-footer">
-              <span class="trend-pill warning">Under Review</span>
-              <span>Awaiting evaluation & committee</span>
-            </div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-header">
-              <span class="kpi-title">Mentor Advisory Network</span>
-              <div class="kpi-icon-wrap" style="color: #8b5cf6;">🧠</div>
-            </div>
-            <div class="kpi-value">6 Mentors</div>
-            <div class="kpi-footer">
-              <span class="trend-pill up">Active</span>
-              <span>100% paired with cohorts</span>
-            </div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-header">
-              <span class="kpi-title">Floorplan Allocation</span>
-              <div class="kpi-icon-wrap" style="color: #06b6d4;">🏢</div>
-            </div>
-            <div class="kpi-value">${stats.occupancyRate}%</div>
-            <div class="kpi-footer">
-              <span class="trend-pill up">84% Utilized</span>
-              <span>${stats.occupiedSpaces} of ${stats.totalSpaces} spaces assigned</span>
-            </div>
-          </div>
-        </div>
-      `;
-    } else if (role === 'finance_admin') {
-      kpiHtml = `
-        <div class="kpi-grid">
-          <div class="kpi-card">
-            <div class="kpi-header">
-              <span class="kpi-title">Monthly Run-Rate (MRR)</span>
-              <div class="kpi-icon-wrap" style="color: #10b981;">₹</div>
-            </div>
-            <div class="kpi-value">₹${(stats.mrr / 100000).toFixed(2)}L</div>
-            <div class="kpi-footer">
-              <span class="trend-pill up">↑ 14.2% MoM</span>
-              <span>Gross projected recurring billing</span>
-            </div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-header">
-              <span class="kpi-title">Pending Collections</span>
-              <div class="kpi-icon-wrap" style="color: #f59e0b;">⏳</div>
-            </div>
-            <div class="kpi-value" style="color: #f59e0b;">₹${(stats.totalOutstanding / 1000).toFixed(0)}k</div>
-            <div class="kpi-footer">
-              <span class="trend-pill warning">${stats.pendingInvoicesCount} Invoices Due</span>
-              <span>Awaiting settlement gateway</span>
-            </div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-header">
-              <span class="kpi-title">Total Invoices Issued</span>
-              <div class="kpi-icon-wrap" style="color: #6366f1;">🧾</div>
-            </div>
-            <div class="kpi-value">${invoicedCount}</div>
-            <div class="kpi-footer">
-              <span class="trend-pill up">${paidCount} Cleared</span>
-              <span>Itemized GST invoices</span>
-            </div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-header">
-              <span class="kpi-title">GST Tax Collections (18%)</span>
-              <div class="kpi-icon-wrap" style="color: #ec4899;">🏛️</div>
-            </div>
-            <div class="kpi-value">₹54,900</div>
-            <div class="kpi-footer">
-              <span class="trend-pill up">Compliant</span>
-              <span>CGST (9%) + SGST (9%) accrued</span>
-            </div>
-          </div>
-        </div>
-      `;
-    } else if (role === 'startup') {
-      const activeStartupId = window.store.activeFounderId || 'STP-XYZ';
-      const myStartup = window.store.getStartupById(activeStartupId) || startups[0];
-      const spaceLabel = (myStartup && myStartup.allocatedSeats && myStartup.allocatedSeats.length > 0)
-        ? myStartup.allocatedSeats.join(', ')
-        : (myStartup ? (myStartup.spacePreference || 'Desk Allocation Pending') : 'Cabin PC-103');
-      const stageLabel = myStartup ? (myStartup.stage || 'Incubation') : 'MVP Development';
-      kpiHtml = `
-        <div class="kpi-grid">
-          <div class="kpi-card">
-            <div class="kpi-header">
-              <span class="kpi-title">My Allocated Space</span>
-              <div class="kpi-icon-wrap" style="color: #06b6d4;">🏢</div>
-            </div>
-            <div class="kpi-value" style="font-size: 19px;">${spaceLabel}</div>
-            <div class="kpi-footer">
-              <span class="trend-pill up">${myStartup ? myStartup.status : 'Active'}</span>
-              <span>${myStartup ? (myStartup.teamSize || 2) + ' Team Members' : '4 Executive Seats'}</span>
-            </div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-header">
-              <span class="kpi-title">Incubation Progress</span>
-              <div class="kpi-icon-wrap" style="color: #10b981;">🌱</div>
-            </div>
-            <div class="kpi-value">80%</div>
-            <div class="kpi-footer">
-              <span class="trend-pill up">On Track</span>
-              <span>Current Stage: MVP Development</span>
-            </div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-header">
-              <span class="kpi-title">Assigned Lead Mentor</span>
-              <div class="kpi-icon-wrap" style="color: #8b5cf6;">👨‍💼</div>
-            </div>
-            <div class="kpi-value" style="font-size: 20px;">John Smith</div>
-            <div class="kpi-footer">
-              <span class="trend-pill up">Weekly Office Hours</span>
-              <span>Incubation Advisory Lead</span>
-            </div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-header">
-              <span class="kpi-title">Next Milestone</span>
-              <div class="kpi-icon-wrap" style="color: #f59e0b;">🎯</div>
-            </div>
-            <div class="kpi-value" style="font-size: 19px;">Revenue Gen</div>
-            <div class="kpi-footer">
-              <span class="trend-pill warning">Due 30 Oct</span>
-              <span>Target: First ₹50k MRR</span>
-            </div>
-          </div>
-        </div>
-      `;
-    } else if (role === 'mentor') {
-      kpiHtml = `
-        <div class="kpi-grid">
-          <div class="kpi-card">
-            <div class="kpi-header">
-              <span class="kpi-title">Assigned Startups</span>
-              <div class="kpi-icon-wrap" style="color: #8b5cf6;">🚀</div>
-            </div>
-            <div class="kpi-value">2 Ventures</div>
-            <div class="kpi-footer">
-              <span class="trend-pill up">Active Mentee</span>
-              <span>XYZ Technologies & NeuroPulse</span>
-            </div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-header">
-              <span class="kpi-title">Milestones In Progress</span>
-              <div class="kpi-icon-wrap" style="color: #f59e0b;">🎯</div>
-            </div>
-            <div class="kpi-value">4 Sprint Targets</div>
-            <div class="kpi-footer">
-              <span class="trend-pill warning">1 Awaiting Review</span>
-              <span>Verification requested</span>
-            </div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-header">
-              <span class="kpi-title">Advisory Sessions Logged</span>
-              <div class="kpi-icon-wrap" style="color: #10b981;">📅</div>
-            </div>
-            <div class="kpi-value">12 Hours</div>
-            <div class="kpi-footer">
-              <span class="trend-pill up">High Engagement</span>
-              <span>Next session: Today at 2:00 PM</span>
-            </div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-header">
-              <span class="kpi-title">Cohort Incubation Stage</span>
-              <div class="kpi-icon-wrap" style="color: #06b6d4;">🌱</div>
-            </div>
-            <div class="kpi-value">Stage 5 of 8</div>
-            <div class="kpi-footer">
-              <span class="trend-pill up">Mentorship Phase</span>
-              <span>Preparing for Product Launch</span>
-            </div>
-          </div>
-        </div>
-      `;
-    } else {
-      // Super Admin: Omnipotent Overview
-      kpiHtml = `
-        <div class="kpi-grid">
-          <div class="kpi-card">
-            <div class="kpi-header">
-              <span class="kpi-title">Workspace Occupancy</span>
-              <div class="kpi-icon-wrap" style="color: var(--status-success);">🏢</div>
-            </div>
-            <div class="kpi-value">${stats.occupancyRate}%</div>
-            <div class="kpi-footer">
-              <span class="trend-pill up">↑ 8% MoM</span>
-              <span>${stats.occupiedSpaces} of ${stats.totalSpaces} seats occupied</span>
-            </div>
-          </div>
-
-          <div class="kpi-card">
-            <div class="kpi-header">
-              <span class="kpi-title">Active Incubated Startups</span>
-              <div class="kpi-icon-wrap" style="color: var(--accent-primary);">🚀</div>
-            </div>
-            <div class="kpi-value">${stats.activeStartupsCount}</div>
-            <div class="kpi-footer">
-              <span class="trend-pill up">Batch 2026</span>
-              <span>${stats.totalStartupsCount} total registered founders</span>
-            </div>
-          </div>
-
-          <div class="kpi-card">
-            <div class="kpi-header">
-              <span class="kpi-title">Monthly Run-Rate (MRR)</span>
-              <div class="kpi-icon-wrap" style="color: var(--accent-secondary);">₹</div>
-            </div>
-            <div class="kpi-value">₹${(stats.mrr / 100000).toFixed(2)}L</div>
-            <div class="kpi-footer">
-              <span class="trend-pill up">↑ 14.2%</span>
-              <span>Gross projected billing</span>
-            </div>
-          </div>
-
-          <div class="kpi-card">
-            <div class="kpi-header">
-              <span class="kpi-title">Pending Collections</span>
-              <div class="kpi-icon-wrap" style="color: var(--status-warning);">⏳</div>
-            </div>
-            <div class="kpi-value" style="color: ${stats.totalOutstanding > 0 ? 'var(--status-warning)' : 'var(--text-primary)'};">
-              ₹${(stats.totalOutstanding / 1000).toFixed(0)}k
-            </div>
-            <div class="kpi-footer">
-              <span class="trend-pill ${stats.pendingInvoicesCount > 0 ? 'warning' : 'up'}">
-                ${stats.pendingInvoicesCount} Invoices
-              </span>
-              <span>Awaiting payment clearance</span>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
-    // Role-specific action spotlight bar
-    let spotlightHtml = '';
-    if (role === 'incubator_admin') {
-      spotlightHtml = `
-        <div style="display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: var(--radius-lg); margin-top: 20px; flex-wrap: wrap; gap: 14px;">
-          <div>
-            <h4 style="font-size: 14px; font-weight: 700; color: #10b981; margin-bottom: 3px;">
-              🌱 Incubator Admin Perspective: Startup Onboarding & Journey Pipeline
-            </h4>
-            <p style="font-size: 12px; color: var(--text-secondary);">
-              Review incoming venture applications, advance startups along the 8-stage incubation lifecycle, and allocate desks.
-            </p>
-          </div>
-          <div style="display: flex; gap: 8px;">
-            <button class="btn btn-outline btn-sm" onclick="App.switchTab('onboarding')">
-              📋 Review Startups (${onboardingCount})
-            </button>
-            <button class="btn btn-primary btn-sm" onclick="App.switchTab('incubation')">
-              🌱 Incubation Journey
-            </button>
-          </div>
-        </div>
-      `;
-    } else if (role === 'finance_admin') {
-      spotlightHtml = `
-        <div style="display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: var(--radius-lg); margin-top: 20px; flex-wrap: wrap; gap: 14px;">
-          <div>
-            <h4 style="font-size: 14px; font-weight: 700; color: #f59e0b; margin-bottom: 3px;">
-              💰 Finance Admin Perspective: Invoicing & Payment Operations
-            </h4>
-            <p style="font-size: 12px; color: var(--text-secondary);">
-              Generate automated monthly rent invoices with grant subsidies, reconcile payments, and inspect GST receipts.
-            </p>
-          </div>
-          <div style="display: flex; gap: 8px;">
-            <button class="btn btn-primary btn-sm" onclick="App.runMonthlyBillingBatch()">
-              ⚡ Run Monthly Invoicing Batch
-            </button>
-            <button class="btn btn-outline btn-sm" onclick="App.switchTab('payments')">
-              💳 Payments Ledger
-            </button>
-          </div>
-        </div>
-      `;
-    } else if (role === 'startup') {
-      spotlightHtml = `
-        <div style="display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; background: rgba(6, 182, 212, 0.08); border: 1px solid rgba(6, 182, 212, 0.3); border-radius: var(--radius-lg); margin-top: 20px; flex-wrap: wrap; gap: 14px;">
-          <div>
-            <h4 style="font-size: 14px; font-weight: 700; color: #06b6d4; margin-bottom: 3px;">
-              🚀 Startup Founder Dashboard (XYZ Technologies - Alex Morgan)
-            </h4>
-            <p style="font-size: 12px; color: var(--text-secondary);">
-              Track incubation milestones with Mentor John Smith, review allocated cabin PC-103, and pay monthly invoices online.
-            </p>
-          </div>
-          <div style="display: flex; gap: 8px;">
-            <button class="btn btn-primary btn-sm" onclick="App.switchTab('milestones')">
-              🎯 View My Milestones
-            </button>
-            <button class="btn btn-outline btn-sm" onclick="App.switchTab('meetingRooms')">
-              📅 Book Meeting Room
-            </button>
-          </div>
-        </div>
-      `;
-    } else if (role === 'mentor') {
-      spotlightHtml = `
-        <div style="display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; background: rgba(139, 92, 246, 0.08); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: var(--radius-lg); margin-top: 20px; flex-wrap: wrap; gap: 14px;">
-          <div>
-            <h4 style="font-size: 14px; font-weight: 700; color: #8b5cf6; margin-bottom: 3px;">
-              🧠 Lead Mentor Workbench (John Smith - Head of Incubation)
-            </h4>
-            <p style="font-size: 12px; color: var(--text-secondary);">
-              Review progress for assigned startups (XYZ Technologies & NeuroPulse AI), verify completed milestones, and schedule sessions.
-            </p>
-          </div>
-          <div style="display: flex; gap: 8px;">
-            <button class="btn btn-primary btn-sm" onclick="App.switchTab('milestones')">
-              🎯 Review Milestones
-            </button>
-            <button class="btn btn-outline btn-sm" onclick="App.switchTab('incubation')">
-              🌱 Incubation Tracker
-            </button>
-          </div>
-        </div>
-      `;
-    } else {
-      spotlightHtml = `
-        <div style="display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; background: var(--accent-gradient-subtle); border: 1px solid var(--border-medium); border-radius: var(--radius-lg); margin-top: 20px; flex-wrap: wrap; gap: 14px;">
-          <div>
-            <h4 style="font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 3px;">
-              👑 Super Admin: Monthly Billing Automation Run
-            </h4>
-            <p style="font-size: 12px; color: var(--text-secondary);">
-              Generate itemized tax invoices with incubation grant subsidies for all active startups with 1 click.
-            </p>
-          </div>
-          <button class="btn btn-primary" onclick="App.runMonthlyBillingBatch()">
-            ⚡ Run October Invoicing
-          </button>
-        </div>
-      `;
-    }
-
-    const styleSwitcherHtml = `
-      <div class="dashboard-style-switcher" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; padding: 12px 18px; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); flex-wrap: wrap; gap: 12px;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <div style="width: 36px; height: 36px; border-radius: var(--radius-md); background: rgba(99, 102, 241, 0.15); display: flex; align-items: center; justify-content: center; font-size: 18px;">
-            🎛️
-          </div>
-          <div>
-            <div style="font-size: 13.5px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-              <span>Dashboard Style</span>
-              <span class="badge ${this.viewStyle === 'classic' ? 'badge-primary' : 'badge-subtle'}" style="font-size: 10px; font-weight: 700;">
-                ${this.viewStyle === 'classic' ? 'Classic (Before) Active' : (this.viewStyle === 'showcase' ? 'Showcase Active' : 'Combined View')}
-              </span>
-            </div>
-            <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">
-              Switch between the clean operational layout (Before) and the executive showcase screen (Item 10)
-            </div>
-          </div>
-        </div>
-
-        <div style="display: flex; background: var(--bg-surface-elevated); border: 1px solid var(--border-medium); border-radius: var(--radius-full); padding: 3px; gap: 4px;">
-          <button class="btn btn-sm ${this.viewStyle === 'classic' ? 'btn-primary' : 'btn-ghost'}" onclick="DashboardModule.setViewStyle('classic')" style="font-size: 11px; padding: 5px 14px; border-radius: var(--radius-full); font-weight: 700;">
-            📋 Classic Operational (Before Style)
-          </button>
-          <button class="btn btn-sm ${this.viewStyle === 'showcase' ? 'btn-primary' : 'btn-ghost'}" onclick="DashboardModule.setViewStyle('showcase')" style="font-size: 11px; padding: 5px 14px; border-radius: var(--radius-full); font-weight: 700;">
-            🏛️ Showcase Screen (Item 10)
-          </button>
-          <button class="btn btn-sm ${this.viewStyle === 'combined' ? 'btn-primary' : 'btn-ghost'}" onclick="DashboardModule.setViewStyle('combined')" style="font-size: 11px; padding: 5px 14px; border-radius: var(--radius-full); font-weight: 700;">
-            🔀 Combined View
-          </button>
-        </div>
-      </div>
-    `;
-
-    if (this.viewStyle === 'showcase') {
-      container.innerHTML = `
-        ${styleSwitcherHtml}
-        ${this.renderShowcaseScreen(stats, startups, rooms)}
-      `;
+    // If summary data is not loaded yet, initiate fetch and display skeleton UI
+    if (!this.summaryData && !this.isLoading) {
+      this.loadSummary();
+      container.innerHTML = this.renderSkeleton();
       return;
     }
 
-    const showcaseBlock = (this.viewStyle === 'combined') 
-      ? this.renderShowcaseScreen(stats, startups, rooms) 
-      : '';
-
-    container.innerHTML = `
-      ${styleSwitcherHtml}
-      ${showcaseBlock}
-
-      <!-- 1. Role-Adaptive High-Impact KPI Grid -->
-      ${kpiHtml}
-
-      <!-- Role-Specific Action Spotlight Banner -->
-      ${spotlightHtml}
-
-      <!-- 2. Interactive Lifecycle Pipeline Bar -->
-      <div class="lifecycle-stepper-card">
-        <div class="lifecycle-stepper-header">
-          <div class="lifecycle-stepper-title">
-            <span>🔄 Incubation & Space Lifecycle Journey</span>
-            <span class="badge badge-info" style="font-size: 11px;">Complete End-to-End Workflow</span>
-          </div>
-          <button class="btn btn-outline btn-sm" onclick="App.openOnboardModal()">
-            + Quick Onboard
-          </button>
-        </div>
-
-        <div class="lifecycle-stages-bar">
-          <div class="lifecycle-node active-stage" onclick="App.switchTab('onboarding')">
-            <div class="node-icon-circle">1</div>
-            <span class="node-label">Onboarding</span>
-            <span class="node-count">${onboardingCount} Startups</span>
-          </div>
-          <span class="lifecycle-arrow">➔</span>
-
-          <div class="lifecycle-node" onclick="App.switchTab('workspace')">
-            <div class="node-icon-circle">2</div>
-            <span class="node-label">Workspace</span>
-            <span class="node-count">${allocatedCount} Allocated</span>
-          </div>
-          <span class="lifecycle-arrow">➔</span>
-
-          <div class="lifecycle-node" onclick="App.switchTab('meetingRooms')">
-            <div class="node-icon-circle">3</div>
-            <span class="node-label">Meeting Rooms</span>
-            <span class="node-count">${bookedRoomsCount} Bookings</span>
-          </div>
-          <span class="lifecycle-arrow">➔</span>
-
-          <div class="lifecycle-node" onclick="App.switchTab('billing')">
-            <div class="node-icon-circle">4</div>
-            <span class="node-label">Rent Engine</span>
-            <span class="node-count">Auto-Prorated</span>
-          </div>
-          <span class="lifecycle-arrow">➔</span>
-
-          <div class="lifecycle-node" onclick="App.switchTab('billing')">
-            <div class="node-icon-circle">5</div>
-            <span class="node-label">Invoices</span>
-            <span class="node-count">${invoicedCount} Issued</span>
-          </div>
-          <span class="lifecycle-arrow">➔</span>
-
-          <div class="lifecycle-node" onclick="App.switchTab('payments')">
-            <div class="node-icon-circle">6</div>
-            <span class="node-label">Payments</span>
-            <span class="node-count">${paidCount} Cleared</span>
-          </div>
-          <span class="lifecycle-arrow">➔</span>
-
-          <div class="lifecycle-node" onclick="App.switchTab('incubation')">
-            <div class="node-icon-circle">7</div>
-            <span class="node-label">Incubation</span>
-            <span class="node-count">${incubationTrackingCount} Milestones</span>
-          </div>
-          <span class="lifecycle-arrow">➔</span>
-
-          <div class="lifecycle-node" onclick="App.switchTab('reports')">
-            <div class="node-icon-circle">8</div>
-            <span class="node-label">Reports</span>
-            <span class="node-count">Analytics</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- 3. Dashboard Body Grid: Activity Feed & Today's Schedule -->
-      <div class="grid-2col">
-        <!-- Real-time Activity Ledger -->
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">
-              <span>⚡ Live Hub Activity Feed</span>
-            </div>
-            <span class="badge badge-subtle">Real-Time</span>
-          </div>
-          <div style="display: flex; flex-direction: column; gap: 12px;">
-            ${activities.slice(0, 5).map(act => `
-              <div style="display: flex; align-items: flex-start; gap: 12px; padding: 10px; border-radius: var(--radius-md); background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle);">
-                <div style="font-size: 20px; line-height: 1;">${act.icon}</div>
-                <div style="flex: 1;">
-                  <div style="font-size: 13px; font-weight: 500; color: var(--text-primary); margin-bottom: 2px;">
-                    ${act.description}
-                  </div>
-                  <div style="display: flex; gap: 8px; font-size: 11px; color: var(--text-muted);">
-                    <span style="font-weight: 600; color: var(--accent-secondary);">${act.category}</span>
-                    <span>•</span>
-                    <span>${act.timestamp}</span>
-                  </div>
-                </div>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-
-        <!-- Today's Conference & Meeting Room Schedule -->
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">
-              <span>📅 Today's Room Reservations</span>
-            </div>
-            <button class="btn btn-outline btn-sm" onclick="App.switchTab('meetingRooms')">
-              + Book Room
-            </button>
-          </div>
-          <div style="display: flex; flex-direction: column; gap: 12px;">
-            ${this.renderTodayBookings(rooms)}
-          </div>
-        </div>
-      </div>
-
-      <!-- 4. Reconciled Payment History & Financial Settlements Section -->
-      ${this.renderDashboardPaymentHistory(role, payments)}
-
-      <!-- Role-Specific Bottom Action Bar -->
-      ${(role === 'super_admin' || role === 'finance_admin') ? `
-        <div style="display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; background: var(--accent-gradient-subtle); border: 1px solid var(--border-medium); border-radius: var(--radius-lg); margin-top: 20px;">
-          <div>
-            <h4 style="font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 3px;">
-              ⚡ Monthly Billing & Rent Automation Engine
-            </h4>
-            <p style="font-size: 12px; color: var(--text-secondary);">
-              Generate itemized tax invoices with incubation grant subsidies for all active startups with 1 click.
-            </p>
-          </div>
-          <button class="btn btn-primary" onclick="App.runMonthlyBillingBatch()">
-            ⚡ Run October Invoicing
-          </button>
-        </div>
-      ` : ''}
-    `;
-  },
-
-  renderDashboardPaymentHistory(role, payments) {
-    if (role === 'startup') {
-      const activeStartupId = window.store.activeFounderId || 'STP-XYZ';
-      const summary = window.store.getPaymentSummaryForStartup ? window.store.getPaymentSummaryForStartup(activeStartupId) : null;
-      const startupPayments = window.store.getPaymentsByStartupId ? window.store.getPaymentsByStartupId(activeStartupId) : payments;
-      const myStartup = window.store.getStartupById ? window.store.getStartupById(activeStartupId) : null;
-      const sName = myStartup ? myStartup.name : 'My Venture';
-
-      return `
-        <div class="card" style="margin-top: 20px;">
-          <div class="card-header" style="padding: 16px 20px; flex-wrap: wrap; gap: 12px; background: var(--bg-surface);">
-            <div>
-              <div class="card-title" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                <span>💳 My Payment History & Reconciled Receipts</span>
-                <span class="badge badge-success" style="font-size: 11px;">${startupPayments.length} Settlements</span>
-                ${summary ? `
-                  <span class="badge" style="background: rgba(16,185,129,0.12); color: var(--status-success); font-family: var(--font-mono); font-weight: 700;">
-                    ₹${Math.round(summary.totalPaid).toLocaleString('en-IN')} Paid
-                  </span>
-                  ${summary.balanceDue > 0 ? `
-                    <span class="badge" style="background: rgba(239,68,68,0.12); color: var(--status-danger); font-family: var(--font-mono); font-weight: 700;">
-                      ₹${Math.round(summary.balanceDue).toLocaleString('en-IN')} Balance Due
-                    </span>
-                  ` : ''}
-                ` : ''}
-              </div>
-              <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 3px;">
-                Verified tax payments, official receipts, and settlement statements for ${sName}.
-              </div>
-            </div>
-
-            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-              <button class="btn btn-outline btn-sm" onclick="PaymentsModule.openStartupPaymentHistoryModal('${activeStartupId}')" title="Open complete payment ledger dossier">
-                📊 Open Full Payment Dossier
-              </button>
-              <button class="btn btn-primary btn-sm" onclick="window.store.exportPaymentsCSV('${activeStartupId}')" title="Download official CSV payment statement">
-                📥 Export Statement (CSV)
-              </button>
-            </div>
-          </div>
-
-          <div class="table-wrapper">
-            <table class="nexus-table">
-              <thead>
-                <tr>
-                  <th>Receipt #</th>
-                  <th>Date</th>
-                  <th>Linked Invoice</th>
-                  <th>Gateway / Method</th>
-                  <th>Transaction Ref / UTR</th>
-                  <th>Amount Paid</th>
-                  <th style="text-align: right;">Receipt</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${startupPayments.length > 0 ? startupPayments.slice(0, 5).map(p => `
-                  <tr>
-                    <td>
-                      <span class="badge badge-subtle" style="font-family: var(--font-mono); font-size: 11px;">
-                        ${p.receiptNo || p.id}
-                      </span>
-                    </td>
-                    <td style="font-size: 12px; color: var(--text-secondary);">${p.paymentDate || '—'}</td>
-                    <td>
-                      <button class="btn btn-ghost btn-sm" style="font-family: var(--font-mono); font-size: 11px; padding: 2px 6px;"
-                        onclick="InvoiceModule.viewInvoice('${p.invoiceId}')">
-                        🧾 ${p.invoiceId || '—'}
-                      </button>
-                    </td>
-                    <td>
-                      <span class="badge ${p.gateway === 'Razorpay' ? 'badge-info' : p.gateway === 'Stripe' ? '' : 'badge-success'}"
-                        style="${p.gateway === 'Stripe' ? 'background: rgba(99,91,255,0.15); color: #635bff;' : ''} font-size: 10.5px;">
-                        ${p.gateway || p.method || 'Online'}
-                      </span>
-                    </td>
-                    <td>
-                      <code style="font-size: 11px; font-family: var(--font-mono); color: var(--text-muted);">
-                        ${p.transactionRef || '—'}
-                      </code>
-                    </td>
-                    <td>
-                      <strong style="font-family: var(--font-mono); font-size: 12.5px; color: var(--status-success);">
-                        ₹${Number(p.amount || 0).toLocaleString('en-IN')}
-                      </strong>
-                    </td>
-                    <td style="text-align: right;">
-                      <button class="btn btn-outline btn-sm" style="font-size: 11px; padding: 3px 8px; color: var(--status-success); border-color: var(--status-success);"
-                        onclick="PaymentsModule.viewReceipt('${p.id}')">
-                        📄 Receipt
-                      </button>
-                    </td>
-                  </tr>
-                `).join('') : `
-                  <tr>
-                    <td colspan="7" style="text-align: center; padding: 30px; color: var(--text-muted);">
-                      No payment settlements recorded yet for this venture.
-                    </td>
-                  </tr>
-                `}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `;
+    if (this.isLoading && !this.summaryData) {
+      container.innerHTML = this.renderSkeleton();
+      return;
     }
 
-    // Super Admin & Management Overview
-    const recentPayments = payments.slice(0, 5);
-    const totalCollected = payments.reduce((s, p) => s + (p.amount || 0), 0);
-
-    return `
-      <div class="card" style="margin-top: 20px;">
-        <div class="card-header" style="padding: 16px 20px; flex-wrap: wrap; gap: 12px; background: var(--bg-surface);">
-          <div>
-            <div class="card-title" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-              <span>💳 Recent Hub Payment Settlements (Stage 6)</span>
-              <span class="badge badge-success" style="font-size: 11px;">${payments.length} Reconciled</span>
-              <span class="badge" style="background: rgba(16,185,129,0.12); color: var(--status-success); font-family: var(--font-mono); font-weight: 700;">
-                ₹${Math.round(totalCollected).toLocaleString('en-IN')} Total Collected
-              </span>
-            </div>
-            <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 3px;">
-              Live settlement audit trail from Razorpay, Stripe, UPI, and Bank Wire collections.
-            </div>
-          </div>
-
-          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-            <button class="btn btn-outline btn-sm" onclick="App.switchTab('payments')" title="Open Stage 6 Payments Ledger">
-              📋 View Full Ledger
-            </button>
-            <button class="btn btn-primary btn-sm" onclick="window.store.exportPaymentsCSV()" title="Export all payments to CSV">
-              📥 Export Payments (CSV)
-            </button>
-          </div>
-        </div>
-
-        <div class="table-wrapper">
-          <table class="nexus-table">
-            <thead>
-              <tr>
-                <th>Payment / Receipt</th>
-                <th>Startup</th>
-                <th>Settlement Date</th>
-                <th>Gateway</th>
-                <th>Amount</th>
-                <th style="text-align: right;">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${recentPayments.length > 0 ? recentPayments.map(p => `
-                <tr>
-                  <td>
-                    <div style="font-family: var(--font-mono); font-weight: 700; font-size: 12px; color: var(--text-primary);">${p.receiptNo || p.id}</div>
-                    <code style="font-size: 10.5px; font-family: var(--font-mono); color: var(--text-muted);">${p.transactionRef || ''}</code>
-                  </td>
-                  <td>
-                    <div style="font-weight: 600; font-size: 12.5px; color: var(--text-primary);">${p.startupName || '—'}</div>
-                    <span style="font-size: 10.5px; color: var(--text-muted);">${p.startupId || ''}</span>
-                  </td>
-                  <td style="font-size: 12px; color: var(--text-secondary);">${p.paymentDate || '—'}</td>
-                  <td>
-                    <span class="badge ${p.gateway === 'Razorpay' ? 'badge-info' : p.gateway === 'Stripe' ? '' : 'badge-success'}"
-                      style="${p.gateway === 'Stripe' ? 'background: rgba(99,91,255,0.15); color: #635bff;' : ''} font-size: 10.5px;">
-                      ${p.gateway || p.method || 'Online'}
-                    </span>
-                  </td>
-                  <td>
-                    <strong style="font-family: var(--font-mono); font-size: 13px; color: var(--status-success);">
-                      ₹${Number(p.amount || 0).toLocaleString('en-IN')}
-                    </strong>
-                    ${p.isPartial ? '<span class="badge badge-subtle" style="font-size: 9.5px; margin-left: 4px;">Partial</span>' : ''}
-                  </td>
-                  <td style="text-align: right;">
-                    <div style="display: inline-flex; gap: 6px;">
-                      <button class="btn btn-outline btn-sm" style="font-size: 11px; padding: 3px 8px; color: var(--status-success); border-color: var(--status-success);"
-                        onclick="PaymentsModule.viewReceipt('${p.id}')" title="View Reconciled Receipt">
-                        📄 Receipt
-                      </button>
-                      ${p.startupId ? `
-                        <button class="btn btn-ghost btn-sm" style="font-size: 11px; padding: 3px 6px;"
-                          onclick="PaymentsModule.openStartupPaymentHistoryModal('${p.startupId}')" title="View Startup History Dossier">
-                          📊 History
-                        </button>
-                      ` : ''}
-                    </div>
-                  </td>
-                </tr>
-              `).join('') : `
-                <tr>
-                  <td colspan="6" style="text-align: center; padding: 30px; color: var(--text-muted);">
-                    No payment transactions recorded yet.
-                  </td>
-                </tr>
-              `}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    `;
-  },
-
-  renderTodayBookings(rooms) {
-    const today = new Date().toISOString().split('T')[0];
-    const todayBookings = [];
-    rooms.forEach(r => {
-      (r.bookings || []).forEach(b => {
-        if (b.date === today && b.status !== 'Cancelled') {
-          todayBookings.push({ ...b, roomName: r.name, roomColor: r.badgeColor });
-        }
-      });
-    });
-
-    if (todayBookings.length === 0) {
-      return `
-        <div style="padding: 30px; text-align: center; color: var(--text-muted); font-size: 13px;">
-          No meeting room reservations scheduled for today yet.
-        </div>
-      `;
-    }
-
-    return todayBookings.map(b => `
-      <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
-        <div>
-          <div style="font-weight: 600; font-size: 13.5px; color: var(--text-primary);">${b.title}</div>
-          <div style="font-size: 11.5px; color: var(--text-muted); display: flex; gap: 8px; margin-top: 3px;">
-            <span style="color: ${b.roomColor}; font-weight: 600;">${b.roomName}</span>
-            <span>•</span>
-            <span>${b.startupName}</span>
-            <span>•</span>
-            <span>${b.attendees} attendees</span>
-          </div>
-        </div>
-        <div style="text-align: right;">
-          <span class="badge badge-info" style="font-family: var(--font-mono);">${b.startTime} - ${b.endTime}</span>
-        </div>
-      </div>
-    `).join('');
-  },
-
-  renderShowcaseScreen(stats, startups, rooms) {
-    const isShowcase = this.isDemoMode;
-    const tf = this.revenueTimeframe || '6m';
-
-    const showcaseData = {
-      startupsCount: isShowcase ? 48 : stats.totalStartupsCount,
-      workspacesCount: isShowcase ? 72 : stats.totalSpaces,
-      monthlyRevenue: isShowcase ? '₹8.4 L' : `₹${(stats.mrr / 100000).toFixed(1)} L`,
-      pendingInvoices: isShowcase ? '₹1.25 L' : `₹${(stats.totalOutstanding / 100000).toFixed(2)} L`,
-      occupancy: isShowcase ? '86%' : `${stats.occupancyRate}%`,
-      cohortInfo: isShowcase ? '48 Incubated Startups • Cohort 2026-B' : `${stats.activeStartupsCount} Active Incubated Ventures`,
-      occupiedDesks: isShowcase ? 62 : stats.occupiedSpaces,
-      totalDesks: isShowcase ? 72 : stats.totalSpaces,
-      availableDesks: isShowcase ? 10 : (stats.totalSpaces - stats.occupiedSpaces),
-      pendingCount: isShowcase ? '4 Invoices Outstanding • 1 Overdue' : `${stats.pendingInvoicesCount} Invoices Awaiting Settlement`
+    const s = this.summaryData || {
+      mrr: { formatted: '₹0.00', value: 0, tooltip: 'MRR = sum of monthly base rent of active allocations' },
+      pendingCollections: { formatted: '₹0.00', value: 0, invoiceCount: 0, overdueAmountFormatted: '₹0.00', overdueCount: 0, tooltip: 'Pending collections' },
+      collected: { formatted: '₹0.00', value: 0, monthPaymentsCount: 0, monthLabel: 'Current Month', tooltip: 'Collected' },
+      occupancy: { rate: 0, occupiedSeats: 0, totalSeats: 26, tooltip: 'Occupancy' },
+      lifecycle: { startups: 10, allocated: 4, bookings: 22, issued: 5, cleared: 3, milestones: 4, totalCollectedFormatted: '₹0.00' },
+      needsAttention: { overdueInvoices: [], pendingApplications: [], unverifiedDocuments: [], endingIncubations: [] },
+      todaysReservations: [],
+      activityFeed: [],
+      charts: { sixMonthRevenue: [], startupFunnel: [] }
     };
 
-    return `
-      <div class="showcase-frame" id="admin-showcase-container">
-        <!-- ─── Showcase Header Deck ─────────────────────────────────── -->
-        <div class="showcase-title-banner">
-          <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
-            <div class="showcase-icon-box">
-              🏛️
-            </div>
-            <div>
-              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                <span class="showcase-title-text">INCUBATION MANAGEMENT</span>
-                <span class="showcase-title-badge-pill">
-                  <span class="showcase-pulse-dot"></span>
-                  <span style="font-size: 11px; font-weight: 800; color: #22d3ee; letter-spacing: 0.5px;">LIVE HUB OPS</span>
-                </span>
-              </div>
-              <div style="font-size: 11.5px; color: var(--text-muted); font-weight: 600; letter-spacing: 0.6px; margin-top: 3px;">
-                10. ADMIN DASHBOARD • MAIN SHOWCASE SCREEN • CYBER CITY CAMPUS, BENGALURU
-              </div>
-            </div>
-          </div>
-
-          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-            <!-- Live Time Pill -->
-            <div class="showcase-time-pill">
-              <span class="showcase-dot-green">●</span>
-              <span>OCT 2026 • 15:15 IST</span>
-            </div>
-
-            <!-- Mode Switcher & Layout Return -->
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <div class="showcase-mode-switcher-wrap">
-                <button class="btn btn-sm ${this.isDemoMode ? 'btn-primary' : 'btn-ghost'}" onclick="DashboardModule.toggleDemoMode(true)" style="font-size: 11px; padding: 4px 12px; border-radius: var(--radius-full); font-weight: 700;">
-                  ✨ Showcase Mode (48 / ₹8.4L)
-                </button>
-                <button class="btn btn-sm ${!this.isDemoMode ? 'btn-primary' : 'btn-ghost'}" onclick="DashboardModule.toggleDemoMode(false)" style="font-size: 11px; padding: 4px 12px; border-radius: var(--radius-full); font-weight: 700;">
-                  ⚡ Live Store Mode
-                </button>
-              </div>
-
-              <button class="btn btn-ghost btn-sm showcase-classic-btn" onclick="DashboardModule.setViewStyle('classic')" title="Return to Before / Classic Operational Dashboard" style="font-size: 11px; padding: 5px 12px; border-radius: var(--radius-full);">
-                ↩ Classic Layout
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- ─── Top 3-Column Hero KPI Grid ─────────────────────────────── -->
-        <!-- Startups (48) | Workspaces (72) | Monthly Revenue (₹8.4 L) -->
-        <div class="showcase-kpi-3col">
-          <!-- Card 1: Startups (48) -->
-          <div class="showcase-kpi-card" style="--card-accent: #10b981; cursor: pointer;" onclick="App.switchTab('onboarding')" title="View Startup Directory & Pipeline">
-            <div class="kpi-label">
-              <span>Startups</span>
-              <div style="width: 34px; height: 34px; border-radius: var(--radius-md); background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); display: flex; align-items: center; justify-content: center; font-size: 18px;">
-                🚀
-              </div>
-            </div>
-
-            <div style="display: flex; align-items: baseline; justify-content: space-between;">
-              <div class="kpi-number" style="color: #10b981;">${showcaseData.startupsCount}</div>
-              <!-- Mini Sparkline SVG -->
-              <svg width="80" height="32" viewBox="0 0 80 32" style="overflow: visible;">
-                <path d="M 0,26 Q 20,22 40,14 T 80,4" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" />
-                <path d="M 0,26 Q 20,22 40,14 T 80,4 L 80,32 L 0,32 Z" fill="rgba(16, 185, 129, 0.12)" />
-                <circle cx="80" cy="4" r="3.5" fill="#10b981" />
-              </svg>
-            </div>
-
-            <!-- Incubation Stages Distribution Meter -->
-            <div style="display: flex; align-items: center; gap: 4px; margin-top: 2px;">
-              <div style="flex: 1; height: 5px; border-radius: 3px; background: #10b981;" title="Incubation Phase: 18"></div>
-              <div style="flex: 1; height: 5px; border-radius: 3px; background: #06b6d4;" title="MVP Development: 12"></div>
-              <div style="flex: 1; height: 5px; border-radius: 3px; background: #8b5cf6;" title="Mentorship Stage: 14"></div>
-              <div style="flex: 0.4; height: 5px; border-radius: 3px; background: #f59e0b;" title="Graduation Ready: 4"></div>
-            </div>
-
-            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 11.5px; color: var(--text-muted); margin-top: 4px;">
-              <span class="trend-pill up">+12 This Quarter</span>
-              <span style="color: var(--text-secondary); font-weight: 600;">94% Active Retention</span>
-            </div>
-          </div>
-
-          <!-- Card 2: Workspaces (72) -->
-          <div class="showcase-kpi-card" style="--card-accent: #818cf8; cursor: pointer;" onclick="App.switchTab('workspace')" title="View Floorplan & Space Allocator">
-            <div class="kpi-label">
-              <span>Workspaces</span>
-              <div style="width: 34px; height: 34px; border-radius: var(--radius-md); background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); display: flex; align-items: center; justify-content: center; font-size: 18px;">
-                🏢
-              </div>
-            </div>
-
-            <div style="display: flex; align-items: baseline; justify-content: space-between;">
-              <div class="kpi-number" style="color: #a5b4fc;">${showcaseData.workspacesCount}</div>
-              <!-- Mini Donut / Segment Pill -->
-              <div style="display: flex; flex-direction: column; align-items: flex-end; font-size: 11px; font-family: var(--font-mono); color: var(--text-muted);">
-                <span style="color: #a5b4fc; font-weight: 700;">62 Assigned</span>
-                <span style="color: #10b981; font-weight: 700;">10 Available</span>
-              </div>
-            </div>
-
-            <!-- Workspace Type Breakdown Bar -->
-            <div style="display: flex; height: 6px; border-radius: 3px; overflow: hidden; background: rgba(255, 255, 255, 0.08); margin-top: 2px;">
-              <div style="width: 52%; background: #6366f1;" title="Dedicated Desks: 38"></div>
-              <div style="width: 26%; background: #06b6d4;" title="Hot Desks: 18"></div>
-              <div style="width: 22%; background: #ec4899;" title="Private Cabins: 16"></div>
-            </div>
-
-            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 11.5px; color: var(--text-muted); margin-top: 4px;">
-              <span class="trend-pill up">86% Occupancy</span>
-              <span style="color: var(--text-secondary); font-weight: 600;">Dedicated • Hot • Cabins</span>
-            </div>
-          </div>
-
-          <!-- Card 3: Monthly Revenue (₹8.4 L) -->
-          <div class="showcase-kpi-card" style="--card-accent: #06b6d4; cursor: pointer;" onclick="App.switchTab('billing')" title="View Monthly Rent & GST Invoices">
-            <div class="kpi-label">
-              <span>Monthly Revenue</span>
-              <div style="width: 34px; height: 34px; border-radius: var(--radius-md); background: rgba(6, 182, 212, 0.15); border: 1px solid rgba(6, 182, 212, 0.3); display: flex; align-items: center; justify-content: center; font-size: 18px;">
-                💰
-              </div>
-            </div>
-
-            <div style="display: flex; align-items: baseline; justify-content: space-between;">
-              <div class="kpi-number" style="color: #22d3ee;">${showcaseData.monthlyRevenue}</div>
-              <!-- Mini Sparkline SVG -->
-              <svg width="80" height="32" viewBox="0 0 80 32" style="overflow: visible;">
-                <path d="M 0,28 Q 20,20 40,16 T 80,4" fill="none" stroke="#22d3ee" stroke-width="2.5" stroke-linecap="round" />
-                <path d="M 0,28 Q 20,20 40,16 T 80,4 L 80,32 L 0,32 Z" fill="rgba(6, 182, 212, 0.12)" />
-                <circle cx="80" cy="4" r="3.5" fill="#22d3ee" />
-              </svg>
-            </div>
-
-            <!-- Mini Revenue Milestone Meter -->
-            <div class="progress-track" style="height: 6px; margin-top: 2px;">
-              <div class="progress-fill" style="width: 100%; background: linear-gradient(90deg, #6366f1, #06b6d4);"></div>
-            </div>
-
-            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 11.5px; color: var(--text-muted); margin-top: 4px;">
-              <span class="trend-pill up">↑ 18.2% YoY</span>
-              <span style="color: #22d3ee; font-weight: 700; font-family: var(--font-mono);">₹1.01 Cr Proj. ARR</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- ─── Centerpiece: Revenue Analytics (📈) ─────────────────────── -->
-        <div class="showcase-analytics-card">
-          <div class="showcase-analytics-header">
-            <div>
-              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                <span style="font-size: 22px;">📈</span>
-                <span style="font-size: 17px; font-weight: 900; color: var(--text-primary); letter-spacing: 0.3px;">Revenue Analytics</span>
-                <span class="badge badge-success" style="font-size: 11.5px; font-weight: 800; padding: 3px 10px;">
-                  ★ Peak MRR: ${showcaseData.monthlyRevenue}
-                </span>
-                <span style="font-size: 11.5px; color: #10b981; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
-                  <span>↑</span> <span>18.2% vs Previous Quarter</span>
-                </span>
-              </div>
-              <p style="font-size: 12.5px; color: var(--text-secondary); margin-top: 4px;">
-                Monthly recurring billing progression across incubation licenses, workspace allocation, and conference room demand.
-              </p>
-            </div>
-
-            <!-- Timeframe Filter Buttons -->
-            <div style="display: flex; align-items: center; gap: 6px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--radius-full); padding: 3px;">
-              <button class="btn btn-sm ${tf === '6m' ? 'btn-primary' : 'btn-ghost'}" onclick="DashboardModule.setRevenueTimeframe('6m')" style="font-size: 11px; padding: 3px 10px; border-radius: var(--radius-full); font-weight: 700;">
-                6M Trajectory
-              </button>
-              <button class="btn btn-sm ${tf === 'q3' ? 'btn-primary' : 'btn-ghost'}" onclick="DashboardModule.setRevenueTimeframe('q3')" style="font-size: 11px; padding: 3px 10px; border-radius: var(--radius-full); font-weight: 700;">
-                Q3 Cohorts
-              </button>
-              <button class="btn btn-sm ${tf === 'annual' ? 'btn-primary' : 'btn-ghost'}" onclick="DashboardModule.setRevenueTimeframe('annual')" style="font-size: 11px; padding: 3px 10px; border-radius: var(--radius-full); font-weight: 700;">
-                FY26 Targets
-              </button>
-            </div>
-          </div>
-
-          <!-- Deluxe SVG Spline Area Chart -->
-          <div style="width: 100%; height: 210px; margin: 12px 0 16px;">
-            ${this.renderRevenueSvgChart(tf)}
-          </div>
-
-          <!-- Revenue Category Breakdown Cards -->
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; padding-top: 18px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
-            <!-- Stream 1 -->
-            <div style="padding: 14px 16px; border-radius: var(--radius-md); background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(99, 102, 241, 0.25);">
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Workspace Licenses</span>
-                <span style="font-size: 11px; font-weight: 800; color: #a5b4fc;">69%</span>
-              </div>
-              <div style="font-size: 19px; font-weight: 900; color: #a5b4fc; margin: 4px 0 8px; font-family: var(--font-mono);">
-                ₹5,80,000 <span style="font-size: 11px; color: var(--text-muted); font-weight: 500;">/ mo</span>
-              </div>
-              <div class="progress-track" style="height: 5px;">
-                <div class="progress-fill" style="width: 69%; background: #6366f1;"></div>
-              </div>
-            </div>
-
-            <!-- Stream 2 -->
-            <div style="padding: 14px 16px; border-radius: var(--radius-md); background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(16, 185, 129, 0.25);">
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Incubation & Mentorship</span>
-                <span style="font-size: 11px; font-weight: 800; color: #10b981;">19%</span>
-              </div>
-              <div style="font-size: 19px; font-weight: 900; color: #10b981; margin: 4px 0 8px; font-family: var(--font-mono);">
-                ₹1,60,000 <span style="font-size: 11px; color: var(--text-muted); font-weight: 500;">/ mo</span>
-              </div>
-              <div class="progress-track" style="height: 5px;">
-                <div class="progress-fill" style="width: 19%; background: #10b981;"></div>
-              </div>
-            </div>
-
-            <!-- Stream 3 -->
-            <div style="padding: 14px 16px; border-radius: var(--radius-md); background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(6, 182, 212, 0.25);">
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Meeting Rooms & Credits</span>
-                <span style="font-size: 11px; font-weight: 800; color: #22d3ee;">12%</span>
-              </div>
-              <div style="font-size: 19px; font-weight: 900; color: #22d3ee; margin: 4px 0 8px; font-family: var(--font-mono);">
-                ₹1,00,000 <span style="font-size: 11px; color: var(--text-muted); font-weight: 500;">/ mo</span>
-              </div>
-              <div class="progress-track" style="height: 5px;">
-                <div class="progress-fill" style="width: 12%; background: #06b6d4;"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ─── Middle 2-Column KPI Cards ──────────────────────────────── -->
-        <!-- Pending Invoices (₹1.25 L) | Occupancy (86%) -->
-        <div class="showcase-kpi-2col">
-          <!-- Pending Invoices Card -->
-          <div class="showcase-kpi-card" style="--card-accent: #f59e0b; cursor: pointer;" onclick="App.switchTab('billing')" title="Review Pending Invoices & Rent Ledger">
-            <div class="kpi-label">
-              <span>Pending Invoices</span>
-              <div style="width: 34px; height: 34px; border-radius: var(--radius-md); background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); display: flex; align-items: center; justify-content: center; font-size: 18px;">
-                ⏳
-              </div>
-            </div>
-
-            <div style="display: flex; align-items: baseline; justify-content: space-between;">
-              <div class="kpi-number" style="color: #fbbf24;">${showcaseData.pendingInvoices}</div>
-              <span class="trend-pill warning">4 Invoices Due</span>
-            </div>
-
-            <!-- Overdue Warning Callout -->
-            <div style="padding: 10px 12px; border-radius: var(--radius-md); background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.25); font-size: 11.5px; color: #fbbf24; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-              <span>⚠️ 1 Overdue (₹29,500) • 3 Due in 5 Days</span>
-              <button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); DashboardModule.sendInvoiceNudge();" style="font-size: 10.5px; padding: 3px 8px; border-color: rgba(245, 158, 11, 0.5); color: #fbbf24;">
-                ⚡ Nudge Founders
-              </button>
-            </div>
-
-            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">
-              <span>Automated Razorpay & UPI Links active</span>
-              <span style="color: var(--accent-primary); font-weight: 700;">Open Billing Engine ➔</span>
-            </div>
-          </div>
-
-          <!-- Occupancy Card -->
-          <div class="showcase-kpi-card" style="--card-accent: #10b981; cursor: pointer;" onclick="App.switchTab('workspace')" title="View Floorplan Space Allocation">
-            <div class="kpi-label">
-              <span>Occupancy</span>
-              <div style="width: 34px; height: 34px; border-radius: var(--radius-md); background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); display: flex; align-items: center; justify-content: center; font-size: 18px;">
-                📊
-              </div>
-            </div>
-
-            <div style="display: flex; align-items: baseline; justify-content: space-between;">
-              <div class="kpi-number" style="color: #34d399;">${showcaseData.occupancy}</div>
-              <span class="trend-pill up">${showcaseData.occupiedDesks} of ${showcaseData.totalDesks} Desks</span>
-            </div>
-
-            <!-- Segmented Multi-Zone Bar -->
-            <div style="margin-top: 2px;">
-              <div class="progress-track" style="height: 8px;">
-                <div class="progress-fill" style="width: ${showcaseData.occupancy}; background: linear-gradient(90deg, #10b981, #06b6d4);"></div>
-              </div>
-              <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: var(--text-muted); margin-top: 6px;">
-                <span>Zone A (Floor 1): 92%</span>
-                <span>Zone B (Floor 2): 80%</span>
-                <span style="color: #10b981; font-weight: 700;">Cabins: 100% Full</span>
-              </div>
-            </div>
-
-            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">
-              <span style="color: #34d399; font-weight: 700;">${showcaseData.availableDesks} Desks Ready for Move-In</span>
-              <span style="color: var(--accent-primary); font-weight: 700;">Floorplan Map ➔</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- ─── Bottom Section: Recent Bookings ────────────────────────── -->
-        <div class="showcase-bookings-card">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 12px;">
+    container.innerHTML = `
+      <div class="dashboard-executive-view" style="padding-bottom: 40px;">
+        
+        <!-- Executive Header & Action Bar -->
+        <div class="dashboard-hero-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border-subtle);">
+          <div>
             <div style="display: flex; align-items: center; gap: 10px;">
-              <span style="font-size: 20px;">📅</span>
+              <h2 style="margin: 0; font-size: 22px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.02em;">
+                Executive Command Center
+              </h2>
+              <span class="badge" style="font-size: 11px; background: rgba(99, 102, 241, 0.12); color: #6366f1; border: 1px solid rgba(99, 102, 241, 0.25); font-weight: 700;">
+                Single Source of Truth
+              </span>
+            </div>
+            <p style="margin: 4px 0 0 0; font-size: 13px; color: var(--text-muted);">
+              Unified live operational metrics, revenue intelligence & venture lifecycle ledger · Asia/Kolkata (IST)
+            </p>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <!-- Month Selector -->
+            <div style="display: flex; align-items: center; gap: 6px; background: var(--bg-surface); border: 1px solid var(--border-subtle); padding: 4px 10px; border-radius: var(--radius-md);">
+              <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Month:</span>
+              <select id="dashboard-month-selector" onchange="DashboardModule.loadSummary(this.value)" style="border: none; background: transparent; font-size: 12px; font-weight: 700; color: var(--text-primary); cursor: pointer; outline: none;" class="tabular-nums">
+                <option value="2026-10" ${this.selectedMonth === '2026-10' ? 'selected' : ''}>October 2026</option>
+                <option value="2026-11" ${this.selectedMonth === '2026-11' ? 'selected' : ''}>November 2026</option>
+                <option value="2026-09" ${this.selectedMonth === '2026-09' ? 'selected' : ''}>September 2026</option>
+              </select>
+            </div>
+
+            <!-- Single "Generate Invoices" Action (Requirement E.16) -->
+            <button class="btn btn-primary" onclick="DashboardModule.openGenerateInvoicesModal('${this.selectedMonth === '2026-11' ? 'November 2026' : 'November 2026'}')" style="font-size: 12.5px; font-weight: 700; padding: 7px 16px; border-radius: var(--radius-md); display: inline-flex; align-items: center; gap: 6px;">
+              <span>⚡</span>
+              <span>Generate Invoices</span>
+            </button>
+
+            <!-- Refresh Button -->
+            <button class="btn btn-secondary btn-icon" onclick="DashboardModule.loadSummary()" title="Refresh Dashboard Summary" style="width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center;">
+              🔄
+            </button>
+          </div>
+        </div>
+
+        <!-- 6-Stage Lifecycle Journey Strip (Requirements A.4 & A.5) -->
+        <div class="lifecycle-journey-strip" style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg, 12px); padding: 16px 20px; margin-bottom: 24px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <div style="font-size: 11.5px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px;">
+              <span>🚀</span> <span>Venture Ecosystem Lifecycle Pipeline</span>
+            </div>
+            <div class="amount-badge tabular-nums" style="background: rgba(16, 185, 129, 0.12); color: #059669; border: 1px solid rgba(16, 185, 129, 0.25); padding: 3px 10px; border-radius: 9999px; font-size: 11.5px; font-weight: 700;">
+              Total Collected: ${s.lifecycle.totalCollectedFormatted}
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
+            <div class="lifecycle-node" onclick="DashboardModule.navigateToModule('onboarding')" style="cursor: pointer; background: var(--bg-canvas, rgba(0,0,0,0.02)); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 10px 12px; transition: all 0.2s ease;">
+              <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">1. Startups</div>
+              <div style="font-size: 18px; font-weight: 800; color: #3b82f6; font-family: 'Inter', sans-serif;" class="tabular-nums">${s.lifecycle.startups}</div>
+              <div style="font-size: 10.5px; color: var(--text-muted);">${s.lifecycle.startups} registered startups</div>
+            </div>
+
+            <div class="lifecycle-node" onclick="DashboardModule.navigateToModule('workspace')" style="cursor: pointer; background: var(--bg-canvas, rgba(0,0,0,0.02)); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 10px 12px; transition: all 0.2s ease;">
+              <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">2. Allocated</div>
+              <div style="font-size: 18px; font-weight: 800; color: #8b5cf6; font-family: 'Inter', sans-serif;" class="tabular-nums">${s.lifecycle.allocated}</div>
+              <div style="font-size: 10.5px; color: var(--text-muted);">${s.lifecycle.allocated} active ventures</div>
+            </div>
+
+            <div class="lifecycle-node" onclick="DashboardModule.navigateToModule('meetingRooms')" style="cursor: pointer; background: var(--bg-canvas, rgba(0,0,0,0.02)); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 10px 12px; transition: all 0.2s ease;">
+              <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">3. Bookings</div>
+              <div style="font-size: 18px; font-weight: 800; color: #06b6d4; font-family: 'Inter', sans-serif;" class="tabular-nums">${s.lifecycle.bookings}</div>
+              <div style="font-size: 10.5px; color: var(--text-muted);">${s.lifecycle.bookings} sessions confirmed</div>
+            </div>
+
+            <div class="lifecycle-node" onclick="DashboardModule.navigateToModule('billing')" style="cursor: pointer; background: var(--bg-canvas, rgba(0,0,0,0.02)); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 10px 12px; transition: all 0.2s ease;">
+              <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">4. Issued</div>
+              <div style="font-size: 18px; font-weight: 800; color: #f59e0b; font-family: 'Inter', sans-serif;" class="tabular-nums">${s.lifecycle.issued}</div>
+              <div style="font-size: 10.5px; color: var(--text-muted);">${s.lifecycle.issued} invoices active</div>
+            </div>
+
+            <div class="lifecycle-node" onclick="DashboardModule.navigateToModule('payments')" style="cursor: pointer; background: var(--bg-canvas, rgba(0,0,0,0.02)); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 10px 12px; transition: all 0.2s ease;">
+              <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">5. Cleared</div>
+              <div style="font-size: 18px; font-weight: 800; color: #10b981; font-family: 'Inter', sans-serif;" class="tabular-nums">${s.lifecycle.cleared}</div>
+              <div style="font-size: 10.5px; color: var(--text-muted);">${s.lifecycle.cleared} fully settled</div>
+            </div>
+
+            <div class="lifecycle-node" onclick="DashboardModule.navigateToModule('milestones')" style="cursor: pointer; background: var(--bg-canvas, rgba(0,0,0,0.02)); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 10px 12px; transition: all 0.2s ease;">
+              <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">6. Milestones</div>
+              <div style="font-size: 18px; font-weight: 800; color: #ec4899; font-family: 'Inter', sans-serif;" class="tabular-nums">${s.lifecycle.milestones}</div>
+              <div style="font-size: 10.5px; color: var(--text-muted);">${s.lifecycle.milestones} in progress</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4 Primary KPI Cards (Requirements A.3, F.19, D.13) -->
+        <div class="kpi-grid">
+          
+          <!-- KPI 1: MRR -->
+          <div class="kpi-card clickable" onclick="DashboardModule.navigateToModule('billing')" title="Click to view workspace billing">
+            <div class="kpi-header">
+              <div style="display: flex; align-items: center;">
+                <span class="kpi-title">Monthly Run-Rate (MRR)</span>
+                <span class="tooltip-wrap">
+                  <span class="tooltip-icon">?</span>
+                  <span class="tooltip-content">${s.mrr.tooltip}</span>
+                </span>
+              </div>
+              <div class="kpi-icon-wrap" style="color: #10b981; background: rgba(16, 185, 129, 0.1);">₹</div>
+            </div>
+            <div class="kpi-value tabular-nums" style="color: #10b981;">
+              ${s.mrr.formatted}
+            </div>
+            <div class="kpi-footer">
+              <span class="trend-pill up">Active Run-Rate</span>
+              <span>Base rent of active allocations</span>
+              <span class="kpi-click-hint">View Billing &rarr;</span>
+            </div>
+          </div>
+
+          <!-- KPI 2: Pending Collections -->
+          <div class="kpi-card clickable" onclick="DashboardModule.navigateToUnpaidInvoices()" title="Click to view unpaid and overdue invoices">
+            <div class="kpi-header">
+              <div style="display: flex; align-items: center;">
+                <span class="kpi-title">Pending Collections</span>
+                <span class="tooltip-wrap">
+                  <span class="tooltip-icon">?</span>
+                  <span class="tooltip-content">${s.pendingCollections.tooltip}</span>
+                </span>
+              </div>
+              <div class="kpi-icon-wrap" style="color: #f59e0b; background: rgba(245, 158, 11, 0.1);">⏳</div>
+            </div>
+            <div class="kpi-value tabular-nums" style="color: ${s.pendingCollections.value > 0 ? '#f59e0b' : 'var(--text-primary)'};">
+              ${s.pendingCollections.formatted}
+            </div>
+            <div class="kpi-footer">
+              <span class="trend-pill warning tabular-nums">${s.pendingCollections.invoiceCount} Unpaid</span>
+              <span class="tabular-nums">${s.pendingCollections.overdueAmountFormatted} overdue</span>
+              <span class="kpi-click-hint">Filter Invoices &rarr;</span>
+            </div>
+          </div>
+
+          <!-- KPI 3: Collected in Month -->
+          <div class="kpi-card clickable" onclick="DashboardModule.navigateToPayments()" title="Click to view payments transaction ledger">
+            <div class="kpi-header">
+              <div style="display: flex; align-items: center;">
+                <span class="kpi-title">Collected (${s.collected.monthLabel})</span>
+                <span class="tooltip-wrap">
+                  <span class="tooltip-icon">?</span>
+                  <span class="tooltip-content">${s.collected.tooltip}</span>
+                </span>
+              </div>
+              <div class="kpi-icon-wrap" style="color: #3b82f6; background: rgba(59, 130, 246, 0.1);">💳</div>
+            </div>
+            <div class="kpi-value tabular-nums" style="color: #3b82f6;">
+              ${s.collected.formatted}
+            </div>
+            <div class="kpi-footer">
+              <span class="trend-pill up tabular-nums">${s.collected.monthPaymentsCount} Payments</span>
+              <span>Settled in selected period</span>
+              <span class="kpi-click-hint">Ledger &rarr;</span>
+            </div>
+          </div>
+
+          <!-- KPI 4: Occupancy -->
+          <div class="kpi-card clickable" onclick="DashboardModule.navigateToWorkspaces()" title="Click to view workspace floorplan">
+            <div class="kpi-header">
+              <div style="display: flex; align-items: center;">
+                <span class="kpi-title">Floorplan Occupancy</span>
+                <span class="tooltip-wrap">
+                  <span class="tooltip-icon">?</span>
+                  <span class="tooltip-content">${s.occupancy.tooltip}</span>
+                </span>
+              </div>
+              <div class="kpi-icon-wrap" style="color: #8b5cf6; background: rgba(139, 92, 246, 0.1);">🏢</div>
+            </div>
+            <div class="kpi-value tabular-nums" style="color: #8b5cf6;">
+              ${s.occupancy.rate}%
+            </div>
+            <div class="kpi-footer">
+              <span class="trend-pill up tabular-nums">${s.occupancy.occupiedSeats} / ${s.occupancy.totalSeats} Seats</span>
+              <span>Occupied capacity</span>
+              <span class="kpi-click-hint">Floorplan &rarr;</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- "Needs Attention" Panel (Requirement F.18) -->
+        <div class="needs-attention-panel">
+          <div class="needs-attention-header">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 18px;">⚠️</span>
               <div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <span style="font-size: 16px; font-weight: 900; color: var(--text-primary);">Recent Bookings</span>
-                  <span class="badge badge-info" style="font-size: 11px; padding: 2px 8px;">4 Active Reservations Today</span>
-                </div>
-                <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
-                  Real-time conference room reservations, investor pitch sessions, and mentor 1-on-1 bookings.
-                </div>
+                <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: var(--text-primary);">Needs Attention</h3>
+                <span style="font-size: 11.5px; color: var(--text-muted);">Urgent operational items requiring administrative action</span>
               </div>
             </div>
-
-            <button class="btn btn-primary btn-sm" onclick="App.switchTab('meetingRooms')" style="font-size: 11.5px; padding: 6px 14px; gap: 6px;">
-              + Book Meeting Room
+            <button class="btn btn-outline btn-sm" onclick="DashboardModule.sendInvoiceNudge()" style="font-size: 11px; padding: 4px 10px;">
+              📲 Discard Nudges to All
             </button>
           </div>
 
-          <!-- Booking Rows directly matching wireframe: Startup A & Startup B -->
-          <div style="display: flex; flex-direction: column; gap: 12px;">
-            <!-- Wireframe Item 1: Startup A → Meeting Room 01 → 10:00 AM -->
-            <div class="showcase-booking-item">
-              <div class="booking-wireframe-route">
-                <span style="font-weight: 800; color: #10b981; font-size: 15px;">Startup A</span>
-                <span class="booking-arrow-glyph">➔</span>
-                <span style="font-weight: 700; color: var(--text-primary);">Meeting Room 01</span>
-                <span class="booking-arrow-glyph">➔</span>
-                <span class="booking-time-badge">10:00 AM</span>
+          <div class="needs-attention-grid">
+            
+            <!-- Overdue Invoices -->
+            <div class="attention-category-card">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <span style="font-size: 12px; font-weight: 700; color: #ef4444;">
+                  🔴 Overdue Invoices (${s.needsAttention.overdueInvoices.length})
+                </span>
+                <span style="font-size: 10.5px; color: var(--text-muted);">Past Due Date</span>
               </div>
-              <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                <span style="font-size: 12px; color: var(--text-muted);">Discussion Pod (4 Pax) • 4K Screen Active</span>
-                <span class="badge badge-success" style="font-size: 11px; font-weight: 800;">● IN SESSION</span>
-              </div>
+              ${s.needsAttention.overdueInvoices.length > 0 ? `
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                  ${s.needsAttention.overdueInvoices.map(inv => `
+                    <div class="attention-item" onclick="DashboardModule.navigateToUnpaidInvoices()" title="Click to view invoice #${inv.id}">
+                      <div style="line-height: 1.3;">
+                        <div style="font-weight: 700; color: var(--text-primary);">${inv.startupName}</div>
+                        <div style="font-size: 11px; color: var(--text-muted);">
+                          #${inv.id} · <span style="color: #ef4444; font-weight: 700;" class="tabular-nums">${inv.daysLateLabel}</span>
+                        </div>
+                      </div>
+                      <div style="text-align: right; display: flex; align-items: center; gap: 8px;">
+                        <span style="font-weight: 800; color: #ef4444;" class="tabular-nums">${inv.amountDueFormatted}</span>
+                        <button class="btn btn-sm" onclick="event.stopPropagation(); DashboardModule.sendOverdueReminder('${inv.id}', '${inv.startupName}')" style="font-size: 10px; padding: 2px 7px; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">
+                          Remind
+                        </button>
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              ` : '<div style="font-size: 12px; color: #10b981;">✓ All invoices are settled or current.</div>'}
             </div>
 
-            <!-- Wireframe Item 2: Startup B → Conference Room → 2:00 PM -->
-            <div class="showcase-booking-item">
-              <div class="booking-wireframe-route">
-                <span style="font-weight: 800; color: #818cf8; font-size: 15px;">Startup B</span>
-                <span class="booking-arrow-glyph">➔</span>
-                <span style="font-weight: 700; color: var(--text-primary);">Conference Room</span>
-                <span class="booking-arrow-glyph">➔</span>
-                <span class="booking-time-badge">2:00 PM</span>
+            <!-- Applications Waiting for Review -->
+            <div class="attention-category-card">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <span style="font-size: 12px; font-weight: 700; color: #f59e0b;">
+                  📋 Applications Waiting Review (${s.needsAttention.pendingApplications.length})
+                </span>
+                <span style="font-size: 10.5px; color: var(--text-muted);">New Submissions</span>
               </div>
-              <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                <span style="font-size: 12px; color: var(--text-muted);">Executive Boardroom (12 Pax) • VC Pitch Rehearsal</span>
-                <span class="badge badge-info" style="font-size: 11px; font-weight: 800;">⏳ CONFIRMED</span>
-              </div>
+              ${s.needsAttention.pendingApplications.length > 0 ? `
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                  ${s.needsAttention.pendingApplications.slice(0, 3).map(app => `
+                    <div class="attention-item" onclick="DashboardModule.navigateToModule('onboarding')">
+                      <div style="line-height: 1.3;">
+                        <div style="font-weight: 700; color: var(--text-primary);">${app.name}</div>
+                        <div style="font-size: 11px; color: var(--text-muted);">${app.founder} · ${app.sector}</div>
+                      </div>
+                      <span class="badge" style="font-size: 10px; background: rgba(245, 158, 11, 0.15); color: #f59e0b;">Review</span>
+                    </div>
+                  `).join('')}
+                </div>
+              ` : '<div style="font-size: 12px; color: #10b981;">✓ Application pipeline is fully reviewed.</div>'}
             </div>
 
-            <!-- Item 3: XYZ Technologies (STP-XYZ) -->
-            <div class="showcase-booking-item">
-              <div class="booking-wireframe-route">
-                <span style="font-weight: 800; color: #22d3ee; font-size: 15px;">XYZ Technologies</span>
-                <span class="booking-arrow-glyph">➔</span>
-                <span style="font-weight: 700; color: var(--text-primary);">Meeting Room 02</span>
-                <span class="booking-arrow-glyph">➔</span>
-                <span class="booking-time-badge">11:30 AM</span>
+            <!-- Startups with Unverified Documents -->
+            <div class="attention-category-card">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <span style="font-size: 12px; font-weight: 700; color: #8b5cf6;">
+                  📑 Document Compliance (${s.needsAttention.unverifiedDocuments.length})
+                </span>
+                <span style="font-size: 10.5px; color: var(--text-muted);">KYC & Dossier</span>
               </div>
-              <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                <span style="font-size: 12px; color: var(--text-muted);">Principal Mentor Advisory Sync with John Smith</span>
-                <span class="badge badge-warning" style="font-size: 11px; font-weight: 800;">⏳ UP NEXT</span>
-              </div>
+              ${s.needsAttention.unverifiedDocuments.length > 0 ? `
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                  ${s.needsAttention.unverifiedDocuments.slice(0, 3).map(doc => `
+                    <div class="attention-item" onclick="DashboardModule.navigateToModule('onboarding')">
+                      <div style="line-height: 1.3;">
+                        <div style="font-weight: 700; color: var(--text-primary);">${doc.name}</div>
+                        <div style="font-size: 11px; color: #8b5cf6;">${doc.issue}</div>
+                      </div>
+                      <span class="badge" style="font-size: 10px; background: rgba(139, 92, 246, 0.12); color: #8b5cf6;">Verify</span>
+                    </div>
+                  `).join('')}
+                </div>
+              ` : '<div style="font-size: 12px; color: #10b981;">✓ All startup compliance documents verified.</div>'}
             </div>
 
-            <!-- Item 4: NeuroPulse AI -->
-            <div class="showcase-booking-item">
-              <div class="booking-wireframe-route">
-                <span style="font-weight: 800; color: #c084fc; font-size: 15px;">NeuroPulse AI</span>
-                <span class="booking-arrow-glyph">➔</span>
-                <span style="font-weight: 700; color: var(--text-primary);">Brainstorm Lab</span>
-                <span class="booking-arrow-glyph">➔</span>
-                <span class="booking-time-badge">4:00 PM</span>
+            <!-- Incubation Ending Within 30 Days -->
+            <div class="attention-category-card">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <span style="font-size: 12px; font-weight: 700; color: #06b6d4;">
+                  ⏳ Cohort Expiry ≤30 Days (${s.needsAttention.endingIncubations.length})
+                </span>
+                <span style="font-size: 10.5px; color: var(--text-muted);">Graduation Planning</span>
               </div>
-              <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                <span style="font-size: 12px; color: var(--text-muted);">Neural AI Architecture Sprint • 8 Attendees</span>
-                <span class="badge badge-subtle" style="font-size: 11px; font-weight: 800;">📅 SCHEDULED</span>
-              </div>
+              ${s.needsAttention.endingIncubations.length > 0 ? `
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                  ${s.needsAttention.endingIncubations.map(inc => `
+                    <div class="attention-item" onclick="DashboardModule.navigateToModule('incubation')">
+                      <div style="line-height: 1.3;">
+                        <div style="font-weight: 700; color: var(--text-primary);">${inc.name}</div>
+                        <div style="font-size: 11px; color: var(--text-muted);">Ends on ${inc.endDate}</div>
+                      </div>
+                      <span class="badge" style="font-size: 10px; background: rgba(6, 182, 212, 0.15); color: #06b6d4;" class="tabular-nums">
+                        ${inc.daysRemaining} days left
+                      </span>
+                    </div>
+                  `).join('')}
+                </div>
+              ` : '<div style="font-size: 12px; color: var(--text-muted);">No cohort tenures ending within 30 days.</div>'}
             </div>
+
           </div>
         </div>
 
-        <!-- ─── Interactive Workflow Shortcut Dock ─────────────────────── -->
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.08); flex-wrap: wrap; gap: 12px;">
-          <div style="font-size: 12px; color: var(--text-muted); font-weight: 600;">
-            ⚡ Quick Workflow Navigation:
+        <!-- 2 Interactive Vector Visualizations (Requirement F.20) -->
+        <div class="dashboard-charts-grid">
+          
+          <!-- Chart 1: 6-Month Revenue History (Collected vs Outstanding) -->
+          <div class="chart-card">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+              <div>
+                <h3 style="margin: 0; font-size: 14px; font-weight: 800; color: var(--text-primary);">6-Month Revenue Intelligence</h3>
+                <span style="font-size: 11.5px; color: var(--text-muted);">Collected cashflow vs outstanding dues (INR)</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 12px; font-size: 11px; font-weight: 600;">
+                <span style="display: inline-flex; align-items: center; gap: 4px;">
+                  <span style="width: 10px; height: 10px; background: #10b981; border-radius: 2px;"></span> Collected
+                </span>
+                <span style="display: inline-flex; align-items: center; gap: 4px;">
+                  <span style="width: 10px; height: 10px; background: #f59e0b; border-radius: 2px;"></span> Outstanding
+                </span>
+              </div>
+            </div>
+
+            <!-- Responsive SVG Bar Chart -->
+            ${this.renderRevenueSvgChart(s.charts.sixMonthRevenue)}
           </div>
 
-          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <button class="btn btn-secondary btn-sm" onclick="App.switchTab('onboarding')" style="font-size: 11px; padding: 4px 10px;">
-              🚀 1. Onboarding
-            </button>
-            <button class="btn btn-secondary btn-sm" onclick="App.switchTab('workspace')" style="font-size: 11px; padding: 4px 10px;">
-              🏢 2. Workspaces
-            </button>
-            <button class="btn btn-secondary btn-sm" onclick="App.switchTab('meetingRooms')" style="font-size: 11px; padding: 4px 10px;">
-              📅 3. Bookings
-            </button>
-            <button class="btn btn-secondary btn-sm" onclick="App.switchTab('billing')" style="font-size: 11px; padding: 4px 10px;">
-              🧾 4. Invoices
-            </button>
-            <button class="btn btn-secondary btn-sm" onclick="App.switchTab('payments')" style="font-size: 11px; padding: 4px 10px;">
-              💳 6. Payments
-            </button>
-            <button class="btn btn-secondary btn-sm" onclick="App.switchTab('incubation')" style="font-size: 11px; padding: 4px 10px;">
-              🌱 7. Incubation
-            </button>
-            <button class="btn btn-secondary btn-sm" onclick="App.switchTab('milestones')" style="font-size: 11px; padding: 4px 10px;">
-              🎯 8. Milestones
-            </button>
-            <button class="btn btn-outline btn-sm" onclick="App.openRbacMatrixModal()" style="font-size: 11px; padding: 4px 10px;">
-              🛡️ 9. RBAC Matrix
-            </button>
+          <!-- Chart 2: Startup Pipeline Funnel -->
+          <div class="chart-card">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+              <div>
+                <h3 style="margin: 0; font-size: 14px; font-weight: 800; color: var(--text-primary);">Startup Pipeline Funnel</h3>
+                <span style="font-size: 11.5px; color: var(--text-muted);">Venture progression across cohort lifecycle</span>
+              </div>
+              <span class="amount-badge tabular-nums" style="font-size: 11px; font-weight: 700; background: rgba(59, 130, 246, 0.1); color: #3b82f6;">
+                10 Total Ventures
+              </span>
+            </div>
+
+            <!-- Funnel Bars -->
+            <div style="display: flex; flex-direction: column; gap: 12px; padding: 6px 0;">
+              ${(s.charts.startupFunnel || []).map(f => {
+                const pct = Math.max(8, Math.round((f.count / 10) * 100));
+                return `
+                  <div>
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                      <span style="font-weight: 700; color: var(--text-primary);">${f.stage}</span>
+                      <span style="font-weight: 800; color: ${f.color}; font-family: 'Inter', sans-serif;" class="tabular-nums">
+                        ${f.count} venture${f.count === 1 ? '' : 's'} (${pct}%)
+                      </span>
+                    </div>
+                    <div style="height: 10px; background: rgba(0, 0, 0, 0.05); border-radius: 5px; overflow: hidden;">
+                      <div style="width: ${pct}%; height: 100%; background: ${f.color}; border-radius: 5px; transition: width 0.6s ease;"></div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
           </div>
+
         </div>
+
+        <!-- Operations Row: Today's Reservations & Activity Feed -->
+        <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 20px;" class="dashboard-operations-grid">
+          
+          <!-- Today's Meeting Room Reservations (Requirements C.10, C.11, C.12) -->
+          <div class="chart-card">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+              <div>
+                <h3 style="margin: 0; font-size: 14px; font-weight: 800; color: var(--text-primary);">Today's Room Reservations</h3>
+                <span style="font-size: 11.5px; color: var(--text-muted);">Confirmed bookings across all meeting rooms & suites</span>
+              </div>
+              <a href="javascript:void(0)" onclick="DashboardModule.navigateToMeetingRooms()" style="font-size: 12px; font-weight: 700; color: var(--accent-primary, #6366f1); text-decoration: none;">
+                View all &rarr;
+              </a>
+            </div>
+
+            ${s.todaysReservations && s.todaysReservations.length > 0 ? `
+              <div style="overflow-x: auto;">
+                <table style="width: 100%; font-size: 12px; border-collapse: collapse;">
+                  <thead style="background: var(--bg-canvas, rgba(0,0,0,0.02)); border-bottom: 1px solid var(--border-subtle);">
+                    <tr>
+                      <th style="padding: 8px 10px; text-align: left;">Room</th>
+                      <th style="padding: 8px 10px; text-align: left;">Startup</th>
+                      <th style="padding: 8px 10px; text-align: center;">Time Window</th>
+                      <th style="padding: 8px 10px; text-align: center;">Pax</th>
+                      <th style="padding: 8px 10px; text-align: right;">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${s.todaysReservations.map(res => `
+                      <tr style="border-bottom: 1px solid var(--border-subtle);">
+                        <td style="padding: 10px; font-weight: 700; color: var(--text-primary); white-space: nowrap;">
+                          ${res.roomName}
+                        </td>
+                        <td style="padding: 10px; color: var(--text-secondary); white-space: nowrap;">
+                          ${res.startupName}
+                        </td>
+                        <td style="padding: 10px; text-align: center; font-weight: 600;" class="tabular-nums">
+                          ${res.timeRange}
+                        </td>
+                        <td style="padding: 10px; text-align: center;" class="tabular-nums">
+                          ${res.attendees}
+                        </td>
+                        <td style="padding: 10px; text-align: right;">
+                          <span class="res-status-chip ${res.status.toLowerCase().replace(/\s+/g, '')}">
+                            ${res.status}
+                          </span>
+                        </td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            ` : `
+              <div style="text-align: center; padding: 36px 16px; border: 1.5px dashed var(--border-subtle); border-radius: 8px;">
+                <div style="font-size: 28px; margin-bottom: 6px;">📅</div>
+                <div style="font-weight: 700; font-size: 13px; color: var(--text-primary);">No bookings today</div>
+                <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">
+                  All conference rooms and focus pods are currently open for booking.
+                </div>
+                <button class="btn btn-outline btn-sm" onclick="DashboardModule.navigateToMeetingRooms()" style="margin-top: 12px; font-size: 11.5px;">
+                  Reserve a Room
+                </button>
+              </div>
+            `}
+          </div>
+
+          <!-- Activity Feed (Requirements B.6, B.7, B.8, B.9) -->
+          <div class="chart-card">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+              <div>
+                <h3 style="margin: 0; font-size: 14px; font-weight: 800; color: var(--text-primary);">Ecosystem Activity Feed</h3>
+                <span style="font-size: 11.5px; color: var(--text-muted);">Real-time operations log (Capped at 10 items)</span>
+              </div>
+              <span class="badge" style="font-size: 10px; background: rgba(0,0,0,0.05); color: var(--text-muted);">
+                IST Timestamps
+              </span>
+            </div>
+
+            ${s.activityFeed && s.activityFeed.length > 0 ? `
+              <div style="display: flex; flex-direction: column; gap: 10px;">
+                ${s.activityFeed.map(act => `
+                  <div style="display: flex; align-items: flex-start; gap: 10px; padding: 8px 10px; border-radius: 6px; background: var(--bg-canvas, rgba(0,0,0,0.015)); border: 1px solid var(--border-subtle);">
+                    <div style="font-size: 16px; flex-shrink: 0; padding-top: 1px;">
+                      ${act.icon || '📌'}
+                    </div>
+                    <div style="flex: 1; line-height: 1.35; overflow: hidden;">
+                      <div style="font-size: 12px; font-weight: 600; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden;">
+                        ${act.title}
+                      </div>
+                      <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 2px; display: flex; align-items: center; gap: 6px;">
+                        <span style="font-weight: 600; color: var(--accent-primary, #6366f1);">${act.module}</span>
+                        <span>•</span>
+                        <span class="tabular-nums">${act.relativeTime}</span>
+                      </div>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            ` : `
+              <div style="text-align: center; padding: 36px 16px; border: 1.5px dashed var(--border-subtle); border-radius: 8px;">
+                <div style="font-size: 28px; margin-bottom: 6px;">📜</div>
+                <div style="font-weight: 700; font-size: 13px; color: var(--text-primary);">No recent activity logged</div>
+                <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">
+                  System activities will appear here in chronological order.
+                </div>
+              </div>
+            `}
+          </div>
+
+        </div>
+
+      </div>
+    `;
+
+    // Apply production element hiding (Requirement E.17)
+    this.applyProductionHiding();
+  },
+
+  renderRevenueSvgChart(data) {
+    if (!data || data.length === 0) {
+      return '<div style="text-align:center; padding: 40px; color: var(--text-muted); font-size: 12px;">No revenue data available.</div>';
+    }
+
+    const svgWidth = 560;
+    const svgHeight = 180;
+    const paddingLeft = 40;
+    const paddingBottom = 30;
+    const paddingTop = 20;
+    const chartWidth = svgWidth - paddingLeft - 20;
+    const chartHeight = svgHeight - paddingTop - paddingBottom;
+
+    // Determine max value for scale
+    let maxVal = 0;
+    data.forEach(d => {
+      if (d.collected > maxVal) maxVal = d.collected;
+      if (d.outstanding > maxVal) maxVal = d.outstanding;
+    });
+    if (maxVal === 0) maxVal = 100000;
+    // Round maxVal up to clean number
+    maxVal = Math.ceil(maxVal / 50000) * 50000;
+
+    const groupWidth = chartWidth / data.length;
+    const barWidth = Math.min(22, groupWidth * 0.32);
+
+    return `
+      <div style="width: 100%; overflow-x: auto;">
+        <svg viewBox="0 0 ${svgWidth} ${svgHeight}" style="width: 100%; height: auto; display: block; font-family: 'Inter', sans-serif;">
+          <!-- Grid Lines -->
+          <line x1="${paddingLeft}" y1="${paddingTop}" x2="${svgWidth - 20}" y2="${paddingTop}" stroke="rgba(148, 163, 184, 0.2)" stroke-dasharray="3 3" />
+          <line x1="${paddingLeft}" y1="${paddingTop + chartHeight / 2}" x2="${svgWidth - 20}" y2="${paddingTop + chartHeight / 2}" stroke="rgba(148, 163, 184, 0.2)" stroke-dasharray="3 3" />
+          <line x1="${paddingLeft}" y1="${paddingTop + chartHeight}" x2="${svgWidth - 20}" y2="${paddingTop + chartHeight}" stroke="rgba(148, 163, 184, 0.4)" />
+
+          <!-- Y-Axis Labels -->
+          <text x="${paddingLeft - 8}" y="${paddingTop + 4}" font-size="9.5" fill="var(--text-muted, #94a3b8)" text-anchor="end" class="tabular-nums">₹${(maxVal / 100000).toFixed(1)}L</text>
+          <text x="${paddingLeft - 8}" y="${paddingTop + chartHeight / 2 + 3}" font-size="9.5" fill="var(--text-muted, #94a3b8)" text-anchor="end" class="tabular-nums">₹${(maxVal / 200000).toFixed(1)}L</text>
+          <text x="${paddingLeft - 8}" y="${paddingTop + chartHeight + 3}" font-size="9.5" fill="var(--text-muted, #94a3b8)" text-anchor="end" class="tabular-nums">₹0</text>
+
+          <!-- Bars -->
+          ${data.map((d, i) => {
+            const centerX = paddingLeft + (i + 0.5) * groupWidth;
+            const hColl = Math.max(3, (d.collected / maxVal) * chartHeight);
+            const hOut = Math.max(3, (d.outstanding / maxVal) * chartHeight);
+            const yColl = paddingTop + chartHeight - hColl;
+            const yOut = paddingTop + chartHeight - hOut;
+            const xColl = centerX - barWidth - 2;
+            const xOut = centerX + 2;
+
+            return `
+              <g class="chart-group">
+                <!-- Collected Bar -->
+                <rect x="${xColl}" y="${yColl}" width="${barWidth}" height="${hColl}" rx="3" fill="#10b981">
+                  <title>${d.label} Collected: ${d.collectedFormatted}</title>
+                </rect>
+                <!-- Outstanding Bar -->
+                <rect x="${xOut}" y="${yOut}" width="${barWidth}" height="${hOut}" rx="3" fill="#f59e0b">
+                  <title>${d.label} Outstanding: ${d.outstandingFormatted}</title>
+                </rect>
+                <!-- X-Axis Label -->
+                <text x="${centerX}" y="${svgHeight - 10}" font-size="10" font-weight="600" fill="var(--text-muted, #94a3b8)" text-anchor="middle">
+                  ${d.label}
+                </text>
+              </g>
+            `;
+          }).join('')}
+        </svg>
       </div>
     `;
   },
 
-  renderRevenueSvgChart(timeframe = '6m') {
-    let dataPoints = [
-      { month: 'May', val: 4.8, x: 50, y: 155 },
-      { month: 'Jun', val: 5.6, x: 140, y: 130 },
-      { month: 'Jul', val: 6.4, x: 230, y: 105 },
-      { month: 'Aug', val: 7.1, x: 320, y: 82 },
-      { month: 'Sep', val: 7.8, x: 410, y: 58 },
-      { month: 'Oct', val: 8.4, x: 500, y: 36 }
-    ];
-
-    if (timeframe === 'q3') {
-      dataPoints = [
-        { month: 'Jul', val: 6.4, x: 70, y: 150 },
-        { month: 'Aug', val: 7.1, x: 190, y: 115 },
-        { month: 'Sep', val: 7.8, x: 310, y: 75 },
-        { month: 'Oct', val: 8.4, x: 460, y: 36 }
-      ];
-    } else if (timeframe === 'annual') {
-      dataPoints = [
-        { month: 'Q1', val: 3.2, x: 60, y: 160 },
-        { month: 'Q2', val: 5.6, x: 180, y: 120 },
-        { month: 'Q3', val: 7.8, x: 320, y: 70 },
-        { month: 'Q4 (Est)', val: 9.6, x: 480, y: 30 }
-      ];
-    }
-
-    const peakPoint = dataPoints[dataPoints.length - 1];
-
+  renderSkeleton() {
     return `
-      <svg viewBox="0 0 550 190" width="100%" height="100%" style="overflow: visible;">
-        <defs>
-          <linearGradient id="showcaseAreaGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.5" />
-            <stop offset="50%" stop-color="#6366f1" stop-opacity="0.18" />
-            <stop offset="100%" stop-color="#6366f1" stop-opacity="0.0" />
-          </linearGradient>
-
-          <linearGradient id="showcaseLineGradient" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stop-color="#6366f1" />
-            <stop offset="50%" stop-color="#06b6d4" />
-            <stop offset="100%" stop-color="#10b981" />
-          </linearGradient>
-
-          <filter id="glowFilter" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="4" result="blur" />
-            <feComposite in="SourceGraphic" in2="blur" operator="over" />
-          </filter>
-        </defs>
-
-        <!-- Horizontal Reference Gridlines -->
-        <line x1="35" y1="36" x2="525" y2="36" stroke="rgba(255,255,255,0.08)" stroke-dasharray="4" />
-        <text x="12" y="39" fill="var(--text-muted)" font-size="10" font-family="var(--font-mono)">₹8.5L</text>
-
-        <line x1="35" y1="80" x2="525" y2="80" stroke="rgba(255,255,255,0.08)" stroke-dasharray="4" />
-        <text x="12" y="83" fill="var(--text-muted)" font-size="10" font-family="var(--font-mono)">₹6.5L</text>
-
-        <line x1="35" y1="125" x2="525" y2="125" stroke="rgba(255,255,255,0.08)" stroke-dasharray="4" />
-        <text x="12" y="128" fill="var(--text-muted)" font-size="10" font-family="var(--font-mono)">₹4.5L</text>
-
-        <line x1="35" y1="168" x2="525" y2="168" stroke="rgba(255,255,255,0.15)" />
-
-        <!-- Area Fill Under Curve -->
-        <path d="M ${dataPoints[0].x},${dataPoints[0].y} ${dataPoints.slice(1).map(p => `L ${p.x},${p.y}`).join(' ')} L ${peakPoint.x},168 L ${dataPoints[0].x},168 Z" fill="url(#showcaseAreaGradient)" />
-
-        <!-- Smooth Curve Stroke -->
-        <path d="M ${dataPoints[0].x},${dataPoints[0].y} ${dataPoints.slice(1).map(p => `L ${p.x},${p.y}`).join(' ')}" fill="none" stroke="url(#showcaseLineGradient)" stroke-width="3.5" filter="url(#glowFilter)" stroke-linecap="round" stroke-linejoin="round" />
-
-        <!-- Data Nodes & Value Tags -->
-        ${dataPoints.map((dp, i) => `
-          <g style="cursor: pointer;">
-            <circle cx="${dp.x}" cy="${dp.y}" r="${i === dataPoints.length - 1 ? 6.5 : 4.5}" fill="${i === dataPoints.length - 1 ? '#10b981' : '#06b6d4'}" stroke="#ffffff" stroke-width="2" />
-            <text x="${dp.x}" y="${dp.y - 12}" fill="${i === dataPoints.length - 1 ? '#10b981' : 'var(--text-primary)'}" font-size="11" font-weight="800" font-family="var(--font-mono)" text-anchor="middle">₹${dp.val}L</text>
-            <text x="${dp.x}" y="182" fill="var(--text-secondary)" font-size="11" font-weight="600" text-anchor="middle">${dp.month}</text>
-          </g>
-        `).join('')}
-
-        <!-- Peak Milestone Callout -->
-        <g transform="translate(${peakPoint.x - 45}, 12)">
-          <rect x="0" y="0" width="90" height="20" rx="10" fill="#10b981" />
-          <text x="45" y="14" fill="#000000" font-size="9.5" font-weight="900" text-anchor="middle">★ ₹8.4L PEAK</text>
-        </g>
-      </svg>
+      <div style="padding: 10px 0;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 24px;">
+          <div class="skeleton-box" style="width: 280px; height: 32px; border-radius: 6px;"></div>
+          <div class="skeleton-box" style="width: 160px; height: 32px; border-radius: 6px;"></div>
+        </div>
+        <div class="skeleton-box" style="width: 100%; height: 85px; border-radius: 12px; margin-bottom: 24px;"></div>
+        <div class="kpi-grid">
+          <div class="skeleton-box" style="height: 120px; border-radius: 12px;"></div>
+          <div class="skeleton-box" style="height: 120px; border-radius: 12px;"></div>
+          <div class="skeleton-box" style="height: 120px; border-radius: 12px;"></div>
+          <div class="skeleton-box" style="height: 120px; border-radius: 12px;"></div>
+        </div>
+        <div class="skeleton-box" style="width: 100%; height: 180px; border-radius: 12px; margin-top: 24px;"></div>
+      </div>
     `;
+  },
+
+  applyProductionHiding() {
+    // Hide reset demo data, dev tools, and permissions banner when in production
+    const isProd = window.__ENV__?.isProduction || 
+                   (typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'production') ||
+                   (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1');
+
+    if (isProd) {
+      document.body.classList.add('is-production');
+      document.querySelectorAll('.dev-only, #btn-reset-demo-data, #header-dev-tools-wrapper, .persona-banner-bar, #dynamic-persona-banner').forEach(el => {
+        el.style.display = 'none';
+      });
+    }
   }
 };
+
+window.DashboardModule = DashboardModule;

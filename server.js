@@ -149,6 +149,9 @@ async function handleApi(req, res, parsedUrl) {
     }
 
     if (pathname === '/api/database/table/seed' && req.method === 'POST') {
+      if (process.env.NODE_ENV === 'production') {
+        return sendJson(res, 403, { ok: false, error: 'Resetting demo data is disabled in production.' });
+      }
       const body = await parseJsonBody(req);
       const force = Boolean(body.force);
       const seedResult = await db.seedAllCollections(force);
@@ -215,6 +218,36 @@ async function handleApi(req, res, parsedUrl) {
     if (pathname === '/api/invoices' && req.method === 'GET') {
       const resData = await db.getTableRecords('invoices', { limit: 100 });
       return sendJson(res, 200, { ok: true, invoices: resData.records || [] });
+    }
+
+    if (pathname === '/api/invoices/generate-batch' && req.method === 'POST') {
+      const role = req.headers['x-user-role'] || searchParams.get('role') || 'incubator_admin';
+      if (role === 'startup') {
+        return sendJson(res, 403, { ok: false, error: 'Access denied: Admin only' });
+      }
+      const body = await parseJsonBody(req);
+      const billingPeriod = body.billingPeriod || 'November 2026';
+      const previewOnly = Boolean(body.previewOnly);
+      const result = await db.generateInvoicesBatchAtomic({ billingPeriod, previewOnly });
+      return sendJson(res, result.ok ? 200 : 400, result);
+    }
+
+    if (pathname === '/api/dashboard/summary' && req.method === 'GET') {
+      const role = req.headers['x-user-role'] || searchParams.get('role') || 'incubator_admin';
+      if (role === 'startup') {
+        return sendJson(res, 403, { ok: false, error: 'Access denied: Admin only' });
+      }
+      const month = searchParams.get('month');
+      const summary = await db.getDashboardSummary(month);
+      return sendJson(res, 200, summary);
+    }
+
+    if (pathname === '/api/config' && req.method === 'GET') {
+      return sendJson(res, 200, {
+        ok: true,
+        nodeEnv: process.env.NODE_ENV || 'development',
+        isProduction: process.env.NODE_ENV === 'production'
+      });
     }
 
     if (pathname === '/api/payments' && req.method === 'GET') {

@@ -21,6 +21,19 @@ const App = {
       this.updateHeaderStats();
     });
 
+    // Production check for dev tools & demo reset (Requirement E.17)
+    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      document.body.classList.add('is-production');
+    }
+    fetch('/api/config')
+      .then(r => r.json())
+      .then(cfg => {
+        if (cfg && cfg.isProduction) {
+          document.body.classList.add('is-production');
+        }
+      })
+      .catch(() => {});
+
     // Render initial view
     this.switchTab('dashboard');
     this.updateHeaderStats();
