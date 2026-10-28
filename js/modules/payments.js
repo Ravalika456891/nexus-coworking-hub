@@ -770,35 +770,44 @@ const PaymentsModule = {
                       ` : '<span style="color: var(--text-muted);">—</span>'}
                     </td>
                     <td style="white-space: nowrap;">
-                      <div style="font-family: var(--font-sans); font-variant-numeric: tabular-nums; font-weight: 700; color: #059669; font-size: 14px;">
-                        ₹${(p.amount || 0).toLocaleString('en-IN')}
-                      </div>
-                      ${p.isPartial ? `
-                        <div style="font-size: 10.5px; color: #7c3aed; font-weight: 700; font-variant-numeric: tabular-nums;">
-                          Partial (₹${(p.remainingBalance || 0).toLocaleString('en-IN')} due)
+                      ${(p.type === 'Refund' || p.amount < 0) ? `
+                        <div style="font-family: var(--font-sans); font-variant-numeric: tabular-nums; font-weight: 700; color: #dc2626; font-size: 14px;">
+                          -₹${Math.abs(p.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                        <div style="font-size: 10px; color: #dc2626; font-weight: 700;">
+                          ↩ Refund Issued
                         </div>
                       ` : `
-                        <div style="font-size: 10px; color: #059669; font-weight: 600;">
-                          ✓ Full Settlement
+                        <div style="font-family: var(--font-sans); font-variant-numeric: tabular-nums; font-weight: 700; color: #059669; font-size: 14px;">
+                          ₹${(p.amount || 0).toLocaleString('en-IN')}
                         </div>
+                        ${p.isPartial ? `
+                          <div style="font-size: 10.5px; color: #7c3aed; font-weight: 700; font-variant-numeric: tabular-nums;">
+                            Partial (₹${(p.remainingBalance || 0).toLocaleString('en-IN')} due)
+                          </div>
+                        ` : `
+                          <div style="font-size: 10px; color: #059669; font-weight: 600;">
+                            ✓ Full Settlement
+                          </div>
+                        `}
                       `}
                     </td>
                     <td>
-                      <span class="badge ${gwClass}" style="${gwStyle} font-size: 11px; font-weight: 700;">
-                        ${p.gateway || p.method}
+                      <span class="badge ${(p.type === 'Refund' || p.amount < 0) ? '' : gwClass}" style="${(p.type === 'Refund' || p.amount < 0) ? 'background: rgba(220, 38, 38, 0.1); color: #dc2626; border: 1px solid rgba(220, 38, 38, 0.3);' : gwStyle} font-size: 11px; font-weight: 700;">
+                        ${(p.type === 'Refund' || p.amount < 0) ? `↩ ${p.gateway || p.method || 'Refund'}` : (p.gateway || p.method)}
                       </span>
                     </td>
                     <td>
                       <code style="font-size: 11px; font-family: var(--font-mono); color: var(--text-muted); background: var(--bg-surface-elevated); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border-subtle);">
-                        ${p.transactionRef || '—'}
+                        ${p.transactionRef || p.reference || '—'}
                       </code>
                     </td>
                     <td style="font-size: 11.5px; color: var(--text-muted); white-space: nowrap;">
                       ${p.paymentDate || '—'}
                     </td>
                     <td>
-                      <span class="badge ${p.status === 'Successful' ? 'badge-success' : 'badge-warning'}">
-                        ${p.status || 'Successful'}
+                      <span class="badge ${(p.type === 'Refund' || p.amount < 0) ? '' : (p.status === 'Successful' ? 'badge-success' : 'badge-warning')}" style="${(p.type === 'Refund' || p.amount < 0) ? 'background: rgba(220, 38, 38, 0.1); color: #dc2626; border: 1px solid rgba(220, 38, 38, 0.3);' : ''}">
+                        ${(p.type === 'Refund' || p.amount < 0) ? 'Refunded' : (p.status || 'Successful')}
                       </span>
                     </td>
                     <td style="text-align: right;">

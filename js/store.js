@@ -1639,27 +1639,99 @@ class NexusStore {
     return { success: true, booking: newBooking, message: `Successfully booked ${room.name}!` };
   }
 
-  async cancelBooking(roomId, bookingId) {
+  async cancelBooking(roomId, bookingId, options = {}) {
     const room = this.getMeetingRoomById(roomId);
     if (!room) return { success: false, message: 'Room not found' };
 
     const booking = (room.bookings || []).find(b => b.id === bookingId);
     if (!booking) return { success: false, message: 'Booking not found' };
 
+    const currentStartup = (this.getStartups() || []).find(s => s.id === booking.startupId) || (this.getStartups && this.getStartups()[0]);
+    const requestingStartupId = options.requestingStartupId || (currentStartup ? currentStartup.id : booking.startupId);
+    const userRole = options.userRole || this.currentRole || 'founder';
+
+    let serverResult = null;
     try {
-      await fetch('/api/meeting-rooms/cancel', {
+      const res = await fetch('/api/meeting-rooms/cancel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roomId, bookingId })
+        body: JSON.stringify({
+          roomId,
+          bookingId,
+          requestingStartupId,
+          userRole,
+          currentClock: options.currentClock || null
+        })
       });
+      serverResult = await res.json().catch(() => null);
+      if (!res.ok) {
+        return {
+          success: false,
+          code: serverResult?.code || 'CANCELLATION_FAILED',
+          message: serverResult?.message || 'Cancellation could not be completed.'
+        };
+      }
     } catch (e) {
-      console.warn('Server offline on cancel booking:', e.message);
+      console.warn('Server offline on cancel booking, proceeding with local policy:', e.message);
+    }
+
+    // Local / client-side sync
+    let quote = serverResult?.quote;
+    if (!quote && typeof CancellationPolicy !== 'undefined') {
+      quote = CancellationPolicy.calculateRefundQuote(booking, options.currentClock);
     }
 
     booking.status = 'Cancelled';
+    booking.cancelledAt = new Date().toISOString();
+    if (quote) booking.refundQuote = quote;
+
+    // Plan credit restoration
+    if (quote?.isPlanCovered) {
+      const startup = (this.getStartups() || []).find(s => s.id === booking.startupId);
+      if (startup) {
+        startup.usedMeetingHours = Math.max(0, (startup.usedMeetingHours || 0) - (quote.durationHours || 1));
+      }
+    } else if (quote) {
+      // Record refund in payments ledger
+      const refundId = serverResult?.refundId || `rfnd_${Date.now()}`;
+      const isRazorpay = (booking.paymentGateway === 'Razorpay' || booking.razorpayPaymentId || booking.paymentMethod === 'Razorpay');
+      const refundPayment = {
+        id: `PMT-RFND-${Date.now()}`,
+        type: 'Refund',
+        invoiceId: booking.invoiceId || null,
+        bookingId: booking.id,
+        roomId: room.id,
+        startupId: booking.startupId,
+        startupName: booking.startupName,
+        amount: -quote.refundRupees,
+        paymentDate: new Date().toISOString().slice(0, 10),
+        method: isRazorpay ? 'Razorpay Refund' : 'Credit Note',
+        gateway: isRazorpay ? 'Razorpay' : 'Credit Note',
+        transactionRef: refundId,
+        status: 'Successful',
+        receiptNo: `REC-RFND-${booking.id}`,
+        notes: `Meeting Room cancellation refund for ${booking.id} (${room.name}) - ${quote.refundPct}% tier`,
+        createdAt: new Date().toISOString()
+      };
+      if (!this.state.payments) this.state.payments = [];
+      this.state.payments.unshift(refundPayment);
+    }
+
+    const toastMsg = serverResult?.message || (
+      quote?.isPlanCovered
+        ? `Cancelled. ${quote.durationHours}h meeting credit restored.`
+        : (quote && typeof CancellationPolicy !== 'undefined' ? `Cancelled. ${CancellationPolicy.formatPaiseToINR(quote.refundPaise)} will be refunded.` : 'Booking cancelled.')
+    );
+
     this.addActivity('Meeting Rooms', `Cancelled booking for ${room.name} (${booking.title}).`, '❌');
     this.save();
-    return { success: true, message: 'Booking cancelled.' };
+    return {
+      success: true,
+      message: toastMsg,
+      quote,
+      cancellation: serverResult?.cancellation,
+      booking
+    };
   }
 
   async updateBookingTimeWindow(roomId, bookingId, { date, startTime, endTime }) {

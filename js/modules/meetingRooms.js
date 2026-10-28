@@ -90,10 +90,17 @@ const MeetingRoomsModule = {
 
   getAllBookings() {
     const rooms = (window.store && window.store.getMeetingRooms) ? window.store.getMeetingRooms() : [];
+    const currentRole = (window.store && window.store.currentRole) || 'founder';
+    const myStartup = this.getMyStartup();
     const list = [];
     rooms.forEach(r => {
       (r.bookings || []).forEach(b => {
         if (b.status !== 'Cancelled') {
+          // Founders see only their own bookings
+          if (currentRole === 'founder') {
+            const isMine = myStartup && (b.startupId === myStartup.id || (b.startupName && b.startupName.toLowerCase() === myStartup.name.toLowerCase()));
+            if (!isMine) return;
+          }
           list.push({ ...b, roomId: r.id, roomName: r.name, roomIcon: r.icon, hourlyRate: r.hourlyRate, capacity: r.capacity });
         }
       });
@@ -115,6 +122,15 @@ const MeetingRoomsModule = {
     setInterval(() => {
       this.refetchAvailability(false);
     }, 30000);
+
+    // 1-minute ticker refreshes refund countdowns and tiers live
+    if (!this._cancellationTicker) {
+      this._cancellationTicker = setInterval(() => {
+        if (this.activeTab === 'myBookings') {
+          this.render();
+        }
+      }, 60000);
+    }
 
     // Auto re-fetch when window gains focus
     window.addEventListener('focus', () => {
@@ -696,7 +712,7 @@ const MeetingRoomsModule = {
                     <th style="min-width: 130px; white-space: nowrap;">Allowance / Cost</th>
                     <th style="min-width: 110px; white-space: nowrap;">Live Status</th>
                     <th style="min-width: 110px; text-align: center; white-space: nowrap;">Details</th>
-                    <th style="min-width: 150px; text-align: center; white-space: nowrap;">Cancel Reservation</th>
+                    <th style="min-width: 150px; text-align: center; white-space: nowrap;">Cancellation</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -847,18 +863,16 @@ const MeetingRoomsModule = {
                           </div>
                         </td>
 
-                        <!-- 9. Dedicated Cancel Reservation Column -->
-                        <td style="white-space: nowrap; text-align: center;">
-                          ${b.status === 'Cancelled' ? `
-                            <span class="badge" style="font-size: 10.5px; background: rgba(100, 116, 139, 0.12); color: #64748b; border: 1px solid rgba(100, 116, 139, 0.25); font-weight: 600;">
-                              Cancelled
-                            </span>
-                          ` : `
-                            <button class="btn btn-outline btn-sm" style="font-size: 11px; padding: 4px 12px; color: #dc2626; border-color: rgba(220, 38, 38, 0.4); font-weight: 700; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; border-radius: 6px; background: rgba(239, 68, 68, 0.04);" onclick="MeetingRoomsModule.cancelBooking('${b.roomId}', '${b.id}')" title="Cancel this reservation">
-                              <span>❌</span> <span>Cancel Reservation</span>
-                            </button>
+                        <!-- 9. Cancellation Column using single shared policy -->
+                        ${(typeof CancellationPolicy !== 'undefined' && CancellationPolicy.cancellationCell)
+                          ? CancellationPolicy.cancellationCell(b, myStartup, currentRole)
+                          : `
+                            <td style="white-space: nowrap; text-align: center;">
+                              <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openCancellationModal('${b.roomId}', '${b.id}')">
+                                Cancel
+                              </button>
+                            </td>
                           `}
-                        </td>
                       </tr>
                     `;
                   }).join('')}
@@ -968,7 +982,11 @@ const MeetingRoomsModule = {
   },
 
   renderAllBookingsView({ allBookings, myStartup }) {
-    const startups = (window.store && window.store.getStartups) ? window.store.getStartups() : [];
+    const rawStartups = (window.store && window.store.getStartups) ? window.store.getStartups() : [];
+    const currentRole = (window.store && window.store.currentRole) || 'founder';
+    const startups = currentRole === 'founder'
+      ? rawStartups.filter(s => s.id === myStartup.id || (s.name && s.name.toLowerCase() === myStartup.name.toLowerCase()))
+      : rawStartups;
 
     return `
       <!-- Company-by-Company Monthly Meeting Room Consumption & Invoice Ledger -->
@@ -4856,6 +4874,202 @@ const MeetingRoomsModule = {
 
   printPassSlip(roomId, bookingId) {
     this.printReservationSlip(roomId, bookingId);
+  },
+
+  openCancellationModal(roomId, bookingId) {
+    const room = window.store.getMeetingRoomById(roomId);
+    if (!room) return;
+    const booking = (room.bookings || []).find(b => b.id === bookingId);
+    if (!booking) {
+      if (typeof App !== 'undefined' && App.showToast) App.showToast('Reservation not found', 'warning');
+      return;
+    }
+
+    const myStartup = this.getMyStartup();
+    const currentRole = (window.store && window.store.currentRole) || 'founder';
+    const quote = (typeof CancellationPolicy !== 'undefined' && CancellationPolicy.calculateRefundQuote)
+      ? CancellationPolicy.calculateRefundQuote(booking)
+      : { allowed: true, refundPct: 80, refundPaise: Math.floor((booking.cost || 0) * 80), feePaise: Math.floor((booking.cost || 0) * 20), minsBeforeStart: 420 };
+
+    if (!quote.allowed) {
+      if (typeof App !== 'undefined' && App.showToast) {
+        App.showToast('⚠️ ' + (quote.reason || 'Cancellation is closed. Less than 1 hour remains before meeting start.'), 'warning');
+      }
+      return;
+    }
+
+    const remainingHours = Math.floor(quote.minsBeforeStart / 60);
+    const remainingMins = quote.minsBeforeStart % 60;
+    const countdownLabel = `${remainingHours}h ${remainingMins}m remaining before start`;
+
+    const refundAmountDisplay = quote.isPlanCovered
+      ? `${quote.durationHours} Credit Hours Restored`
+      : CancellationPolicy.formatPaiseToINR(quote.refundPaise);
+
+    const feeAmountDisplay = quote.isPlanCovered
+      ? '₹0.00 (No fee)'
+      : CancellationPolicy.formatPaiseToINR(quote.feePaise);
+
+    const originalAmountDisplay = quote.isPlanCovered
+      ? 'Covered by Plan (₹0)'
+      : CancellationPolicy.formatPaiseToINR(quote.amountPaise);
+
+    const modalHtml = `
+      <div class="modal-overlay active" id="modal-cancellation-confirm" onclick="if(event.target === this) MeetingRoomsModule.closeModal('modal-cancellation-confirm')" style="z-index: 1070; display: flex; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.78); backdrop-filter: blur(8px); padding: 16px; animation: fadeIn 0.2s ease;">
+        <div class="modal-content" style="max-width: 520px; width: 100%; border-radius: 20px; background: var(--bg-surface); border: 1.5px solid var(--border-medium); display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 60px -12px rgba(0,0,0,0.4); animation: scaleUp 0.22s ease;">
+          
+          <!-- Modal Header -->
+          <div style="background: linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%); color: #ffffff; padding: 20px 24px; position: relative;">
+            <button class="modal-close-btn" onclick="MeetingRoomsModule.closeModal('modal-cancellation-confirm')" style="position: absolute; right: 14px; top: 14px; color: #ffffff; background: rgba(255,255,255,0.18); border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center;">&times;</button>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 26px;">❌</span>
+              <div>
+                <h2 style="font-size: 19px; font-weight: 800; color: #ffffff; margin: 0;">
+                  Cancel Meeting Reservation
+                </h2>
+                <div style="font-size: 12.5px; color: #fecaca; margin-top: 3px; font-weight: 500;">
+                  Review cancellation breakdown and refund quote
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Body -->
+          <div style="padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; max-height: 70vh; overflow-y: auto;">
+            
+            <!-- Reservation Summary Card -->
+            <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 12px 16px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="font-size: 24px;">${room.icon || '🏢'}</span>
+                  <div>
+                    <h3 style="font-size: 15px; font-weight: 800; color: var(--text-primary); margin: 0;">${room.name}</h3>
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">
+                      ${booking.title}
+                    </div>
+                  </div>
+                </div>
+                <code style="font-size: 11.5px; color: #2563eb; background: rgba(37,99,235,0.08); padding: 3px 8px; border-radius: 6px; font-weight: 700;">${booking.id}</code>
+              </div>
+              <div style="display: flex; gap: 14px; margin-top: 10px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border-subtle); padding-top: 8px;">
+                <span>📅 <strong>${booking.date}</strong></span>
+                <span>•</span>
+                <span>⏰ <strong>${booking.startTime} – ${booking.endTime}</strong></span>
+                <span>•</span>
+                <span>👥 <strong>${booking.attendees} Pax</strong></span>
+              </div>
+            </div>
+
+            <!-- Refund Policy Ticker & Countdown Banner -->
+            <div style="background: rgba(239, 68, 68, 0.06); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 12px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #b91c1c; letter-spacing: 0.04em;">
+                  Time Remaining &amp; Refund Tier
+                </div>
+                <div style="font-size: 14px; font-weight: 800; color: #991b1b; margin-top: 2px;">
+                  ⏰ ${countdownLabel}
+                </div>
+              </div>
+              <div style="text-align: right;">
+                <span class="badge" style="background: #dc2626; color: #ffffff; font-size: 13px; font-weight: 800; padding: 4px 10px; border-radius: 8px;">
+                  ${quote.refundPct}% Refund
+                </span>
+                <div style="font-size: 10.5px; color: #b91c1c; margin-top: 3px;">
+                  ${quote.wholeHours} whole hours remaining
+                </div>
+              </div>
+            </div>
+
+            <!-- Detailed Financial Breakdown -->
+            <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 14px 16px;">
+              <div style="font-size: 11.5px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em; margin-bottom: 10px;">
+                Refund Breakdown &amp; Settlement
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px;">
+                <div style="display: flex; justify-content: space-between; color: var(--text-secondary);">
+                  <span>Original Booking Cost:</span>
+                  <strong style="color: var(--text-primary); font-family: var(--font-mono);">${originalAmountDisplay}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; color: #16a34a; font-weight: 700;">
+                  <span>Refund (${quote.refundPct}%):</span>
+                  <span style="font-size: 15px; font-family: var(--font-mono);">+${refundAmountDisplay}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; color: #dc2626; font-size: 12px;">
+                  <span>Cancellation Fee Kept (${100 - quote.refundPct}%):</span>
+                  <span style="font-family: var(--font-mono);">-${feeAmountDisplay}</span>
+                </div>
+                <div style="border-top: 1px dashed var(--border-medium); margin-top: 4px; padding-top: 8px; display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted);">
+                  <span>Refund Destination:</span>
+                  <strong style="color: var(--text-primary);">${quote.isPlanCovered ? 'Monthly Quota Restored' : (booking.razorpayPaymentId || quote.paymentGateway === 'Razorpay' ? 'Original Razorpay Account (Instant)' : 'Credit Note on Next Invoice')}</strong>
+                </div>
+              </div>
+            </div>
+
+            <div style="font-size: 11.5px; color: var(--text-muted); line-height: 1.4;">
+              ⚠️ By confirming cancellation, your scheduled time slot will be immediately freed for other venture bookings. This action cannot be reversed.
+            </div>
+          </div>
+
+          <!-- Footer Actions -->
+          <div style="padding: 14px 24px; background: var(--bg-surface-elevated); border-top: 1px solid var(--border-subtle); display: flex; justify-content: flex-end; gap: 10px; align-items: center;">
+            <button type="button" class="btn btn-outline" onclick="MeetingRoomsModule.closeModal('modal-cancellation-confirm')" style="font-weight: 700; font-size: 12.5px; padding: 8px 16px; border-radius: 8px;">
+              Keep Reservation
+            </button>
+            <button type="button" id="btn-confirm-cancellation" class="btn btn-primary" onclick="MeetingRoomsModule.confirmCancellation('${roomId}', '${bookingId}')" style="background: #dc2626; border-color: #b91c1c; font-weight: 800; font-size: 12.5px; padding: 8px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.35);">
+              Confirm Cancellation
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const mount = document.getElementById('modal-mount');
+    if (mount) {
+      mount.innerHTML = modalHtml;
+    }
+  },
+
+  async confirmCancellation(roomId, bookingId) {
+    const btn = document.getElementById('btn-confirm-cancellation');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = `<span style="display: inline-block; width: 14px; height: 14px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; margin-right: 6px; vertical-align: middle;"></span> Cancelling...`;
+    }
+
+    try {
+      const res = await window.store.cancelBooking(roomId, bookingId);
+      this.closeModal('modal-cancellation-confirm');
+
+      if (res.success) {
+        if (typeof App !== 'undefined' && App.showToast) {
+          App.showToast(res.message || 'Cancelled. ₹900.00 will be refunded.', 'success');
+        }
+        this.render();
+        if (typeof DashboardModule !== 'undefined' && DashboardModule.render) {
+          DashboardModule.render();
+        }
+        if (typeof PaymentsModule !== 'undefined' && PaymentsModule.render) {
+          PaymentsModule.render();
+        }
+      } else {
+        if (typeof App !== 'undefined' && App.showToast) {
+          App.showToast(res.message || 'Cancellation could not be completed.', 'error');
+        }
+      }
+    } catch (err) {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Confirm Cancellation';
+      }
+      if (typeof App !== 'undefined' && App.showToast) {
+        App.showToast(err.message || 'An error occurred during cancellation.', 'error');
+      }
+    }
+  },
+
+  cancelBooking(roomId, bookingId) {
+    this.openCancellationModal(roomId, bookingId);
   }
 };
 

@@ -292,9 +292,27 @@ async function handleApi(req, res, parsedUrl) {
       if (!roomId || !bookingId) {
         return sendJson(res, 400, { ok: false, error: 'roomId and bookingId are required' });
       }
-      const result = await db.cancelMeetingRoomSlotsAtomic(roomId, bookingId);
+
+      const requestingStartupId = body.requestingStartupId || req.headers['x-startup-id'] || null;
+      const userRole = body.userRole || req.headers['x-user-role'] || 'founder';
+      const currentClock = body.currentClock || null;
+
+      const result = await db.cancelBooking({
+        roomId,
+        bookingId,
+        requestingStartupId,
+        userRole,
+        currentClock
+      });
+
       if (result.ok) {
-        broadcastMeetingRoomUpdate({ action: 'cancelled', roomId, bookingId });
+        broadcastMeetingRoomUpdate({
+          action: 'cancelled',
+          roomId,
+          bookingId,
+          cancellation: result.cancellation,
+          quote: result.quote
+        });
         return sendJson(res, 200, result);
       } else {
         return sendJson(res, result.status || 400, result);
