@@ -201,12 +201,37 @@ async function runTests() {
     assert.strictEqual(arenaAlt.startTime, '09:00');
   });
 
+  // Helper to ensure clean date slots before testing
+  async function cleanDateSlots(roomId, date) {
+    const database = await db.connectDB();
+    if (database) {
+      await database.collection('meeting_room_slots').deleteMany({ roomId, date });
+      const mrCol = database.collection('meeting_rooms');
+      const mr = await mrCol.findOne({ id: roomId });
+      if (mr) {
+        const filtered = (mr.bookings || []).filter(b => b.date !== date);
+        await mrCol.updateOne({ id: roomId }, { $set: { bookings: filtered } });
+      }
+      const appStateCol = database.collection('app_state');
+      const doc = await appStateCol.findOne({ _id: 'current_state' });
+      if (doc && doc.state && doc.state.meetingRooms) {
+        const r = doc.state.meetingRooms.find(x => x.id === roomId);
+        if (r) {
+          r.bookings = (r.bookings || []).filter(b => b.date !== date);
+          await appStateCol.updateOne({ _id: 'current_state' }, { $set: { 'state.meetingRooms': doc.state.meetingRooms } });
+        }
+      }
+    }
+  }
+
   // --- Test 9: User-Customized Arbitrary Time Window Booking & Minimum 15-min Enforcement ---
   await testAsync('Test 9: User can book customized flexible time window (e.g. 45 mins: 10:15 to 11:00)', async () => {
     const targetRoomId = 'MR-01';
     const targetDate = '2026-11-25';
     const customStart = '10:15';
     const customEnd = '11:00';
+
+    await cleanDateSlots(targetRoomId, targetDate);
 
     const res = await db.reserveMeetingRoomSlotsAtomic({
       roomId: targetRoomId,
@@ -246,6 +271,8 @@ async function runTests() {
   await testAsync('Test 10: User can customize / update time window of an existing booking atomically', async () => {
     const targetRoomId = 'MR-01';
     const targetDate = '2026-11-28';
+
+    await cleanDateSlots(targetRoomId, targetDate);
 
     // 1. Initial 1-hour booking (09:00 - 10:00)
     const initial = await db.reserveMeetingRoomSlotsAtomic({
