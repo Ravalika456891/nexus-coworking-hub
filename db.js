@@ -1009,7 +1009,19 @@ async function cancelBooking(arg1, arg2, arg3) {
     const room = rooms.find(r => r.id === roomId);
     if (!room) return { ok: false, status: 404, message: 'Room not found.' };
 
-    const booking = (room.bookings || []).find(b => b.id === bookingId);
+    let booking = (room.bookings || []).find(b => b.id === bookingId);
+    if (!booking) {
+      const database = await connectDB();
+      if (database) {
+        const mrDoc = await database.collection('meeting_rooms').findOne({ id: roomId });
+        if (mrDoc && Array.isArray(mrDoc.bookings)) {
+          booking = mrDoc.bookings.find(b => b.id === bookingId);
+          if (booking) {
+            room.bookings = mrDoc.bookings;
+          }
+        }
+      }
+    }
     if (!booking) return { ok: false, status: 404, message: 'Booking not found.' };
 
     // 1. Verify owner or admin

@@ -32,19 +32,22 @@ async function runTests() {
     }
   }
 
-  async function cleanDate(date) {
+  async function cleanAllTestDates() {
+    const testDates = ['2026-10-30', '2026-11-20', '2026-11-21', '2026-11-22', '2026-11-23', '2026-11-24', '2026-11-25', '2026-11-28'];
     const database = await db.connectDB();
     if (database) {
-      await database.collection('meeting_room_slots').deleteMany({ date });
+      await database.collection('meeting_room_slots').deleteMany({ date: { $in: testDates } });
       const state = await db.getAppState();
       if (state && state.meetingRooms) {
         state.meetingRooms.forEach(r => {
-          r.bookings = (r.bookings || []).filter(b => b.date !== date);
+          r.bookings = (r.bookings || []).filter(b => !testDates.includes(b.date));
         });
         await db.saveAppState(state);
       }
     }
   }
+
+  await cleanAllTestDates();
 
   // --- Test 1: Tier Boundaries & Integer Paise Math ---
   test('Test 1: Refund tier boundaries (1h, 1h59, 2h, 7h) and integer paise math', () => {
@@ -136,7 +139,6 @@ async function runTests() {
     const date = '2026-11-21';
     const startTime = '14:00';
     const endTime = '15:00';
-    await cleanDate(date);
 
     const bookRes = await db.reserveMeetingRoomSlotsAtomic({
       roomId,
@@ -168,7 +170,6 @@ async function runTests() {
 
     // Clean up test booking via admin override
     await db.cancelBooking({ roomId, bookingId: testBookingId, userRole: 'admin', currentClock: clock40m });
-    await cleanDate(date);
   });
 
   // --- Test 3: Double-Click / Repeat Cancel Protection (Confirmed -> Cancelled only once) ---
@@ -177,7 +178,6 @@ async function runTests() {
     const date = '2026-11-22';
     const startTime = '10:00';
     const endTime = '11:00';
-    await cleanDate(date);
 
     const bookRes = await db.reserveMeetingRoomSlotsAtomic({
       roomId,
@@ -223,9 +223,6 @@ async function runTests() {
     assert.strictEqual(secondRes.ok, false, 'Second cancellation must be rejected');
     assert.strictEqual(secondRes.status, 409, 'Double cancellation must return 409 Conflict');
     assert.strictEqual(secondRes.code, 'ALREADY_CANCELLED', 'Code must be ALREADY_CANCELLED');
-
-    // Clean up
-    await cleanDate(date);
   });
 
   // --- Test 4: Another Startup Cannot Cancel (Unauthorized Rejection) ---
@@ -234,7 +231,6 @@ async function runTests() {
     const date = '2026-11-23';
     const startTime = '15:00';
     const endTime = '16:00';
-    await cleanDate(date);
 
     const bookRes = await db.reserveMeetingRoomSlotsAtomic({
       roomId,
@@ -289,7 +285,6 @@ async function runTests() {
     const date = '2026-11-24';
     const startTime = '16:00';
     const endTime = '17:00';
-    await cleanDate(date);
 
     // 1. Initial reservation
     const initialRes = await db.reserveMeetingRoomSlotsAtomic({
@@ -364,7 +359,6 @@ async function runTests() {
     const date = '2026-10-30';
     const startTime = '17:00';
     const endTime = '18:00';
-    await cleanDate(date);
 
     // Baseline dashboard summary
     const summaryBefore = await db.getDashboardSummary('2026-10');
