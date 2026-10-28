@@ -594,7 +594,7 @@ const MeetingRoomsModule = {
                 </span>
               </div>
               <p style="font-size: 12px; color: var(--text-muted); margin: 3px 0 0 0;">
-                Live reservation ledger, room door credentials, calendar synchronization, and hourly allowance tracking.
+                Live reservation ledger, session schedules, calendar synchronization, and hourly allowance tracking.
               </p>
             </div>
 
@@ -830,9 +830,6 @@ const MeetingRoomsModule = {
                                 ⋯
                               </button>
                               <div id="room-menu-${b.id}" class="meeting-row-menu" style="display: none; position: absolute; right: 0; top: 100%; margin-top: 4px; z-index: 1000; min-width: 185px; background: var(--bg-surface); border: 1px solid var(--border-medium); border-radius: var(--radius-md); box-shadow: 0 10px 25px rgba(0,0,0,0.18); padding: 5px; text-align: left;">
-                                <button class="row-menu-item" onclick="MeetingRoomsModule.closeAllRowMenus(); MeetingRoomsModule.openReservationDetailsModal('${b.roomId}', '${b.id}')" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 10px; font-size: 12px; font-weight: 600; color: var(--text-primary); border: none; background: transparent; cursor: pointer; border-radius: 6px; text-align: left; transition: all 0.15s ease;">
-                                  <span>📋</span> <span>Reservation Details</span>
-                                </button>
                                 <button class="row-menu-item" onclick="MeetingRoomsModule.closeAllRowMenus(); MeetingRoomsModule.downloadBookingIcs('${b.id}')" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 10px; font-size: 12px; font-weight: 600; color: #2563eb; border: none; background: transparent; cursor: pointer; border-radius: 6px; text-align: left; transition: all 0.15s ease;">
                                   <span>📅</span> <span>Add to Calendar (.ics)</span>
                                 </button>
@@ -1800,7 +1797,7 @@ const MeetingRoomsModule = {
 
               <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px; padding: 8px 12px; font-size: 11px; color: #065f46; display: flex; align-items: center; gap: 6px;">
                 <span>💡</span>
-                <span>Once confirmed, your booking is locked and a 4-digit PIN is activated on the door tablet.</span>
+                <span>Once confirmed, your reservation is instantly locked with conflict protection.</span>
               </div>
             </div>
 
@@ -2016,7 +2013,7 @@ const MeetingRoomsModule = {
     const endH = booking.endTime.replace(/:/g, '');
     const startIso = `${cleanDate}T${startH}00`;
     const endIso = `${cleanDate}T${endH}00`;
-    const details = `Room: ${room.name} (${room.capacity} Pax)\nReserved by: ${booking.startupName || 'Your Team'}\nAgenda: ${booking.title}\nSmart Keypad Door Access PIN is active on the door display.\nNexus Co-Working & Incubation Hub`;
+    const details = `Room: ${room.name} (${room.capacity} Pax)\nReserved by: ${booking.startupName || 'Your Team'}\nAgenda: ${booking.title}\nConfirmed Reservation • Nexus Co-Working & Incubation Hub`;
     const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(booking.title + ' (' + room.name + ')')}&dates=${startIso}/${endIso}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(room.name + ', Nexus Hub')}`;
     window.open(url, '_blank');
   },
@@ -2098,7 +2095,7 @@ const MeetingRoomsModule = {
               Room Successfully Booked!
             </h2>
             <p style="font-size: 12px; color: #a7f3d0; margin: 0;">
-              Your reservation is confirmed &amp; synced to the door display tablet.
+              Your reservation is confirmed &amp; synced across schedules.
             </p>
           </div>
 
@@ -4420,7 +4417,7 @@ const MeetingRoomsModule = {
   },
 
   openBookingDetailsModal(roomId, bookingId) {
-    this.openPassModal(roomId, bookingId);
+    this.openReservationDetailsModal(roomId, bookingId);
   },
 
   showConflictAlternativesModal(room, req, message, alternatives = []) {
