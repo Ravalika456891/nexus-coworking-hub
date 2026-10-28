@@ -888,7 +888,7 @@ const WorkspaceModule = {
           <div style="background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%); color: #ffffff; padding: 18px 22px; display: flex; justify-content: space-between; align-items: flex-start;">
             <div>
               <div style="font-size: 11px; text-transform: uppercase; font-weight: 800; letter-spacing: 0.1em; opacity: 0.85;">
-                Nexus Innovation Hub • Digital Desk Pass
+                Nexus Innovation Hub • Desk Reservation Details
               </div>
               <h3 style="font-size: 18px; font-weight: 800; margin: 4px 0 0 0; color: #ffffff;">
                 ${space.label || space.id}
@@ -911,7 +911,7 @@ const WorkspaceModule = {
                 </div>
               </div>
               <div style="text-align: right;">
-                <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Pass ID</span>
+                <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Reservation ID</span>
                 <div style="font-size: 13px; font-family: var(--font-mono); font-weight: 800; color: #2563eb; margin-top: 2px;">
                   ${bookingId}
                 </div>
@@ -935,7 +935,7 @@ const WorkspaceModule = {
               </div>
               <div>
                 <span style="font-size: 11px; color: var(--text-muted);">Status:</span>
-                <div style="font-weight: 800; color: #16a34a; margin-top: 1px;">● Active Pass</div>
+                <div style="font-weight: 800; color: #16a34a; margin-top: 1px;">● Active Reservation</div>
               </div>
             </div>
 
@@ -977,7 +977,7 @@ const WorkspaceModule = {
 
             <div style="display: flex; gap: 8px;">
               <button type="button" class="btn btn-outline btn-sm" onclick="window.print()" style="font-size: 11.5px; padding: 6px 12px; border-radius: 8px;">
-                🖨️ Print Pass
+                🖨️ Print Details
               </button>
               <button type="button" class="btn btn-primary btn-sm" onclick="WorkspaceModule.closeModal('modal-desk-pass')" style="font-size: 11.5px; padding: 6px 16px; border-radius: 8px;">
                 Done

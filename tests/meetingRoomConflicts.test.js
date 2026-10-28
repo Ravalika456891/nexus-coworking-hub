@@ -205,21 +205,19 @@ async function runTests() {
   async function cleanDateSlots(roomId, date) {
     const database = await db.connectDB();
     if (database) {
-      await database.collection('meeting_room_slots').deleteMany({ roomId, date });
+      await database.collection('meeting_room_slots').deleteMany({ date });
       const mrCol = database.collection('meeting_rooms');
-      const mr = await mrCol.findOne({ id: roomId });
-      if (mr) {
-        const filtered = (mr.bookings || []).filter(b => b.date !== date);
-        await mrCol.updateOne({ id: roomId }, { $set: { bookings: filtered } });
+      const rooms = await mrCol.find({}).toArray();
+      for (const r of rooms) {
+        await mrCol.updateOne({ id: r.id }, { $set: { bookings: (r.bookings || []).filter(b => b.date !== date) } });
       }
       const appStateCol = database.collection('app_state');
       const doc = await appStateCol.findOne({ _id: 'current_state' });
       if (doc && doc.state && doc.state.meetingRooms) {
-        const r = doc.state.meetingRooms.find(x => x.id === roomId);
-        if (r) {
+        doc.state.meetingRooms.forEach(r => {
           r.bookings = (r.bookings || []).filter(b => b.date !== date);
-          await appStateCol.updateOne({ _id: 'current_state' }, { $set: { 'state.meetingRooms': doc.state.meetingRooms } });
-        }
+        });
+        await appStateCol.updateOne({ _id: 'current_state' }, { $set: { 'state.meetingRooms': doc.state.meetingRooms } });
       }
     }
   }

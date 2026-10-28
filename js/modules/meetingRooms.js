@@ -304,8 +304,8 @@ const MeetingRoomsModule = {
               </div>
               <div style="display: flex; gap: 8px; margin-top: 4px; flex-wrap: wrap;">
                 ${myBookingsToday.map(b => `
-                  <span class="badge" style="background: rgba(37, 99, 235, 0.15); color: #1d4ed8; border: 1px solid rgba(37, 99, 235, 0.4); font-size: 11.5px; padding: 3px 9px; font-weight: 700; cursor: pointer;" onclick="MeetingRoomsModule.openPassModal('${b.roomId}', '${b.id}')" title="Click to view digital pass">
-                    🏢 ${b.roomName}: ⏰ ${b.startTime} - ${b.endTime} (${b.title}) ➔ Pass
+                  <span class="badge" style="background: rgba(37, 99, 235, 0.15); color: #1d4ed8; border: 1px solid rgba(37, 99, 235, 0.4); font-size: 11.5px; padding: 3px 9px; font-weight: 700; cursor: pointer;" onclick="MeetingRoomsModule.openReservationDetailsModal('${b.roomId}', '${b.id}')" title="Click to view reservation details">
+                    🏢 ${b.roomName}: ⏰ ${b.startTime} - ${b.endTime} (${b.title}) ➔ Details
                   </span>
                 `).join('')}
               </div>
@@ -746,7 +746,7 @@ const MeetingRoomsModule = {
                             ${b.id}
                           </div>
                           <div style="display: inline-flex; align-items: center; gap: 4px; margin-top: 3px; font-size: 10.5px; color: #16a34a; font-weight: 600;">
-                            <span>📱</span> <span>Digital QR Active</span>
+                            <span>✅</span> <span>Confirmed Reservation</span>
                           </div>
                         </td>
 
@@ -820,8 +820,8 @@ const MeetingRoomsModule = {
                         <!-- 8. Actions (Clean Primary + ⋯ Popover Menu) -->
                         <td style="white-space: nowrap; text-align: right;">
                           <div style="display: inline-flex; gap: 6px; align-items: center; justify-content: flex-end; white-space: nowrap;">
-                            <button class="btn btn-outline btn-sm" style="font-size: 11px; padding: 4px 10px; color: #2563eb; border-color: rgba(37, 99, 235, 0.4); font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;" onclick="MeetingRoomsModule.openPassModal('${b.roomId}', '${b.id}')" title="View Digital Door Access Pass">
-                              <span>🎫</span> <span>Pass</span>
+                            <button class="btn btn-outline btn-sm" style="font-size: 11px; padding: 4px 10px; color: #2563eb; border-color: rgba(37, 99, 235, 0.4); font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;" onclick="MeetingRoomsModule.openReservationDetailsModal('${b.roomId}', '${b.id}')" title="View Reservation Details">
+                              <span>📋</span> <span>Details</span>
                             </button>
 
                             <!-- Compact "⋯" Popover Menu -->
@@ -830,18 +830,18 @@ const MeetingRoomsModule = {
                                 ⋯
                               </button>
                               <div id="room-menu-${b.id}" class="meeting-row-menu" style="display: none; position: absolute; right: 0; top: 100%; margin-top: 4px; z-index: 1000; min-width: 185px; background: var(--bg-surface); border: 1px solid var(--border-medium); border-radius: var(--radius-md); box-shadow: 0 10px 25px rgba(0,0,0,0.18); padding: 5px; text-align: left;">
-                                <button class="row-menu-item" onclick="MeetingRoomsModule.closeAllRowMenus(); MeetingRoomsModule.openPassModal('${b.roomId}', '${b.id}')" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 10px; font-size: 12px; font-weight: 600; color: var(--text-primary); border: none; background: transparent; cursor: pointer; border-radius: 6px; text-align: left; transition: all 0.15s ease;">
-                                  <span>🎫</span> <span>Digital Door Pass</span>
+                                <button class="row-menu-item" onclick="MeetingRoomsModule.closeAllRowMenus(); MeetingRoomsModule.openReservationDetailsModal('${b.roomId}', '${b.id}')" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 10px; font-size: 12px; font-weight: 600; color: var(--text-primary); border: none; background: transparent; cursor: pointer; border-radius: 6px; text-align: left; transition: all 0.15s ease;">
+                                  <span>📋</span> <span>Reservation Details</span>
                                 </button>
                                 <button class="row-menu-item" onclick="MeetingRoomsModule.closeAllRowMenus(); MeetingRoomsModule.downloadBookingIcs('${b.id}')" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 10px; font-size: 12px; font-weight: 600; color: #2563eb; border: none; background: transparent; cursor: pointer; border-radius: 6px; text-align: left; transition: all 0.15s ease;">
                                   <span>📅</span> <span>Add to Calendar (.ics)</span>
                                 </button>
                                 <button class="row-menu-item" onclick="MeetingRoomsModule.closeAllRowMenus(); MeetingRoomsModule.printPassSlip('${b.roomId}', '${b.id}')" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 10px; font-size: 12px; font-weight: 600; color: var(--text-primary); border: none; background: transparent; cursor: pointer; border-radius: 6px; text-align: left; transition: all 0.15s ease;">
-                                  <span>🖨️</span> <span>Print Entry Slip</span>
+                                  <span>🖨️</span> <span>Print Details</span>
                                 </button>
                                 ${b.status !== 'Cancelled' ? `
                                   <button class="row-menu-item" onclick="MeetingRoomsModule.closeAllRowMenus(); MeetingRoomsModule.openEditTimeWindowModal('${b.roomId}', '${b.id}')" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 10px; font-size: 12px; font-weight: 600; color: #2563eb; border: none; background: transparent; cursor: pointer; border-radius: 6px; text-align: left; transition: all 0.15s ease;">
-                                    <span>⏰</span> <span>Customize Time Window</span>
+                                    <span>⏰</span> <span>Change Booking Time</span>
                                   </button>
                                   <button class="row-menu-item" onclick="MeetingRoomsModule.closeAllRowMenus(); MeetingRoomsModule.cancelBooking('${b.roomId}', '${b.id}')" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 10px; font-size: 12px; font-weight: 600; color: #dc2626; border: none; background: transparent; cursor: pointer; border-radius: 6px; text-align: left; transition: all 0.15s ease;">
                                     <span>❌</span> <span>Cancel Reservation</span>
@@ -924,10 +924,10 @@ const MeetingRoomsModule = {
                           Cost: <strong style="color: #16a34a;">${b.cost === 0 ? 'Covered by Plan (₹0)' : `₹${b.cost}`}</strong>
                         </div>
                         <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-                          <button class="btn btn-sm btn-primary" onclick="MeetingRoomsModule.openPassModal('${b.roomId}', '${b.id}')" style="font-size: 11.5px; padding: 5px 12px; border-radius: 6px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;">
-                            <span>🎫</span> Pass
+                          <button class="btn btn-sm btn-primary" onclick="MeetingRoomsModule.openReservationDetailsModal('${b.roomId}', '${b.id}')" style="font-size: 11.5px; padding: 5px 12px; border-radius: 6px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;">
+                            <span>📋</span> Details
                           </button>
-                          <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openEditTimeWindowModal('${b.roomId}', '${b.id}')" style="font-size: 11.5px; padding: 5px 9px; border-radius: 6px; color: #2563eb; border-color: rgba(37,99,235,0.4);" title="Customize booking time window">
+                          <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openEditTimeWindowModal('${b.roomId}', '${b.id}')" style="font-size: 11.5px; padding: 5px 9px; border-radius: 6px; color: #2563eb; border-color: rgba(37,99,235,0.4);" title="Change booking time">
                             ⏰ Time
                           </button>
                           <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.downloadBookingIcs('${b.id}')" style="font-size: 11.5px; padding: 5px 9px; border-radius: 6px; color: #2563eb; border-color: rgba(37,99,235,0.4);" title="Download calendar invite">
@@ -1175,8 +1175,8 @@ const MeetingRoomsModule = {
                     </td>
                     <td style="padding: 12px 16px; text-align: right; white-space: nowrap;">
                       <div style="display: inline-flex; gap: 6px; align-items: center; white-space: nowrap;">
-                        <button class="btn btn-outline btn-sm" style="padding: 4px 10px; font-size: 11px; color: #2563eb; border-color: rgba(37,99,235,0.4); white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;" onclick="MeetingRoomsModule.openPassModal('${b.roomId}', '${b.id}')">
-                          <span>🎫</span><span>Pass</span>
+                        <button class="btn btn-outline btn-sm" style="padding: 4px 10px; font-size: 11px; color: #2563eb; border-color: rgba(37,99,235,0.4); white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;" onclick="MeetingRoomsModule.openReservationDetailsModal('${b.roomId}', '${b.id}')">
+                          <span>📋</span><span>Details</span>
                         </button>
                         <button class="btn btn-outline btn-sm" style="padding: 4px 10px; font-size: 11px; color: #dc2626; border-color: rgba(239, 68, 68, 0.4); white-space: nowrap; flex-shrink: 0;" onclick="MeetingRoomsModule.cancelBooking('${b.roomId}', '${b.id}')">
                           Cancel
@@ -1306,7 +1306,7 @@ const MeetingRoomsModule = {
             <div style="display: flex; flex-direction: column; gap: 3px; margin-top: 4px;">
               ${hasMyBooking ? `
                 <span style="font-size: 9.5px; font-weight: 700; color: #64748b; background: rgba(0, 0, 0, 0.06); padding: 1px 5px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                  <span>🎟️</span> <span>My Pass</span>
+                  <span>📅</span> <span>My Booking</span>
                 </span>
               ` : ''}
               ${totalBookedSessions > 0 ? `
@@ -1377,7 +1377,7 @@ const MeetingRoomsModule = {
           <div style="display: flex; flex-direction: column; gap: 3px; margin-top: 4px;">
             ${hasMyBooking ? `
               <span style="font-size: 9.5px; font-weight: 700; color: #1d4ed8; background: rgba(59, 130, 246, 0.12); padding: 1px 5px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                <span>🎟️</span> <span>My Pass</span>
+                <span>📅</span> <span>My Booking</span>
               </span>
             ` : ''}
             ${totalBookedSessions > 0 ? `
@@ -1415,7 +1415,7 @@ const MeetingRoomsModule = {
                   ${targetRoom ? `${targetRoom.name} — Monthly Calendar` : 'Meeting Room Master Calendar'}
                 </h3>
                 <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
-                  ${targetRoom ? `Availability and reservations schedule for ${targetRoom.name} (${targetRoom.capacity} Pax Capacity)` : 'Select any date to view operating sessions, book slots, or check passes'}
+                  ${targetRoom ? `Availability and reservations schedule for ${targetRoom.name} (${targetRoom.capacity} Pax Capacity)` : 'Select any date to view operating sessions, book slots, or check confirmed reservations'}
                 </div>
               </div>
             </div>
@@ -1748,11 +1748,11 @@ const MeetingRoomsModule = {
                   📅 <strong>${formattedDate}</strong>
                 </div>
 
-                <!-- Interactive Time Window Customizer -->
+                <!-- Interactive Time Window Selection -->
                 <div style="background: var(--bg-surface); border: 1.5px solid var(--border-medium); border-radius: 10px; padding: 10px 12px;">
                   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                     <label style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--accent-primary, #2563eb); margin: 0; display: flex; align-items: center; gap: 5px;">
-                      <span>⏰</span> Customize Time Window <span style="color: #ef4444;">*</span>
+                      <span>⏰</span> Change Booking Time <span style="color: #ef4444;">*</span>
                     </label>
                     <span id="confirm-duration-label" style="font-size: 11.5px; font-family: var(--font-mono); font-weight: 800; color: #16a34a;">
                       ${count} hr${count > 1 ? 's' : ''}
@@ -2185,14 +2185,14 @@ const MeetingRoomsModule = {
           <!-- Fixed Action Footer (Always Visible & Accessible) -->
           <div style="flex-shrink: 0; background: var(--bg-surface-elevated); border-top: 1px solid var(--border-subtle); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
             <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-              <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openEditTimeWindowModal('${room.id}', '${booking.id}')" style="font-weight: 700; padding: 7px 12px; border-radius: 7px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 5px; color: #2563eb; border-color: rgba(37, 99, 235, 0.4); background: rgba(37, 99, 235, 0.05);" title="Customize reservation time window">
-                <span>✏️</span> Time Window
+              <button class="btn btn-primary btn-sm" onclick="MeetingRoomsModule.openReservationDetailsModal('${room.id}', '${booking.id}'); MeetingRoomsModule.closeModal('modal-booking-success');" style="font-weight: 700; padding: 7px 14px; border-radius: 7px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 5px; background: #2563eb; border-color: #1d4ed8; color: #fff;">
+                <span>📋</span> View Details
               </button>
-              <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openKioskModal('${room.id}'); MeetingRoomsModule.closeModal('modal-booking-success');" style="font-weight: 700; padding: 7px 12px; border-radius: 7px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 5px;">
-                <span>📱</span> Open door display
+              <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.closeModal('modal-booking-success'); MeetingRoomsModule.switchTab('allBookings');" style="font-weight: 700; padding: 7px 12px; border-radius: 7px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 5px; color: #16a34a; border-color: rgba(34, 197, 94, 0.35);" title="Check all confirmed reservations">
+                <span>📂</span> All Confirmed Reservations
               </button>
-              <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openPassModal('${room.id}', '${booking.id}'); MeetingRoomsModule.closeModal('modal-booking-success');" style="font-weight: 700; padding: 7px 12px; border-radius: 7px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 5px; color: #16a34a; border-color: rgba(34, 197, 94, 0.35);">
-                <span>🎫</span> Digital Pass
+              <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openEditTimeWindowModal('${room.id}', '${booking.id}')" style="font-weight: 700; padding: 7px 12px; border-radius: 7px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 5px; color: #2563eb; border-color: rgba(37, 99, 235, 0.4); background: rgba(37, 99, 235, 0.05);" title="Change reservation time">
+                <span>⏰</span> Change Time
               </button>
             </div>
             <button class="btn btn-primary btn-sm" onclick="MeetingRoomsModule.closeModal('modal-booking-success')" style="font-weight: 800; padding: 7px 22px; border-radius: 7px; font-size: 12px; background: #16a34a; border-color: #15803d; box-shadow: 0 3px 10px rgba(22, 163, 74, 0.35); cursor: pointer;">
@@ -3552,10 +3552,10 @@ const MeetingRoomsModule = {
           if (isMine) {
             return `
               <div class="clear-slot-card past booked-mine" 
-                   onclick="MeetingRoomsModule.openPassModal('${room.id}', '${booked.id}')"
-                   title="Past session (${timeRangeLabel}) • Reserved by your team • Click to view history pass">
+                   onclick="MeetingRoomsModule.openReservationDetailsModal('${room.id}', '${booked.id}')"
+                   title="Past session (${timeRangeLabel}) • Reserved by your team • Click to view reservation details">
                 <div class="slot-time">${timeRangeLabel}</div>
-                <div class="slot-status">🎟️ Booked by you (Past)</div>
+                <div class="slot-status">📅 Reserved by you (Past)</div>
               </div>
             `;
           } else {
@@ -3849,8 +3849,8 @@ const MeetingRoomsModule = {
                   </td>
                   <td style="white-space: nowrap; text-align: right;">
                     <div style="display: inline-flex; gap: 6px; align-items: center; white-space: nowrap;">
-                      <button class="btn btn-outline btn-sm" style="font-size: 11.5px; padding: 4px 10px; color: #2563eb; border-color: rgba(37,99,235,0.4); white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; line-height: 1; flex-shrink: 0;" onclick="MeetingRoomsModule.openPassModal('${b.roomId}', '${b.id}')">
-                        <span>🎫</span><span>Pass</span>
+                      <button class="btn btn-outline btn-sm" style="font-size: 11.5px; padding: 4px 10px; color: #2563eb; border-color: rgba(37,99,235,0.4); white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; line-height: 1; flex-shrink: 0;" onclick="MeetingRoomsModule.openReservationDetailsModal('${b.roomId}', '${b.id}')">
+                        <span>📋</span><span>Details</span>
                       </button>
                       <button class="btn btn-outline btn-sm" style="font-size: 11.5px; padding: 4px 10px; color: var(--status-danger); border-color: rgba(239,68,68,0.4); white-space: nowrap; line-height: 1; flex-shrink: 0;" onclick="MeetingRoomsModule.cancelBooking('${b.roomId}', '${b.id}')">
                         Cancel
@@ -3866,103 +3866,134 @@ const MeetingRoomsModule = {
     `;
   },
 
-  openPassModal(roomId, bookingId) {
+  openReservationDetailsModal(roomId, bookingId) {
+    this.closeModal('modal-room-door-pass');
+    this.closeModal('modal-reservation-details');
     const rooms = window.store.getMeetingRooms();
     const room = rooms.find(r => r.id === roomId);
     if (!room) return;
     const booking = (room.bookings || []).find(b => b.id === bookingId);
     if (!booking) return;
 
+    const [sh, sm] = (booking.startTime || '08:00').split(':').map(Number);
+    const [eh, em] = (booking.endTime || '09:00').split(':').map(Number);
+    const curMin = (eh * 60 + (em || 0)) - (sh * 60 + (sm || 0));
+
     const html = `
-      <div class="modal-overlay active" id="modal-room-door-pass" onclick="if(event.target === this) MeetingRoomsModule.closeModal('modal-room-door-pass')" style="z-index: 1050; display: flex; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(6px); padding: 16px;">
-        <div class="modal-content" style="max-width: 480px; width: 100%; max-height: min(92vh, 640px); border-radius: 18px; background: var(--bg-surface); border: 1px solid var(--border-subtle); display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+      <div class="modal-overlay active" id="modal-reservation-details" onclick="if(event.target === this) MeetingRoomsModule.closeModal('modal-reservation-details')" style="z-index: 1050; display: flex; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.78); backdrop-filter: blur(8px); padding: 16px; animation: fadeIn 0.2s ease;">
+        <div class="modal-content" style="max-width: 520px; width: 100%; max-height: min(92vh, 660px); border-radius: 20px; background: var(--bg-surface); border: 1.5px solid var(--border-medium); display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); animation: scaleUp 0.22s ease;">
           
-          <!-- Pass Top Banner -->
-          <div style="background: linear-gradient(135deg, #0b2545 0%, #001f54 60%, #1d4ed8 100%); color: #ffffff; padding: 18px 22px; position: relative; flex-shrink: 0;">
-            <button class="modal-close-btn" onclick="MeetingRoomsModule.closeModal('modal-room-door-pass')" style="position: absolute; right: 14px; top: 14px; color: #ffffff; background: rgba(255,255,255,0.15); border: none; border-radius: 50%; width: 28px; height: 28px; font-size: 16px; cursor: pointer;">&times;</button>
-            <div style="display: flex; align-items: center; gap: 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #93c5fd; font-weight: 700;">
-              <span>⚡ Nexus Incubation OS</span> • <span>Digital Entry Pass</span>
+          <!-- Top Banner -->
+          <div style="background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); color: #ffffff; padding: 18px 22px; position: relative; flex-shrink: 0;">
+            <button class="modal-close-btn" onclick="MeetingRoomsModule.closeModal('modal-reservation-details')" style="position: absolute; right: 14px; top: 14px; color: #ffffff; background: rgba(255,255,255,0.18); border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center;">&times;</button>
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #93c5fd; font-weight: 700;">
+              <span>📋 Confirmed Reservation</span> • <span>Ref: ${booking.id}</span>
             </div>
-            <h2 style="font-size: 19px; font-weight: 800; margin: 6px 0 0 0; color: #ffffff; display: flex; align-items: center; gap: 8px;">
+            <h2 style="font-size: 20px; font-weight: 800; margin: 4px 0 0 0; color: #ffffff; display: flex; align-items: center; gap: 8px;">
               <span>${room.icon || '🏢'}</span> ${room.name}
             </h2>
-            <div style="font-size: 11.5px; color: #bfdbfe; margin-top: 2px;">
-              ${room.capacity} Pax Capacity • Smart Glass &amp; Cisco Access Enabled
+            <div style="font-size: 12px; color: #bfdbfe; margin-top: 2px;">
+              ${room.capacity} Pax Capacity • ₹${room.hourlyRate}/hr • Floor 3, Nexus Hub
             </div>
           </div>
 
-          <!-- Pass Details Body (Scrollable) -->
-          <div style="padding: 16px 20px; overflow-y: auto; flex: 1;">
-            <div style="background: var(--bg-surface-elevated); border: 1.5px dashed var(--border-medium); border-radius: 14px; padding: 14px; margin-bottom: 14px; text-align: center;">
-              
-              <!-- QR Code Mockup -->
-              <div style="display: inline-flex; align-items: center; justify-content: center; width: 116px; height: 116px; background: #ffffff; border-radius: 10px; padding: 6px; box-shadow: 0 4px 14px rgba(0,0,0,0.06); margin-bottom: 10px; border: 1px solid #e2e8f0;">
-                <svg width="104" height="104" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <!-- QR Code Pattern -->
-                  <rect width="100" height="100" fill="white"/>
-                  <rect x="10" y="10" width="25" height="25" fill="#0f172a"/>
-                  <rect x="15" y="15" width="15" height="15" fill="white"/>
-                  <rect x="18" y="18" width="9" height="9" fill="#0f172a"/>
-                  <rect x="65" y="10" width="25" height="25" fill="#0f172a"/>
-                  <rect x="70" y="15" width="15" height="15" fill="white"/>
-                  <rect x="73" y="18" width="9" height="9" fill="#0f172a"/>
-                  <rect x="10" y="65" width="25" height="25" fill="#0f172a"/>
-                  <rect x="15" y="70" width="15" height="15" fill="white"/>
-                  <rect x="18" y="73" width="9" height="9" fill="#0f172a"/>
-                  <rect x="42" y="12" width="6" height="16" fill="#0f172a"/>
-                  <rect x="52" y="18" width="6" height="18" fill="#0f172a"/>
-                  <rect x="42" y="42" width="16" height="16" fill="#2563eb"/>
-                  <rect x="65" y="42" width="8" height="14" fill="#0f172a"/>
-                  <rect x="78" y="42" width="12" height="6" fill="#0f172a"/>
-                  <rect x="42" y="65" width="14" height="10" fill="#0f172a"/>
-                  <rect x="62" y="65" width="10" height="25" fill="#0f172a"/>
-                  <rect x="78" y="65" width="12" height="25" fill="#0f172a"/>
-                </svg>
+          <!-- Body -->
+          <div style="padding: 18px 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 14px;">
+            
+            <!-- Confirmed Status Banner -->
+            <div style="background: rgba(34, 197, 94, 0.08); border: 1.5px solid rgba(34, 197, 94, 0.3); border-radius: 12px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-size: 13px; font-weight: 800; color: #16a34a; display: flex; align-items: center; gap: 6px;">
+                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #22c55e; display: inline-block;"></span>
+                  Confirmed Reservation
+                </div>
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 1px;">
+                  Locked in system • Zero double-booking verified
+                </div>
+              </div>
+              <span class="badge badge-success" style="font-size: 11.5px; font-weight: 800; padding: 4px 10px;">
+                ${booking.status || 'Confirmed'}
+              </span>
+            </div>
+
+            <!-- Details Grid -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 10px 12px;">
+                <div style="font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Session Date</div>
+                <div style="font-size: 13.5px; font-weight: 800; color: var(--text-primary); margin-top: 2px;">📅 ${booking.date}</div>
               </div>
 
-              <div style="font-family: var(--font-mono); font-size: 13px; font-weight: 800; color: #2563eb; letter-spacing: 0.05em;">
-                ENTRY PIN: NX-${booking.id.replace('BKG-', '')}
+              <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 10px 12px;">
+                <div style="font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Time & Duration</div>
+                <div style="font-size: 13px; font-weight: 800; color: #2563eb; font-family: var(--font-mono); margin-top: 2px;">
+                  ⏰ ${this.formatTime12h(booking.startTime)} – ${this.formatTime12h(booking.endTime)}
+                </div>
+                <div style="font-size: 11px; color: #16a34a; font-weight: 700; margin-top: 1px;">
+                  ${this.formatMinutesDuration(curMin)}
+                </div>
               </div>
-              <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
-                Scan QR or enter PIN at the boardroom door console
+
+              <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 10px 12px;">
+                <div style="font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Reserving Venture</div>
+                <div style="font-size: 13px; font-weight: 800; color: var(--text-primary); margin-top: 2px;">🏢 ${booking.startupName}</div>
+              </div>
+
+              <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 10px 12px;">
+                <div style="font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Attendees Expected</div>
+                <div style="font-size: 13px; font-weight: 800; color: var(--text-primary); margin-top: 2px;">👥 ${booking.attendees} Pax</div>
               </div>
             </div>
 
-            <!-- Booking Metadata Grid -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12px; margin-bottom: 14px;">
-              <div>
-                <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Reserving Venture</div>
-                <div style="font-weight: 700; color: var(--text-primary); margin-top: 2px;">${booking.startupName}</div>
+            <!-- Agenda -->
+            <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 10px 14px;">
+              <div style="font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Meeting Agenda / Title</div>
+              <div style="font-size: 13.5px; font-weight: 800; color: var(--text-primary); margin-top: 2px;">${booking.title}</div>
+            </div>
+
+            <!-- Billing & Amenities -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 10px 12px;">
+                <div style="font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Billing / Plan</div>
+                <div style="font-size: 13px; font-weight: 800; color: #16a34a; margin-top: 2px;">
+                  ${booking.cost === 0 ? 'Covered by Plan (₹0)' : `₹${booking.cost}`}
+                </div>
               </div>
-              <div>
-                <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Session Date</div>
-                <div style="font-weight: 700; color: var(--text-primary); margin-top: 2px;">📅 ${booking.date}</div>
-              </div>
-              <div>
-                <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Time Slot Window</div>
-                <div style="font-weight: 800; color: #2563eb; font-family: var(--font-mono); margin-top: 2px;">⏰ ${booking.startTime} - ${booking.endTime}</div>
-              </div>
-              <div>
-                <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Attendees Expected</div>
-                <div style="font-weight: 700; color: var(--text-primary); margin-top: 2px;">👥 ${booking.attendees} Pax</div>
+
+              <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 10px 12px;">
+                <div style="font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Included Amenities</div>
+                <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 2px; font-weight: 600;">
+                  Polycom 4K • Screen • WiFi
+                </div>
               </div>
             </div>
 
-            <div style="background: var(--bg-surface-elevated); padding: 9px 12px; border-radius: 8px; border: 1px solid var(--border-subtle);">
-              <div style="font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Session Agenda</div>
-              <div style="font-size: 12.5px; font-weight: 700; color: var(--text-primary); margin-top: 2px;">${booking.title}</div>
+            <!-- Calendar Export -->
+            <div style="background: rgba(37, 99, 235, 0.05); border: 1px solid rgba(37, 99, 235, 0.2); border-radius: 10px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <div style="font-size: 12px; font-weight: 700; color: #1d4ed8;">
+                <span>📅</span> <span>Add to Personal Calendar:</span>
+              </div>
+              <div style="display: flex; gap: 6px;">
+                <button class="btn btn-sm btn-outline" onclick="MeetingRoomsModule.addToGoogleCalendar('${booking.id}', '${room.id}')" style="font-size: 11px; padding: 4px 10px; border-radius: 6px;">
+                  Google Calendar
+                </button>
+                <button class="btn btn-sm btn-outline" onclick="MeetingRoomsModule.downloadBookingIcs('${booking.id}')" style="font-size: 11px; padding: 4px 10px; border-radius: 6px;">
+                  iCal (.ics)
+                </button>
+              </div>
             </div>
           </div>
 
           <!-- Fixed Footer -->
-          <div style="flex-shrink: 0; padding: 12px 20px; border-top: 1px solid var(--border-subtle); background: var(--bg-surface-elevated); display: flex; gap: 10px; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
-            <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openEditTimeWindowModal('${room.id}', '${booking.id}')" style="font-weight: 700; font-size: 11.5px; border-radius: 7px; color: #2563eb; border-color: rgba(37,99,235,0.4); background: rgba(37,99,235,0.06);">
-              ⏰ Customize Time
-            </button>
-            <button class="btn btn-outline btn-sm" onclick="window.print()" style="font-weight: 600; font-size: 12px; border-radius: 7px;">
-              🖨️ Print Pass
-            </button>
-            <button class="btn btn-primary btn-sm" onclick="MeetingRoomsModule.closeModal('modal-room-door-pass')" style="font-weight: 700; font-size: 12px; border-radius: 7px; padding: 7px 18px;">
+          <div style="flex-shrink: 0; padding: 12px 20px; border-top: 1px solid var(--border-subtle); background: var(--bg-surface-elevated); display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.closeModal('modal-reservation-details'); MeetingRoomsModule.openEditTimeWindowModal('${room.id}', '${booking.id}')" style="font-weight: 700; font-size: 12px; border-radius: 8px; color: #2563eb; border-color: rgba(37,99,235,0.4); padding: 7px 14px;">
+                ⏰ Change Time
+              </button>
+              <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.closeModal('modal-reservation-details'); MeetingRoomsModule.cancelBooking('${room.id}', '${booking.id}')" style="font-weight: 700; font-size: 12px; border-radius: 8px; color: #dc2626; border-color: rgba(220,38,38,0.4); padding: 7px 14px;">
+                Cancel
+              </button>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="MeetingRoomsModule.closeModal('modal-reservation-details')" style="font-weight: 800; font-size: 12px; border-radius: 8px; padding: 7px 22px; background: #2563eb; border-color: #1d4ed8;">
               Done
             </button>
           </div>
@@ -3971,6 +4002,10 @@ const MeetingRoomsModule = {
     `;
 
     document.getElementById('modal-mount').innerHTML = html;
+  },
+
+  openPassModal(roomId, bookingId) {
+    this.openReservationDetailsModal(roomId, bookingId);
   },
 
   generateStartSlots() {
@@ -4148,7 +4183,7 @@ const MeetingRoomsModule = {
               <span>📅</span> Reserve Meeting Room
             </h2>
             <div style="font-size: 12.5px; color: #bfdbfe;">
-              Select session, time window, and lock in with instant digital door pass.
+              Select session, time window, and lock in your reservation details.
             </div>
           </div>
 
@@ -4761,7 +4796,7 @@ const MeetingRoomsModule = {
     }
   },
 
-  printPassSlip(roomId, bookingId) {
+  printReservationSlip(roomId, bookingId) {
     const rooms = window.store.getMeetingRooms();
     const room = rooms.find(r => r.id === roomId);
     if (!room) return;
@@ -4774,33 +4809,32 @@ const MeetingRoomsModule = {
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Meeting Room Pass - ${booking.id}</title>
+        <title>Reservation Details - ${booking.id}</title>
         <style>
           body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 30px; text-align: center; color: #0f172a; }
-          .pass-card { max-width: 420px; margin: 0 auto; border: 2px dashed #0f172a; border-radius: 16px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.06); }
+          .receipt-card { max-width: 420px; margin: 0 auto; border: 2px dashed #0f172a; border-radius: 16px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.06); }
           h2 { margin: 8px 0 4px; font-size: 20px; }
           .badge { display: inline-block; padding: 4px 12px; border-radius: 999px; background: #2563eb; color: #fff; font-weight: bold; font-size: 12px; margin: 8px 0; }
-          .qr { width: 120px; height: 120px; margin: 15px auto; border: 2px solid #cbd5e1; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #64748b; background: #f8fafc; font-weight: bold; }
           table { width: 100%; text-align: left; margin: 16px 0; font-size: 13px; border-collapse: collapse; }
           td { padding: 6px 0; border-bottom: 1px solid #f1f5f9; }
           @media print { body { padding: 0; } }
         </style>
       </head>
       <body>
-        <div class="pass-card">
+        <div class="receipt-card">
           <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #64748b; font-weight: bold;">Nexus Coworking &amp; Startup Hub</div>
           <h2>${room.icon || '🏢'} ${room.name}</h2>
-          <div class="badge">Pass ID: ${booking.id}</div>
-          <div class="qr">[ DIGITAL DOOR QR ]</div>
+          <div class="badge">Confirmation ID: ${booking.id}</div>
           <table>
             <tr><td><strong>Venture:</strong></td><td>${booking.startupName}</td></tr>
             <tr><td><strong>Session Title:</strong></td><td>${booking.title}</td></tr>
             <tr><td><strong>Date:</strong></td><td>${booking.date}</td></tr>
             <tr><td><strong>Scheduled Time:</strong></td><td><strong>${booking.startTime} - ${booking.endTime}</strong></td></tr>
-            <tr><td><strong>Attendees:</strong></td><td>${booking.attendees} Pax Capacity: ${room.capacity}</td></tr>
+            <tr><td><strong>Attendees:</strong></td><td>${booking.attendees} Pax (Capacity: ${room.capacity})</td></tr>
+            <tr><td><strong>Status:</strong></td><td><strong style="color: #16a34a;">${booking.status || 'Confirmed'}</strong></td></tr>
           </table>
-          <div style="font-size: 10.5px; color: #94a3b8; margin-top: 10px;">
-            Present this pass at Smart Glass Access Reader at Room Entrance.
+          <div style="font-size: 10.5px; color: #64748b; margin-top: 10px;">
+            Reservation confirmed in system • Nexus Coworking &amp; Startup Hub
           </div>
         </div>
         <script>window.onload = function() { window.print(); };</script>
@@ -4808,6 +4842,10 @@ const MeetingRoomsModule = {
       </html>
     `);
     printWin.document.close();
+  },
+
+  printPassSlip(roomId, bookingId) {
+    this.printReservationSlip(roomId, bookingId);
   }
 };
 
