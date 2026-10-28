@@ -695,13 +695,14 @@ const MeetingRoomsModule = {
                     <th style="min-width: 110px; white-space: nowrap;">Duration</th>
                     <th style="min-width: 130px; white-space: nowrap;">Allowance / Cost</th>
                     <th style="min-width: 110px; white-space: nowrap;">Live Status</th>
-                    <th style="min-width: 140px; text-align: right; white-space: nowrap;">Actions</th>
+                    <th style="min-width: 110px; text-align: center; white-space: nowrap;">Details</th>
+                    <th style="min-width: 150px; text-align: center; white-space: nowrap;">Cancel Reservation</th>
                   </tr>
                 </thead>
                 <tbody>
                   ${filteredList.length === 0 ? `
                     <tr>
-                      <td colspan="8" style="text-align: center; padding: 48px 20px; color: var(--text-muted);">
+                      <td colspan="9" style="text-align: center; padding: 48px 20px; color: var(--text-muted);">
                         <div style="font-size: 32px; margin-bottom: 8px;">🎟️</div>
                         <div style="font-weight: 700; font-size: 14px; color: var(--text-primary);">
                           No meeting room bookings match your filter criteria.
@@ -817,9 +818,9 @@ const MeetingRoomsModule = {
                           ${statusBadge}
                         </td>
 
-                        <!-- 8. Actions (Clean Primary + ⋯ Popover Menu) -->
-                        <td style="white-space: nowrap; text-align: right;">
-                          <div style="display: inline-flex; gap: 6px; align-items: center; justify-content: flex-end; white-space: nowrap;">
+                        <!-- 8. Details (Details Button + ⋯ Popover Menu) -->
+                        <td style="white-space: nowrap; text-align: center;">
+                          <div style="display: inline-flex; gap: 6px; align-items: center; justify-content: center; white-space: nowrap;">
                             <button class="btn btn-outline btn-sm" style="font-size: 11px; padding: 4px 10px; color: #2563eb; border-color: rgba(37, 99, 235, 0.4); font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;" onclick="MeetingRoomsModule.openReservationDetailsModal('${b.roomId}', '${b.id}')" title="View Reservation Details">
                               <span>📋</span> <span>Details</span>
                             </button>
@@ -840,13 +841,23 @@ const MeetingRoomsModule = {
                                   <button class="row-menu-item" onclick="MeetingRoomsModule.closeAllRowMenus(); MeetingRoomsModule.openEditTimeWindowModal('${b.roomId}', '${b.id}')" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 10px; font-size: 12px; font-weight: 600; color: #2563eb; border: none; background: transparent; cursor: pointer; border-radius: 6px; text-align: left; transition: all 0.15s ease;">
                                     <span>⏰</span> <span>Change Booking Time</span>
                                   </button>
-                                  <button class="row-menu-item" onclick="MeetingRoomsModule.closeAllRowMenus(); MeetingRoomsModule.cancelBooking('${b.roomId}', '${b.id}')" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 10px; font-size: 12px; font-weight: 600; color: #dc2626; border: none; background: transparent; cursor: pointer; border-radius: 6px; text-align: left; transition: all 0.15s ease;">
-                                    <span>❌</span> <span>Cancel Reservation</span>
-                                  </button>
                                 ` : ''}
                               </div>
                             </div>
                           </div>
+                        </td>
+
+                        <!-- 9. Dedicated Cancel Reservation Column -->
+                        <td style="white-space: nowrap; text-align: center;">
+                          ${b.status === 'Cancelled' ? `
+                            <span class="badge" style="font-size: 10.5px; background: rgba(100, 116, 139, 0.12); color: #64748b; border: 1px solid rgba(100, 116, 139, 0.25); font-weight: 600;">
+                              Cancelled
+                            </span>
+                          ` : `
+                            <button class="btn btn-outline btn-sm" style="font-size: 11px; padding: 4px 12px; color: #dc2626; border-color: rgba(220, 38, 38, 0.4); font-weight: 700; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; border-radius: 6px; background: rgba(239, 68, 68, 0.04);" onclick="MeetingRoomsModule.cancelBooking('${b.roomId}', '${b.id}')" title="Cancel this reservation">
+                              <span>❌</span> <span>Cancel Reservation</span>
+                            </button>
+                          `}
                         </td>
                       </tr>
                     `;
@@ -1133,12 +1144,13 @@ const MeetingRoomsModule = {
                 <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; white-space: nowrap;">Date &amp; AM/PM Timing</th>
                 <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; text-align: center; white-space: nowrap;">Attendees</th>
                 <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; white-space: nowrap;">Billing / Cost</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; text-align: right; white-space: nowrap;">Action</th>
+                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; text-align: center; white-space: nowrap;">Details</th>
+                <th style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; text-align: center; white-space: nowrap;">Cancel Reservation</th>
               </tr>
             </thead>
             <tbody>
               ${allBookings.length === 0 ? `
-                <tr><td colspan="7" style="padding: 40px; text-align: center; color: var(--text-muted);">No reservations recorded in database</td></tr>
+                <tr><td colspan="8" style="padding: 40px; text-align: center; color: var(--text-muted);">No reservations recorded in database</td></tr>
               ` : allBookings.map(b => {
                 const isMine = b.startupId === myStartup.id;
                 const sHour = parseInt(b.startTime.split(':')[0], 10);
@@ -1170,15 +1182,15 @@ const MeetingRoomsModule = {
                     <td style="padding: 12px 16px; white-space: nowrap;">
                       ${b.cost === 0 ? '<span style="color: #16a34a; font-weight: 700; white-space: nowrap;">Covered by Plan (₹0)</span>' : `<span style="white-space: nowrap;">₹${b.cost}</span>`}
                     </td>
-                    <td style="padding: 12px 16px; text-align: right; white-space: nowrap;">
-                      <div style="display: inline-flex; gap: 6px; align-items: center; white-space: nowrap;">
-                        <button class="btn btn-outline btn-sm" style="padding: 4px 10px; font-size: 11px; color: #2563eb; border-color: rgba(37,99,235,0.4); white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;" onclick="MeetingRoomsModule.openReservationDetailsModal('${b.roomId}', '${b.id}')">
-                          <span>📋</span><span>Details</span>
-                        </button>
-                        <button class="btn btn-outline btn-sm" style="padding: 4px 10px; font-size: 11px; color: #dc2626; border-color: rgba(239, 68, 68, 0.4); white-space: nowrap; flex-shrink: 0;" onclick="MeetingRoomsModule.cancelBooking('${b.roomId}', '${b.id}')">
-                          Cancel
-                        </button>
-                      </div>
+                    <td style="padding: 12px 16px; text-align: center; white-space: nowrap;">
+                      <button class="btn btn-outline btn-sm" style="padding: 4px 10px; font-size: 11px; color: #2563eb; border-color: rgba(37,99,235,0.4); white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;" onclick="MeetingRoomsModule.openReservationDetailsModal('${b.roomId}', '${b.id}')">
+                        <span>📋</span><span>Details</span>
+                      </button>
+                    </td>
+                    <td style="padding: 12px 16px; text-align: center; white-space: nowrap;">
+                      <button class="btn btn-outline btn-sm" style="padding: 4px 12px; font-size: 11px; color: #dc2626; border-color: rgba(239, 68, 68, 0.4); white-space: nowrap; flex-shrink: 0; font-weight: 700; background: rgba(239, 68, 68, 0.04);" onclick="MeetingRoomsModule.cancelBooking('${b.roomId}', '${b.id}')">
+                        <span>❌</span> <span>Cancel Reservation</span>
+                      </button>
                     </td>
                   </tr>
                 `;
@@ -3822,7 +3834,8 @@ const MeetingRoomsModule = {
               <th style="white-space: nowrap;">Time Window</th>
               <th style="white-space: nowrap; text-align: center;">Attendees</th>
               <th style="white-space: nowrap;">Fee / Credits</th>
-              <th style="white-space: nowrap; text-align: right;">Action</th>
+              <th style="white-space: nowrap; text-align: center;">Details</th>
+              <th style="white-space: nowrap; text-align: center;">Cancel Reservation</th>
             </tr>
           </thead>
           <tbody>
@@ -3844,15 +3857,15 @@ const MeetingRoomsModule = {
                   <td style="white-space: nowrap;">
                     ${b.cost === 0 ? '<span style="color: #16a34a; font-weight: 600; white-space: nowrap;">Covered by Plan</span>' : `<span style="white-space: nowrap;">₹${b.cost}</span>`}
                   </td>
-                  <td style="white-space: nowrap; text-align: right;">
-                    <div style="display: inline-flex; gap: 6px; align-items: center; white-space: nowrap;">
-                      <button class="btn btn-outline btn-sm" style="font-size: 11.5px; padding: 4px 10px; color: #2563eb; border-color: rgba(37,99,235,0.4); white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; line-height: 1; flex-shrink: 0;" onclick="MeetingRoomsModule.openReservationDetailsModal('${b.roomId}', '${b.id}')">
-                        <span>📋</span><span>Details</span>
-                      </button>
-                      <button class="btn btn-outline btn-sm" style="font-size: 11.5px; padding: 4px 10px; color: var(--status-danger); border-color: rgba(239,68,68,0.4); white-space: nowrap; line-height: 1; flex-shrink: 0;" onclick="MeetingRoomsModule.cancelBooking('${b.roomId}', '${b.id}')">
-                        Cancel
-                      </button>
-                    </div>
+                  <td style="white-space: nowrap; text-align: center;">
+                    <button class="btn btn-outline btn-sm" style="font-size: 11.5px; padding: 4px 10px; color: #2563eb; border-color: rgba(37,99,235,0.4); white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; line-height: 1; flex-shrink: 0;" onclick="MeetingRoomsModule.openReservationDetailsModal('${b.roomId}', '${b.id}')">
+                      <span>📋</span><span>Details</span>
+                    </button>
+                  </td>
+                  <td style="white-space: nowrap; text-align: center;">
+                    <button class="btn btn-outline btn-sm" style="font-size: 11.5px; padding: 4px 12px; color: var(--status-danger); border-color: rgba(239,68,68,0.4); white-space: nowrap; line-height: 1; flex-shrink: 0; font-weight: 700; background: rgba(239, 68, 68, 0.04);" onclick="MeetingRoomsModule.cancelBooking('${b.roomId}', '${b.id}')">
+                      <span>❌</span> <span>Cancel Reservation</span>
+                    </button>
                   </td>
                 </tr>
               `;
