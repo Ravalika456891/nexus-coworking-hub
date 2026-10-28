@@ -2115,7 +2115,7 @@ const MeetingRoomsModule = {
                 </div>
               </div>
               <span class="badge badge-success" style="font-size: 10.5px; padding: 3px 8px; font-weight: 800;">
-                ● Locked In
+                ● Booked
               </span>
             </div>
 
@@ -2833,7 +2833,7 @@ const MeetingRoomsModule = {
     if (!selectedRoomId || !selectedStartTime || !selectedEndTime) {
       container.innerHTML = `
         <div style="font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
-          <span>💡</span> <span>Tap any available start time above to review summary &amp; lock in instantly.</span>
+          <span>💡</span> <span>Tap any available start time above to review summary &amp; book instantly.</span>
         </div>
       `;
       return;
@@ -3633,7 +3633,7 @@ const MeetingRoomsModule = {
           <div style="min-width: 0; flex: 1;">
             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
               <span style="font-size: 13px; font-weight: 800; color: var(--text-primary, #0f172a); display: flex; align-items: center; gap: 5px;">
-                <span>🔒</span> <span>Lock In:</span> <strong style="color: #059669; font-family: var(--font-mono);">${formatSlot12h(startSlot)} – ${formatSlot12h(endSlotStr)}</strong> <span style="color: var(--text-secondary, #64748b); font-size: 11px;">(${duration} hr${duration > 1 ? 's' : ''})</span>
+                <span>📅</span> <span>Booking:</span> <strong style="color: #059669; font-family: var(--font-mono);">${formatSlot12h(startSlot)} – ${formatSlot12h(endSlotStr)}</strong> <span style="color: var(--text-secondary, #64748b); font-size: 11px;">(${duration} hr${duration > 1 ? 's' : ''})</span>
               </span>
               <span class="badge ${isCovered ? 'badge-success' : 'badge-primary'}" style="font-size: 10.5px; padding: 2px 8px; font-weight: 700;">
                 ${costBadge}
@@ -3648,8 +3648,8 @@ const MeetingRoomsModule = {
             <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.clearSlotSelection('${room.id}')" style="font-size: 11.5px; padding: 6px 12px; border-radius: 6px; color: var(--text-secondary, #64748b); border-color: var(--border-medium, #cbd5e1);" title="Clear selection">
               ✕ Cancel
             </button>
-            <button class="btn btn-sm" onclick="MeetingRoomsModule.lockInSelectedSlots('${room.id}')" style="font-size: 12px; font-weight: 800; padding: 7px 16px; border-radius: 8px; background: #16a34a; color: #ffffff; border: 1px solid #15803d; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35);" title="Lock in this reservation immediately">
-              <span>🔒</span> <span>Lock In Now</span>
+            <button class="btn btn-sm" onclick="MeetingRoomsModule.lockInSelectedSlots('${room.id}')" style="font-size: 12px; font-weight: 800; padding: 7px 16px; border-radius: 8px; background: #16a34a; color: #ffffff; border: 1px solid #15803d; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35);" title="Book this reservation immediately">
+              <span>⚡</span> <span>Book Now</span>
             </button>
           </div>
         </div>
@@ -3905,7 +3905,7 @@ const MeetingRoomsModule = {
                   Confirmed Reservation
                 </div>
                 <div style="font-size: 11px; color: var(--text-muted); margin-top: 1px;">
-                  Locked in system • Zero double-booking verified
+                  Booked in system • Zero double-booking verified
                 </div>
               </div>
               <span class="badge badge-success" style="font-size: 11.5px; font-weight: 800; padding: 4px 10px;">
@@ -4180,7 +4180,7 @@ const MeetingRoomsModule = {
               <span>📅</span> Reserve Meeting Room
             </h2>
             <div style="font-size: 12.5px; color: #bfdbfe;">
-              Select session, time window, and lock in your reservation details.
+              Select session, time window, and confirm your reservation details.
             </div>
           </div>
 
@@ -4320,7 +4320,7 @@ const MeetingRoomsModule = {
                   Cancel
                 </button>
                 <button type="submit" class="btn btn-primary" style="font-weight: 800; padding: 9px 24px; border-radius: 8px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35);">
-                  <span>🔒 Confirm & Lock In</span> <span>➔</span>
+                  <span>⚡ Confirm & Book</span> <span>➔</span>
                 </button>
               </div>
             </form>
@@ -4345,7 +4345,7 @@ const MeetingRoomsModule = {
     e.preventDefault();
     const form = e.target;
     const submitBtn = form ? form.querySelector('button[type="submit"]') : null;
-    const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '<span>🔒 Confirm & Lock In</span> <span>➔</span>';
+    const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '<span>⚡ Confirm & Book</span> <span>➔</span>';
 
     const fd = new FormData(form);
     const data = Object.fromEntries(fd.entries());
