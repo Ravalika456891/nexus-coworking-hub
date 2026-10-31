@@ -401,6 +401,250 @@
       ]);
 
       const [bookingModalRoom, setBookingModalRoom] = useState(null);
+      // Enhanced Custom Room Booking & Real-Time Availability Drawer State
+      const [bookingDrawerRoom, setBookingDrawerRoom] = useState(null);
+      const [bookingDrawerDate, setBookingDrawerDate] = useState("2026-10-31");
+      const [bookingDrawerDuration, setBookingDrawerDuration] = useState(1.0);
+      const [bookingDrawerStartTime, setBookingDrawerStartTime] = useState("10:00 AM");
+      const [bookingDrawerAttendees, setBookingDrawerAttendees] = useState(4);
+      const [bookingDrawerTitle, setBookingDrawerTitle] = useState("");
+      const [bookingDrawerPurpose, setBookingDrawerPurpose] = useState("Team Sync & Collaboration");
+      const [bookingDrawerNotes, setBookingDrawerNotes] = useState("");
+      const [bookingDrawerSyncGCal, setBookingDrawerSyncGCal] = useState(true);
+      const [bookingDrawerStep, setBookingDrawerStep] = useState("slots"); // 'slots' | 'details' | 'success'
+      const [lastConfirmedReservation, setLastConfirmedReservation] = useState(null);
+      const [startupCreditsRemaining, setStartupCreditsRemaining] = useState(113);
+
+      const openBookingDrawer = (room) => {
+        if (!room) return;
+        setBookingDrawerRoom(room);
+        const initDate = (selectedDate && selectedDate !== "Today") ? selectedDate : "2026-10-31";
+        setBookingDrawerDate(initDate);
+        setBookingDrawerDuration(1.0);
+        setBookingDrawerStartTime("10:00 AM");
+        setBookingDrawerAttendees(Math.min(selectedPeople || 4, room.capacity));
+        setBookingDrawerTitle(`Strategy Sync (${room.name})`);
+        setBookingDrawerPurpose("Team Sync & Collaboration");
+        setBookingDrawerNotes("");
+        setBookingDrawerSyncGCal(true);
+        setBookingDrawerStep("slots");
+      };
+
+      const TIME_SLOTS_30MIN = [
+        "08:00 AM", "08:30 AM", "09:00 AM", "09:30 AM",
+        "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
+        "12:00 PM", "12:30 PM", "01:00 PM", "01:30 PM",
+        "02:00 PM", "02:30 PM", "03:00 PM", "03:30 PM",
+        "04:00 PM", "04:30 PM", "05:00 PM", "05:30 PM",
+        "06:00 PM", "06:30 PM", "07:00 PM", "07:30 PM"
+      ];
+
+      const timeStrToMinutes = (str) => {
+        if (!str) return 0;
+        const parts = str.trim().split(/\s+/);
+        const time = parts[0];
+        const ampm = (parts[1] || "").toUpperCase();
+        const [hStr, mStr] = time.split(":");
+        let h = parseInt(hStr, 10);
+        const m = parseInt(mStr, 10) || 0;
+        if (ampm === "PM" && h < 12) h += 12;
+        if (ampm === "AM" && h === 12) h = 0;
+        return h * 60 + m;
+      };
+
+      const minutesToTimeStr = (totalMins) => {
+        let h = Math.floor(totalMins / 60);
+        const m = totalMins % 60;
+        const ampm = h >= 12 ? "PM" : "AM";
+        if (h > 12) h -= 12;
+        if (h === 0) h = 12;
+        return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")} ${ampm}`;
+      };
+
+      const getSlotStatus = (slotTime, room, date, durationHours) => {
+        if (!room) return { available: true, label: "Available" };
+        const slotStart = timeStrToMinutes(slotTime);
+        const durationMins = Math.round(durationHours * 60);
+        const reqEnd = slotStart + durationMins;
+
+        if (reqEnd > 1200) {
+          return { available: false, label: "Exceeds Hours", isConflict: true };
+        }
+
+        const activeBookings = upcomingBookings.filter(b => {
+          if (b.status === "Cancelled") return false;
+          const matchRoom = (b.room === room.name || b.roomId === room.id);
+          const matchDate = (b.date === date || (date === "2026-10-31" && b.date === "Today") || b.fullDate === date);
+          return matchRoom && matchDate;
+        });
+
+        for (const b of activeBookings) {
+          let bkgStart = 0;
+          let bkgEnd = 0;
+          if (b.time && b.time.includes("–")) {
+            const [s, e] = b.time.split("–");
+            bkgStart = timeStrToMinutes(s.trim());
+            bkgEnd = timeStrToMinutes(e.trim());
+          } else if (b.startTime && b.endTime) {
+            bkgStart = timeStrToMinutes(b.startTime);
+            bkgEnd = timeStrToMinutes(b.endTime);
+          } else {
+            bkgStart = timeStrToMinutes(b.time);
+            bkgEnd = bkgStart + 60;
+          }
+
+          if (slotStart >= bkgStart && slotStart < bkgEnd) {
+            return { available: false, label: "Occupied", isBooked: true };
+          }
+          if (Math.max(slotStart, bkgStart) < Math.min(reqEnd, bkgEnd)) {
+            return { available: false, label: "Duration Conflict", isConflict: true };
+          }
+        }
+        return { available: true, label: "Available" };
+      };
+
+      const getGoogleCalendarUrl = ({ title, room, date, startTime, durationHours, notes }) => {
+        const startMin = timeStrToMinutes(startTime);
+        const endMin = startMin + Math.round(durationHours * 60);
+        const dStr = (date === "Today" ? "2026-10-31" : date === "Tomorrow" ? "2026-11-01" : date).replace(/-/g, "");
+        const startH = String(Math.floor(startMin / 60)).padStart(2, "0");
+        const startM = String(startMin % 60).padStart(2, "0");
+        const endH = String(Math.floor(endMin / 60)).padStart(2, "0");
+        const endM = String(endMin % 60).padStart(2, "0");
+        const startIso = `${dStr}T${startH}${startM}00`;
+        const endIso = `${dStr}T${endH}${endM}00`;
+
+        const text = encodeURIComponent(`${title} • ${room ? room.name : "NEXUS HUB"}`);
+        const details = encodeURIComponent(
+          `Meeting Room Reservation at NEXUS HUB\nFacility: ${room ? room.name : "Meeting Space"}\nAttendees: Up to ${room ? room.capacity : 6} people\nNotes: ${notes || "Equipped with 4K display, wireless casting, and conference mic."}\n\nPowered by NEXUS HUB Incubation Operating System`
+        );
+        const location = encodeURIComponent(`${room ? room.name : "Meeting Room"}, NEXUS HUB Innovation Campus, Ground Floor East Wing`);
+        return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${startIso}/${endIso}&details=${details}&location=${location}`;
+      };
+
+      const downloadIcs = ({ title, room, date, startTime, durationHours, notes, resId }) => {
+        const startMin = timeStrToMinutes(startTime);
+        const endMin = startMin + Math.round(durationHours * 60);
+        const dStr = (date === "Today" ? "20261031" : date === "Tomorrow" ? "20261101" : date.replace(/-/g, ""));
+        const startH = String(Math.floor(startMin / 60)).padStart(2, "0");
+        const startM = String(startMin % 60).padStart(2, "0");
+        const endH = String(Math.floor(endMin / 60)).padStart(2, "0");
+        const endM = String(endMin % 60).padStart(2, "0");
+
+        const icsData = [
+          "BEGIN:VCALENDAR",
+          "VERSION:2.0",
+          "PRODID:-//NEXUS HUB//Meeting Room Reservation//EN",
+          "CALSCALE:GREGORIAN",
+          "METHOD:PUBLISH",
+          "BEGIN:VEVENT",
+          `UID:${resId || Date.now()}@nexushub.co`,
+          `DTSTAMP:${dStr}T000000Z`,
+          `DTSTART:${dStr}T${startH}${startM}00`,
+          `DTEND:${dStr}T${endH}${endM}00`,
+          `SUMMARY:${title} - ${room ? room.name : "Meeting Room"}`,
+          `DESCRIPTION:${notes || "NEXUS HUB Meeting Room Reservation"}`,
+          `LOCATION:${room ? room.name : "NEXUS HUB"} Innovation Campus`,
+          "STATUS:CONFIRMED",
+          "END:VEVENT",
+          "END:VCALENDAR"
+        ].join("\r\n");
+
+        const blob = new Blob([icsData], { type: "text/calendar;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `nexus-booking-${(resId || "bkg").toLowerCase()}.ics`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      };
+
+      const handleDrawerConfirmBooking = (e) => {
+        if (e) e.preventDefault();
+        if (!bookingDrawerRoom) return;
+
+        const slotStatus = getSlotStatus(bookingDrawerStartTime, bookingDrawerRoom, bookingDrawerDate, bookingDrawerDuration);
+        if (!slotStatus.available) {
+          showToast(`⚠️ Conflict: Selected slot is ${slotStatus.label}. Please pick an available time slot.`);
+          return;
+        }
+
+        const startMin = timeStrToMinutes(bookingDrawerStartTime);
+        const endMin = startMin + Math.round(bookingDrawerDuration * 60);
+        const endTimeStr = minutesToTimeStr(endMin);
+        const formattedTimeRange = `${bookingDrawerStartTime} – ${endTimeStr}`;
+        const resId = `RES-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+        const title = bookingDrawerTitle.trim() || `Strategy Sync (${bookingDrawerRoom.name})`;
+        const hourlyRate = parseInt((bookingDrawerRoom.rate || "").replace(/[^0-9]/g, ""), 10) || 2000;
+        const totalCost = Math.round(hourlyRate * bookingDrawerDuration);
+
+        setStartupCreditsRemaining(prev => Math.max(0, prev - bookingDrawerDuration));
+
+        const newReservation = {
+          id: `bkg-${Date.now()}`,
+          resId: resId,
+          date: bookingDrawerDate === "2026-10-31" ? "Today" : bookingDrawerDate,
+          fullDate: bookingDrawerDate,
+          time: formattedTimeRange,
+          startTime: bookingDrawerStartTime,
+          endTime: endTimeStr,
+          duration: `${bookingDrawerDuration} hrs`,
+          title: title,
+          purpose: bookingDrawerPurpose,
+          room: bookingDrawerRoom.name,
+          roomId: bookingDrawerRoom.id,
+          roomImage: bookingDrawerRoom.image || "assets/rooms/mr-01-main.jpg",
+          attendees: bookingDrawerAttendees,
+          credits: bookingDrawerDuration,
+          cost: totalCost,
+          notes: bookingDrawerNotes,
+          status: "Confirmed",
+          statusColor: "bg-emerald-50 text-emerald-600 border border-emerald-200",
+          barColor: "bg-emerald-500",
+          createdAt: new Date().toISOString()
+        };
+
+        setUpcomingBookings(prev => [newReservation, ...prev]);
+
+        if (bookingDrawerDate === "2026-10-31" || bookingDrawerDate === "Today") {
+          setTodaysSchedule(prev => [
+            ...prev,
+            {
+              time: formattedTimeRange,
+              title: title,
+              room: bookingDrawerRoom.name,
+              attendees: bookingDrawerAttendees,
+              dotColor: "bg-emerald-500",
+              tintColor: "border-l-4 border-l-emerald-500"
+            }
+          ]);
+        }
+
+        setLastConfirmedReservation(newReservation);
+        setBookingDrawerStep("success");
+        showToast(`🎉 Room booked! ${bookingDrawerRoom.name} confirmed (#${resId})`);
+
+        try {
+          fetch('/api/meeting-rooms/book', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              roomId: bookingDrawerRoom.id || "MR-01",
+              startupId: "STP-XYZ",
+              startupName: "XYZ Technologies",
+              title: title,
+              purpose: bookingDrawerPurpose,
+              date: bookingDrawerDate,
+              startTime: bookingDrawerStartTime,
+              endTime: endTimeStr,
+              attendees: bookingDrawerAttendees,
+              cost: totalCost
+            })
+          }).catch(err => console.log('Backend sync offline:', err));
+        } catch (err) {}
+      };
       const [showPurchaseCreditsModal, setShowPurchaseCreditsModal] = useState(false);
       const [selectedCreditTier, setSelectedCreditTier] = useState(25);
       const [meetingTitleInput, setMeetingTitleInput] = useState("");
@@ -1409,7 +1653,10 @@
 
                             <div className="p-4 flex-1 flex flex-col justify-between">
                               <div>
-                                <h4 className="font-bold text-[15px] text-[#111827]">{room.name}</h4>
+                                <h4 className="font-bold text-[15px] text-[#111827] cursor-pointer hover:text-[#4F3FE0] transition-colors flex items-center justify-between" onClick={() => openBookingDrawer(room)}>
+                                    <span>{room.name}</span>
+                                    <span className="text-[10px] font-semibold text-[#4F3FE0] bg-[#F4F2FF] px-2 py-0.5 rounded-full border border-[#E0D8FF]">Quick Book ↗</span>
+                                  </h4>
                                 <div className="flex items-center gap-1.5 text-xs text-[#64748B] font-medium mt-1">
                                   <Icon name="users" className="w-3.5 h-3.5 text-[#8A90A2]" />
                                   <span>{room.capacity} people</span>
@@ -1429,7 +1676,7 @@
                                 {isAvailable ? (
                                   <button
                                     type="button"
-                                    onClick={() => setBookingModalRoom(room)}
+                                    onClick={() => openBookingDrawer(room)}
                                     className="bg-[#4F3FE0] hover:bg-[#4335C9] text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95"
                                   >
                                     Book Now
@@ -1437,7 +1684,7 @@
                                 ) : (
                                   <button
                                     type="button"
-                                    onClick={() => showToast(`Schedule for ${room.name} opened in calendar`)}
+                                    onClick={() => openBookingDrawer(room)}
                                     className="border border-[#ECEEF4] hover:bg-gray-50 text-[#374151] px-4 py-2 rounded-xl text-xs font-semibold transition-all"
                                   >
                                     View Schedule
@@ -1459,7 +1706,7 @@
                       <div className="grid grid-cols-4 gap-2 text-center">
                         <button
                           type="button"
-                          onClick={() => setBookingModalRoom(rooms[0])}
+                          onClick={() => openBookingDrawer(rooms[0])}
                           className="bg-[#F3EFFE] hover:bg-[#EAE4FE] text-[#6E42E5] p-2.5 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all group"
                         >
                           <Icon name="calendar" className="w-5 h-5 text-[#6E42E5] group-hover:scale-110 transition-transform" />
@@ -2102,7 +2349,7 @@
                             {/* 1. Book a Room */}
                             <button
                               type="button"
-                              onClick={() => setBookingModalRoom(rooms[0])}
+                              onClick={() => openBookingDrawer(rooms[0])}
                               className="p-3 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#F3EFFE] hover:border-[#6E42E5]/30 transition-all text-center group"
                             >
                               <span className="w-9 h-9 rounded-xl bg-purple-50 text-[#6E42E5] flex items-center justify-center mx-auto mb-1.5 group-hover:scale-105 transition-transform">
@@ -2192,7 +2439,7 @@
                           ) : (
                             <button
                               key={r.id}
-                              onClick={() => setBookingModalRoom(r)}
+                              onClick={() => openBookingDrawer(r)}
                               className="bg-[#F8FAFC] border border-dashed border-[#ECEEF4] hover:border-[#4F3FE0] hover:bg-[#F3EFFE] text-[#8A90A2] hover:text-[#4F3FE0] p-2 rounded-xl text-center font-medium transition-all"
                             >
                               + Open Slot
@@ -3056,66 +3303,610 @@
           {/* =========================================================================
               MODAL: CONFIRM RESERVATION
               ========================================================================= */}
-          {bookingModalRoom && (
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fadeIn">
-              <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-[#ECEEF4] relative animate-scaleUp">
-                <div className="flex items-center justify-between pb-3 border-b border-[#ECEEF4]">
-                  <div>
-                    <h3 className="text-lg font-black text-[#111827]">Book {bookingModalRoom.name}</h3>
-                    <p className="text-xs text-[#8A90A2]">Instant confirmation • Deducts 1 hour credit</p>
-                  </div>
+          {/* =========================================================================
+              CUSTOM ROOM DETAILS & REAL-TIME AVAILABILITY SLIDE-OUT DRAWER
+              ========================================================================= */}
+          {bookingDrawerRoom && (
+            <div className="fixed inset-0 z-50 overflow-hidden flex justify-end animate-fadeIn">
+              {/* Dark Overlay Backdrop */}
+              <div
+                onClick={() => setBookingDrawerRoom(null)}
+                className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
+              />
+
+              {/* Drawer Container (Desktop: Right-Side Drawer / Mobile: Full Screen) */}
+              <div className="relative w-full sm:max-w-xl md:max-w-2xl bg-white h-full shadow-2xl flex flex-col z-10 animate-slideLeft overflow-hidden">
+                {/* Header with Meeting Room Photo & Details */}
+                <div className="relative h-44 sm:h-48 w-full flex-shrink-0 overflow-hidden bg-gray-900">
+                  <img
+                    src={bookingDrawerRoom.image || "assets/rooms/mr-01-main.jpg"}
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = bookingDrawerRoom.fallbackImage || "assets/rooms/mr-01-main.jpg";
+                    }}
+                    alt={bookingDrawerRoom.name}
+                    className="w-full h-full object-cover object-center"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-transparent" />
+
+                  {/* Close Button */}
                   <button
-                    onClick={() => setBookingModalRoom(null)}
-                    className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500"
+                    type="button"
+                    onClick={() => setBookingDrawerRoom(null)}
+                    className="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/40 hover:bg-black/75 backdrop-blur-sm text-white flex items-center justify-center transition-all z-20"
+                    title="Close Drawer"
                   >
-                    <Icon name="x" className="w-4 h-4" />
+                    <Icon name="x" className="w-5 h-5" />
+                  </button>
+
+                  {/* Room Meta Badges & Title */}
+                  <div className="absolute bottom-3 left-4 right-4 text-white z-10">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-[#4F3FE0] text-white uppercase tracking-wider">
+                        {bookingDrawerRoom.type}
+                      </span>
+                      <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-emerald-500 text-white flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                        Live Available
+                      </span>
+                    </div>
+                    <h2 className="text-xl sm:text-2xl font-black">{bookingDrawerRoom.name}</h2>
+                    <div className="flex items-center gap-2.5 text-xs text-gray-200 mt-1 font-medium flex-wrap">
+                      <span className="inline-flex items-center gap-1">
+                        <Icon name="users" className="w-3.5 h-3.5 text-gray-300" />
+                        Up to {bookingDrawerRoom.capacity} people
+                      </span>
+                      <span>•</span>
+                      <span className="text-yellow-300 font-bold">{bookingDrawerRoom.rate}</span>
+                      <span>•</span>
+                      <span>Ground Floor East Wing</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Step Progress Tabs */}
+                <div className="flex border-b border-[#ECEEF4] bg-[#F8FAFC] text-xs font-bold text-center flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => bookingDrawerStep !== 'success' && setBookingDrawerStep('slots')}
+                    className={`flex-1 py-3 border-b-2 transition-all ${
+                      bookingDrawerStep === 'slots'
+                        ? 'border-[#4F3FE0] text-[#4F3FE0] bg-white'
+                        : 'border-transparent text-[#64748B] hover:text-[#111827]'
+                    }`}
+                  >
+                    1. Time &amp; Slots
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (bookingDrawerStep === 'slots') {
+                        const status = getSlotStatus(bookingDrawerStartTime, bookingDrawerRoom, bookingDrawerDate, bookingDrawerDuration);
+                        if (status.available) setBookingDrawerStep('details');
+                        else showToast("Please pick an available slot first");
+                      }
+                    }}
+                    className={`flex-1 py-3 border-b-2 transition-all ${
+                      bookingDrawerStep === 'details'
+                        ? 'border-[#4F3FE0] text-[#4F3FE0] bg-white'
+                        : 'border-transparent text-[#64748B]'
+                    }`}
+                  >
+                    2. Meeting Details &amp; Sync
+                  </button>
+                  <button
+                    type="button"
+                    disabled={bookingDrawerStep !== 'success'}
+                    className={`flex-1 py-3 border-b-2 transition-all ${
+                      bookingDrawerStep === 'success'
+                        ? 'border-emerald-600 text-emerald-600 bg-white'
+                        : 'border-transparent text-[#A0A6B8] cursor-not-allowed'
+                    }`}
+                  >
+                    3. Confirmation
                   </button>
                 </div>
 
-                <form onSubmit={handleConfirmBooking} className="mt-4 space-y-4">
-                  <div>
-                    <label className="block text-xs font-bold text-[#374151] mb-1">Meeting Title</label>
-                    <input
-                      type="text"
-                      required
-                      value={meetingTitleInput}
-                      onChange={(e) => setMeetingTitleInput(e.target.value)}
-                      placeholder="e.g. Q4 Executive Pitch Session"
-                      className="w-full bg-[#F6F7FB] border border-[#ECEEF4] rounded-xl px-3.5 py-2 text-sm text-[#111827] focus:outline-none focus:border-[#4F3FE0] focus:bg-white"
-                    />
-                  </div>
+                {/* Scrollable Content Body */}
+                <div className="flex-1 overflow-y-auto p-5 space-y-5">
+                  {/* STEP 1: DATE, DURATION & LIVE SLOTS */}
+                  {bookingDrawerStep === 'slots' && (() => {
+                    const hourlyRate = parseInt((bookingDrawerRoom.rate || "").replace(/[^0-9]/g, ""), 10) || 2000;
+                    const estimatedPrice = Math.round(hourlyRate * bookingDrawerDuration);
+                    const currentSlotStatus = getSlotStatus(bookingDrawerStartTime, bookingDrawerRoom, bookingDrawerDate, bookingDrawerDuration);
+                    const startMin = timeStrToMinutes(bookingDrawerStartTime);
+                    const endMin = startMin + Math.round(bookingDrawerDuration * 60);
+                    const endTimeStr = minutesToTimeStr(endMin);
 
-                  <div className="bg-[#F8F9FD] border border-[#E3DEFF] rounded-xl p-3.5 space-y-2 text-xs">
-                    <div className="flex justify-between">
-                      <span className="text-[#8A90A2]">Room Rate:</span>
-                      <span className="font-bold text-[#111827]">{bookingModalRoom.rate} (Covered by Credits)</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-[#8A90A2]">Date &amp; Time:</span>
-                      <span className="font-bold text-[#111827]">{selectedDate} • {selectedTime}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-[#8A90A2]">Attendees:</span>
-                      <span className="font-bold text-[#111827]">{selectedPeople} people (Capacity: {bookingModalRoom.capacity})</span>
-                    </div>
-                  </div>
+                    return (
+                      <div className="space-y-5">
+                        {/* 1. Date Selector */}
+                        <div>
+                          <label className="block text-xs font-black uppercase tracking-wider text-[#111827] mb-2">
+                            Select Reservation Date
+                          </label>
+                          <div className="grid grid-cols-3 gap-2 mb-2">
+                            {[
+                              { label: "Today (31 Oct)", val: "2026-10-31" },
+                              { label: "Tomorrow (01 Nov)", val: "2026-11-01" },
+                              { label: "Monday (03 Nov)", val: "2026-11-03" }
+                            ].map(d => (
+                              <button
+                                key={d.val}
+                                type="button"
+                                onClick={() => setBookingDrawerDate(d.val)}
+                                className={`py-2 px-2 rounded-xl text-xs font-bold border transition-all text-center ${
+                                  bookingDrawerDate === d.val
+                                    ? "bg-[#4F3FE0] text-white border-[#4F3FE0] shadow-xs"
+                                    : "bg-[#F8FAFC] border-[#ECEEF4] text-[#374151] hover:bg-white"
+                                }`}
+                              >
+                                {d.label}
+                              </button>
+                            ))}
+                          </div>
+                          <div className="flex items-center gap-2 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl px-3 py-2 text-xs">
+                            <span className="text-[#64748B] font-medium">Or pick any date:</span>
+                            <input
+                              type="date"
+                              min="2026-10-31"
+                              value={bookingDrawerDate}
+                              onChange={(e) => setBookingDrawerDate(e.target.value)}
+                              className="bg-transparent font-bold text-[#111827] outline-none cursor-pointer flex-1 text-right"
+                            />
+                          </div>
+                        </div>
 
-                  <div className="flex items-center justify-end gap-2.5 pt-2">
-                    <button
-                      type="button"
-                      onClick={() => setBookingModalRoom(null)}
-                      className="px-4 py-2 border border-[#ECEEF4] text-[#374151] rounded-xl text-xs font-bold hover:bg-gray-50"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-5 py-2 bg-[#4F3FE0] hover:bg-[#4335C9] text-white rounded-xl text-xs font-bold shadow-sm"
-                    >
-                      Confirm Reservation
-                    </button>
-                  </div>
-                </form>
+                        {/* 2. Duration Selector */}
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <label className="text-xs font-black uppercase tracking-wider text-[#111827]">
+                              Booking Duration
+                            </label>
+                            <span className="text-[11px] font-bold text-[#4F3FE0]">
+                              {bookingDrawerDuration} hrs selected
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                            {[
+                              { label: "30 min", val: 0.5 },
+                              { label: "1.0 hr", val: 1.0 },
+                              { label: "1.5 hrs", val: 1.5 },
+                              { label: "2.0 hrs", val: 2.0 },
+                              { label: "3.0 hrs", val: 3.0 },
+                              { label: "4.0 hrs", val: 4.0 }
+                            ].map(dur => (
+                              <button
+                                key={dur.val}
+                                type="button"
+                                onClick={() => setBookingDrawerDuration(dur.val)}
+                                className={`py-2 rounded-xl text-xs font-bold border transition-all text-center ${
+                                  bookingDrawerDuration === dur.val
+                                    ? "bg-[#4F3FE0] text-white border-[#4F3FE0] shadow-xs"
+                                    : "bg-[#F8FAFC] border-[#ECEEF4] text-[#374151] hover:bg-white hover:border-[#4F3FE0]/40"
+                                }`}
+                              >
+                                {dur.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* 3. Live Availability Slots Grid */}
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <div>
+                              <label className="text-xs font-black uppercase tracking-wider text-[#111827]">
+                                Real-Time Availability Slots
+                              </label>
+                              <p className="text-[11px] text-[#8A90A2]">30-minute intervals • Overlap prevention active</p>
+                            </div>
+                            <div className="flex items-center gap-2 text-[10px] font-semibold text-[#64748B]">
+                              <span className="flex items-center gap-1">
+                                <span className="w-2 h-2 rounded-full bg-emerald-500" /> Free
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <span className="w-2 h-2 rounded-full bg-[#4F3FE0]" /> Selected
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <span className="w-2 h-2 rounded-full bg-gray-400" /> Booked
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-56 overflow-y-auto p-1 border border-[#ECEEF4] rounded-2xl bg-[#FAFAFC]">
+                            {TIME_SLOTS_30MIN.map(slot => {
+                              const status = getSlotStatus(slot, bookingDrawerRoom, bookingDrawerDate, bookingDrawerDuration);
+                              const isSelected = bookingDrawerStartTime === slot;
+
+                              if (status.isBooked) {
+                                return (
+                                  <div
+                                    key={slot}
+                                    className="p-2.5 rounded-xl border border-gray-200 bg-gray-100/90 text-gray-400 text-center cursor-not-allowed select-none opacity-70"
+                                    title="Slot already reserved by another founder"
+                                  >
+                                    <div className="text-xs font-bold line-through">{slot}</div>
+                                    <div className="text-[10px] font-semibold text-gray-500 mt-0.5">🔒 Booked</div>
+                                  </div>
+                                );
+                              }
+
+                              if (status.isConflict) {
+                                return (
+                                  <div
+                                    key={slot}
+                                    className="p-2.5 rounded-xl border border-amber-200 bg-amber-50/60 text-amber-700 text-center cursor-not-allowed select-none"
+                                    title="Requested duration would overlap an existing reservation"
+                                  >
+                                    <div className="text-xs font-bold">{slot}</div>
+                                    <div className="text-[9.5px] font-semibold text-amber-600 mt-0.5">Overlap conflict</div>
+                                  </div>
+                                );
+                              }
+
+                              return (
+                                <button
+                                  key={slot}
+                                  type="button"
+                                  onClick={() => setBookingDrawerStartTime(slot)}
+                                  className={`p-2.5 rounded-xl border text-center transition-all ${
+                                    isSelected
+                                      ? "bg-[#4F3FE0] text-white border-[#4F3FE0] shadow-md ring-2 ring-[#4F3FE0]/25"
+                                      : "bg-white border-[#ECEEF4] text-[#111827] hover:border-[#4F3FE0] hover:bg-[#F4F2FF] hover:shadow-xs"
+                                  }`}
+                                >
+                                  <div className="text-xs font-bold">{slot}</div>
+                                  <div className={`text-[10px] font-semibold mt-0.5 ${isSelected ? "text-purple-100" : "text-emerald-600"}`}>
+                                    {isSelected ? "★ Selected" : "✓ Available"}
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* 4. Selected Time Window Callout */}
+                        <div className="p-3.5 bg-[#F4F2FF] border border-[#E0D8FF] rounded-xl flex items-center justify-between text-xs">
+                          <div>
+                            <span className="text-[#8A90A2] font-semibold block text-[11px]">Selected Time Window:</span>
+                            <span className="font-extrabold text-[#4F3FE0] text-sm">
+                              {bookingDrawerDate} • {bookingDrawerStartTime} – {endTimeStr}
+                            </span>
+                          </div>
+                          <span className="px-2.5 py-1 rounded-full bg-white text-[#4F3FE0] font-bold shadow-xs border border-[#E0D8FF] text-[11px]">
+                            {bookingDrawerDuration} hrs
+                          </span>
+                        </div>
+
+                        {/* 5. Price & Credits Calculation Summary */}
+                        <div className="p-4 bg-[#F8FAFC] border border-[#ECEEF4] rounded-2xl space-y-2 text-xs">
+                          <div className="flex items-center justify-between text-[#64748B]">
+                            <span>Hourly Rate:</span>
+                            <strong className="text-[#111827] font-bold">₹{hourlyRate.toLocaleString()}/hour</strong>
+                          </div>
+                          <div className="flex items-center justify-between text-[#64748B]">
+                            <span>Duration Requested:</span>
+                            <strong className="text-[#111827] font-bold">{bookingDrawerDuration} hour(s)</strong>
+                          </div>
+                          <div className="flex items-center justify-between text-[#64748B]">
+                            <span>Estimated Room Value:</span>
+                            <strong className="text-[#111827] font-bold">₹{estimatedPrice.toLocaleString()}</strong>
+                          </div>
+                          <div className="flex items-center justify-between text-[#64748B]">
+                            <span>Startup Incubation Quota:</span>
+                            <span className="text-emerald-600 font-bold">Covered by Startup Plan</span>
+                          </div>
+                          <div className="pt-2 border-t border-[#ECEEF4] flex items-center justify-between">
+                            <div>
+                              <div className="text-[11px] text-[#8A90A2]">Credit Balance Impact:</div>
+                              <div className="font-bold text-[#111827] text-xs">
+                                -{bookingDrawerDuration} cr ({startupCreditsRemaining - bookingDrawerDuration} cr left)
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-[10px] uppercase font-bold text-[#8A90A2]">Net Payable</div>
+                              <div className="text-base font-black text-emerald-600">₹0 (100% Free)</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Step 1 Footer Action */}
+                        <div className="flex items-center justify-end gap-2.5 pt-2">
+                          <button
+                            type="button"
+                            onClick={() => setBookingDrawerRoom(null)}
+                            className="px-4 py-2.5 border border-[#ECEEF4] text-[#374151] rounded-xl text-xs font-bold hover:bg-gray-50"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            disabled={!currentSlotStatus.available}
+                            onClick={() => setBookingDrawerStep('details')}
+                            className={`px-6 py-2.5 rounded-xl text-xs font-bold text-white shadow-sm transition-all flex items-center gap-1.5 ${
+                              currentSlotStatus.available
+                                ? "bg-[#4F3FE0] hover:bg-[#4335C9] active:scale-95"
+                                : "bg-gray-300 cursor-not-allowed"
+                            }`}
+                          >
+                            <span>Continue to Details</span>
+                            <span>&rarr;</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* STEP 2: MEETING DETAILS & GOOGLE CALENDAR SYNC */}
+                  {bookingDrawerStep === 'details' && (() => {
+                    const startMin = timeStrToMinutes(bookingDrawerStartTime);
+                    const endMin = startMin + Math.round(bookingDrawerDuration * 60);
+                    const endTimeStr = minutesToTimeStr(endMin);
+
+                    return (
+                      <form onSubmit={handleDrawerConfirmBooking} className="space-y-4">
+                        {/* Quick Summary Pill */}
+                        <div className="p-3 bg-[#F4F2FF] border border-[#E0D8FF] rounded-xl flex items-center justify-between text-xs">
+                          <div>
+                            <div className="font-bold text-[#4F3FE0]">{bookingDrawerRoom.name}</div>
+                            <div className="text-[11px] text-[#64748B]">
+                              {bookingDrawerDate} • {bookingDrawerStartTime} – {endTimeStr} ({bookingDrawerDuration} hrs)
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setBookingDrawerStep('slots')}
+                            className="text-[11px] font-bold text-[#4F3FE0] hover:underline"
+                          >
+                            Change Slot
+                          </button>
+                        </div>
+
+                        {/* Meeting Title Input */}
+                        <div>
+                          <label className="block text-xs font-black uppercase tracking-wider text-[#111827] mb-1">
+                            Meeting Title <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={bookingDrawerTitle}
+                            onChange={(e) => setBookingDrawerTitle(e.target.value)}
+                            placeholder="e.g. Client Strategy & Demo Session"
+                            className="w-full bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#111827] focus:outline-none focus:border-[#4F3FE0] focus:bg-white"
+                          />
+                          <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                            <span className="text-[10px] text-[#8A90A2]">Suggestions:</span>
+                            {["Strategy Sync", "Sprint Demo", "Client Pitch", "Investor Update"].map(s => (
+                              <button
+                                key={s}
+                                type="button"
+                                onClick={() => setBookingDrawerTitle(`${s} (${bookingDrawerRoom.name})`)}
+                                className="text-[10px] bg-gray-100 hover:bg-gray-200 text-[#374151] px-2 py-0.5 rounded-full"
+                              >
+                                {s}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Purpose Selector */}
+                        <div>
+                          <label className="block text-xs font-black uppercase tracking-wider text-[#111827] mb-1">
+                            Meeting Purpose / Category
+                          </label>
+                          <select
+                            value={bookingDrawerPurpose}
+                            onChange={(e) => setBookingDrawerPurpose(e.target.value)}
+                            className="w-full bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#111827] focus:outline-none focus:border-[#4F3FE0] cursor-pointer"
+                          >
+                            <option value="Team Sync & Collaboration">Team Sync &amp; Collaboration</option>
+                            <option value="Client Pitch & Presentation">Client Pitch &amp; Presentation</option>
+                            <option value="Board & Executive Meeting">Board &amp; Executive Meeting</option>
+                            <option value="Sprint Planning & Demo">Sprint Planning &amp; Demo</option>
+                            <option value="Investor Review">Investor Review</option>
+                            <option value="Interview & Recruiting">Interview &amp; Recruiting</option>
+                          </select>
+                        </div>
+
+                        {/* Attendees Counter */}
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="text-xs font-black uppercase tracking-wider text-[#111827]">
+                              Number of Attendees
+                            </label>
+                            <span className="text-[11px] text-[#8A90A2]">
+                              Max Room Capacity: {bookingDrawerRoom.capacity} seats
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <button
+                              type="button"
+                              onClick={() => setBookingDrawerAttendees(prev => Math.max(1, prev - 1))}
+                              className="w-9 h-9 rounded-xl border border-[#ECEEF4] bg-[#F8FAFC] hover:bg-white text-lg font-bold flex items-center justify-center text-[#111827]"
+                            >
+                              -
+                            </button>
+                            <div className="flex-1 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl py-2 text-center text-sm font-black text-[#111827]">
+                              {bookingDrawerAttendees} people
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setBookingDrawerAttendees(prev => Math.min(bookingDrawerRoom.capacity, prev + 1))}
+                              className="w-9 h-9 rounded-xl border border-[#ECEEF4] bg-[#F8FAFC] hover:bg-white text-lg font-bold flex items-center justify-center text-[#111827]"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Optional Notes */}
+                        <div>
+                          <label className="block text-xs font-black uppercase tracking-wider text-[#111827] mb-1">
+                            Notes / AV &amp; Room Requirements (Optional)
+                          </label>
+                          <textarea
+                            rows={2}
+                            value={bookingDrawerNotes}
+                            onChange={(e) => setBookingDrawerNotes(e.target.value)}
+                            placeholder="e.g. Need 4K HDMI adapter, lapel microphones, and extra whiteboard markers."
+                            className="w-full bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl p-3 text-xs text-[#111827] focus:outline-none focus:border-[#4F3FE0] focus:bg-white"
+                          />
+                        </div>
+
+                        {/* Google Calendar Sync Option */}
+                        <div className="p-3.5 bg-gradient-to-r from-blue-50/70 to-indigo-50/70 border border-blue-200/80 rounded-2xl flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-white text-blue-600 flex items-center justify-center shadow-xs font-black text-sm">
+                              📅
+                            </div>
+                            <div>
+                              <div className="text-xs font-black text-[#111827]">Sync with Google Calendar</div>
+                              <div className="text-[11px] text-[#64748B]">Auto-generates event with campus location link</div>
+                            </div>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={bookingDrawerSyncGCal}
+                              onChange={(e) => setBookingDrawerSyncGCal(e.target.checked)}
+                              className="sr-only peer"
+                            />
+                            <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#4F3FE0]"></div>
+                          </label>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#ECEEF4]">
+                          <button
+                            type="button"
+                            onClick={() => setBookingDrawerStep('slots')}
+                            className="px-4 py-2.5 border border-[#ECEEF4] text-[#374151] rounded-xl text-xs font-bold hover:bg-gray-50"
+                          >
+                            &larr; Back
+                          </button>
+                          <button
+                            type="submit"
+                            className="px-6 py-2.5 bg-[#4F3FE0] hover:bg-[#4335C9] text-white rounded-xl text-xs font-black shadow-sm active:scale-95 transition-all flex items-center gap-2"
+                          >
+                            <span>⚡ Confirm Reservation</span>
+                          </button>
+                        </div>
+                      </form>
+                    );
+                  })()}
+
+                  {/* STEP 3: SUCCESS & 1-CLICK GOOGLE CALENDAR SYNC */}
+                  {bookingDrawerStep === 'success' && lastConfirmedReservation && (() => {
+                    const gcalUrl = getGoogleCalendarUrl({
+                      title: lastConfirmedReservation.title,
+                      room: bookingDrawerRoom,
+                      date: lastConfirmedReservation.fullDate || lastConfirmedReservation.date,
+                      startTime: lastConfirmedReservation.startTime,
+                      durationHours: parseFloat(lastConfirmedReservation.duration) || 1.0,
+                      notes: lastConfirmedReservation.notes
+                    });
+
+                    return (
+                      <div className="py-4 text-center space-y-4 animate-scaleUp">
+                        <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 border-2 border-emerald-200 flex items-center justify-center mx-auto text-2xl shadow-sm">
+                          ✓
+                        </div>
+                        <div>
+                          <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                            Reservation Confirmed
+                          </span>
+                          <h3 className="text-xl font-black text-[#111827] mt-1.5">
+                            {lastConfirmedReservation.title}
+                          </h3>
+                          <p className="text-xs text-[#8A90A2]">
+                            Reference Code: <strong className="font-mono text-[#111827]">#{lastConfirmedReservation.resId}</strong>
+                          </p>
+                        </div>
+
+                        {/* Reservation Summary Card */}
+                        <div className="bg-[#F8FAFC] border border-[#ECEEF4] rounded-2xl p-4 text-left text-xs space-y-2 max-w-md mx-auto">
+                          <div className="flex justify-between">
+                            <span className="text-[#8A90A2]">Room Facility:</span>
+                            <strong className="text-[#111827]">{lastConfirmedReservation.room}</strong>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-[#8A90A2]">Date &amp; Time:</span>
+                            <strong className="text-[#111827]">{lastConfirmedReservation.date} • {lastConfirmedReservation.time}</strong>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-[#8A90A2]">Duration &amp; Attendees:</span>
+                            <strong className="text-[#111827]">{lastConfirmedReservation.duration} • {lastConfirmedReservation.attendees} attendees</strong>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-[#8A90A2]">Credit Deducted:</span>
+                            <span className="text-emerald-600 font-bold">-{lastConfirmedReservation.credits} cr (Incubation Quota)</span>
+                          </div>
+                        </div>
+
+                        {/* Google Calendar One-Click Sync Section */}
+                        <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl text-left max-w-md mx-auto space-y-2.5">
+                          <div className="flex items-center gap-2">
+                            <span className="text-base">📅</span>
+                            <strong className="text-xs font-black text-[#111827]">Add to Your Calendar</strong>
+                          </div>
+                          <p className="text-[11px] text-[#64748B] leading-relaxed">
+                            Sync this meeting to your schedule so your attendees receive notifications and campus location links.
+                          </p>
+                          <div className="flex items-center gap-2 pt-1">
+                            <a
+                              href={gcalUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-1 bg-white hover:bg-blue-50 text-[#2B71FF] border border-blue-300 font-bold py-2 px-3 rounded-xl text-xs text-center shadow-xs flex items-center justify-center gap-1.5 transition-all"
+                            >
+                              <span>Google Calendar (1-Click)</span>
+                              <Icon name="externalLink" className="w-3.5 h-3.5" />
+                            </a>
+                            <button
+                              type="button"
+                              onClick={() => downloadIcs({
+                                title: lastConfirmedReservation.title,
+                                room: bookingDrawerRoom,
+                                date: lastConfirmedReservation.fullDate || lastConfirmedReservation.date,
+                                startTime: lastConfirmedReservation.startTime,
+                                durationHours: parseFloat(lastConfirmedReservation.duration) || 1.0,
+                                notes: lastConfirmedReservation.notes,
+                                resId: lastConfirmedReservation.resId
+                              })}
+                              className="bg-white hover:bg-gray-50 text-[#374151] border border-gray-300 font-bold py-2 px-3 rounded-xl text-xs shadow-xs transition-all"
+                              title="Download iCal (.ics) file for Outlook or Apple Calendar"
+                            >
+                              📥 .ICS
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Navigation Actions */}
+                        <div className="flex items-center justify-center gap-3 pt-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setBookingDrawerRoom(null);
+                              navigateTo("My Bookings");
+                            }}
+                            className="px-5 py-2.5 bg-[#4F3FE0] hover:bg-[#4335C9] text-white rounded-xl text-xs font-bold shadow-sm"
+                          >
+                            View in My Bookings &rarr;
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setBookingDrawerRoom(null)}
+                            className="px-5 py-2.5 border border-[#ECEEF4] text-[#374151] rounded-xl text-xs font-bold hover:bg-gray-50"
+                          >
+                            Done
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
               </div>
             </div>
           )}

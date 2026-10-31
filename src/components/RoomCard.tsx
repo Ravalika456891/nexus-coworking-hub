@@ -24,7 +24,11 @@ export default function RoomCard({
   return (
     <div className="bg-white border border-[#ECEEF4] rounded-2xl overflow-hidden shadow-soft hover:shadow-card hover:-translate-y-1 transition-all duration-200 flex flex-col group select-none">
       {/* 16:9 Image Container */}
-      <div className="relative aspect-[16/9] w-full overflow-hidden bg-gray-100">
+      <div
+        onClick={() => onBookClick(room)}
+        className="relative aspect-[16/9] w-full overflow-hidden bg-gray-100 cursor-pointer"
+        title="Click to view details & book this room"
+      >
         <img
           src={room.image}
           onError={(e) => {
@@ -64,7 +68,12 @@ export default function RoomCard({
       {/* Card Content Body */}
       <div className="p-4 flex-1 flex flex-col justify-between">
         <div>
-          <h4 className="font-bold text-[15px] text-[#111827] leading-tight">{room.name}</h4>
+          <h4
+            onClick={() => onBookClick(room)}
+            className="font-bold text-[15px] text-[#111827] leading-tight cursor-pointer hover:text-[#4F3FE0] transition-colors"
+          >
+            {room.name}
+          </h4>
 
           <div className="flex items-center gap-1.5 text-xs text-[#64748B] font-medium mt-1">
             <Users className="w-3.5 h-3.5 text-[#8A90A2]" />
