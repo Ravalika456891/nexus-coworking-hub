@@ -20,3 +20,4 @@ for (let i = 0; i < lines.length; i++) {
   // naive check
 }
 console.log('Done naive check');
+

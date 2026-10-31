@@ -821,3 +821,4 @@ console.log("Modal markup updated successfully.");
 
 fs.writeFileSync('meeting-rooms.html', html, 'utf8');
 console.log("meeting-rooms.html written successfully.");
+

@@ -7,7 +7,7 @@ export const INITIAL_ROOMS: Room[] = [
     capacity: 10,
     type: 'Boardroom',
     status: 'Available',
-    image: '/assets/rooms/mr-01.webp',
+    image: 'assets/rooms/mr-01-main.jpg',
     fallbackImage: 'https://images.unsplash.com/photo-1517502884422-41eaead166d4?auto=format&fit=crop&w=800&q=80',
     amenities: ['Projector', 'Video Conferencing', 'Whiteboard', 'TV/Display', 'Audio/Mic'],
     rate: '₹2,500/hr'
@@ -18,7 +18,7 @@ export const INITIAL_ROOMS: Room[] = [
     capacity: 8,
     type: 'Pitch Room',
     status: 'Available',
-    image: '/assets/rooms/mr-02.webp',
+    image: 'assets/rooms/mr-02-main.jpg',
     fallbackImage: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=800&q=80',
     amenities: ['TV/Display', 'Video Conferencing', 'Audio/Mic', 'Natural Light'],
     rate: '₹3,000/hr'
@@ -29,7 +29,7 @@ export const INITIAL_ROOMS: Room[] = [
     capacity: 4,
     type: 'Meeting Room',
     status: 'In Use',
-    image: '/assets/rooms/mr-03.webp',
+    image: 'assets/rooms/mr-03-main.jpg',
     fallbackImage: 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=800&q=80',
     amenities: ['TV/Display', 'Whiteboard', 'Audio/Mic'],
     rate: '₹1,200/hr'
@@ -40,7 +40,7 @@ export const INITIAL_ROOMS: Room[] = [
     capacity: 6,
     type: 'Meeting Room',
     status: 'Available',
-    image: '/assets/rooms/mr-04.webp',
+    image: 'assets/rooms/mr-04-main.jpg',
     fallbackImage: 'https://images.unsplash.com/photo-1527192491265-7e15c55b1ed2?auto=format&fit=crop&w=800&q=80',
     amenities: ['Whiteboard', 'Video Conferencing', 'Natural Light'],
     rate: '₹1,800/hr'
@@ -51,7 +51,7 @@ export const INITIAL_ROOMS: Room[] = [
     capacity: 20,
     type: 'Training Room',
     status: 'Available',
-    image: '/assets/rooms/mr-05.webp',
+    image: 'assets/rooms/mr-05-main.jpg',
     fallbackImage: 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=800&q=80',
     amenities: ['Projector', 'Audio/Mic', 'Whiteboard', 'Catering', 'Accessible'],
     rate: '₹4,000/hr'
@@ -62,7 +62,7 @@ export const INITIAL_ROOMS: Room[] = [
     capacity: 8,
     type: 'Event Space',
     status: 'Available',
-    image: '/assets/rooms/mr-06.webp',
+    image: 'assets/rooms/mr-06-main.jpg',
     fallbackImage: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=800&q=80',
     amenities: ['TV/Display', 'Whiteboard', 'Natural Light', 'Audio/Mic'],
     rate: '₹2,200/hr'
