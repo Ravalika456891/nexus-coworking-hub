@@ -216,7 +216,8 @@
       const [activeNav, setActiveNav] = useState(() => {
         const hash = window.location.hash.replace("#", "").toLowerCase().replace(/[-_]/g, "");
         if (hash === "database" || hash === "databasetables" || hash === "tables") return "Database Tables";
-        const validTabs = ["Dashboard", "Meeting Rooms", "Bookings", "Calendar", "My Reservations", "Billing & Credits", "Analytics", "Workspace & Desks", "Visitors", "Members", "Database Tables", "Settings"];
+        if (hash === "bookings" || hash === "myreservations" || hash === "mybookings" || hash === "reservations") return "My Bookings";
+        const validTabs = ["Dashboard", "Meeting Rooms", "My Bookings", "Bookings", "Calendar", "My Reservations", "Billing & Credits", "Analytics", "Workspace & Desks", "Visitors", "Members", "Database Tables", "Settings"];
         return validTabs.find(t => t.toLowerCase().replace(/\s+/g, "") === hash) || "Dashboard";
       });
 
@@ -381,7 +382,11 @@
             setActiveNav("Database Tables");
             return;
           }
-          const validTabs = ["Dashboard", "Meeting Rooms", "Bookings", "Calendar", "My Reservations", "Billing & Credits", "Analytics", "Workspace & Desks", "Visitors", "Members", "Database Tables", "Settings"];
+          if (hash === "bookings" || hash === "myreservations" || hash === "mybookings" || hash === "reservations") {
+            setActiveNav("My Bookings");
+            return;
+          }
+          const validTabs = ["Dashboard", "Meeting Rooms", "My Bookings", "Bookings", "Calendar", "My Reservations", "Billing & Credits", "Analytics", "Workspace & Desks", "Visitors", "Members", "Database Tables", "Settings"];
           const found = validTabs.find(t => t.toLowerCase().replace(/\s+/g, "") === hash);
           if (found) setActiveNav(found);
         };
@@ -493,13 +498,14 @@
                 {[
                   { name: "Dashboard", icon: "layoutDashboard" },
                   { name: "Meeting Rooms", icon: "calendar" },
-                  { name: "Bookings", icon: "bookmark" },
+                  { name: "My Bookings", icon: "bookmark" },
                   { name: "Calendar", icon: "calendarDays" },
-                  { name: "My Reservations", icon: "clock" },
                   { name: "Billing & Credits", icon: "creditCard" },
                   { name: "Analytics", icon: "barChart" }
                 ].map(item => {
-                  const isActive = activeNav === item.name;
+                  const isActive =
+                    activeNav === item.name ||
+                    (item.name === "My Bookings" && (activeNav === "Bookings" || activeNav === "My Reservations"));
                   return (
                     <button
                       key={item.name}
@@ -652,46 +658,62 @@
               {/* ── VIEW 1: DASHBOARD (Command Center) ── */}
               {activeNav === "Dashboard" && (
                 <div className="space-y-6 animate-fadeIn">
-                  {/* Top Section: Personalized Welcome & High-Level Pulse */}
-                  <div className="bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft flex items-center justify-between flex-wrap gap-4">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#4F3FE0] to-[#7B6FF0] text-white flex items-center justify-center font-black text-xl shadow-md shadow-indigo-100 flex-shrink-0">
-                        ⚡
-                      </div>
-                      <div>
-                        <h2 className="text-2xl font-black text-[#111827] tracking-tight flex items-center gap-2">
-                          <span>{getGreeting()}, Alex!</span>
-                        </h2>
-                        <p className="text-xs text-[#64748B] mt-1 flex items-center gap-2">
-                          <span>Welcome to the <strong>XYZ Technologies</strong> venture command center.</span>
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                          <span className="text-emerald-700 font-bold text-[11px]">24/7 Facility Access Active</span>
-                        </p>
-                      </div>
+                  {/* Section 4: Premium Welcome Banner with Modern Meeting Room Photography */}
+                  <div className="relative rounded-2xl border border-[#ECEEF4] overflow-hidden bg-white shadow-soft flex items-center min-h-[200px] max-h-[230px]">
+                    {/* Smooth White-to-Lavender Gradient Overlay on Left */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-white via-white/95 via-[#F6F4FF]/75 to-transparent z-10 w-[65%]" />
+
+                    {/* Attractive Meeting Room Photography on Right */}
+                    <div className="absolute right-0 top-0 bottom-0 w-[55%] h-full z-0 overflow-hidden">
+                      <img
+                        src="assets/rooms/banner-hero.jpg"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = "https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=1200&q=80";
+                        }}
+                        alt="NEXUS HUB Modern Meeting Space"
+                        className="w-full h-full object-cover object-center"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-r from-[#F6F4FF]/60 via-transparent to-black/10" />
                     </div>
 
-                    <div className="flex items-center gap-3">
-                      <span className="bg-[#F8FAFC] border border-[#ECEEF4] rounded-full px-3.5 py-1.5 text-xs font-bold text-[#334155] flex items-center gap-1.5">
-                        <Icon name="calendar" className="w-3.5 h-3.5 text-[#4F3FE0]" />
-                        <span>Sat, 31 Oct 2026</span>
-                      </span>
-                      <span className="bg-[#EEEBFF] border border-[#E3DEFF] rounded-full px-3.5 py-1.5 text-xs font-bold text-[#4F3FE0]">
-                        🚀 Batch 2026-A
-                      </span>
-                      <button
-                        onClick={() => navigateTo("Meeting Rooms")}
-                        className="bg-[#4F3FE0] hover:bg-[#4335C9] text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-sm flex items-center gap-1.5"
-                      >
-                        <span>+ Reserve Space</span>
-                      </button>
+                    {/* Banner Left Content */}
+                    <div className="relative z-20 p-8 max-w-[580px]">
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EEEBFF] text-[#4F3FE0] text-xs font-bold mb-2">
+                        <span className="w-2 h-2 rounded-full bg-[#4F3FE0] animate-pulse"></span>
+                        <span>Sat, 31 Oct 2026 • XYZ Technologies</span>
+                      </div>
+
+                      <h2 className="text-2xl lg:text-3xl font-black text-[#111827] tracking-tight">
+                        {getGreeting()}, Alex!
+                      </h2>
+                      <p className="text-xs sm:text-sm text-[#64748B] mt-1 leading-relaxed">
+                        Here's what's happening at <strong>XYZ Technologies</strong> today.
+                      </p>
+
+                      <div className="mt-4 flex items-center gap-3">
+                        <button
+                          onClick={() => navigateTo("Meeting Rooms")}
+                          className="bg-[#4F3FE0] hover:bg-[#4335C9] text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow-sm flex items-center gap-2 hover:shadow-md"
+                        >
+                          <span className="text-sm font-bold">+</span>
+                          <span>Reserve Space</span>
+                        </button>
+                        <button
+                          onClick={() => navigateTo("Calendar")}
+                          className="bg-white/90 backdrop-blur-xs border border-[#ECEEF4] text-[#374151] hover:text-[#4F3FE0] hover:bg-white text-xs font-semibold px-4 py-2.5 rounded-xl transition-all"
+                        >
+                          View Calendar
+                        </button>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Top Section: Four Elevated KPI Cards */}
+                  {/* Section 5: Four Premium KPI Cards */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {/* Card 1: Upcoming Meetings */}
                     <div
-                      onClick={() => navigateTo("Bookings")}
+                      onClick={() => navigateTo("My Bookings")}
                       className="bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft hover:shadow-card hover:-translate-y-1 transition-all cursor-pointer group"
                     >
                       <div className="flex items-center justify-between text-[#8A90A2]">
@@ -708,7 +730,7 @@
                       </div>
                       <div className="flex items-center justify-between text-xs text-[#8A90A2] mt-3 pt-3 border-t border-[#ECEEF4]">
                         <span className="text-[#374151] font-medium">Next: Today at 03:00 PM</span>
-                        <span className="text-[#4F3FE0] font-bold group-hover:translate-x-0.5 transition-transform">View &rarr;</span>
+                        <span className="text-[#4F3FE0] font-bold group-hover:translate-x-0.5 transition-transform">My Bookings &rarr;</span>
                       </div>
                     </div>
 
@@ -730,8 +752,8 @@
                         </span>
                       </div>
                       <div className="flex items-center justify-between text-xs text-[#8A90A2] mt-3 pt-3 border-t border-[#ECEEF4]">
-                        <span className="text-[#374151] font-medium">Alpha, Focus &amp; Studio</span>
-                        <span className="text-[#4F3FE0] font-bold group-hover:translate-x-0.5 transition-transform">Book &rarr;</span>
+                        <span className="text-[#374151] font-medium">Open right now</span>
+                        <span className="text-[#4F3FE0] font-bold group-hover:translate-x-0.5 transition-transform">Book Room &rarr;</span>
                       </div>
                     </div>
 
@@ -749,115 +771,136 @@
                       <div className="text-3xl font-black text-[#2563eb] mt-3">
                         80 <span className="text-sm font-semibold text-[#8A90A2]">/ 120 cr</span>
                       </div>
-                      {/* Sleek progress bar */}
                       <div className="w-full bg-[#ECEEF4] rounded-full h-1.5 mt-2 overflow-hidden">
                         <div className="bg-[#4F3FE0] h-full rounded-full" style={{ width: "66%" }}></div>
                       </div>
                       <div className="flex items-center justify-between text-xs text-[#8A90A2] mt-3 pt-2 border-t border-[#ECEEF4]">
                         <span className="text-[#374151] font-medium">Renews in 24 hours</span>
-                        <span className="text-[#4F3FE0] font-bold group-hover:translate-x-0.5 transition-transform">Top Up &rarr;</span>
+                        <span className="text-[#4F3FE0] font-bold group-hover:translate-x-0.5 transition-transform">Billing &rarr;</span>
                       </div>
                     </div>
 
-                    {/* Card 4: Workspace Desks */}
+                    {/* Card 4: Pending Requests */}
                     <div
-                      onClick={() => navigateTo("Workspace & Desks")}
+                      onClick={() => navigateTo("My Bookings")}
                       className="bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft hover:shadow-card hover:-translate-y-1 transition-all cursor-pointer group"
                     >
                       <div className="flex items-center justify-between text-[#8A90A2]">
-                        <span className="text-xs font-bold uppercase tracking-wider text-[#64748B]">Workspace &amp; Team</span>
+                        <span className="text-xs font-bold uppercase tracking-wider text-[#64748B]">Pending Requests</span>
                         <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-105 transition-transform">
-                          <Icon name="users" className="w-5 h-5 text-amber-600" />
+                          <Icon name="clock" className="w-5 h-5 text-amber-600" />
                         </div>
                       </div>
-                      <div className="text-3xl font-black text-[#111827] mt-3">
-                        6 <span className="text-sm font-semibold text-[#8A90A2]">desks</span>
-                        <span className="text-xs font-bold text-[#4F3FE0] ml-2 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200">
-                          Suite 401
-                        </span>
-                      </div>
+                      <div className="text-3xl font-black text-[#111827] mt-3">0</div>
                       <div className="flex items-center justify-between text-xs text-[#8A90A2] mt-3 pt-3 border-t border-[#ECEEF4]">
-                        <span className="text-[#374151] font-medium">8 Team Members Active</span>
-                        <span className="text-[#4F3FE0] font-bold group-hover:translate-x-0.5 transition-transform">Desks &rarr;</span>
+                        <span className="text-[#374151] font-medium">All approved ✓</span>
+                        <span className="text-[#4F3FE0] font-bold group-hover:translate-x-0.5 transition-transform">Review &rarr;</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Main Section: Quick Actions, Facilities Overview & Today's Schedule */}
+                  {/* Main Dashboard Layout (2 Columns: Left = Actions + Facilities, Right = Timeline + Recent Activity) */}
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                    {/* Left Column (7 cols): Quick Actions & Facilities Overview */}
+                    
+                    {/* LEFT COLUMN (7 cols on large desktop): Quick Actions + Venture Facilities */}
                     <div className="lg:col-span-7 space-y-6">
-                      {/* Quick Actions Container */}
+                      
+                      {/* Section 6: Quick Actions Panel */}
                       <div className="bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft">
                         <div className="flex items-center justify-between mb-4">
                           <div>
                             <h4 className="text-sm font-black text-[#111827] flex items-center gap-2">
-                              <span>⚡</span> Quick Launchpad
+                              <span>⚡</span> Quick Actions
                             </h4>
-                            <p className="text-xs text-[#8A90A2] mt-0.5">Instant one-click shortcuts to key operational workflows</p>
+                            <p className="text-xs text-[#8A90A2] mt-0.5">Direct shortcuts to frequent meeting and facility tasks</p>
                           </div>
                           <span className="text-[11px] font-bold text-[#64748B] bg-[#F8FAFC] px-2.5 py-1 rounded-full border border-[#ECEEF4]">
                             Shortcuts
                           </span>
                         </div>
 
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        {/* 4 Cards in 2-Column Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                          {/* 1. Book a Room */}
                           <button
                             type="button"
                             onClick={() => navigateTo("Meeting Rooms")}
-                            className="flex flex-col items-center justify-center p-3.5 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#F3EFFE] hover:border-[#6E42E5]/40 transition-all text-center group"
+                            className="flex items-center justify-between p-4 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#F3EFFE] hover:border-[#6E42E5]/30 hover:shadow-xs transition-all text-left group"
                           >
-                            <span className="w-10 h-10 rounded-xl bg-purple-50 text-[#6E42E5] flex items-center justify-center group-hover:scale-110 transition-transform mb-2">
-                              <Icon name="calendar" className="w-5 h-5 text-[#6E42E5]" />
-                            </span>
-                            <span className="text-xs font-bold text-[#111827]">Book Room</span>
-                            <span className="text-[10px] text-[#8A90A2] mt-0.5">6 Facilities</span>
+                            <div className="flex items-center gap-3">
+                              <span className="w-10 h-10 rounded-xl bg-purple-50 text-[#6E42E5] flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0">
+                                <Icon name="calendar" className="w-5 h-5 text-[#6E42E5]" />
+                              </span>
+                              <div>
+                                <div className="text-xs font-bold text-[#111827]">Book a Room</div>
+                                <div className="text-[11px] text-[#8A90A2]">Meeting Rooms &amp; Pods</div>
+                              </div>
+                            </div>
+                            <span className="text-[#8A90A2] group-hover:text-[#4F3FE0] group-hover:translate-x-1 transition-all text-sm font-bold">&rarr;</span>
                           </button>
 
+                          {/* 2. My Bookings */}
                           <button
                             type="button"
-                            onClick={() => navigateTo("Bookings")}
-                            className="flex flex-col items-center justify-center p-3.5 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#EEF5FF] hover:border-[#2B71FF]/40 transition-all text-center group"
+                            onClick={() => navigateTo("My Bookings")}
+                            className="flex items-center justify-between p-4 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#EEF5FF] hover:border-[#2B71FF]/30 hover:shadow-xs transition-all text-left group"
                           >
-                            <span className="w-10 h-10 rounded-xl bg-blue-50 text-[#2B71FF] flex items-center justify-center group-hover:scale-110 transition-transform mb-2">
-                              <Icon name="bookmark" className="w-5 h-5 text-[#2B71FF]" />
-                            </span>
-                            <span className="text-xs font-bold text-[#111827]">My Bookings</span>
-                            <span className="text-[10px] text-[#8A90A2] mt-0.5">3 Active</span>
+                            <div className="flex items-center gap-3">
+                              <span className="w-10 h-10 rounded-xl bg-blue-50 text-[#2B71FF] flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0">
+                                <Icon name="bookmark" className="w-5 h-5 text-[#2B71FF]" />
+                              </span>
+                              <div>
+                                <div className="text-xs font-bold text-[#111827]">My Bookings</div>
+                                <div className="text-[11px] text-[#8A90A2]">Active reservations</div>
+                              </div>
+                            </div>
+                            <span className="text-[#8A90A2] group-hover:text-[#4F3FE0] group-hover:translate-x-1 transition-all text-sm font-bold">&rarr;</span>
                           </button>
 
+                          {/* 3. Open Calendar */}
                           <button
                             type="button"
                             onClick={() => navigateTo("Calendar")}
-                            className="flex flex-col items-center justify-center p-3.5 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#EEFAF3] hover:border-[#12A150]/40 transition-all text-center group"
+                            className="flex items-center justify-between p-4 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#EEFAF3] hover:border-[#12A150]/30 hover:shadow-xs transition-all text-left group"
                           >
-                            <span className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform mb-2">
-                              <Icon name="calendarDays" className="w-5 h-5 text-emerald-600" />
-                            </span>
-                            <span className="text-xs font-bold text-[#111827]">Calendar</span>
-                            <span className="text-[10px] text-[#8A90A2] mt-0.5">Full Grid</span>
+                            <div className="flex items-center gap-3">
+                              <span className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0">
+                                <Icon name="calendarDays" className="w-5 h-5 text-emerald-600" />
+                              </span>
+                              <div>
+                                <div className="text-xs font-bold text-[#111827]">Open Calendar</div>
+                                <div className="text-[11px] text-[#8A90A2]">Full Timeline View</div>
+                              </div>
+                            </div>
+                            <span className="text-[#8A90A2] group-hover:text-[#4F3FE0] group-hover:translate-x-1 transition-all text-sm font-bold">&rarr;</span>
                           </button>
 
+                          {/* 4. Invite Guests */}
                           <button
                             type="button"
                             onClick={() => navigateTo("Visitors")}
-                            className="flex flex-col items-center justify-center p-3.5 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#FFF5EC] hover:border-[#F36B20]/40 transition-all text-center group"
+                            className="flex items-center justify-between p-4 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#FFF5EC] hover:border-[#F36B20]/30 hover:shadow-xs transition-all text-left group"
                           >
-                            <span className="w-10 h-10 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center group-hover:scale-110 transition-transform mb-2">
-                              <Icon name="userPlus" className="w-5 h-5 text-orange-600" />
-                            </span>
-                            <span className="text-xs font-bold text-[#111827]">Guest Pass</span>
-                            <span className="text-[10px] text-[#8A90A2] mt-0.5">Invite Visitors</span>
+                            <div className="flex items-center gap-3">
+                              <span className="w-10 h-10 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0">
+                                <Icon name="userPlus" className="w-5 h-5 text-orange-600" />
+                              </span>
+                              <div>
+                                <div className="text-xs font-bold text-[#111827]">Invite Guests</div>
+                                <div className="text-[11px] text-[#8A90A2]">Visitor Gate Pass</div>
+                              </div>
+                            </div>
+                            <span className="text-[#8A90A2] group-hover:text-[#4F3FE0] group-hover:translate-x-1 transition-all text-sm font-bold">&rarr;</span>
                           </button>
                         </div>
                       </div>
 
-                      {/* Venture Facilities & Office Suite Overview */}
+                      {/* Section 8: Venture Facilities Overview */}
                       <div className="bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft">
                         <div className="flex items-center justify-between mb-4">
                           <div>
                             <h4 className="text-sm font-black text-[#111827] flex items-center gap-2">
-                              <span>🏢</span> Venture Facilities &amp; Lease Overview
+                              <span>🏢</span> Venture Facilities Overview
                             </h4>
                             <p className="text-xs text-[#8A90A2] mt-0.5">Assigned physical space and operational amenities</p>
                           </div>
@@ -869,208 +912,162 @@
                           </span>
                         </div>
 
+                        {/* Four Mini-Cards */}
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                          <div className="p-3.5 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl">
-                            <span className="text-[10px] font-bold text-[#8A90A2] uppercase tracking-wider">Office Suite</span>
-                            <div className="text-sm font-black text-[#111827] mt-1">Suite 401</div>
-                            <span className="text-[11px] text-[#64748B] block mt-0.5">Floor 4 (Executive Wing)</span>
+                          {/* Mini-Card 1: Active Team */}
+                          <div
+                            onClick={() => navigateTo("Members")}
+                            className="p-3.5 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl cursor-pointer hover:border-[#4F3FE0]/30 transition-colors"
+                          >
+                            <div className="w-7 h-7 rounded-lg bg-indigo-50 text-[#4F3FE0] flex items-center justify-center mb-1.5">
+                              <Icon name="users" className="w-4 h-4" />
+                            </div>
+                            <span className="text-[10px] font-bold text-[#8A90A2] uppercase tracking-wider">Active Team</span>
+                            <div className="text-sm font-black text-[#111827] mt-0.5">8 Members</div>
+                            <span className="text-[10.5px] text-[#64748B] block mt-0.5">Team Registered</span>
                           </div>
 
-                          <div className="p-3.5 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl">
-                            <span className="text-[10px] font-bold text-[#8A90A2] uppercase tracking-wider">Desks &amp; Seats</span>
-                            <div className="text-sm font-black text-[#111827] mt-1">6 Dedicated</div>
-                            <span className="text-[11px] text-[#64748B] block mt-0.5">8 Keycards issued</span>
+                          {/* Mini-Card 2: Assigned Space */}
+                          <div
+                            onClick={() => navigateTo("Workspace & Desks")}
+                            className="p-3.5 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl cursor-pointer hover:border-[#4F3FE0]/30 transition-colors"
+                          >
+                            <div className="w-7 h-7 rounded-lg bg-purple-50 text-[#6E42E5] flex items-center justify-center mb-1.5">
+                              <Icon name="building" className="w-4 h-4" />
+                            </div>
+                            <span className="text-[10px] font-bold text-[#8A90A2] uppercase tracking-wider">Assigned Space</span>
+                            <div className="text-sm font-black text-[#111827] mt-0.5">Suite 401</div>
+                            <span className="text-[10.5px] text-[#64748B] block mt-0.5">6 Desks (Fl 4)</span>
                           </div>
 
-                          <div className="p-3.5 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl">
-                            <span className="text-[10px] font-bold text-[#8A90A2] uppercase tracking-wider">Lease Billing</span>
-                            <div className="text-sm font-black text-emerald-600 mt-1">$2,400 / mo</div>
-                            <span className="text-[11px] text-emerald-700 font-semibold block mt-0.5">Settled &amp; Current ✓</span>
+                          {/* Mini-Card 3: Invoices Due */}
+                          <div
+                            onClick={() => navigateTo("Billing & Credits")}
+                            className="p-3.5 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl cursor-pointer hover:border-[#4F3FE0]/30 transition-colors"
+                          >
+                            <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center mb-1.5">
+                              <Icon name="creditCard" className="w-4 h-4" />
+                            </div>
+                            <span className="text-[10px] font-bold text-[#8A90A2] uppercase tracking-wider">Invoices Due</span>
+                            <div className="text-sm font-black text-emerald-600 mt-0.5">All Settled ✓</div>
+                            <span className="text-[10.5px] text-emerald-700 font-semibold block mt-0.5">$0.00 Overdue</span>
                           </div>
 
-                          <div className="p-3.5 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl">
-                            <span className="text-[10px] font-bold text-[#8A90A2] uppercase tracking-wider">Wi-Fi &amp; Access</span>
-                            <div className="text-sm font-black text-[#4F3FE0] mt-1">1 Gbps Fiber</div>
-                            <span className="text-[11px] text-[#64748B] block mt-0.5">24/7 RFID Smart Lock</span>
+                          {/* Mini-Card 4: Next Milestone */}
+                          <div
+                            onClick={() => navigateTo("Analytics")}
+                            className="p-3.5 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl cursor-pointer hover:border-[#4F3FE0]/30 transition-colors"
+                          >
+                            <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center mb-1.5">
+                              <Icon name="crown" className="w-4 h-4 text-amber-600" />
+                            </div>
+                            <span className="text-[10px] font-bold text-[#8A90A2] uppercase tracking-wider">Next Milestone</span>
+                            <div className="text-sm font-black text-[#4F3FE0] mt-0.5">Beta Prototype</div>
+                            <span className="text-[10.5px] text-[#64748B] block mt-0.5">Target: Nov 15</span>
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    {/* Right Column (5 cols): Today's Schedule Live Interactive Widget */}
-                    <div className="lg:col-span-5 bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft flex flex-col justify-between">
-                      <div>
-                        <div className="flex items-center justify-between mb-4">
+                    {/* RIGHT COLUMN (5 cols on large desktop): Today's Schedule + Recent Activity */}
+                    <div className="lg:col-span-5 space-y-6">
+                      
+                      {/* Section 7: Today's Schedule (Timeline Style) */}
+                      <div className="bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft">
+                        <div className="flex items-center justify-between pb-3 border-b border-[#ECEEF4] mb-4">
                           <div>
                             <h4 className="text-sm font-black text-[#111827] flex items-center gap-2">
-                              <span>🗓️</span> Schedule &amp; Bookings
+                              <span>🗓️</span> Today's Schedule
                             </h4>
-                            <p className="text-xs text-[#8A90A2] mt-0.5">Chronological reservation timeline</p>
+                            <p className="text-xs text-[#8A90A2] mt-0.5">Timeline of room allocations</p>
                           </div>
-                          {/* Segmented Tab Switcher */}
-                          <div className="flex items-center p-1 bg-[#F6F7FB] border border-[#ECEEF4] rounded-xl">
-                            <button
-                              onClick={() => setDashScheduleTab("today")}
-                              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                                dashScheduleTab === "today"
-                                  ? "bg-white text-[#4F3FE0] shadow-xs"
-                                  : "text-[#8A90A2] hover:text-[#111827]"
-                              }`}
+                          <button
+                            onClick={() => navigateTo("Calendar")}
+                            className="text-xs font-bold text-[#4F3FE0] hover:underline"
+                          >
+                            View Calendar &rarr;
+                          </button>
+                        </div>
+
+                        {/* Timeline List with Vertical Connector */}
+                        <div className="relative pl-5 space-y-4 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#ECEEF4]">
+                          {todaysSchedule.slice(0, 4).map((item, idx) => (
+                            <div
+                              key={idx}
+                              onClick={() => navigateTo("Meeting Rooms")}
+                              className="relative flex items-start gap-3 p-3 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:border-[#4F3FE0]/40 transition-all cursor-pointer group"
                             >
-                              Today ({todaysSchedule.length})
-                            </button>
-                            <button
-                              onClick={() => setDashScheduleTab("upcoming")}
-                              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                                dashScheduleTab === "upcoming"
-                                  ? "bg-white text-[#4F3FE0] shadow-xs"
-                                  : "text-[#8A90A2] hover:text-[#111827]"
-                              }`}
-                            >
-                              Upcoming ({upcomingBookings.length})
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* List Items */}
-                        <div className="space-y-3">
-                          {dashScheduleTab === "today" ? (
-                            todaysSchedule.map((item, idx) => (
-                              <div
-                                key={idx}
-                                className="flex items-center gap-3 p-3.5 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl hover:border-[#4F3FE0]/30 transition-colors"
-                              >
-                                <div className="w-[84px] text-[11px] font-bold text-[#64748B] flex-shrink-0">
-                                  {item.time.split("–")[0].trim()}
+                              {/* Colored Timeline Dot */}
+                              <span className={`absolute -left-[21px] top-3.5 w-2.5 h-2.5 rounded-full border-2 border-white ${item.dotColor || 'bg-[#4F3FE0]'} shadow-xs`} />
+                              
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-[11px] font-bold text-[#4F3FE0]">
+                                    {item.time}
+                                  </span>
+                                  <span className="bg-emerald-50 text-emerald-600 border border-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                    Confirmed
+                                  </span>
                                 </div>
-                                <div className="w-1.5 h-8 rounded-full bg-[#4F3FE0] flex-shrink-0" />
-                                <div className="flex-1 min-w-0">
-                                  <div className="text-xs font-bold text-[#111827] truncate">{item.title}</div>
-                                  <div className="text-[11px] text-[#8A90A2] truncate">
-                                    {item.room} • 👥 {item.attendees} pax
-                                  </div>
+                                <div className="text-xs font-bold text-[#111827] mt-1 group-hover:text-[#4F3FE0] transition-colors truncate">
+                                  {item.title}
                                 </div>
-                                <span className="bg-emerald-50 text-emerald-600 border border-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0">
-                                  Confirmed
-                                </span>
-                              </div>
-                            ))
-                          ) : (
-                            upcomingBookings.map((bkg) => (
-                              <div
-                                key={bkg.id}
-                                className="flex items-center gap-3 p-3.5 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl hover:border-[#4F3FE0]/30 transition-colors"
-                              >
-                                <div className="w-[84px] text-[11px] font-bold text-[#64748B] flex-shrink-0">
-                                  {bkg.date} • {bkg.time}
+                                <div className="text-[11px] text-[#8A90A2] mt-0.5">
+                                  {item.room} • 👥 {item.attendees} pax
                                 </div>
-                                <div className="w-1.5 h-8 rounded-full bg-emerald-500 flex-shrink-0" />
-                                <div className="flex-1 min-w-0">
-                                  <div className="text-xs font-bold text-[#111827] truncate">{bkg.title}</div>
-                                  <div className="text-[11px] text-[#8A90A2] truncate">
-                                    {bkg.room} • 👥 {bkg.attendees} pax
-                                  </div>
-                                </div>
-                                <span className="bg-blue-50 text-blue-600 border border-blue-200 text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0">
-                                  {bkg.status}
-                                </span>
-                              </div>
-                            ))
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="mt-5 pt-4 border-t border-[#ECEEF4] flex items-center justify-between text-xs text-[#64748B]">
-                        <span>Need a private room right now?</span>
-                        <button
-                          onClick={() => navigateTo("Meeting Rooms")}
-                          className="bg-[#4F3FE0] text-white px-3.5 py-1.5 rounded-xl text-xs font-bold hover:bg-[#4335C9] transition-all"
-                        >
-                          + Reserve Space
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Secondary Section: Recent Activity & Incubation Milestones */}
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                    {/* Left: Recent Activity Feed (7 cols) */}
-                    <div className="lg:col-span-7 bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft space-y-4">
-                      <div className="flex items-center justify-between pb-3 border-b border-[#ECEEF4]">
-                        <div>
-                          <h4 className="text-sm font-black text-[#111827] flex items-center gap-2">
-                            <span>🕒</span> Recent Venture Activity
-                          </h4>
-                          <p className="text-xs text-[#8A90A2] mt-0.5">Audit log of room bookings, credit updates, and team actions</p>
-                        </div>
-                        <span className="text-[11px] font-bold text-[#4F3FE0] cursor-pointer" onClick={() => navigateTo("Analytics")}>
-                          Full Audit Log &rarr;
-                        </span>
-                      </div>
-
-                      <div className="divide-y divide-[#ECEEF4]">
-                        {DASHBOARD_ACTIVITIES.map((act) => (
-                          <div key={act.id} className="py-3 flex items-start justify-between gap-3 first:pt-1 last:pb-1">
-                            <div className="flex items-start gap-3">
-                              <div className="w-8 h-8 rounded-xl bg-[#F6F7FB] border border-[#ECEEF4] flex items-center justify-center text-[#4F3FE0] flex-shrink-0 mt-0.5">
-                                <Icon name={act.icon} className="w-4 h-4 text-[#4F3FE0]" />
-                              </div>
-                              <div>
-                                <div className="text-xs font-bold text-[#111827]">{act.title}</div>
-                                <div className="text-[11px] text-[#64748B] mt-0.5">{act.desc}</div>
-                                <div className="text-[10px] text-[#8A90A2] mt-1 font-medium">By: {act.user}</div>
                               </div>
                             </div>
-                            <span className="text-[11px] font-semibold text-[#8A90A2] whitespace-nowrap bg-[#F8FAFC] px-2 py-0.5 rounded-md border border-[#ECEEF4]">
-                              {act.time}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                          ))}
+                        </div>
 
-                    {/* Right: Milestones & Facility Advisory (5 cols) */}
-                    <div className="lg:col-span-5 space-y-6">
-                      {/* Milestone Card */}
-                      <div className="bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft space-y-4">
+                        <div className="mt-4 pt-3 border-t border-[#ECEEF4] flex items-center justify-between text-xs text-[#64748B]">
+                          <span>Need to book a new slot?</span>
+                          <button
+                            onClick={() => navigateTo("Meeting Rooms")}
+                            className="bg-[#4F3FE0] text-white px-3.5 py-1.5 rounded-xl text-xs font-bold hover:bg-[#4335C9] transition-all"
+                          >
+                            + Reserve Space
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Section 9: Recent Activity Panel */}
+                      <div className="bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft space-y-3">
                         <div className="flex items-center justify-between pb-3 border-b border-[#ECEEF4]">
                           <div>
                             <h4 className="text-sm font-black text-[#111827] flex items-center gap-2">
-                              <span>🎯</span> Incubation Milestone
+                              <span>🕒</span> Recent Activity
                             </h4>
-                            <p className="text-xs text-[#8A90A2] mt-0.5">Next milestone evaluation target</p>
+                            <p className="text-xs text-[#8A90A2] mt-0.5">Authorized venture event stream</p>
                           </div>
-                          <span className="bg-indigo-50 text-[#4F3FE0] font-bold text-[10.5px] px-2.5 py-0.5 rounded-full border border-indigo-200">
-                            15 Days Left
+                          <span
+                            onClick={() => navigateTo("Analytics")}
+                            className="text-xs font-bold text-[#4F3FE0] hover:underline cursor-pointer"
+                          >
+                            View All &rarr;
                           </span>
                         </div>
 
-                        <div>
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="font-extrabold text-[#111827]">Q4 Venture Demo Day Readiness</span>
-                            <span className="font-black text-[#4F3FE0]">75%</span>
-                          </div>
-                          <div className="w-full bg-[#F1F3F9] rounded-full h-2 mt-2 overflow-hidden">
-                            <div className="bg-gradient-to-r from-[#4F3FE0] to-[#7B6FF0] h-full rounded-full" style={{ width: "75%" }}></div>
-                          </div>
-                          <p className="text-[11px] text-[#64748B] mt-2">
-                            Pitch deck draft submitted. Pitch Arena practice session scheduled for Nov 10, 2026.
-                          </p>
+                        <div className="divide-y divide-[#ECEEF4]">
+                          {DASHBOARD_ACTIVITIES.map((act) => (
+                            <div key={act.id} className="py-2.5 flex items-start justify-between gap-3 first:pt-1 last:pb-1">
+                              <div className="flex items-start gap-3">
+                                <div className="w-8 h-8 rounded-xl bg-[#F6F7FB] border border-[#ECEEF4] flex items-center justify-center text-[#4F3FE0] flex-shrink-0 mt-0.5">
+                                  <Icon name={act.icon} className="w-4 h-4 text-[#4F3FE0]" />
+                                </div>
+                                <div>
+                                  <div className="text-xs font-bold text-[#111827]">{act.title}</div>
+                                  <div className="text-[11px] text-[#64748B] mt-0.5">{act.desc}</div>
+                                </div>
+                              </div>
+                              <span className="text-[10px] font-semibold text-[#8A90A2] whitespace-nowrap bg-[#F8FAFC] px-2 py-0.5 rounded-md border border-[#ECEEF4]">
+                                {act.time}
+                              </span>
+                            </div>
+                          ))}
                         </div>
                       </div>
 
-                      {/* Facility Operational Notice */}
-                      <div className="bg-amber-50/60 border border-amber-200/80 rounded-2xl p-5 shadow-soft">
-                        <div className="flex items-start gap-3">
-                          <span className="text-lg">📢</span>
-                          <div>
-                            <h5 className="text-xs font-black text-amber-900">Facility Maintenance Advisory</h5>
-                            <p className="text-[11px] text-amber-800 mt-1 leading-relaxed">
-                              Routine fiber network optimization will take place on Sunday between 02:00 AM – 03:30 AM IST. Backup 5G links will remain active with no downtime anticipated.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
                     </div>
                   </div>
 
@@ -1371,7 +1368,7 @@
 
                         <button
                           type="button"
-                          onClick={() => navigateTo("Bookings")}
+                          onClick={() => navigateTo("My Bookings")}
                           className="bg-[#EEF5FF] hover:bg-[#DFEDFF] text-[#2B71FF] p-2.5 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all group"
                         >
                           <Icon name="fileText" className="w-5 h-5 text-[#2B71FF] group-hover:scale-110 transition-transform" />
@@ -1508,7 +1505,7 @@
 
 
               {/* ── VIEW 3: BOOKINGS / MY RESERVATIONS ── */}
-              {(activeNav === "Bookings" || activeNav === "My Reservations") && (
+              {(activeNav === "My Bookings" || activeNav === "Bookings" || activeNav === "My Reservations") && (
                 <div className="space-y-6 animate-fadeIn">
                   <div className="flex items-center justify-between flex-wrap gap-4 bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft">
                     <div>

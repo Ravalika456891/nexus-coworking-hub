@@ -27,9 +27,8 @@ export default function Sidebar({ activeNav, setActiveNav, onUpgradeClick }: Sid
   const primaryNav = [
     { name: 'Dashboard', icon: LayoutDashboard },
     { name: 'Meeting Rooms', icon: Calendar },
-    { name: 'Bookings', icon: Bookmark },
+    { name: 'My Bookings', icon: Bookmark },
     { name: 'Calendar', icon: CalendarDays },
-    { name: 'My Reservations', icon: Clock },
     { name: 'Billing & Credits', icon: CreditCard },
     { name: 'Analytics', icon: BarChart3 }
   ];
@@ -58,7 +57,9 @@ export default function Sidebar({ activeNav, setActiveNav, onUpgradeClick }: Sid
         {/* Primary Nav */}
         <nav className="space-y-1">
           {primaryNav.map((item) => {
-            const isActive = activeNav === item.name;
+            const isActive =
+              activeNav === item.name ||
+              (item.name === 'My Bookings' && (activeNav === 'Bookings' || activeNav === 'My Reservations'));
             const Icon = item.icon;
             return (
               <button

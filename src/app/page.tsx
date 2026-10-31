@@ -82,9 +82,14 @@ export default function MeetingRoomsPage() {
         setActiveNav('Database Tables');
         return;
       }
+      if (hash === 'bookings' || hash === 'myreservations' || hash === 'mybookings' || hash === 'reservations') {
+        setActiveNav('My Bookings');
+        return;
+      }
       const validTabs = [
         'Dashboard',
         'Meeting Rooms',
+        'My Bookings',
         'Bookings',
         'Calendar',
         'My Reservations',
@@ -202,38 +207,55 @@ export default function MeetingRoomsPage() {
           {/* ── 1. DASHBOARD VIEW ── */}
           {activeNav === 'Dashboard' && (
             <div className="space-y-6 animate-fadeIn">
-              {/* Top Section: Personalized Welcome & High-Level Pulse */}
-              <div className="bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft flex items-center justify-between flex-wrap gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#4F3FE0] to-[#7B6FF0] text-white flex items-center justify-center font-black text-xl shadow-md shadow-indigo-100 flex-shrink-0">
-                    ⚡
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-black text-[#111827] tracking-tight flex items-center gap-2">
-                      <span>{getGreeting()}, Alex!</span>
-                    </h2>
-                    <p className="text-xs text-[#64748B] mt-1 flex items-center gap-2">
-                      <span>Welcome to the <strong>XYZ Technologies</strong> venture command center.</span>
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                      <span className="text-emerald-700 font-bold text-[11px]">24/7 Facility Access Active</span>
-                    </p>
-                  </div>
+              {/* Section 4: Premium Welcome Banner with Modern Meeting Room Photography */}
+              <div className="relative rounded-2xl border border-[#ECEEF4] overflow-hidden bg-white shadow-soft flex items-center min-h-[190px] sm:min-h-[200px] sm:max-h-[230px]">
+                {/* Smooth White-to-Lavender Gradient Overlay on Left */}
+                <div className="absolute inset-0 bg-gradient-to-r from-white via-white/95 via-[#F6F4FF]/75 to-transparent z-10 w-full sm:w-[65%]" />
+
+                {/* Attractive Meeting Room Photography on Right */}
+                <div className="absolute right-0 top-0 bottom-0 w-full sm:w-[55%] h-full z-0 overflow-hidden">
+                  <img
+                    src="/assets/rooms/banner-hero.jpg"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.onerror = null;
+                      target.src = 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=1200&q=80';
+                    }}
+                    alt="NEXUS HUB Modern Meeting Space"
+                    className="w-full h-full object-cover object-center"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#F6F4FF]/60 via-transparent to-black/10" />
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <span className="bg-[#F8FAFC] border border-[#ECEEF4] rounded-full px-3.5 py-1.5 text-xs font-bold text-[#334155] flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-[#4F3FE0]" />
-                    <span>Sat, 31 Oct 2026</span>
-                  </span>
-                  <span className="bg-[#EEEBFF] border border-[#E3DEFF] rounded-full px-3.5 py-1.5 text-xs font-bold text-[#4F3FE0]">
-                    🚀 Batch 2026-A
-                  </span>
-                  <button
-                    onClick={() => navigateTo('Meeting Rooms')}
-                    className="bg-[#4F3FE0] hover:bg-[#4335C9] text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-sm flex items-center gap-1.5"
-                  >
-                    <span>+ Reserve Space</span>
-                  </button>
+                {/* Banner Left Content */}
+                <div className="relative z-20 p-6 sm:p-8 max-w-[580px]">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EEEBFF] text-[#4F3FE0] text-xs font-bold mb-2">
+                    <span className="w-2 h-2 rounded-full bg-[#4F3FE0] animate-pulse"></span>
+                    <span>Sat, 31 Oct 2026 • XYZ Technologies</span>
+                  </div>
+
+                  <h2 className="text-2xl lg:text-3xl font-black text-[#111827] tracking-tight">
+                    {getGreeting()}, Alex!
+                  </h2>
+                  <p className="text-xs sm:text-sm text-[#64748B] mt-1 leading-relaxed">
+                    Here&apos;s what&apos;s happening at <strong>XYZ Technologies</strong> today.
+                  </p>
+
+                  <div className="mt-4 flex items-center gap-3">
+                    <button
+                      onClick={() => navigateTo('Meeting Rooms')}
+                      className="bg-[#4F3FE0] hover:bg-[#4335C9] text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow-sm flex items-center gap-2 hover:shadow-md"
+                    >
+                      <span className="text-sm font-bold">+</span>
+                      <span>Reserve Space</span>
+                    </button>
+                    <button
+                      onClick={() => navigateTo('Calendar')}
+                      className="bg-white/90 backdrop-blur-xs border border-[#ECEEF4] text-[#374151] hover:text-[#4F3FE0] hover:bg-white text-xs font-semibold px-4 py-2.5 rounded-xl transition-all"
+                    >
+                      View Calendar
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -241,7 +263,7 @@ export default function MeetingRoomsPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Card 1: Upcoming Meetings */}
                 <div
-                  onClick={() => navigateTo('Bookings')}
+                  onClick={() => navigateTo('My Bookings')}
                   className="bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft hover:shadow-card hover:-translate-y-1 transition-all cursor-pointer group"
                 >
                   <div className="flex items-center justify-between text-[#8A90A2]">
@@ -365,7 +387,7 @@ export default function MeetingRoomsPage() {
 
                       <button
                         type="button"
-                        onClick={() => navigateTo('Bookings')}
+                        onClick={() => navigateTo('My Bookings')}
                         className="flex flex-col items-center justify-center p-3.5 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#EEF5FF] hover:border-[#2B71FF]/40 transition-all text-center group"
                       >
                         <span className="w-10 h-10 rounded-xl bg-blue-50 text-[#2B71FF] flex items-center justify-center group-hover:scale-110 transition-transform mb-2">
@@ -711,7 +733,7 @@ export default function MeetingRoomsPage() {
           )}
 
           {/* ── 3. BOOKINGS VIEW ── */}
-          {(activeNav === 'Bookings' || activeNav === 'My Reservations') && (
+          {(activeNav === 'My Bookings' || activeNav === 'Bookings' || activeNav === 'My Reservations') && (
             <div className="space-y-6 animate-fadeIn">
               <div className="flex items-center justify-between flex-wrap gap-4 bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft">
                 <div>
