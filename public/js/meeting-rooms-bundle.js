@@ -14,7 +14,6 @@ function _nonIterableRest() { throw new TypeError("Invalid attempt to destructur
 function _unsupportedIterableToArray(t, e) { if (t) { if ("string" == typeof t) return _arrayLikeToArray(t, e); var o = {}.toString.call(t).slice(8, -1); return "Object" === o && t.constructor && (o = t.constructor.name), "Map" === o || "Set" === o ? Array.from(t) : "Arguments" === o || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(o) ? _arrayLikeToArray(t, e) : void 0; } }
 function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
 function _iterableToArrayLimit(r, t) { var e = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (Array.isArray(r) && (null == e || e === ("undefined" != typeof Symbol && [][Symbol.iterator]) || e === []["@@iterator"])) return r; if (null != e) { var l, n, i, a, u = [], o = !0, f = !1; try { if (i = (e = e.call(r)).next, 0 === t) { if (Object(e) !== e) return; o = !1; } else for (; !(o = (l = i.call(e)).done) && (u.push(l.value), u.length !== t); o = !0); } catch (r) { f = !0, n = r; } finally { try { if (!o && null != e["return"] && (a = e["return"](), Object(a) !== a)) return; } finally { if (f) throw n; } } return u; } }
-import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
 var _React = React,
   useState = _React.useState,
   useMemo = _React.useMemo,
@@ -28,251 +27,250 @@ var Icon = function Icon(_ref) {
     _ref$strokeWidth = _ref.strokeWidth,
     strokeWidth = _ref$strokeWidth === void 0 ? 1.5 : _ref$strokeWidth;
   var icons = {
-    bolt: /*#__PURE__*/_jsx("path", {
+    bolt: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M13 10V3L4 14h7v7l9-11h-7z"
     }),
-    search: /*#__PURE__*/_jsx("path", {
+    search: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
     }),
-    mapPin: /*#__PURE__*/_jsx("path", {
+    mapPin: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M15 10.5a3 3 0 11-6 0 3 3 0 016 0z M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"
     }),
-    bell: /*#__PURE__*/_jsx("path", {
+    bell: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"
     }),
-    chevronDown: /*#__PURE__*/_jsx("path", {
+    chevronDown: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M19.5 8.25l-7.5 7.5-7.5-7.5"
     }),
-    crown: /*#__PURE__*/_jsx("path", {
+    crown: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M3.75 6.75l3.75 10.5h9l3.75-10.5-6 4.5-4.5-4.5-6 4.5z"
     }),
-    layoutDashboard: /*#__PURE__*/_jsx("path", {
+    layoutDashboard: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"
     }),
-    calendar: /*#__PURE__*/_jsx("path", {
+    calendar: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"
     }),
-    calendarDays: /*#__PURE__*/_jsx("path", {
+    calendarDays: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5m-9-3h.008v.008H12v-.008zM12 15h.008v.008H12V15zm0 2.25h.008v.008H12v-.008zM9.75 15h.008v.008H9.75V15zm0 2.25h.008v.008H9.75v-.008zM7.5 15h.008v.008H7.5V15zm0 2.25h.008v.008H7.5v-.008zm6.75-4.5h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V15zm0 2.25h.008v.008h-.008v-.008zm2.25-4.5h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5V15z"
     }),
-    bookmark: /*#__PURE__*/_jsx("path", {
+    bookmark: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z"
     }),
-    clock: /*#__PURE__*/_jsx("path", {
+    clock: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"
     }),
-    creditCard: /*#__PURE__*/_jsx("path", {
+    creditCard: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-6.75-9.75h19.5a2.25 2.25 0 012.25 2.25v10.5a2.25 2.25 0 01-2.25 2.25H2.25a2.25 2.25 0 01-2.25-2.25V8.25a2.25 2.25 0 012.25-2.25z"
     }),
-    barChart: /*#__PURE__*/_jsx("path", {
+    barChart: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"
     }),
-    building: /*#__PURE__*/_jsx("path", {
+    building: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"
     }),
-    users: /*#__PURE__*/_jsx("path", {
+    users: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"
     }),
-    database: /*#__PURE__*/_jsx("path", {
+    database: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 5.625c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125"
     }),
-    settings: /*#__PURE__*/_jsx("path", {
+    settings: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z M15 12a3 3 0 11-6 0 3 3 0 016 0z"
     }),
-    sliders: /*#__PURE__*/_jsx("path", {
+    sliders: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75"
     }),
-    heart: /*#__PURE__*/_jsx("path", {
+    heart: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
     }),
-    heartFilled: /*#__PURE__*/_jsx("path", {
+    heartFilled: /*#__PURE__*/React.createElement("path", {
       fill: "currentColor",
       stroke: "none",
       d: "M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
     }),
-    monitor: /*#__PURE__*/_jsx("path", {
+    monitor: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0H3"
     }),
-    video: /*#__PURE__*/_jsx("path", {
+    video: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z"
     }),
-    mic: /*#__PURE__*/_jsx("path", {
+    mic: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"
     }),
-    wifi: /*#__PURE__*/_jsx("path", {
+    wifi: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M8.288 15.038a5.25 5.25 0 017.424 0M5.106 11.856c3.807-3.808 9.98-3.808 13.788 0M1.924 8.674c5.565-5.565 14.587-5.565 20.152 0M12.53 18.22l-.53.53-.53-.53a.75.75 0 011.06 0z"
     }),
-    projector: /*#__PURE__*/_jsx("path", {
+    projector: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0020.25 4.5H3.75A2.25 2.25 0 001.5 6.75v10.5A2.25 2.25 0 003.75 19.5zm11.25-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"
     }),
-    edit3: /*#__PURE__*/_jsx("path", {
+    edit3: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125"
     }),
-    sun: /*#__PURE__*/_jsx("path", {
+    sun: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z"
     }),
-    coffee: /*#__PURE__*/_jsx("path", {
+    coffee: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0l-3-3m3 3l3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"
     }),
-    accessibility: /*#__PURE__*/_jsx("path", {
+    accessibility: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"
     }),
-    repeat: /*#__PURE__*/_jsx("path", {
+    repeat: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
     }),
-    userPlus: /*#__PURE__*/_jsx("path", {
+    userPlus: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-1.5a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z"
     }),
-    fileText: /*#__PURE__*/_jsx("path", {
+    fileText: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
     }),
-    moreHorizontal: /*#__PURE__*/_jsx("path", {
+    moreHorizontal: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z"
     }),
-    check: /*#__PURE__*/_jsx("path", {
+    check: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M4.5 12.75l6 6 9-13.5"
     }),
-    x: /*#__PURE__*/_jsx("path", {
+    x: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M6 18L18 6M6 6l12 12"
     }),
-    externalLink: /*#__PURE__*/_jsx("path", {
+    externalLink: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
     }),
-    chevronRight: /*#__PURE__*/_jsx("path", {
+    chevronRight: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M8.25 4.5l7.5 7.5-7.5 7.5"
     }),
-    arrowRight: /*#__PURE__*/_jsx("path", {
+    arrowRight: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"
     }),
-    trendingUp: /*#__PURE__*/_jsx("path", {
+    trendingUp: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M2.25 18L9 11.25l4.5 4.5 7.5-7.5M21 8.25V12m0-3.75h-3.75"
     }),
-    coins: /*#__PURE__*/_jsx("path", {
+    coins: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
     }),
-    gift: /*#__PURE__*/_jsx("path", {
+    gift: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M21 11.25v8.25a1.5 1.5 0 01-1.5 1.5H4.5a1.5 1.5 0 01-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 109.375 7.5H12m0-2.625V21m0-16.125A2.625 2.625 0 1114.625 7.5H12m-9 3.75h18"
     }),
-    sparkles: /*#__PURE__*/_jsx("path", {
+    sparkles: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z"
     }),
-    checkCircle: /*#__PURE__*/_jsx("path", {
+    checkCircle: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
     }),
-    xCircle: /*#__PURE__*/_jsx("path", {
+    xCircle: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
     }),
-    alertCircle: /*#__PURE__*/_jsx("path", {
+    alertCircle: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"
     }),
-    calendarCheck: /*#__PURE__*/_jsx("path", {
+    calendarCheck: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5m-8.25-3.75l2.25 2.25 4.5-4.5"
     }),
-    filter: /*#__PURE__*/_jsx("path", {
+    filter: /*#__PURE__*/React.createElement("path", {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       d: "M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z"
     })
   };
-  return /*#__PURE__*/_jsx("svg", {
+  return /*#__PURE__*/React.createElement("svg", {
     xmlns: "http://www.w3.org/2000/svg",
     fill: "none",
     viewBox: "0 0 24 24",
     strokeWidth: strokeWidth,
     stroke: "currentColor",
-    className: className,
-    children: icons[name] || icons.bolt
-  });
+    className: className
+  }, icons[name] || icons.bolt);
 };
 
 // --- Mock Data ---
@@ -1401,4103 +1399,2998 @@ function MeetingRoomsApp() {
     setBookingModalRoom(null);
     setMeetingTitleInput("");
   };
-  return /*#__PURE__*/_jsxs("div", {
-    className: "flex min-h-screen bg-[#F6F7FB] text-[#374151] antialiased",
-    children: [/*#__PURE__*/_jsxs("aside", {
-      className: "w-[235px] flex-shrink-0 bg-white border-r border-[#ECEEF4] flex flex-col justify-between py-5 px-3 min-h-screen sticky top-0 h-screen select-none z-40",
-      children: [/*#__PURE__*/_jsxs("div", {
-        children: [/*#__PURE__*/_jsxs("div", {
-          className: "flex items-center gap-3 px-3 mb-6 cursor-pointer",
-          onClick: function onClick() {
-            return navigateTo("Dashboard");
-          },
-          children: [/*#__PURE__*/_jsx("div", {
-            className: "w-10 h-10 rounded-xl bg-[#111827] flex items-center justify-center text-yellow-400 shadow-sm flex-shrink-0",
-            children: /*#__PURE__*/_jsx(Icon, {
-              name: "bolt",
-              className: "w-5 h-5 text-yellow-400",
-              strokeWidth: 2.2
-            })
-          }), /*#__PURE__*/_jsxs("div", {
-            className: "leading-tight",
-            children: [/*#__PURE__*/_jsx("h1", {
-              className: "font-extrabold text-[15px] tracking-tight text-[#111827]",
-              children: "NEXUS HUB"
-            }), /*#__PURE__*/_jsx("span", {
-              className: "text-[11px] font-medium text-[#8A90A2]",
-              children: "Coworking Space"
-            })]
-          })]
-        }), /*#__PURE__*/_jsxs("nav", {
-          className: "space-y-1",
-          children: [[{
-            name: "Dashboard",
-            icon: "layoutDashboard"
-          }, {
-            name: "Meeting Rooms",
-            icon: "calendar"
-          }, {
-            name: "My Bookings",
-            icon: "bookmark"
-          }, {
-            name: "Calendar",
-            icon: "calendarDays"
-          }, {
-            name: "Billing & Credits",
-            icon: "creditCard"
-          }, {
-            name: "Analytics",
-            icon: "barChart"
-          }].map(function (item) {
-            var isActive = activeNav === item.name || item.name === "My Bookings" && (activeNav === "Bookings" || activeNav === "My Reservations");
-            return /*#__PURE__*/_jsxs("button", {
-              onClick: function onClick() {
-                return navigateTo(item.name);
-              },
-              className: "w-full flex items-center gap-3 px-3.5 py-2.5 rounded-[10px] text-[13px] font-medium transition-all ".concat(isActive ? "bg-[#EEEBFF] text-[#4F3FE0] font-semibold" : "text-[#374151] hover:bg-[#F8F9FD] hover:text-[#111827]"),
-              children: [/*#__PURE__*/_jsx(Icon, {
-                name: item.icon,
-                className: "w-4 h-4 ".concat(isActive ? "text-[#4F3FE0]" : "text-[#8A90A2]"),
-                strokeWidth: isActive ? 2 : 1.7
-              }), /*#__PURE__*/_jsx("span", {
-                children: item.name
-              })]
-            }, item.name);
-          }), /*#__PURE__*/_jsx("div", {
-            className: "h-[1px] bg-[#ECEEF4] my-3 mx-2"
-          }), [{
-            name: "Workspace & Desks",
-            icon: "building"
-          }, {
-            name: "Visitors",
-            icon: "users"
-          }, {
-            name: "Members",
-            icon: "users"
-          }, {
-            name: "Database Tables",
-            icon: "database"
-          }].map(function (item) {
-            var isActive = activeNav === item.name;
-            return /*#__PURE__*/_jsxs("button", {
-              onClick: function onClick() {
-                return navigateTo(item.name);
-              },
-              className: "w-full flex items-center gap-3 px-3.5 py-2.5 rounded-[10px] text-[13px] font-medium transition-all ".concat(isActive ? "bg-[#EEEBFF] text-[#4F3FE0] font-semibold" : "text-[#374151] hover:bg-[#F8F9FD] hover:text-[#111827]"),
-              children: [/*#__PURE__*/_jsx(Icon, {
-                name: item.icon,
-                className: "w-4 h-4 ".concat(isActive ? "text-[#4F3FE0]" : "text-[#8A90A2]"),
-                strokeWidth: isActive ? 2 : 1.7
-              }), /*#__PURE__*/_jsx("span", {
-                children: item.name
-              })]
-            }, item.name);
-          })]
-        })]
-      }), /*#__PURE__*/_jsxs("div", {
-        className: "bg-[#F4F2FF] border border-[#E3DEFF] rounded-2xl p-4 mt-4",
-        children: [/*#__PURE__*/_jsxs("div", {
-          className: "flex items-center gap-1.5 text-[#4F3FE0] text-xs font-bold uppercase tracking-wider",
-          children: [/*#__PURE__*/_jsx(Icon, {
-            name: "crown",
-            className: "w-3.5 h-3.5 text-[#4F3FE0]",
-            strokeWidth: 2
-          }), /*#__PURE__*/_jsx("span", {
-            children: "Startup Plan"
-          })]
-        }), /*#__PURE__*/_jsx("div", {
-          className: "text-[19px] font-black text-[#111827] mt-1",
-          children: "120 credits"
-        }), /*#__PURE__*/_jsx("div", {
-          className: "w-full h-1.5 bg-[#E4DEFF] rounded-full mt-2.5 overflow-hidden",
-          children: /*#__PURE__*/_jsx("div", {
-            className: "h-full bg-[#4F3FE0] rounded-full w-[33%] transition-all duration-500"
-          })
-        }), /*#__PURE__*/_jsx("div", {
-          className: "text-[11px] font-medium text-[#8A90A2] mt-1.5",
-          children: "80 credits left"
-        }), /*#__PURE__*/_jsx("button", {
-          type: "button",
-          onClick: function onClick() {
-            return navigateTo("Billing & Credits");
-          },
-          className: "w-full mt-3 bg-[#4F3FE0] hover:bg-[#4335C9] text-white py-2 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-[0.98]",
-          children: "Upgrade Plan"
-        })]
-      })]
-    }), /*#__PURE__*/_jsxs("div", {
-      className: "flex-1 flex flex-col min-w-0",
-      children: [/*#__PURE__*/_jsxs("header", {
-        className: "h-[70px] bg-white border-b border-[#ECEEF4] px-8 flex items-center justify-between sticky top-0 z-30",
-        children: [/*#__PURE__*/_jsxs("div", {
-          className: "relative w-[380px]",
-          children: [/*#__PURE__*/_jsx(Icon, {
-            name: "search",
-            className: "w-4 h-4 text-[#8A90A2] absolute left-3.5 top-1/2 -translate-y-1/2"
-          }), /*#__PURE__*/_jsx("input", {
-            type: "text",
-            value: searchQuery,
-            onChange: function onChange(e) {
-              return setSearchQuery(e.target.value);
-            },
-            placeholder: "Search rooms, amenities, or location...",
-            className: "w-full bg-[#F6F7FB] border border-[#ECEEF4] rounded-full pl-10 pr-4 py-2 text-[13px] text-[#111827] placeholder-[#8A90A2] focus:outline-none focus:border-[#4F3FE0] focus:bg-white transition-all"
-          }), searchQuery && /*#__PURE__*/_jsx("button", {
-            onClick: function onClick() {
-              return setSearchQuery("");
-            },
-            className: "absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600",
-            children: /*#__PURE__*/_jsx(Icon, {
-              name: "x",
-              className: "w-3.5 h-3.5"
-            })
-          })]
-        }), /*#__PURE__*/_jsxs("div", {
-          className: "flex items-center gap-4",
-          children: [/*#__PURE__*/_jsxs("a", {
-            href: "app.html",
-            className: "hidden md:inline-flex items-center gap-1.5 text-xs font-bold text-[#4F3FE0] bg-[#F4F2FF] border border-[#E3DEFF] hover:bg-[#EAE4FE] px-3 py-1.5 rounded-full transition-all",
-            title: "Open Full Incubation OS App Shell",
-            children: [/*#__PURE__*/_jsx("span", {
-              children: "\u26A1 Enterprise OS Shell"
-            }), /*#__PURE__*/_jsx(Icon, {
-              name: "externalLink",
-              className: "w-3 h-3"
-            })]
-          }), /*#__PURE__*/_jsxs("div", {
-            className: "flex items-center gap-2 bg-[#F6F7FB] border border-[#ECEEF4] rounded-full px-3.5 py-1.5 cursor-pointer hover:border-[#4F3FE0]/40 transition-all",
-            children: [/*#__PURE__*/_jsx(Icon, {
-              name: "mapPin",
-              className: "w-3.5 h-3.5 text-[#4F3FE0]"
-            }), /*#__PURE__*/_jsx("span", {
-              className: "text-[12.5px] font-semibold text-[#111827]",
-              children: "XYZ Technologies (STP-XYZ)"
-            }), /*#__PURE__*/_jsx(Icon, {
-              name: "chevronDown",
-              className: "w-3.5 h-3.5 text-[#8A90A2]"
-            })]
-          }), /*#__PURE__*/_jsxs("button", {
-            type: "button",
-            onClick: function onClick() {
-              return showToast("Notifications: 2 pending requests");
-            },
-            className: "w-9 h-9 rounded-full bg-[#F6F7FB] border border-[#ECEEF4] flex items-center justify-center relative hover:bg-gray-100 transition-all",
-            children: [/*#__PURE__*/_jsx(Icon, {
-              name: "bell",
-              className: "w-4 h-4 text-[#374151]"
-            }), /*#__PURE__*/_jsx("span", {
-              className: "w-2 h-2 rounded-full bg-red-500 absolute top-2 right-2 border-2 border-white"
-            })]
-          }), /*#__PURE__*/_jsxs("div", {
-            className: "flex items-center gap-2.5 pl-2 cursor-pointer",
-            onClick: function onClick() {
-              return navigateTo("Settings");
-            },
-            children: [/*#__PURE__*/_jsx("img", {
-              src: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&h=120&q=80",
-              alt: "Alex Morgan",
-              className: "w-9 h-9 rounded-full object-cover ring-2 ring-[#4F3FE0]/20"
-            }), /*#__PURE__*/_jsxs("div", {
-              className: "leading-tight text-left",
-              children: [/*#__PURE__*/_jsx("div", {
-                className: "text-[13px] font-bold text-[#111827]",
-                children: "Alex Morgan"
-              }), /*#__PURE__*/_jsx("div", {
-                className: "text-[11px] font-medium text-[#8A90A2]",
-                children: "Co-Founder"
-              })]
-            }), /*#__PURE__*/_jsx(Icon, {
-              name: "chevronDown",
-              className: "w-3.5 h-3.5 text-[#8A90A2] ml-0.5"
-            })]
-          })]
-        })]
-      }), /*#__PURE__*/_jsxs("div", {
-        className: "flex-1 p-8 max-w-[1600px] w-full mx-auto",
-        children: [activeNav === "Dashboard" && /*#__PURE__*/_jsxs("div", {
-          className: "space-y-6 animate-fadeIn",
-          children: [/*#__PURE__*/_jsxs("div", {
-            className: "relative rounded-2xl border border-[#ECEEF4] overflow-hidden bg-white shadow-soft flex items-center min-h-[200px] max-h-[230px]",
-            children: [/*#__PURE__*/_jsx("div", {
-              className: "absolute inset-0 bg-gradient-to-r from-white via-white/95 via-[#F6F4FF]/75 to-transparent z-10 w-[65%]"
-            }), /*#__PURE__*/_jsxs("div", {
-              className: "absolute right-0 top-0 bottom-0 w-[55%] h-full z-0 overflow-hidden",
-              children: [/*#__PURE__*/_jsx("img", {
-                src: "assets/rooms/banner-hero.jpg",
-                onError: function onError(e) {
-                  e.target.onerror = null;
-                  e.target.src = "https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=1200&q=80";
-                },
-                alt: "NEXUS HUB Modern Meeting Space",
-                className: "w-full h-full object-cover object-center"
-              }), /*#__PURE__*/_jsx("div", {
-                className: "absolute inset-0 bg-gradient-to-r from-[#F6F4FF]/60 via-transparent to-black/10"
-              })]
-            }), /*#__PURE__*/_jsxs("div", {
-              className: "relative z-20 p-8 max-w-[580px]",
-              children: [/*#__PURE__*/_jsxs("div", {
-                className: "inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EEEBFF] text-[#4F3FE0] text-xs font-bold mb-2",
-                children: [/*#__PURE__*/_jsx("span", {
-                  className: "w-2 h-2 rounded-full bg-[#4F3FE0] animate-pulse"
-                }), /*#__PURE__*/_jsx("span", {
-                  children: "Sat, 31 Oct 2026 \u2022 XYZ Technologies"
-                })]
-              }), /*#__PURE__*/_jsxs("h2", {
-                className: "text-2xl lg:text-3xl font-black text-[#111827] tracking-tight",
-                children: [getGreeting(), ", Alex!"]
-              }), /*#__PURE__*/_jsxs("p", {
-                className: "text-xs sm:text-sm text-[#64748B] mt-1 leading-relaxed",
-                children: ["Here's what's happening at ", /*#__PURE__*/_jsx("strong", {
-                  children: "XYZ Technologies"
-                }), " today."]
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "mt-4 flex items-center gap-3",
-                children: [/*#__PURE__*/_jsxs("button", {
-                  onClick: function onClick() {
-                    return navigateTo("Meeting Rooms");
-                  },
-                  className: "bg-[#4F3FE0] hover:bg-[#4335C9] text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow-sm flex items-center gap-2 hover:shadow-md",
-                  children: [/*#__PURE__*/_jsx("span", {
-                    className: "text-sm font-bold",
-                    children: "+"
-                  }), /*#__PURE__*/_jsx("span", {
-                    children: "Reserve Space"
-                  })]
-                }), /*#__PURE__*/_jsx("button", {
-                  onClick: function onClick() {
-                    return navigateTo("Calendar");
-                  },
-                  className: "bg-white/90 backdrop-blur-xs border border-[#ECEEF4] text-[#374151] hover:text-[#4F3FE0] hover:bg-white text-xs font-semibold px-4 py-2.5 rounded-xl transition-all",
-                  children: "View Calendar"
-                })]
-              })]
-            })]
-          }), /*#__PURE__*/_jsxs("div", {
-            className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4",
-            children: [/*#__PURE__*/_jsxs("div", {
-              onClick: function onClick() {
-                return navigateTo("My Bookings");
-              },
-              className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft hover:shadow-card hover:-translate-y-1 transition-all cursor-pointer group",
-              children: [/*#__PURE__*/_jsxs("div", {
-                className: "flex items-center justify-between text-[#8A90A2]",
-                children: [/*#__PURE__*/_jsx("span", {
-                  className: "text-xs font-bold uppercase tracking-wider text-[#64748B]",
-                  children: "Upcoming Meetings"
-                }), /*#__PURE__*/_jsx("div", {
-                  className: "w-9 h-9 rounded-xl bg-purple-50 text-[#6E42E5] flex items-center justify-center group-hover:scale-105 transition-transform",
-                  children: /*#__PURE__*/_jsx(Icon, {
-                    name: "calendar",
-                    className: "w-5 h-5 text-[#6E42E5]"
-                  })
-                })]
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "text-3xl font-black text-[#111827] mt-3",
-                children: [upcomingBookings.length, /*#__PURE__*/_jsx("span", {
-                  className: "text-xs font-bold text-emerald-600 ml-2 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200",
-                  children: "100% Confirmed"
-                })]
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "flex items-center justify-between text-xs text-[#8A90A2] mt-3 pt-3 border-t border-[#ECEEF4]",
-                children: [/*#__PURE__*/_jsx("span", {
-                  className: "text-[#374151] font-medium",
-                  children: "Next: Today at 03:00 PM"
-                }), /*#__PURE__*/_jsx("span", {
-                  className: "text-[#4F3FE0] font-bold group-hover:translate-x-0.5 transition-transform",
-                  children: "My Bookings \u2192"
-                })]
-              })]
-            }), /*#__PURE__*/_jsxs("div", {
-              onClick: function onClick() {
-                return navigateTo("Meeting Rooms");
-              },
-              className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft hover:shadow-card hover:-translate-y-1 transition-all cursor-pointer group",
-              children: [/*#__PURE__*/_jsxs("div", {
-                className: "flex items-center justify-between text-[#8A90A2]",
-                children: [/*#__PURE__*/_jsx("span", {
-                  className: "text-xs font-bold uppercase tracking-wider text-[#64748B]",
-                  children: "Available Rooms"
-                }), /*#__PURE__*/_jsx("div", {
-                  className: "w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-105 transition-transform",
-                  children: /*#__PURE__*/_jsx(Icon, {
-                    name: "building",
-                    className: "w-5 h-5 text-emerald-600"
-                  })
-                })]
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "text-3xl font-black text-[#059669] mt-3",
-                children: ["5 ", /*#__PURE__*/_jsx("span", {
-                  className: "text-base text-[#8A90A2] font-semibold",
-                  children: "/ 6"
-                }), /*#__PURE__*/_jsx("span", {
-                  className: "text-xs font-bold text-[#059669] ml-2 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200",
-                  children: "83% Ready"
-                })]
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "flex items-center justify-between text-xs text-[#8A90A2] mt-3 pt-3 border-t border-[#ECEEF4]",
-                children: [/*#__PURE__*/_jsx("span", {
-                  className: "text-[#374151] font-medium",
-                  children: "Open right now"
-                }), /*#__PURE__*/_jsx("span", {
-                  className: "text-[#4F3FE0] font-bold group-hover:translate-x-0.5 transition-transform",
-                  children: "Book Room \u2192"
-                })]
-              })]
-            }), /*#__PURE__*/_jsxs("div", {
-              onClick: function onClick() {
-                return navigateTo("Billing & Credits");
-              },
-              className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft hover:shadow-card hover:-translate-y-1 transition-all cursor-pointer group",
-              children: [/*#__PURE__*/_jsxs("div", {
-                className: "flex items-center justify-between text-[#8A90A2]",
-                children: [/*#__PURE__*/_jsx("span", {
-                  className: "text-xs font-bold uppercase tracking-wider text-[#64748B]",
-                  children: "Remaining Credits"
-                }), /*#__PURE__*/_jsx("div", {
-                  className: "w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-105 transition-transform",
-                  children: /*#__PURE__*/_jsx(Icon, {
-                    name: "creditCard",
-                    className: "w-5 h-5 text-blue-600"
-                  })
-                })]
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "text-3xl font-black text-[#2563eb] mt-3",
-                children: ["80 ", /*#__PURE__*/_jsx("span", {
-                  className: "text-sm font-semibold text-[#8A90A2]",
-                  children: "/ 120 cr"
-                })]
-              }), /*#__PURE__*/_jsx("div", {
-                className: "w-full bg-[#ECEEF4] rounded-full h-1.5 mt-2 overflow-hidden",
-                children: /*#__PURE__*/_jsx("div", {
-                  className: "bg-[#4F3FE0] h-full rounded-full",
-                  style: {
-                    width: "66%"
-                  }
-                })
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "flex items-center justify-between text-xs text-[#8A90A2] mt-3 pt-2 border-t border-[#ECEEF4]",
-                children: [/*#__PURE__*/_jsx("span", {
-                  className: "text-[#374151] font-medium",
-                  children: "Renews in 24 hours"
-                }), /*#__PURE__*/_jsx("span", {
-                  className: "text-[#4F3FE0] font-bold group-hover:translate-x-0.5 transition-transform",
-                  children: "Billing \u2192"
-                })]
-              })]
-            }), /*#__PURE__*/_jsxs("div", {
-              onClick: function onClick() {
-                return navigateTo("My Bookings");
-              },
-              className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft hover:shadow-card hover:-translate-y-1 transition-all cursor-pointer group",
-              children: [/*#__PURE__*/_jsxs("div", {
-                className: "flex items-center justify-between text-[#8A90A2]",
-                children: [/*#__PURE__*/_jsx("span", {
-                  className: "text-xs font-bold uppercase tracking-wider text-[#64748B]",
-                  children: "Pending Requests"
-                }), /*#__PURE__*/_jsx("div", {
-                  className: "w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-105 transition-transform",
-                  children: /*#__PURE__*/_jsx(Icon, {
-                    name: "clock",
-                    className: "w-5 h-5 text-amber-600"
-                  })
-                })]
-              }), /*#__PURE__*/_jsx("div", {
-                className: "text-3xl font-black text-[#111827] mt-3",
-                children: "0"
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "flex items-center justify-between text-xs text-[#8A90A2] mt-3 pt-3 border-t border-[#ECEEF4]",
-                children: [/*#__PURE__*/_jsx("span", {
-                  className: "text-[#374151] font-medium",
-                  children: "All approved \u2713"
-                }), /*#__PURE__*/_jsx("span", {
-                  className: "text-[#4F3FE0] font-bold group-hover:translate-x-0.5 transition-transform",
-                  children: "Review \u2192"
-                })]
-              })]
-            })]
-          }), /*#__PURE__*/_jsxs("div", {
-            className: "grid grid-cols-1 lg:grid-cols-12 gap-6 items-start",
-            children: [/*#__PURE__*/_jsxs("div", {
-              className: "lg:col-span-7 space-y-6",
-              children: [/*#__PURE__*/_jsxs("div", {
-                className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft",
-                children: [/*#__PURE__*/_jsxs("div", {
-                  className: "flex items-center justify-between mb-4",
-                  children: [/*#__PURE__*/_jsxs("div", {
-                    children: [/*#__PURE__*/_jsxs("h4", {
-                      className: "text-sm font-black text-[#111827] flex items-center gap-2",
-                      children: [/*#__PURE__*/_jsx("span", {
-                        children: "\u26A1"
-                      }), " Quick Actions"]
-                    }), /*#__PURE__*/_jsx("p", {
-                      className: "text-xs text-[#8A90A2] mt-0.5",
-                      children: "Direct shortcuts to frequent meeting and facility tasks"
-                    })]
-                  }), /*#__PURE__*/_jsx("span", {
-                    className: "text-[11px] font-bold text-[#64748B] bg-[#F8FAFC] px-2.5 py-1 rounded-full border border-[#ECEEF4]",
-                    children: "Shortcuts"
-                  })]
-                }), /*#__PURE__*/_jsxs("div", {
-                  className: "grid grid-cols-1 sm:grid-cols-2 gap-3.5",
-                  children: [/*#__PURE__*/_jsxs("button", {
-                    type: "button",
-                    onClick: function onClick() {
-                      return navigateTo("Meeting Rooms");
-                    },
-                    className: "flex items-center justify-between p-4 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#F3EFFE] hover:border-[#6E42E5]/30 hover:shadow-xs transition-all text-left group",
-                    children: [/*#__PURE__*/_jsxs("div", {
-                      className: "flex items-center gap-3",
-                      children: [/*#__PURE__*/_jsx("span", {
-                        className: "w-10 h-10 rounded-xl bg-purple-50 text-[#6E42E5] flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0",
-                        children: /*#__PURE__*/_jsx(Icon, {
-                          name: "calendar",
-                          className: "w-5 h-5 text-[#6E42E5]"
-                        })
-                      }), /*#__PURE__*/_jsxs("div", {
-                        children: [/*#__PURE__*/_jsx("div", {
-                          className: "text-xs font-bold text-[#111827]",
-                          children: "Book a Room"
-                        }), /*#__PURE__*/_jsx("div", {
-                          className: "text-[11px] text-[#8A90A2]",
-                          children: "Meeting Rooms & Pods"
-                        })]
-                      })]
-                    }), /*#__PURE__*/_jsx("span", {
-                      className: "text-[#8A90A2] group-hover:text-[#4F3FE0] group-hover:translate-x-1 transition-all text-sm font-bold",
-                      children: "\u2192"
-                    })]
-                  }), /*#__PURE__*/_jsxs("button", {
-                    type: "button",
-                    onClick: function onClick() {
-                      return navigateTo("My Bookings");
-                    },
-                    className: "flex items-center justify-between p-4 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#EEF5FF] hover:border-[#2B71FF]/30 hover:shadow-xs transition-all text-left group",
-                    children: [/*#__PURE__*/_jsxs("div", {
-                      className: "flex items-center gap-3",
-                      children: [/*#__PURE__*/_jsx("span", {
-                        className: "w-10 h-10 rounded-xl bg-blue-50 text-[#2B71FF] flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0",
-                        children: /*#__PURE__*/_jsx(Icon, {
-                          name: "bookmark",
-                          className: "w-5 h-5 text-[#2B71FF]"
-                        })
-                      }), /*#__PURE__*/_jsxs("div", {
-                        children: [/*#__PURE__*/_jsx("div", {
-                          className: "text-xs font-bold text-[#111827]",
-                          children: "My Bookings"
-                        }), /*#__PURE__*/_jsx("div", {
-                          className: "text-[11px] text-[#8A90A2]",
-                          children: "Active reservations"
-                        })]
-                      })]
-                    }), /*#__PURE__*/_jsx("span", {
-                      className: "text-[#8A90A2] group-hover:text-[#4F3FE0] group-hover:translate-x-1 transition-all text-sm font-bold",
-                      children: "\u2192"
-                    })]
-                  }), /*#__PURE__*/_jsxs("button", {
-                    type: "button",
-                    onClick: function onClick() {
-                      return navigateTo("Calendar");
-                    },
-                    className: "flex items-center justify-between p-4 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#EEFAF3] hover:border-[#12A150]/30 hover:shadow-xs transition-all text-left group",
-                    children: [/*#__PURE__*/_jsxs("div", {
-                      className: "flex items-center gap-3",
-                      children: [/*#__PURE__*/_jsx("span", {
-                        className: "w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0",
-                        children: /*#__PURE__*/_jsx(Icon, {
-                          name: "calendarDays",
-                          className: "w-5 h-5 text-emerald-600"
-                        })
-                      }), /*#__PURE__*/_jsxs("div", {
-                        children: [/*#__PURE__*/_jsx("div", {
-                          className: "text-xs font-bold text-[#111827]",
-                          children: "Open Calendar"
-                        }), /*#__PURE__*/_jsx("div", {
-                          className: "text-[11px] text-[#8A90A2]",
-                          children: "Full Timeline View"
-                        })]
-                      })]
-                    }), /*#__PURE__*/_jsx("span", {
-                      className: "text-[#8A90A2] group-hover:text-[#4F3FE0] group-hover:translate-x-1 transition-all text-sm font-bold",
-                      children: "\u2192"
-                    })]
-                  }), /*#__PURE__*/_jsxs("button", {
-                    type: "button",
-                    onClick: function onClick() {
-                      return navigateTo("Visitors");
-                    },
-                    className: "flex items-center justify-between p-4 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#FFF5EC] hover:border-[#F36B20]/30 hover:shadow-xs transition-all text-left group",
-                    children: [/*#__PURE__*/_jsxs("div", {
-                      className: "flex items-center gap-3",
-                      children: [/*#__PURE__*/_jsx("span", {
-                        className: "w-10 h-10 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0",
-                        children: /*#__PURE__*/_jsx(Icon, {
-                          name: "userPlus",
-                          className: "w-5 h-5 text-orange-600"
-                        })
-                      }), /*#__PURE__*/_jsxs("div", {
-                        children: [/*#__PURE__*/_jsx("div", {
-                          className: "text-xs font-bold text-[#111827]",
-                          children: "Invite Guests"
-                        }), /*#__PURE__*/_jsx("div", {
-                          className: "text-[11px] text-[#8A90A2]",
-                          children: "Visitor Gate Pass"
-                        })]
-                      })]
-                    }), /*#__PURE__*/_jsx("span", {
-                      className: "text-[#8A90A2] group-hover:text-[#4F3FE0] group-hover:translate-x-1 transition-all text-sm font-bold",
-                      children: "\u2192"
-                    })]
-                  })]
-                })]
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft",
-                children: [/*#__PURE__*/_jsxs("div", {
-                  className: "flex items-center justify-between mb-4",
-                  children: [/*#__PURE__*/_jsxs("div", {
-                    children: [/*#__PURE__*/_jsxs("h4", {
-                      className: "text-sm font-black text-[#111827] flex items-center gap-2",
-                      children: [/*#__PURE__*/_jsx("span", {
-                        children: "\uD83C\uDFE2"
-                      }), " Venture Facilities Overview"]
-                    }), /*#__PURE__*/_jsx("p", {
-                      className: "text-xs text-[#8A90A2] mt-0.5",
-                      children: "Assigned physical space and operational amenities"
-                    })]
-                  }), /*#__PURE__*/_jsx("span", {
-                    onClick: function onClick() {
-                      return navigateTo("Workspace & Desks");
-                    },
-                    className: "text-xs font-bold text-[#4F3FE0] hover:underline cursor-pointer",
-                    children: "Manage Space \u2192"
-                  })]
-                }), /*#__PURE__*/_jsxs("div", {
-                  className: "grid grid-cols-2 sm:grid-cols-4 gap-3",
-                  children: [/*#__PURE__*/_jsxs("div", {
-                    onClick: function onClick() {
-                      return navigateTo("Members");
-                    },
-                    className: "p-3.5 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl cursor-pointer hover:border-[#4F3FE0]/30 transition-colors",
-                    children: [/*#__PURE__*/_jsx("div", {
-                      className: "w-7 h-7 rounded-lg bg-indigo-50 text-[#4F3FE0] flex items-center justify-center mb-1.5",
-                      children: /*#__PURE__*/_jsx(Icon, {
-                        name: "users",
-                        className: "w-4 h-4"
-                      })
-                    }), /*#__PURE__*/_jsx("span", {
-                      className: "text-[10px] font-bold text-[#8A90A2] uppercase tracking-wider",
-                      children: "Active Team"
-                    }), /*#__PURE__*/_jsx("div", {
-                      className: "text-sm font-black text-[#111827] mt-0.5",
-                      children: "8 Members"
-                    }), /*#__PURE__*/_jsx("span", {
-                      className: "text-[10.5px] text-[#64748B] block mt-0.5",
-                      children: "Team Registered"
-                    })]
-                  }), /*#__PURE__*/_jsxs("div", {
-                    onClick: function onClick() {
-                      return navigateTo("Workspace & Desks");
-                    },
-                    className: "p-3.5 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl cursor-pointer hover:border-[#4F3FE0]/30 transition-colors",
-                    children: [/*#__PURE__*/_jsx("div", {
-                      className: "w-7 h-7 rounded-lg bg-purple-50 text-[#6E42E5] flex items-center justify-center mb-1.5",
-                      children: /*#__PURE__*/_jsx(Icon, {
-                        name: "building",
-                        className: "w-4 h-4"
-                      })
-                    }), /*#__PURE__*/_jsx("span", {
-                      className: "text-[10px] font-bold text-[#8A90A2] uppercase tracking-wider",
-                      children: "Assigned Space"
-                    }), /*#__PURE__*/_jsx("div", {
-                      className: "text-sm font-black text-[#111827] mt-0.5",
-                      children: "Suite 401"
-                    }), /*#__PURE__*/_jsx("span", {
-                      className: "text-[10.5px] text-[#64748B] block mt-0.5",
-                      children: "6 Desks (Fl 4)"
-                    })]
-                  }), /*#__PURE__*/_jsxs("div", {
-                    onClick: function onClick() {
-                      return navigateTo("Billing & Credits");
-                    },
-                    className: "p-3.5 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl cursor-pointer hover:border-[#4F3FE0]/30 transition-colors",
-                    children: [/*#__PURE__*/_jsx("div", {
-                      className: "w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center mb-1.5",
-                      children: /*#__PURE__*/_jsx(Icon, {
-                        name: "creditCard",
-                        className: "w-4 h-4"
-                      })
-                    }), /*#__PURE__*/_jsx("span", {
-                      className: "text-[10px] font-bold text-[#8A90A2] uppercase tracking-wider",
-                      children: "Invoices Due"
-                    }), /*#__PURE__*/_jsx("div", {
-                      className: "text-sm font-black text-emerald-600 mt-0.5",
-                      children: "All Settled \u2713"
-                    }), /*#__PURE__*/_jsx("span", {
-                      className: "text-[10.5px] text-emerald-700 font-semibold block mt-0.5",
-                      children: "$0.00 Overdue"
-                    })]
-                  }), /*#__PURE__*/_jsxs("div", {
-                    onClick: function onClick() {
-                      return navigateTo("Analytics");
-                    },
-                    className: "p-3.5 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl cursor-pointer hover:border-[#4F3FE0]/30 transition-colors",
-                    children: [/*#__PURE__*/_jsx("div", {
-                      className: "w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center mb-1.5",
-                      children: /*#__PURE__*/_jsx(Icon, {
-                        name: "crown",
-                        className: "w-4 h-4 text-amber-600"
-                      })
-                    }), /*#__PURE__*/_jsx("span", {
-                      className: "text-[10px] font-bold text-[#8A90A2] uppercase tracking-wider",
-                      children: "Next Milestone"
-                    }), /*#__PURE__*/_jsx("div", {
-                      className: "text-sm font-black text-[#4F3FE0] mt-0.5",
-                      children: "Beta Prototype"
-                    }), /*#__PURE__*/_jsx("span", {
-                      className: "text-[10.5px] text-[#64748B] block mt-0.5",
-                      children: "Target: Nov 15"
-                    })]
-                  })]
-                })]
-              })]
-            }), /*#__PURE__*/_jsxs("div", {
-              className: "lg:col-span-5 space-y-6",
-              children: [/*#__PURE__*/_jsxs("div", {
-                className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft",
-                children: [/*#__PURE__*/_jsxs("div", {
-                  className: "flex items-center justify-between pb-3 border-b border-[#ECEEF4] mb-4",
-                  children: [/*#__PURE__*/_jsxs("div", {
-                    children: [/*#__PURE__*/_jsxs("h4", {
-                      className: "text-sm font-black text-[#111827] flex items-center gap-2",
-                      children: [/*#__PURE__*/_jsx("span", {
-                        children: "\uD83D\uDDD3\uFE0F"
-                      }), " Today's Schedule"]
-                    }), /*#__PURE__*/_jsx("p", {
-                      className: "text-xs text-[#8A90A2] mt-0.5",
-                      children: "Timeline of room allocations"
-                    })]
-                  }), /*#__PURE__*/_jsx("button", {
-                    onClick: function onClick() {
-                      return navigateTo("Calendar");
-                    },
-                    className: "text-xs font-bold text-[#4F3FE0] hover:underline",
-                    children: "View Calendar \u2192"
-                  })]
-                }), /*#__PURE__*/_jsx("div", {
-                  className: "relative pl-5 space-y-4 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#ECEEF4]",
-                  children: todaysSchedule.slice(0, 4).map(function (item, idx) {
-                    return /*#__PURE__*/_jsxs("div", {
-                      onClick: function onClick() {
-                        return navigateTo("Meeting Rooms");
-                      },
-                      className: "relative flex items-start gap-3 p-3 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:border-[#4F3FE0]/40 transition-all cursor-pointer group",
-                      children: [/*#__PURE__*/_jsx("span", {
-                        className: "absolute -left-[21px] top-3.5 w-2.5 h-2.5 rounded-full border-2 border-white ".concat(item.dotColor || 'bg-[#4F3FE0]', " shadow-xs")
-                      }), /*#__PURE__*/_jsxs("div", {
-                        className: "flex-1 min-w-0",
-                        children: [/*#__PURE__*/_jsxs("div", {
-                          className: "flex items-center justify-between gap-2",
-                          children: [/*#__PURE__*/_jsx("span", {
-                            className: "text-[11px] font-bold text-[#4F3FE0]",
-                            children: item.time
-                          }), /*#__PURE__*/_jsx("span", {
-                            className: "bg-emerald-50 text-emerald-600 border border-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded-full",
-                            children: "Confirmed"
-                          })]
-                        }), /*#__PURE__*/_jsx("div", {
-                          className: "text-xs font-bold text-[#111827] mt-1 group-hover:text-[#4F3FE0] transition-colors truncate",
-                          children: item.title
-                        }), /*#__PURE__*/_jsxs("div", {
-                          className: "text-[11px] text-[#8A90A2] mt-0.5",
-                          children: [item.room, " \u2022 \uD83D\uDC65 ", item.attendees, " pax"]
-                        })]
-                      })]
-                    }, idx);
-                  })
-                }), /*#__PURE__*/_jsxs("div", {
-                  className: "mt-4 pt-3 border-t border-[#ECEEF4] flex items-center justify-between text-xs text-[#64748B]",
-                  children: [/*#__PURE__*/_jsx("span", {
-                    children: "Need to book a new slot?"
-                  }), /*#__PURE__*/_jsx("button", {
-                    onClick: function onClick() {
-                      return navigateTo("Meeting Rooms");
-                    },
-                    className: "bg-[#4F3FE0] text-white px-3.5 py-1.5 rounded-xl text-xs font-bold hover:bg-[#4335C9] transition-all",
-                    children: "+ Reserve Space"
-                  })]
-                })]
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft space-y-3",
-                children: [/*#__PURE__*/_jsxs("div", {
-                  className: "flex items-center justify-between pb-3 border-b border-[#ECEEF4]",
-                  children: [/*#__PURE__*/_jsxs("div", {
-                    children: [/*#__PURE__*/_jsxs("h4", {
-                      className: "text-sm font-black text-[#111827] flex items-center gap-2",
-                      children: [/*#__PURE__*/_jsx("span", {
-                        children: "\uD83D\uDD52"
-                      }), " Recent Activity"]
-                    }), /*#__PURE__*/_jsx("p", {
-                      className: "text-xs text-[#8A90A2] mt-0.5",
-                      children: "Authorized venture event stream"
-                    })]
-                  }), /*#__PURE__*/_jsx("span", {
-                    onClick: function onClick() {
-                      return navigateTo("Analytics");
-                    },
-                    className: "text-xs font-bold text-[#4F3FE0] hover:underline cursor-pointer",
-                    children: "View All \u2192"
-                  })]
-                }), /*#__PURE__*/_jsx("div", {
-                  className: "divide-y divide-[#ECEEF4]",
-                  children: DASHBOARD_ACTIVITIES.map(function (act) {
-                    return /*#__PURE__*/_jsxs("div", {
-                      className: "py-2.5 flex items-start justify-between gap-3 first:pt-1 last:pb-1",
-                      children: [/*#__PURE__*/_jsxs("div", {
-                        className: "flex items-start gap-3",
-                        children: [/*#__PURE__*/_jsx("div", {
-                          className: "w-8 h-8 rounded-xl bg-[#F6F7FB] border border-[#ECEEF4] flex items-center justify-center text-[#4F3FE0] flex-shrink-0 mt-0.5",
-                          children: /*#__PURE__*/_jsx(Icon, {
-                            name: act.icon,
-                            className: "w-4 h-4 text-[#4F3FE0]"
-                          })
-                        }), /*#__PURE__*/_jsxs("div", {
-                          children: [/*#__PURE__*/_jsx("div", {
-                            className: "text-xs font-bold text-[#111827]",
-                            children: act.title
-                          }), /*#__PURE__*/_jsx("div", {
-                            className: "text-[11px] text-[#64748B] mt-0.5",
-                            children: act.desc
-                          })]
-                        })]
-                      }), /*#__PURE__*/_jsx("span", {
-                        className: "text-[10px] font-semibold text-[#8A90A2] whitespace-nowrap bg-[#F8FAFC] px-2 py-0.5 rounded-md border border-[#ECEEF4]",
-                        children: act.time
-                      })]
-                    }, act.id);
-                  })
-                })]
-              })]
-            })]
-          })]
-        }), activeNav === "Meeting Rooms" && /*#__PURE__*/_jsxs("div", {
-          className: "grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-8 items-start animate-fadeIn",
-          children: [/*#__PURE__*/_jsxs("main", {
-            className: "space-y-6 min-w-0",
-            children: [/*#__PURE__*/_jsxs("div", {
-              className: "relative rounded-2xl border border-[#ECEEF4] overflow-hidden bg-white shadow-soft flex items-center min-h-[220px]",
-              children: [/*#__PURE__*/_jsx("div", {
-                className: "absolute inset-0 bg-gradient-to-r from-[#EAE6FF] via-[#F4F2FF] to-transparent z-10 w-[60%]"
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "absolute right-0 top-0 bottom-0 w-[55%] h-full z-0 overflow-hidden",
-                children: [/*#__PURE__*/_jsx("img", {
-                  src: "assets/rooms/banner-hero.jpg",
-                  onError: function onError(e) {
-                    e.target.onerror = null;
-                    e.target.src = "https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=1200&q=80";
-                  },
-                  alt: "Modern Boardroom",
-                  className: "w-full h-full object-cover object-center"
-                }), /*#__PURE__*/_jsx("div", {
-                  className: "absolute inset-0 bg-gradient-to-r from-[#F4F2FF] via-transparent to-black/10"
-                })]
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "relative z-20 p-8 max-w-[560px]",
-                children: [/*#__PURE__*/_jsxs("div", {
-                  className: "flex items-center gap-1.5 text-xs font-bold text-[#4F3FE0] uppercase tracking-wider mb-2",
-                  children: [/*#__PURE__*/_jsx(Icon, {
-                    name: "bolt",
-                    className: "w-3.5 h-3.5 text-[#4F3FE0]",
-                    strokeWidth: 2.5
-                  }), /*#__PURE__*/_jsx("span", {
-                    children: "NEXUS HUB"
-                  })]
-                }), /*#__PURE__*/_jsxs("h2", {
-                  className: "text-[34px] xl:text-[38px] font-black text-[#111827] leading-[1.12] tracking-tight",
-                  children: ["Book the right space ", /*#__PURE__*/_jsx("br", {}), "for every idea"]
-                }), /*#__PURE__*/_jsx("p", {
-                  className: "text-[13px] text-[#374151] font-medium mt-2 max-w-[460px]",
-                  children: "Modern meeting rooms for productive discussions, workshops and client calls."
-                }), /*#__PURE__*/_jsxs("div", {
-                  className: "flex flex-wrap items-center gap-2 mt-4 pt-1",
-                  children: [/*#__PURE__*/_jsxs("span", {
-                    className: "inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-sm border border-[#ECEEF4] rounded-lg px-2.5 py-1 text-[11px] font-semibold text-[#111827] shadow-sm",
-                    children: [/*#__PURE__*/_jsx("span", {
-                      className: "w-2 h-2 rounded-full bg-emerald-500"
-                    }), "Instant Booking"]
-                  }), /*#__PURE__*/_jsxs("span", {
-                    className: "inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-sm border border-[#ECEEF4] rounded-lg px-2.5 py-1 text-[11px] font-semibold text-[#111827] shadow-sm",
-                    children: [/*#__PURE__*/_jsx("span", {
-                      className: "w-2 h-2 rounded-full bg-blue-500"
-                    }), "Real-time Availability"]
-                  }), /*#__PURE__*/_jsxs("span", {
-                    className: "inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-sm border border-[#ECEEF4] rounded-lg px-2.5 py-1 text-[11px] font-semibold text-[#111827] shadow-sm",
-                    children: [/*#__PURE__*/_jsx("span", {
-                      className: "w-2 h-2 rounded-full bg-amber-500"
-                    }), "Flexible Durations"]
-                  }), /*#__PURE__*/_jsxs("span", {
-                    className: "inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-sm border border-[#ECEEF4] rounded-lg px-2.5 py-1 text-[11px] font-semibold text-[#111827] shadow-sm",
-                    children: [/*#__PURE__*/_jsx("span", {
-                      className: "w-2 h-2 rounded-full bg-indigo-500"
-                    }), "Integrated Calendar"]
-                  })]
-                })]
-              })]
-            }), /*#__PURE__*/_jsxs("div", {
-              className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft space-y-4",
-              children: [/*#__PURE__*/_jsxs("div", {
-                className: "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-[1fr_1.3fr_1fr_auto] gap-3 items-center",
-                children: [/*#__PURE__*/_jsxs("div", {
-                  className: "flex flex-col",
-                  children: [/*#__PURE__*/_jsx("span", {
-                    className: "text-[10px] font-bold uppercase tracking-wider text-[#8A90A2] mb-1",
-                    children: "Date"
-                  }), /*#__PURE__*/_jsxs("div", {
-                    className: "flex items-center gap-2 bg-[#F6F7FB] border border-[#ECEEF4] rounded-xl px-3.5 py-2.5 cursor-pointer hover:border-[#4F3FE0]/50 transition-all",
-                    children: [/*#__PURE__*/_jsx(Icon, {
-                      name: "calendar",
-                      className: "w-4 h-4 text-[#4F3FE0]"
-                    }), /*#__PURE__*/_jsx("span", {
-                      className: "text-[13px] font-semibold text-[#111827] whitespace-nowrap",
-                      children: selectedDate
-                    }), /*#__PURE__*/_jsx(Icon, {
-                      name: "chevronDown",
-                      className: "w-3.5 h-3.5 text-[#8A90A2] ml-auto"
-                    })]
-                  })]
-                }), /*#__PURE__*/_jsxs("div", {
-                  className: "flex flex-col",
-                  children: [/*#__PURE__*/_jsx("span", {
-                    className: "text-[10px] font-bold uppercase tracking-wider text-[#8A90A2] mb-1",
-                    children: "Time"
-                  }), /*#__PURE__*/_jsxs("div", {
-                    className: "flex items-center gap-2 bg-[#F6F7FB] border border-[#ECEEF4] rounded-xl px-3.5 py-2.5 cursor-pointer hover:border-[#4F3FE0]/50 transition-all",
-                    children: [/*#__PURE__*/_jsx(Icon, {
-                      name: "clock",
-                      className: "w-4 h-4 text-[#4F3FE0]"
-                    }), /*#__PURE__*/_jsx("span", {
-                      className: "text-[13px] font-semibold text-[#111827] whitespace-nowrap",
-                      children: selectedTime
-                    }), /*#__PURE__*/_jsx(Icon, {
-                      name: "chevronDown",
-                      className: "w-3.5 h-3.5 text-[#8A90A2] ml-auto"
-                    })]
-                  })]
-                }), /*#__PURE__*/_jsxs("div", {
-                  className: "flex flex-col",
-                  children: [/*#__PURE__*/_jsx("span", {
-                    className: "text-[10px] font-bold uppercase tracking-wider text-[#8A90A2] mb-1",
-                    children: "People"
-                  }), /*#__PURE__*/_jsxs("div", {
-                    className: "flex items-center gap-2 bg-[#F6F7FB] border border-[#ECEEF4] rounded-xl px-3.5 py-2.5 cursor-pointer hover:border-[#4F3FE0]/50 transition-all",
-                    children: [/*#__PURE__*/_jsx(Icon, {
-                      name: "users",
-                      className: "w-4 h-4 text-[#4F3FE0]"
-                    }), /*#__PURE__*/_jsxs("select", {
-                      value: selectedPeople,
-                      onChange: function onChange(e) {
-                        return setSelectedPeople(Number(e.target.value));
-                      },
-                      className: "bg-transparent text-[13px] font-semibold text-[#111827] outline-none cursor-pointer w-full",
-                      children: [/*#__PURE__*/_jsx("option", {
-                        value: 2,
-                        children: "2 people"
-                      }), /*#__PURE__*/_jsx("option", {
-                        value: 4,
-                        children: "4 people"
-                      }), /*#__PURE__*/_jsx("option", {
-                        value: 6,
-                        children: "6 people"
-                      }), /*#__PURE__*/_jsx("option", {
-                        value: 8,
-                        children: "8 people"
-                      }), /*#__PURE__*/_jsx("option", {
-                        value: 10,
-                        children: "10 people"
-                      }), /*#__PURE__*/_jsx("option", {
-                        value: 20,
-                        children: "20+ people"
-                      })]
-                    })]
-                  })]
-                }), /*#__PURE__*/_jsx("div", {
-                  className: "self-end pt-4 sm:pt-0",
-                  children: /*#__PURE__*/_jsx("button", {
-                    type: "button",
-                    onClick: function onClick() {
-                      return showToast("\uD83D\uDD0D Filtered rooms with capacity >= ".concat(selectedPeople));
-                    },
-                    className: "w-full bg-[#4F3FE0] hover:bg-[#4335C9] text-white px-7 py-2.5 rounded-xl text-[13px] font-bold transition-all shadow-sm flex items-center justify-center gap-2 active:scale-95",
-                    children: /*#__PURE__*/_jsx("span", {
-                      children: "Search Rooms"
-                    })
-                  })
-                })]
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "pt-2 border-t border-[#ECEEF4] flex items-center justify-between flex-wrap gap-2",
-                children: [/*#__PURE__*/_jsx("div", {
-                  className: "flex items-center flex-wrap gap-1.5",
-                  children: ROOM_TYPES.map(function (type) {
-                    return /*#__PURE__*/_jsx("button", {
-                      type: "button",
-                      onClick: function onClick() {
-                        return setSelectedType(type);
-                      },
-                      className: "px-3 py-1.5 rounded-full text-xs font-semibold transition-all ".concat(selectedType === type ? "bg-[#4F3FE0] text-white shadow-sm" : "bg-[#F6F7FB] hover:bg-gray-200 text-[#374151]"),
-                      children: type
-                    }, type);
-                  })
-                }), /*#__PURE__*/_jsxs("button", {
-                  type: "button",
-                  onClick: function onClick() {
-                    return showToast("Advanced filters: Price range & availability applied");
-                  },
-                  className: "inline-flex items-center gap-1.5 border border-[#4F3FE0] text-[#4F3FE0] hover:bg-[#F4F2FF] px-3.5 py-1.5 rounded-full text-xs font-bold transition-all",
-                  children: [/*#__PURE__*/_jsx(Icon, {
-                    name: "sliders",
-                    className: "w-3.5 h-3.5"
-                  }), /*#__PURE__*/_jsx("span", {
-                    children: "More Filters"
-                  })]
-                })]
-              }), /*#__PURE__*/_jsx("div", {
-                className: "flex items-center flex-wrap gap-2 pt-1",
-                children: AMENITIES_LIST.map(function (amenity) {
-                  var isSelected = selectedAmenities.includes(amenity.name);
-                  return /*#__PURE__*/_jsxs("button", {
-                    type: "button",
-                    onClick: function onClick() {
-                      return toggleAmenity(amenity.name);
-                    },
-                    className: "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11.5px] font-medium border transition-all ".concat(isSelected ? "bg-[#EEEBFF] border-[#4F3FE0] text-[#4F3FE0] font-semibold" : "bg-white border-[#ECEEF4] text-[#374151] hover:border-gray-300"),
-                    children: [/*#__PURE__*/_jsx(Icon, {
-                      name: amenity.icon,
-                      className: "w-3.5 h-3.5 ".concat(isSelected ? "text-[#4F3FE0]" : "text-[#8A90A2]")
-                    }), /*#__PURE__*/_jsx("span", {
-                      children: amenity.name
-                    })]
-                  }, amenity.name);
-                })
-              })]
-            }), /*#__PURE__*/_jsxs("div", {
-              className: "flex items-center justify-between pt-2",
-              children: [/*#__PURE__*/_jsxs("div", {
-                className: "flex items-center gap-3",
-                children: [/*#__PURE__*/_jsx("h3", {
-                  className: "text-xl font-black text-[#111827]",
-                  children: "Available Rooms"
-                }), /*#__PURE__*/_jsxs("span", {
-                  className: "bg-[#DCFCE7] text-[#16A34A] px-2.5 py-0.5 rounded-full text-xs font-bold border border-emerald-200",
-                  children: [filteredRooms.length, " rooms available"]
-                })]
-              }), /*#__PURE__*/_jsx("div", {
-                className: "flex items-center bg-white border border-[#ECEEF4] p-1 rounded-xl shadow-xs",
-                children: ["Cards", "List", "Calendar"].map(function (v) {
-                  return /*#__PURE__*/_jsx("button", {
-                    type: "button",
-                    onClick: function onClick() {
-                      return setViewMode(v);
-                    },
-                    className: "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ".concat(viewMode === v ? "bg-[#4F3FE0] text-white shadow-xs" : "text-[#64748B] hover:text-[#111827]"),
-                    children: /*#__PURE__*/_jsx("span", {
-                      children: v
-                    })
-                  }, v);
-                })
-              })]
-            }), /*#__PURE__*/_jsx("div", {
-              className: "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5",
-              children: filteredRooms.map(function (room) {
-                var isFav = favorites.has(room.id);
-                var isAvailable = room.status === "Available";
-                return /*#__PURE__*/_jsxs("div", {
-                  className: "bg-white border border-[#ECEEF4] rounded-2xl overflow-hidden shadow-soft hover:shadow-card hover:-translate-y-1 transition-all duration-200 flex flex-col group",
-                  children: [/*#__PURE__*/_jsxs("div", {
-                    className: "relative aspect-[16/9] w-full overflow-hidden bg-gray-100",
-                    children: [/*#__PURE__*/_jsx("img", {
-                      src: room.image,
-                      onError: function onError(e) {
-                        e.target.onerror = null;
-                        e.target.src = room.fallbackImage;
-                      },
-                      alt: room.name,
-                      className: "w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    }), /*#__PURE__*/_jsx("div", {
-                      className: "absolute top-3 left-3",
-                      children: /*#__PURE__*/_jsx("span", {
-                        className: "px-2.5 py-1 rounded-full text-[11px] font-bold text-white shadow-md ".concat(isAvailable ? "bg-[#16A34A]" : "bg-[#F97316]"),
-                        children: room.status
-                      })
-                    }), /*#__PURE__*/_jsx("button", {
-                      type: "button",
-                      onClick: function onClick(e) {
-                        return toggleFavorite(room.id, e);
-                      },
-                      className: "w-8 h-8 rounded-full bg-white/95 backdrop-blur-sm shadow-md flex items-center justify-center absolute top-3 right-3 hover:scale-110 active:scale-95 transition-all",
-                      children: /*#__PURE__*/_jsx(Icon, {
-                        name: isFav ? "heartFilled" : "heart",
-                        className: "w-4 h-4 ".concat(isFav ? "text-[#EF4444]" : "text-[#8A90A2]"),
-                        strokeWidth: 2
-                      })
-                    })]
-                  }), /*#__PURE__*/_jsxs("div", {
-                    className: "p-4 flex-1 flex flex-col justify-between",
-                    children: [/*#__PURE__*/_jsxs("div", {
-                      children: [/*#__PURE__*/_jsxs("h4", {
-                        className: "font-bold text-[15px] text-[#111827] cursor-pointer hover:text-[#4F3FE0] transition-colors flex items-center justify-between",
-                        onClick: function onClick() {
-                          return openBookingDrawer(room);
-                        },
-                        children: [/*#__PURE__*/_jsx("span", {
-                          children: room.name
-                        }), /*#__PURE__*/_jsx("span", {
-                          className: "text-[10px] font-semibold text-[#4F3FE0] bg-[#F4F2FF] px-2 py-0.5 rounded-full border border-[#E0D8FF]",
-                          children: "Quick Book \u2197"
-                        })]
-                      }), /*#__PURE__*/_jsxs("div", {
-                        className: "flex items-center gap-1.5 text-xs text-[#64748B] font-medium mt-1",
-                        children: [/*#__PURE__*/_jsx(Icon, {
-                          name: "users",
-                          className: "w-3.5 h-3.5 text-[#8A90A2]"
-                        }), /*#__PURE__*/_jsxs("span", {
-                          children: [room.capacity, " people"]
-                        }), /*#__PURE__*/_jsx("span", {
-                          className: "mx-1",
-                          children: "\u2022"
-                        }), /*#__PURE__*/_jsx("span", {
-                          className: "text-[#4F3FE0] font-semibold",
-                          children: room.rate
-                        })]
-                      })]
-                    }), /*#__PURE__*/_jsxs("div", {
-                      className: "flex items-center justify-between pt-3 mt-3 border-t border-[#ECEEF4]",
-                      children: [/*#__PURE__*/_jsxs("div", {
-                        className: "flex items-center gap-2 text-[#8A90A2]",
-                        children: [/*#__PURE__*/_jsx(Icon, {
-                          name: "monitor",
-                          className: "w-4 h-4 hover:text-[#111827]"
-                        }), /*#__PURE__*/_jsx(Icon, {
-                          name: "video",
-                          className: "w-4 h-4 hover:text-[#111827]"
-                        }), /*#__PURE__*/_jsx(Icon, {
-                          name: "mic",
-                          className: "w-4 h-4 hover:text-[#111827]"
-                        }), /*#__PURE__*/_jsx(Icon, {
-                          name: "wifi",
-                          className: "w-4 h-4 hover:text-[#111827]"
-                        })]
-                      }), isAvailable ? /*#__PURE__*/_jsx("button", {
-                        type: "button",
-                        onClick: function onClick() {
-                          return openBookingDrawer(room);
-                        },
-                        className: "bg-[#4F3FE0] hover:bg-[#4335C9] text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95",
-                        children: "Book Now"
-                      }) : /*#__PURE__*/_jsx("button", {
-                        type: "button",
-                        onClick: function onClick() {
-                          return openBookingDrawer(room);
-                        },
-                        className: "border border-[#ECEEF4] hover:bg-gray-50 text-[#374151] px-4 py-2 rounded-xl text-xs font-semibold transition-all",
-                        children: "View Schedule"
-                      })]
-                    })]
-                  })]
-                }, room.id);
-              })
-            })]
-          }), /*#__PURE__*/_jsxs("aside", {
-            className: "space-y-5",
-            children: [/*#__PURE__*/_jsxs("div", {
-              className: "bg-white border border-[#ECEEF4] rounded-2xl p-4 shadow-soft",
-              children: [/*#__PURE__*/_jsx("h4", {
-                className: "text-[13px] font-bold text-[#111827] mb-3",
-                children: "Quick Actions"
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "grid grid-cols-4 gap-2 text-center",
-                children: [/*#__PURE__*/_jsxs("button", {
-                  type: "button",
-                  onClick: function onClick() {
-                    return openBookingDrawer(rooms[0]);
-                  },
-                  className: "bg-[#F3EFFE] hover:bg-[#EAE4FE] text-[#6E42E5] p-2.5 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all group",
-                  children: [/*#__PURE__*/_jsx(Icon, {
-                    name: "calendar",
-                    className: "w-5 h-5 text-[#6E42E5] group-hover:scale-110 transition-transform"
-                  }), /*#__PURE__*/_jsx("span", {
-                    className: "text-[10.5px] font-bold leading-tight",
-                    children: "Book a Room"
-                  })]
-                }), /*#__PURE__*/_jsxs("button", {
-                  type: "button",
-                  onClick: function onClick() {
-                    return navigateTo("My Bookings");
-                  },
-                  className: "bg-[#EEF5FF] hover:bg-[#DFEDFF] text-[#2B71FF] p-2.5 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all group",
-                  children: [/*#__PURE__*/_jsx(Icon, {
-                    name: "fileText",
-                    className: "w-5 h-5 text-[#2B71FF] group-hover:scale-110 transition-transform"
-                  }), /*#__PURE__*/_jsx("span", {
-                    className: "text-[10.5px] font-bold leading-tight",
-                    children: "My Bookings"
-                  })]
-                }), /*#__PURE__*/_jsxs("button", {
-                  type: "button",
-                  onClick: function onClick() {
-                    return showToast("Recurring scheduler activated");
-                  },
-                  className: "bg-[#EEFAF3] hover:bg-[#DEFAEA] text-[#12A150] p-2.5 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all group",
-                  children: [/*#__PURE__*/_jsx(Icon, {
-                    name: "repeat",
-                    className: "w-5 h-5 text-[#12A150] group-hover:scale-110 transition-transform"
-                  }), /*#__PURE__*/_jsx("span", {
-                    className: "text-[10.5px] font-bold leading-tight",
-                    children: "Recurring"
-                  })]
-                }), /*#__PURE__*/_jsxs("button", {
-                  type: "button",
-                  onClick: function onClick() {
-                    return navigateTo("Visitors");
-                  },
-                  className: "bg-[#FFF5EC] hover:bg-[#FFE8D5] text-[#F36B20] p-2.5 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all group",
-                  children: [/*#__PURE__*/_jsx(Icon, {
-                    name: "userPlus",
-                    className: "w-5 h-5 text-[#F36B20] group-hover:scale-110 transition-transform"
-                  }), /*#__PURE__*/_jsx("span", {
-                    className: "text-[10.5px] font-bold leading-tight",
-                    children: "Invite Guests"
-                  })]
-                })]
-              })]
-            }), /*#__PURE__*/_jsxs("div", {
-              className: "bg-white border border-[#ECEEF4] rounded-2xl p-4 shadow-soft",
-              children: [/*#__PURE__*/_jsxs("div", {
-                className: "flex items-center justify-between mb-3",
-                children: [/*#__PURE__*/_jsx("h4", {
-                  className: "text-[13px] font-bold text-[#111827]",
-                  children: "Today's Schedule"
-                }), /*#__PURE__*/_jsx("button", {
-                  type: "button",
-                  onClick: function onClick() {
-                    return navigateTo("Calendar");
-                  },
-                  className: "text-xs font-semibold text-[#4F3FE0] hover:underline",
-                  children: "View Calendar"
-                })]
-              }), /*#__PURE__*/_jsx("div", {
-                className: "space-y-2.5",
-                children: todaysSchedule.map(function (item, idx) {
-                  return /*#__PURE__*/_jsxs("div", {
-                    className: "flex items-start gap-2.5 text-xs",
-                    children: [/*#__PURE__*/_jsx("div", {
-                      className: "w-[84px] text-[10.5px] font-semibold text-[#8A90A2] pt-1 whitespace-nowrap leading-tight",
-                      children: item.time.replace("–", "\n–")
-                    }), /*#__PURE__*/_jsx("div", {
-                      className: "pt-2 flex flex-col items-center",
-                      children: /*#__PURE__*/_jsx("span", {
-                        className: "w-2 h-2 rounded-full ".concat(item.dotColor, " ring-4 ring-white shadow-xs")
-                      })
-                    }), /*#__PURE__*/_jsxs("div", {
-                      className: "flex-1 bg-[#F8FAFC] border border-[#ECEEF4] ".concat(item.tintColor, " rounded-xl p-2.5"),
-                      children: [/*#__PURE__*/_jsxs("div", {
-                        className: "flex items-center justify-between",
-                        children: [/*#__PURE__*/_jsx("span", {
-                          className: "font-bold text-[#111827] text-[12px] truncate",
-                          children: item.title
-                        }), /*#__PURE__*/_jsx(Icon, {
-                          name: "moreHorizontal",
-                          className: "w-3.5 h-3.5 text-[#8A90A2]"
-                        })]
-                      }), /*#__PURE__*/_jsxs("div", {
-                        className: "flex items-center justify-between text-[11px] text-[#64748B] mt-1",
-                        children: [/*#__PURE__*/_jsx("span", {
-                          children: item.room
-                        }), /*#__PURE__*/_jsxs("span", {
-                          className: "inline-flex items-center gap-1 font-medium",
-                          children: [/*#__PURE__*/_jsx(Icon, {
-                            name: "users",
-                            className: "w-3 h-3 text-[#8A90A2]"
-                          }), item.attendees]
-                        })]
-                      })]
-                    })]
-                  }, idx);
-                })
-              })]
-            }), /*#__PURE__*/_jsxs("div", {
-              className: "bg-white border border-[#ECEEF4] rounded-2xl p-4 shadow-soft",
-              children: [/*#__PURE__*/_jsxs("div", {
-                className: "flex items-center justify-between mb-3",
-                children: [/*#__PURE__*/_jsx("h4", {
-                  className: "text-[13px] font-bold text-[#111827]",
-                  children: "My Upcoming Bookings"
-                }), /*#__PURE__*/_jsx("button", {
-                  type: "button",
-                  onClick: function onClick() {
-                    return navigateTo("Bookings");
-                  },
-                  className: "text-xs font-semibold text-[#4F3FE0] hover:underline",
-                  children: "View All"
-                })]
-              }), /*#__PURE__*/_jsx("div", {
-                className: "space-y-2.5",
-                children: upcomingBookings.map(function (bkg) {
-                  return /*#__PURE__*/_jsxs("div", {
-                    className: "flex items-center justify-between bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl p-2.5 hover:border-gray-300 transition-all text-xs",
-                    children: [/*#__PURE__*/_jsxs("div", {
-                      className: "flex items-center gap-2.5 min-w-0",
-                      children: [/*#__PURE__*/_jsxs("div", {
-                        className: "text-left leading-tight w-[58px] flex-shrink-0",
-                        children: [/*#__PURE__*/_jsx("div", {
-                          className: "font-bold text-[#111827] text-[11.5px]",
-                          children: bkg.date
-                        }), /*#__PURE__*/_jsx("div", {
-                          className: "text-[10px] text-[#8A90A2]",
-                          children: bkg.time
-                        })]
-                      }), /*#__PURE__*/_jsx("div", {
-                        className: "w-1 h-8 rounded-full ".concat(bkg.barColor, " flex-shrink-0")
-                      }), /*#__PURE__*/_jsxs("div", {
-                        className: "truncate",
-                        children: [/*#__PURE__*/_jsx("div", {
-                          className: "font-bold text-[#111827] text-[12px] truncate",
-                          children: bkg.title
-                        }), /*#__PURE__*/_jsxs("div", {
-                          className: "text-[11px] text-[#64748B] truncate flex items-center gap-1.5",
-                          children: [/*#__PURE__*/_jsx("span", {
-                            children: bkg.room
-                          }), /*#__PURE__*/_jsx("span", {
-                            children: "\u2022"
-                          }), /*#__PURE__*/_jsxs("span", {
-                            children: ["\uD83D\uDC65 ", bkg.attendees]
-                          })]
-                        })]
-                      })]
-                    }), /*#__PURE__*/_jsx("span", {
-                      className: "px-2 py-0.5 rounded-full text-[10.5px] font-bold flex-shrink-0 ".concat(bkg.statusColor),
-                      children: bkg.status
-                    })]
-                  }, bkg.id);
-                })
-              })]
-            }), /*#__PURE__*/_jsxs("div", {
-              className: "bg-white border border-[#ECEEF4] rounded-2xl p-4 shadow-soft",
-              children: [/*#__PURE__*/_jsxs("div", {
-                className: "flex items-center justify-between mb-2",
-                children: [/*#__PURE__*/_jsx("h4", {
-                  className: "text-[13px] font-bold text-[#111827]",
-                  children: "Usage & Credits"
-                }), /*#__PURE__*/_jsx("span", {
-                  className: "text-[11px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full",
-                  children: "2 hrs free remaining"
-                })]
-              }), /*#__PURE__*/_jsx("div", {
-                className: "w-full h-2 bg-[#E4DEFF] rounded-full overflow-hidden mt-2.5",
-                children: /*#__PURE__*/_jsx("div", {
-                  className: "h-full bg-[#4F3FE0] rounded-full w-[80%]"
-                })
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "flex items-center justify-between text-xs mt-2 text-[#64748B]",
-                children: [/*#__PURE__*/_jsx("span", {
-                  className: "font-bold text-[#111827]",
-                  children: "8 / 10 hours used"
-                }), /*#__PURE__*/_jsx("button", {
-                  type: "button",
-                  onClick: function onClick() {
-                    return navigateTo("Billing & Credits");
-                  },
-                  className: "text-xs font-semibold text-[#4F3FE0] hover:underline",
-                  children: "View Details"
-                })]
-              })]
-            })]
-          })]
-        }), (activeNav === "My Bookings" || activeNav === "Bookings" || activeNav === "My Reservations") && function () {
-          // Calculate dynamic KPI counts from state
-          var totalCount = upcomingBookings.length;
-          var confirmedCount = upcomingBookings.filter(function (b) {
-            return b.status === "Confirmed";
-          }).length;
-          var pendingCount = upcomingBookings.filter(function (b) {
-            return b.status === "Pending";
-          }).length;
-          var cancelledCount = upcomingBookings.filter(function (b) {
-            return b.status === "Cancelled";
-          }).length;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "flex min-h-screen bg-[#F6F7FB] text-[#374151] antialiased"
+  }, /*#__PURE__*/React.createElement("aside", {
+    className: "w-[235px] flex-shrink-0 bg-white border-r border-[#ECEEF4] flex flex-col justify-between py-5 px-3 min-h-screen sticky top-0 h-screen select-none z-40"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-3 px-3 mb-6 cursor-pointer",
+    onClick: function onClick() {
+      return navigateTo("Dashboard");
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "w-10 h-10 rounded-xl bg-[#111827] flex items-center justify-center text-yellow-400 shadow-sm flex-shrink-0"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "bolt",
+    className: "w-5 h-5 text-yellow-400",
+    strokeWidth: 2.2
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "leading-tight"
+  }, /*#__PURE__*/React.createElement("h1", {
+    className: "font-extrabold text-[15px] tracking-tight text-[#111827]"
+  }, "NEXUS HUB"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[11px] font-medium text-[#8A90A2]"
+  }, "Coworking Space"))), /*#__PURE__*/React.createElement("nav", {
+    className: "space-y-1"
+  }, [{
+    name: "Dashboard",
+    icon: "layoutDashboard"
+  }, {
+    name: "Meeting Rooms",
+    icon: "calendar"
+  }, {
+    name: "My Bookings",
+    icon: "bookmark"
+  }, {
+    name: "Calendar",
+    icon: "calendarDays"
+  }, {
+    name: "Billing & Credits",
+    icon: "creditCard"
+  }, {
+    name: "Analytics",
+    icon: "barChart"
+  }].map(function (item) {
+    var isActive = activeNav === item.name || item.name === "My Bookings" && (activeNav === "Bookings" || activeNav === "My Reservations");
+    return /*#__PURE__*/React.createElement("button", {
+      key: item.name,
+      onClick: function onClick() {
+        return navigateTo(item.name);
+      },
+      className: "w-full flex items-center gap-3 px-3.5 py-2.5 rounded-[10px] text-[13px] font-medium transition-all ".concat(isActive ? "bg-[#EEEBFF] text-[#4F3FE0] font-semibold" : "text-[#374151] hover:bg-[#F8F9FD] hover:text-[#111827]")
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: item.icon,
+      className: "w-4 h-4 ".concat(isActive ? "text-[#4F3FE0]" : "text-[#8A90A2]"),
+      strokeWidth: isActive ? 2 : 1.7
+    }), /*#__PURE__*/React.createElement("span", null, item.name));
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "h-[1px] bg-[#ECEEF4] my-3 mx-2"
+  }), [{
+    name: "Workspace & Desks",
+    icon: "building"
+  }, {
+    name: "Visitors",
+    icon: "users"
+  }, {
+    name: "Members",
+    icon: "users"
+  }, {
+    name: "Database Tables",
+    icon: "database"
+  }].map(function (item) {
+    var isActive = activeNav === item.name;
+    return /*#__PURE__*/React.createElement("button", {
+      key: item.name,
+      onClick: function onClick() {
+        return navigateTo(item.name);
+      },
+      className: "w-full flex items-center gap-3 px-3.5 py-2.5 rounded-[10px] text-[13px] font-medium transition-all ".concat(isActive ? "bg-[#EEEBFF] text-[#4F3FE0] font-semibold" : "text-[#374151] hover:bg-[#F8F9FD] hover:text-[#111827]")
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: item.icon,
+      className: "w-4 h-4 ".concat(isActive ? "text-[#4F3FE0]" : "text-[#8A90A2]"),
+      strokeWidth: isActive ? 2 : 1.7
+    }), /*#__PURE__*/React.createElement("span", null, item.name));
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "bg-[#F4F2FF] border border-[#E3DEFF] rounded-2xl p-4 mt-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-1.5 text-[#4F3FE0] text-xs font-bold uppercase tracking-wider"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "crown",
+    className: "w-3.5 h-3.5 text-[#4F3FE0]",
+    strokeWidth: 2
+  }), /*#__PURE__*/React.createElement("span", null, "Startup Plan")), /*#__PURE__*/React.createElement("div", {
+    className: "text-[19px] font-black text-[#111827] mt-1"
+  }, "120 credits"), /*#__PURE__*/React.createElement("div", {
+    className: "w-full h-1.5 bg-[#E4DEFF] rounded-full mt-2.5 overflow-hidden"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "h-full bg-[#4F3FE0] rounded-full w-[33%] transition-all duration-500"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] font-medium text-[#8A90A2] mt-1.5"
+  }, "80 credits left"), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return navigateTo("Billing & Credits");
+    },
+    className: "w-full mt-3 bg-[#4F3FE0] hover:bg-[#4335C9] text-white py-2 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-[0.98]"
+  }, "Upgrade Plan"))), /*#__PURE__*/React.createElement("div", {
+    className: "flex-1 flex flex-col min-w-0"
+  }, /*#__PURE__*/React.createElement("header", {
+    className: "h-[70px] bg-white border-b border-[#ECEEF4] px-8 flex items-center justify-between sticky top-0 z-30"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "relative w-[380px]"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "search",
+    className: "w-4 h-4 text-[#8A90A2] absolute left-3.5 top-1/2 -translate-y-1/2"
+  }), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    value: searchQuery,
+    onChange: function onChange(e) {
+      return setSearchQuery(e.target.value);
+    },
+    placeholder: "Search rooms, amenities, or location...",
+    className: "w-full bg-[#F6F7FB] border border-[#ECEEF4] rounded-full pl-10 pr-4 py-2 text-[13px] text-[#111827] placeholder-[#8A90A2] focus:outline-none focus:border-[#4F3FE0] focus:bg-white transition-all"
+  }), searchQuery && /*#__PURE__*/React.createElement("button", {
+    onClick: function onClick() {
+      return setSearchQuery("");
+    },
+    className: "absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "x",
+    className: "w-3.5 h-3.5"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-4"
+  }, /*#__PURE__*/React.createElement("a", {
+    href: "app.html",
+    className: "hidden md:inline-flex items-center gap-1.5 text-xs font-bold text-[#4F3FE0] bg-[#F4F2FF] border border-[#E3DEFF] hover:bg-[#EAE4FE] px-3 py-1.5 rounded-full transition-all",
+    title: "Open Full Incubation OS App Shell"
+  }, /*#__PURE__*/React.createElement("span", null, "\u26A1 Enterprise OS Shell"), /*#__PURE__*/React.createElement(Icon, {
+    name: "externalLink",
+    className: "w-3 h-3"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2 bg-[#F6F7FB] border border-[#ECEEF4] rounded-full px-3.5 py-1.5 cursor-pointer hover:border-[#4F3FE0]/40 transition-all"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "mapPin",
+    className: "w-3.5 h-3.5 text-[#4F3FE0]"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-[12.5px] font-semibold text-[#111827]"
+  }, "XYZ Technologies (STP-XYZ)"), /*#__PURE__*/React.createElement(Icon, {
+    name: "chevronDown",
+    className: "w-3.5 h-3.5 text-[#8A90A2]"
+  })), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return showToast("Notifications: 2 pending requests");
+    },
+    className: "w-9 h-9 rounded-full bg-[#F6F7FB] border border-[#ECEEF4] flex items-center justify-center relative hover:bg-gray-100 transition-all"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "bell",
+    className: "w-4 h-4 text-[#374151]"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "w-2 h-2 rounded-full bg-red-500 absolute top-2 right-2 border-2 border-white"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2.5 pl-2 cursor-pointer",
+    onClick: function onClick() {
+      return navigateTo("Settings");
+    }
+  }, /*#__PURE__*/React.createElement("img", {
+    src: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&h=120&q=80",
+    alt: "Alex Morgan",
+    className: "w-9 h-9 rounded-full object-cover ring-2 ring-[#4F3FE0]/20"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "leading-tight text-left"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-[13px] font-bold text-[#111827]"
+  }, "Alex Morgan"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] font-medium text-[#8A90A2]"
+  }, "Co-Founder")), /*#__PURE__*/React.createElement(Icon, {
+    name: "chevronDown",
+    className: "w-3.5 h-3.5 text-[#8A90A2] ml-0.5"
+  })))), /*#__PURE__*/React.createElement("div", {
+    className: "flex-1 p-8 max-w-[1600px] w-full mx-auto"
+  }, activeNav === "Dashboard" && /*#__PURE__*/React.createElement("div", {
+    className: "space-y-6 animate-fadeIn"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "relative rounded-2xl border border-[#ECEEF4] overflow-hidden bg-white shadow-soft flex items-center min-h-[200px] max-h-[230px]"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "absolute inset-0 bg-gradient-to-r from-white via-white/95 via-[#F6F4FF]/75 to-transparent z-10 w-[65%]"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "absolute right-0 top-0 bottom-0 w-[55%] h-full z-0 overflow-hidden"
+  }, /*#__PURE__*/React.createElement("img", {
+    src: "assets/rooms/banner-hero.jpg",
+    onError: function onError(e) {
+      e.target.onerror = null;
+      e.target.src = "https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=1200&q=80";
+    },
+    alt: "NEXUS HUB Modern Meeting Space",
+    className: "w-full h-full object-cover object-center"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "absolute inset-0 bg-gradient-to-r from-[#F6F4FF]/60 via-transparent to-black/10"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "relative z-20 p-8 max-w-[580px]"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EEEBFF] text-[#4F3FE0] text-xs font-bold mb-2"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-2 h-2 rounded-full bg-[#4F3FE0] animate-pulse"
+  }), /*#__PURE__*/React.createElement("span", null, "Sat, 31 Oct 2026 \u2022 XYZ Technologies")), /*#__PURE__*/React.createElement("h2", {
+    className: "text-2xl lg:text-3xl font-black text-[#111827] tracking-tight"
+  }, getGreeting(), ", Alex!"), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs sm:text-sm text-[#64748B] mt-1 leading-relaxed"
+  }, "Here's what's happening at ", /*#__PURE__*/React.createElement("strong", null, "XYZ Technologies"), " today."), /*#__PURE__*/React.createElement("div", {
+    className: "mt-4 flex items-center gap-3"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: function onClick() {
+      return navigateTo("Meeting Rooms");
+    },
+    className: "bg-[#4F3FE0] hover:bg-[#4335C9] text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow-sm flex items-center gap-2 hover:shadow-md"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-sm font-bold"
+  }, "+"), /*#__PURE__*/React.createElement("span", null, "Reserve Space")), /*#__PURE__*/React.createElement("button", {
+    onClick: function onClick() {
+      return navigateTo("Calendar");
+    },
+    className: "bg-white/90 backdrop-blur-xs border border-[#ECEEF4] text-[#374151] hover:text-[#4F3FE0] hover:bg-white text-xs font-semibold px-4 py-2.5 rounded-xl transition-all"
+  }, "View Calendar")))), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    onClick: function onClick() {
+      return navigateTo("My Bookings");
+    },
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft hover:shadow-card hover:-translate-y-1 transition-all cursor-pointer group"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between text-[#8A90A2]"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-xs font-bold uppercase tracking-wider text-[#64748B]"
+  }, "Upcoming Meetings"), /*#__PURE__*/React.createElement("div", {
+    className: "w-9 h-9 rounded-xl bg-purple-50 text-[#6E42E5] flex items-center justify-center group-hover:scale-105 transition-transform"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "calendar",
+    className: "w-5 h-5 text-[#6E42E5]"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "text-3xl font-black text-[#111827] mt-3"
+  }, upcomingBookings.length, /*#__PURE__*/React.createElement("span", {
+    className: "text-xs font-bold text-emerald-600 ml-2 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200"
+  }, "100% Confirmed")), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between text-xs text-[#8A90A2] mt-3 pt-3 border-t border-[#ECEEF4]"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[#374151] font-medium"
+  }, "Next: Today at 03:00 PM"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[#4F3FE0] font-bold group-hover:translate-x-0.5 transition-transform"
+  }, "My Bookings \u2192"))), /*#__PURE__*/React.createElement("div", {
+    onClick: function onClick() {
+      return navigateTo("Meeting Rooms");
+    },
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft hover:shadow-card hover:-translate-y-1 transition-all cursor-pointer group"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between text-[#8A90A2]"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-xs font-bold uppercase tracking-wider text-[#64748B]"
+  }, "Available Rooms"), /*#__PURE__*/React.createElement("div", {
+    className: "w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-105 transition-transform"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "building",
+    className: "w-5 h-5 text-emerald-600"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "text-3xl font-black text-[#059669] mt-3"
+  }, "5 ", /*#__PURE__*/React.createElement("span", {
+    className: "text-base text-[#8A90A2] font-semibold"
+  }, "/ 6"), /*#__PURE__*/React.createElement("span", {
+    className: "text-xs font-bold text-[#059669] ml-2 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200"
+  }, "83% Ready")), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between text-xs text-[#8A90A2] mt-3 pt-3 border-t border-[#ECEEF4]"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[#374151] font-medium"
+  }, "Open right now"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[#4F3FE0] font-bold group-hover:translate-x-0.5 transition-transform"
+  }, "Book Room \u2192"))), /*#__PURE__*/React.createElement("div", {
+    onClick: function onClick() {
+      return navigateTo("Billing & Credits");
+    },
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft hover:shadow-card hover:-translate-y-1 transition-all cursor-pointer group"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between text-[#8A90A2]"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-xs font-bold uppercase tracking-wider text-[#64748B]"
+  }, "Remaining Credits"), /*#__PURE__*/React.createElement("div", {
+    className: "w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-105 transition-transform"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "creditCard",
+    className: "w-5 h-5 text-blue-600"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "text-3xl font-black text-[#2563eb] mt-3"
+  }, "80 ", /*#__PURE__*/React.createElement("span", {
+    className: "text-sm font-semibold text-[#8A90A2]"
+  }, "/ 120 cr")), /*#__PURE__*/React.createElement("div", {
+    className: "w-full bg-[#ECEEF4] rounded-full h-1.5 mt-2 overflow-hidden"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-[#4F3FE0] h-full rounded-full",
+    style: {
+      width: "66%"
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between text-xs text-[#8A90A2] mt-3 pt-2 border-t border-[#ECEEF4]"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[#374151] font-medium"
+  }, "Renews in 24 hours"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[#4F3FE0] font-bold group-hover:translate-x-0.5 transition-transform"
+  }, "Billing \u2192"))), /*#__PURE__*/React.createElement("div", {
+    onClick: function onClick() {
+      return navigateTo("My Bookings");
+    },
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft hover:shadow-card hover:-translate-y-1 transition-all cursor-pointer group"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between text-[#8A90A2]"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-xs font-bold uppercase tracking-wider text-[#64748B]"
+  }, "Pending Requests"), /*#__PURE__*/React.createElement("div", {
+    className: "w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-105 transition-transform"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "clock",
+    className: "w-5 h-5 text-amber-600"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "text-3xl font-black text-[#111827] mt-3"
+  }, "0"), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between text-xs text-[#8A90A2] mt-3 pt-3 border-t border-[#ECEEF4]"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[#374151] font-medium"
+  }, "All approved \u2713"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[#4F3FE0] font-bold group-hover:translate-x-0.5 transition-transform"
+  }, "Review \u2192")))), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-1 lg:grid-cols-12 gap-6 items-start"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "lg:col-span-7 space-y-6"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between mb-4"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h4", {
+    className: "text-sm font-black text-[#111827] flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("span", null, "\u26A1"), " Quick Actions"), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-[#8A90A2] mt-0.5"
+  }, "Direct shortcuts to frequent meeting and facility tasks")), /*#__PURE__*/React.createElement("span", {
+    className: "text-[11px] font-bold text-[#64748B] bg-[#F8FAFC] px-2.5 py-1 rounded-full border border-[#ECEEF4]"
+  }, "Shortcuts")), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-1 sm:grid-cols-2 gap-3.5"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return navigateTo("Meeting Rooms");
+    },
+    className: "flex items-center justify-between p-4 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#F3EFFE] hover:border-[#6E42E5]/30 hover:shadow-xs transition-all text-left group"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-3"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-10 h-10 rounded-xl bg-purple-50 text-[#6E42E5] flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "calendar",
+    className: "w-5 h-5 text-[#6E42E5]"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "text-xs font-bold text-[#111827]"
+  }, "Book a Room"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] text-[#8A90A2]"
+  }, "Meeting Rooms & Pods"))), /*#__PURE__*/React.createElement("span", {
+    className: "text-[#8A90A2] group-hover:text-[#4F3FE0] group-hover:translate-x-1 transition-all text-sm font-bold"
+  }, "\u2192")), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return navigateTo("My Bookings");
+    },
+    className: "flex items-center justify-between p-4 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#EEF5FF] hover:border-[#2B71FF]/30 hover:shadow-xs transition-all text-left group"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-3"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-10 h-10 rounded-xl bg-blue-50 text-[#2B71FF] flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "bookmark",
+    className: "w-5 h-5 text-[#2B71FF]"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "text-xs font-bold text-[#111827]"
+  }, "My Bookings"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] text-[#8A90A2]"
+  }, "Active reservations"))), /*#__PURE__*/React.createElement("span", {
+    className: "text-[#8A90A2] group-hover:text-[#4F3FE0] group-hover:translate-x-1 transition-all text-sm font-bold"
+  }, "\u2192")), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return navigateTo("Calendar");
+    },
+    className: "flex items-center justify-between p-4 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#EEFAF3] hover:border-[#12A150]/30 hover:shadow-xs transition-all text-left group"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-3"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "calendarDays",
+    className: "w-5 h-5 text-emerald-600"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "text-xs font-bold text-[#111827]"
+  }, "Open Calendar"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] text-[#8A90A2]"
+  }, "Full Timeline View"))), /*#__PURE__*/React.createElement("span", {
+    className: "text-[#8A90A2] group-hover:text-[#4F3FE0] group-hover:translate-x-1 transition-all text-sm font-bold"
+  }, "\u2192")), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return navigateTo("Visitors");
+    },
+    className: "flex items-center justify-between p-4 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#FFF5EC] hover:border-[#F36B20]/30 hover:shadow-xs transition-all text-left group"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-3"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-10 h-10 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "userPlus",
+    className: "w-5 h-5 text-orange-600"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "text-xs font-bold text-[#111827]"
+  }, "Invite Guests"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] text-[#8A90A2]"
+  }, "Visitor Gate Pass"))), /*#__PURE__*/React.createElement("span", {
+    className: "text-[#8A90A2] group-hover:text-[#4F3FE0] group-hover:translate-x-1 transition-all text-sm font-bold"
+  }, "\u2192")))), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between mb-4"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h4", {
+    className: "text-sm font-black text-[#111827] flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("span", null, "\uD83C\uDFE2"), " Venture Facilities Overview"), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-[#8A90A2] mt-0.5"
+  }, "Assigned physical space and operational amenities")), /*#__PURE__*/React.createElement("span", {
+    onClick: function onClick() {
+      return navigateTo("Workspace & Desks");
+    },
+    className: "text-xs font-bold text-[#4F3FE0] hover:underline cursor-pointer"
+  }, "Manage Space \u2192")), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-2 sm:grid-cols-4 gap-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    onClick: function onClick() {
+      return navigateTo("Members");
+    },
+    className: "p-3.5 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl cursor-pointer hover:border-[#4F3FE0]/30 transition-colors"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "w-7 h-7 rounded-lg bg-indigo-50 text-[#4F3FE0] flex items-center justify-center mb-1.5"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "users",
+    className: "w-4 h-4"
+  })), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-bold text-[#8A90A2] uppercase tracking-wider"
+  }, "Active Team"), /*#__PURE__*/React.createElement("div", {
+    className: "text-sm font-black text-[#111827] mt-0.5"
+  }, "8 Members"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10.5px] text-[#64748B] block mt-0.5"
+  }, "Team Registered")), /*#__PURE__*/React.createElement("div", {
+    onClick: function onClick() {
+      return navigateTo("Workspace & Desks");
+    },
+    className: "p-3.5 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl cursor-pointer hover:border-[#4F3FE0]/30 transition-colors"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "w-7 h-7 rounded-lg bg-purple-50 text-[#6E42E5] flex items-center justify-center mb-1.5"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "building",
+    className: "w-4 h-4"
+  })), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-bold text-[#8A90A2] uppercase tracking-wider"
+  }, "Assigned Space"), /*#__PURE__*/React.createElement("div", {
+    className: "text-sm font-black text-[#111827] mt-0.5"
+  }, "Suite 401"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10.5px] text-[#64748B] block mt-0.5"
+  }, "6 Desks (Fl 4)")), /*#__PURE__*/React.createElement("div", {
+    onClick: function onClick() {
+      return navigateTo("Billing & Credits");
+    },
+    className: "p-3.5 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl cursor-pointer hover:border-[#4F3FE0]/30 transition-colors"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center mb-1.5"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "creditCard",
+    className: "w-4 h-4"
+  })), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-bold text-[#8A90A2] uppercase tracking-wider"
+  }, "Invoices Due"), /*#__PURE__*/React.createElement("div", {
+    className: "text-sm font-black text-emerald-600 mt-0.5"
+  }, "All Settled \u2713"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10.5px] text-emerald-700 font-semibold block mt-0.5"
+  }, "$0.00 Overdue")), /*#__PURE__*/React.createElement("div", {
+    onClick: function onClick() {
+      return navigateTo("Analytics");
+    },
+    className: "p-3.5 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl cursor-pointer hover:border-[#4F3FE0]/30 transition-colors"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center mb-1.5"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "crown",
+    className: "w-4 h-4 text-amber-600"
+  })), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-bold text-[#8A90A2] uppercase tracking-wider"
+  }, "Next Milestone"), /*#__PURE__*/React.createElement("div", {
+    className: "text-sm font-black text-[#4F3FE0] mt-0.5"
+  }, "Beta Prototype"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10.5px] text-[#64748B] block mt-0.5"
+  }, "Target: Nov 15"))))), /*#__PURE__*/React.createElement("div", {
+    className: "lg:col-span-5 space-y-6"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between pb-3 border-b border-[#ECEEF4] mb-4"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h4", {
+    className: "text-sm font-black text-[#111827] flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDDD3\uFE0F"), " Today's Schedule"), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-[#8A90A2] mt-0.5"
+  }, "Timeline of room allocations")), /*#__PURE__*/React.createElement("button", {
+    onClick: function onClick() {
+      return navigateTo("Calendar");
+    },
+    className: "text-xs font-bold text-[#4F3FE0] hover:underline"
+  }, "View Calendar \u2192")), /*#__PURE__*/React.createElement("div", {
+    className: "relative pl-5 space-y-4 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#ECEEF4]"
+  }, todaysSchedule.slice(0, 4).map(function (item, idx) {
+    return /*#__PURE__*/React.createElement("div", {
+      key: idx,
+      onClick: function onClick() {
+        return navigateTo("Meeting Rooms");
+      },
+      className: "relative flex items-start gap-3 p-3 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:border-[#4F3FE0]/40 transition-all cursor-pointer group"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "absolute -left-[21px] top-3.5 w-2.5 h-2.5 rounded-full border-2 border-white ".concat(item.dotColor || 'bg-[#4F3FE0]', " shadow-xs")
+    }), /*#__PURE__*/React.createElement("div", {
+      className: "flex-1 min-w-0"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between gap-2"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-[11px] font-bold text-[#4F3FE0]"
+    }, item.time), /*#__PURE__*/React.createElement("span", {
+      className: "bg-emerald-50 text-emerald-600 border border-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded-full"
+    }, "Confirmed")), /*#__PURE__*/React.createElement("div", {
+      className: "text-xs font-bold text-[#111827] mt-1 group-hover:text-[#4F3FE0] transition-colors truncate"
+    }, item.title), /*#__PURE__*/React.createElement("div", {
+      className: "text-[11px] text-[#8A90A2] mt-0.5"
+    }, item.room, " \u2022 \uD83D\uDC65 ", item.attendees, " pax")));
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "mt-4 pt-3 border-t border-[#ECEEF4] flex items-center justify-between text-xs text-[#64748B]"
+  }, /*#__PURE__*/React.createElement("span", null, "Need to book a new slot?"), /*#__PURE__*/React.createElement("button", {
+    onClick: function onClick() {
+      return navigateTo("Meeting Rooms");
+    },
+    className: "bg-[#4F3FE0] text-white px-3.5 py-1.5 rounded-xl text-xs font-bold hover:bg-[#4335C9] transition-all"
+  }, "+ Reserve Space"))), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft space-y-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between pb-3 border-b border-[#ECEEF4]"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h4", {
+    className: "text-sm font-black text-[#111827] flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDD52"), " Recent Activity"), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-[#8A90A2] mt-0.5"
+  }, "Authorized venture event stream")), /*#__PURE__*/React.createElement("span", {
+    onClick: function onClick() {
+      return navigateTo("Analytics");
+    },
+    className: "text-xs font-bold text-[#4F3FE0] hover:underline cursor-pointer"
+  }, "View All \u2192")), /*#__PURE__*/React.createElement("div", {
+    className: "divide-y divide-[#ECEEF4]"
+  }, DASHBOARD_ACTIVITIES.map(function (act) {
+    return /*#__PURE__*/React.createElement("div", {
+      key: act.id,
+      className: "py-2.5 flex items-start justify-between gap-3 first:pt-1 last:pb-1"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-start gap-3"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "w-8 h-8 rounded-xl bg-[#F6F7FB] border border-[#ECEEF4] flex items-center justify-center text-[#4F3FE0] flex-shrink-0 mt-0.5"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: act.icon,
+      className: "w-4 h-4 text-[#4F3FE0]"
+    })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      className: "text-xs font-bold text-[#111827]"
+    }, act.title), /*#__PURE__*/React.createElement("div", {
+      className: "text-[11px] text-[#64748B] mt-0.5"
+    }, act.desc))), /*#__PURE__*/React.createElement("span", {
+      className: "text-[10px] font-semibold text-[#8A90A2] whitespace-nowrap bg-[#F8FAFC] px-2 py-0.5 rounded-md border border-[#ECEEF4]"
+    }, act.time));
+  })))))), activeNav === "Meeting Rooms" && /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-8 items-start animate-fadeIn"
+  }, /*#__PURE__*/React.createElement("main", {
+    className: "space-y-6 min-w-0"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "relative rounded-2xl border border-[#ECEEF4] overflow-hidden bg-white shadow-soft flex items-center min-h-[220px]"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "absolute inset-0 bg-gradient-to-r from-[#EAE6FF] via-[#F4F2FF] to-transparent z-10 w-[60%]"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "absolute right-0 top-0 bottom-0 w-[55%] h-full z-0 overflow-hidden"
+  }, /*#__PURE__*/React.createElement("img", {
+    src: "assets/rooms/banner-hero.jpg",
+    onError: function onError(e) {
+      e.target.onerror = null;
+      e.target.src = "https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=1200&q=80";
+    },
+    alt: "Modern Boardroom",
+    className: "w-full h-full object-cover object-center"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "absolute inset-0 bg-gradient-to-r from-[#F4F2FF] via-transparent to-black/10"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "relative z-20 p-8 max-w-[560px]"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-1.5 text-xs font-bold text-[#4F3FE0] uppercase tracking-wider mb-2"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "bolt",
+    className: "w-3.5 h-3.5 text-[#4F3FE0]",
+    strokeWidth: 2.5
+  }), /*#__PURE__*/React.createElement("span", null, "NEXUS HUB")), /*#__PURE__*/React.createElement("h2", {
+    className: "text-[34px] xl:text-[38px] font-black text-[#111827] leading-[1.12] tracking-tight"
+  }, "Book the right space ", /*#__PURE__*/React.createElement("br", null), "for every idea"), /*#__PURE__*/React.createElement("p", {
+    className: "text-[13px] text-[#374151] font-medium mt-2 max-w-[460px]"
+  }, "Modern meeting rooms for productive discussions, workshops and client calls."), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-wrap items-center gap-2 mt-4 pt-1"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-sm border border-[#ECEEF4] rounded-lg px-2.5 py-1 text-[11px] font-semibold text-[#111827] shadow-sm"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-2 h-2 rounded-full bg-emerald-500"
+  }), "Instant Booking"), /*#__PURE__*/React.createElement("span", {
+    className: "inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-sm border border-[#ECEEF4] rounded-lg px-2.5 py-1 text-[11px] font-semibold text-[#111827] shadow-sm"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-2 h-2 rounded-full bg-blue-500"
+  }), "Real-time Availability"), /*#__PURE__*/React.createElement("span", {
+    className: "inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-sm border border-[#ECEEF4] rounded-lg px-2.5 py-1 text-[11px] font-semibold text-[#111827] shadow-sm"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-2 h-2 rounded-full bg-amber-500"
+  }), "Flexible Durations"), /*#__PURE__*/React.createElement("span", {
+    className: "inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-sm border border-[#ECEEF4] rounded-lg px-2.5 py-1 text-[11px] font-semibold text-[#111827] shadow-sm"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-2 h-2 rounded-full bg-indigo-500"
+  }), "Integrated Calendar")))), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft space-y-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-[1fr_1.3fr_1fr_auto] gap-3 items-center"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-col"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-bold uppercase tracking-wider text-[#8A90A2] mb-1"
+  }, "Date"), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2 bg-[#F6F7FB] border border-[#ECEEF4] rounded-xl px-3.5 py-2.5 cursor-pointer hover:border-[#4F3FE0]/50 transition-all"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "calendar",
+    className: "w-4 h-4 text-[#4F3FE0]"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-[13px] font-semibold text-[#111827] whitespace-nowrap"
+  }, selectedDate), /*#__PURE__*/React.createElement(Icon, {
+    name: "chevronDown",
+    className: "w-3.5 h-3.5 text-[#8A90A2] ml-auto"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-col"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-bold uppercase tracking-wider text-[#8A90A2] mb-1"
+  }, "Time"), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2 bg-[#F6F7FB] border border-[#ECEEF4] rounded-xl px-3.5 py-2.5 cursor-pointer hover:border-[#4F3FE0]/50 transition-all"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "clock",
+    className: "w-4 h-4 text-[#4F3FE0]"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-[13px] font-semibold text-[#111827] whitespace-nowrap"
+  }, selectedTime), /*#__PURE__*/React.createElement(Icon, {
+    name: "chevronDown",
+    className: "w-3.5 h-3.5 text-[#8A90A2] ml-auto"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-col"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-bold uppercase tracking-wider text-[#8A90A2] mb-1"
+  }, "People"), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2 bg-[#F6F7FB] border border-[#ECEEF4] rounded-xl px-3.5 py-2.5 cursor-pointer hover:border-[#4F3FE0]/50 transition-all"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "users",
+    className: "w-4 h-4 text-[#4F3FE0]"
+  }), /*#__PURE__*/React.createElement("select", {
+    value: selectedPeople,
+    onChange: function onChange(e) {
+      return setSelectedPeople(Number(e.target.value));
+    },
+    className: "bg-transparent text-[13px] font-semibold text-[#111827] outline-none cursor-pointer w-full"
+  }, /*#__PURE__*/React.createElement("option", {
+    value: 2
+  }, "2 people"), /*#__PURE__*/React.createElement("option", {
+    value: 4
+  }, "4 people"), /*#__PURE__*/React.createElement("option", {
+    value: 6
+  }, "6 people"), /*#__PURE__*/React.createElement("option", {
+    value: 8
+  }, "8 people"), /*#__PURE__*/React.createElement("option", {
+    value: 10
+  }, "10 people"), /*#__PURE__*/React.createElement("option", {
+    value: 20
+  }, "20+ people")))), /*#__PURE__*/React.createElement("div", {
+    className: "self-end pt-4 sm:pt-0"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return showToast("\uD83D\uDD0D Filtered rooms with capacity >= ".concat(selectedPeople));
+    },
+    className: "w-full bg-[#4F3FE0] hover:bg-[#4335C9] text-white px-7 py-2.5 rounded-xl text-[13px] font-bold transition-all shadow-sm flex items-center justify-center gap-2 active:scale-95"
+  }, /*#__PURE__*/React.createElement("span", null, "Search Rooms")))), /*#__PURE__*/React.createElement("div", {
+    className: "pt-2 border-t border-[#ECEEF4] flex items-center justify-between flex-wrap gap-2"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center flex-wrap gap-1.5"
+  }, ROOM_TYPES.map(function (type) {
+    return /*#__PURE__*/React.createElement("button", {
+      key: type,
+      type: "button",
+      onClick: function onClick() {
+        return setSelectedType(type);
+      },
+      className: "px-3 py-1.5 rounded-full text-xs font-semibold transition-all ".concat(selectedType === type ? "bg-[#4F3FE0] text-white shadow-sm" : "bg-[#F6F7FB] hover:bg-gray-200 text-[#374151]")
+    }, type);
+  })), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return showToast("Advanced filters: Price range & availability applied");
+    },
+    className: "inline-flex items-center gap-1.5 border border-[#4F3FE0] text-[#4F3FE0] hover:bg-[#F4F2FF] px-3.5 py-1.5 rounded-full text-xs font-bold transition-all"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "sliders",
+    className: "w-3.5 h-3.5"
+  }), /*#__PURE__*/React.createElement("span", null, "More Filters"))), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center flex-wrap gap-2 pt-1"
+  }, AMENITIES_LIST.map(function (amenity) {
+    var isSelected = selectedAmenities.includes(amenity.name);
+    return /*#__PURE__*/React.createElement("button", {
+      key: amenity.name,
+      type: "button",
+      onClick: function onClick() {
+        return toggleAmenity(amenity.name);
+      },
+      className: "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11.5px] font-medium border transition-all ".concat(isSelected ? "bg-[#EEEBFF] border-[#4F3FE0] text-[#4F3FE0] font-semibold" : "bg-white border-[#ECEEF4] text-[#374151] hover:border-gray-300")
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: amenity.icon,
+      className: "w-3.5 h-3.5 ".concat(isSelected ? "text-[#4F3FE0]" : "text-[#8A90A2]")
+    }), /*#__PURE__*/React.createElement("span", null, amenity.name));
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between pt-2"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-3"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "text-xl font-black text-[#111827]"
+  }, "Available Rooms"), /*#__PURE__*/React.createElement("span", {
+    className: "bg-[#DCFCE7] text-[#16A34A] px-2.5 py-0.5 rounded-full text-xs font-bold border border-emerald-200"
+  }, filteredRooms.length, " rooms available")), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center bg-white border border-[#ECEEF4] p-1 rounded-xl shadow-xs"
+  }, ["Cards", "List", "Calendar"].map(function (v) {
+    return /*#__PURE__*/React.createElement("button", {
+      key: v,
+      type: "button",
+      onClick: function onClick() {
+        return setViewMode(v);
+      },
+      className: "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ".concat(viewMode === v ? "bg-[#4F3FE0] text-white shadow-xs" : "text-[#64748B] hover:text-[#111827]")
+    }, /*#__PURE__*/React.createElement("span", null, v));
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5"
+  }, filteredRooms.map(function (room) {
+    var isFav = favorites.has(room.id);
+    var isAvailable = room.status === "Available";
+    return /*#__PURE__*/React.createElement("div", {
+      key: room.id,
+      className: "bg-white border border-[#ECEEF4] rounded-2xl overflow-hidden shadow-soft hover:shadow-card hover:-translate-y-1 transition-all duration-200 flex flex-col group"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "relative aspect-[16/9] w-full overflow-hidden bg-gray-100"
+    }, /*#__PURE__*/React.createElement("img", {
+      src: room.image,
+      onError: function onError(e) {
+        e.target.onerror = null;
+        e.target.src = room.fallbackImage;
+      },
+      alt: room.name,
+      className: "w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+    }), /*#__PURE__*/React.createElement("div", {
+      className: "absolute top-3 left-3"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "px-2.5 py-1 rounded-full text-[11px] font-bold text-white shadow-md ".concat(isAvailable ? "bg-[#16A34A]" : "bg-[#F97316]")
+    }, room.status)), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: function onClick(e) {
+        return toggleFavorite(room.id, e);
+      },
+      className: "w-8 h-8 rounded-full bg-white/95 backdrop-blur-sm shadow-md flex items-center justify-center absolute top-3 right-3 hover:scale-110 active:scale-95 transition-all"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: isFav ? "heartFilled" : "heart",
+      className: "w-4 h-4 ".concat(isFav ? "text-[#EF4444]" : "text-[#8A90A2]"),
+      strokeWidth: 2
+    }))), /*#__PURE__*/React.createElement("div", {
+      className: "p-4 flex-1 flex flex-col justify-between"
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h4", {
+      className: "font-bold text-[15px] text-[#111827] cursor-pointer hover:text-[#4F3FE0] transition-colors flex items-center justify-between",
+      onClick: function onClick() {
+        return openBookingDrawer(room);
+      }
+    }, /*#__PURE__*/React.createElement("span", null, room.name), /*#__PURE__*/React.createElement("span", {
+      className: "text-[10px] font-semibold text-[#4F3FE0] bg-[#F4F2FF] px-2 py-0.5 rounded-full border border-[#E0D8FF]"
+    }, "Quick Book \u2197")), /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-1.5 text-xs text-[#64748B] font-medium mt-1"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "users",
+      className: "w-3.5 h-3.5 text-[#8A90A2]"
+    }), /*#__PURE__*/React.createElement("span", null, room.capacity, " people"), /*#__PURE__*/React.createElement("span", {
+      className: "mx-1"
+    }, "\u2022"), /*#__PURE__*/React.createElement("span", {
+      className: "text-[#4F3FE0] font-semibold"
+    }, room.rate))), /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between pt-3 mt-3 border-t border-[#ECEEF4]"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-2 text-[#8A90A2]"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "monitor",
+      className: "w-4 h-4 hover:text-[#111827]"
+    }), /*#__PURE__*/React.createElement(Icon, {
+      name: "video",
+      className: "w-4 h-4 hover:text-[#111827]"
+    }), /*#__PURE__*/React.createElement(Icon, {
+      name: "mic",
+      className: "w-4 h-4 hover:text-[#111827]"
+    }), /*#__PURE__*/React.createElement(Icon, {
+      name: "wifi",
+      className: "w-4 h-4 hover:text-[#111827]"
+    })), isAvailable ? /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: function onClick() {
+        return openBookingDrawer(room);
+      },
+      className: "bg-[#4F3FE0] hover:bg-[#4335C9] text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95"
+    }, "Book Now") : /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: function onClick() {
+        return openBookingDrawer(room);
+      },
+      className: "border border-[#ECEEF4] hover:bg-gray-50 text-[#374151] px-4 py-2 rounded-xl text-xs font-semibold transition-all"
+    }, "View Schedule"))));
+  }))), /*#__PURE__*/React.createElement("aside", {
+    className: "space-y-5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-4 shadow-soft"
+  }, /*#__PURE__*/React.createElement("h4", {
+    className: "text-[13px] font-bold text-[#111827] mb-3"
+  }, "Quick Actions"), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-4 gap-2 text-center"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return openBookingDrawer(rooms[0]);
+    },
+    className: "bg-[#F3EFFE] hover:bg-[#EAE4FE] text-[#6E42E5] p-2.5 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all group"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "calendar",
+    className: "w-5 h-5 text-[#6E42E5] group-hover:scale-110 transition-transform"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10.5px] font-bold leading-tight"
+  }, "Book a Room")), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return navigateTo("My Bookings");
+    },
+    className: "bg-[#EEF5FF] hover:bg-[#DFEDFF] text-[#2B71FF] p-2.5 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all group"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "fileText",
+    className: "w-5 h-5 text-[#2B71FF] group-hover:scale-110 transition-transform"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10.5px] font-bold leading-tight"
+  }, "My Bookings")), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return showToast("Recurring scheduler activated");
+    },
+    className: "bg-[#EEFAF3] hover:bg-[#DEFAEA] text-[#12A150] p-2.5 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all group"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "repeat",
+    className: "w-5 h-5 text-[#12A150] group-hover:scale-110 transition-transform"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10.5px] font-bold leading-tight"
+  }, "Recurring")), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return navigateTo("Visitors");
+    },
+    className: "bg-[#FFF5EC] hover:bg-[#FFE8D5] text-[#F36B20] p-2.5 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all group"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "userPlus",
+    className: "w-5 h-5 text-[#F36B20] group-hover:scale-110 transition-transform"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10.5px] font-bold leading-tight"
+  }, "Invite Guests")))), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-4 shadow-soft"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between mb-3"
+  }, /*#__PURE__*/React.createElement("h4", {
+    className: "text-[13px] font-bold text-[#111827]"
+  }, "Today's Schedule"), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return navigateTo("Calendar");
+    },
+    className: "text-xs font-semibold text-[#4F3FE0] hover:underline"
+  }, "View Calendar")), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-2.5"
+  }, todaysSchedule.map(function (item, idx) {
+    return /*#__PURE__*/React.createElement("div", {
+      key: idx,
+      className: "flex items-start gap-2.5 text-xs"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "w-[84px] text-[10.5px] font-semibold text-[#8A90A2] pt-1 whitespace-nowrap leading-tight"
+    }, item.time.replace("–", "\n–")), /*#__PURE__*/React.createElement("div", {
+      className: "pt-2 flex flex-col items-center"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "w-2 h-2 rounded-full ".concat(item.dotColor, " ring-4 ring-white shadow-xs")
+    })), /*#__PURE__*/React.createElement("div", {
+      className: "flex-1 bg-[#F8FAFC] border border-[#ECEEF4] ".concat(item.tintColor, " rounded-xl p-2.5")
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "font-bold text-[#111827] text-[12px] truncate"
+    }, item.title), /*#__PURE__*/React.createElement(Icon, {
+      name: "moreHorizontal",
+      className: "w-3.5 h-3.5 text-[#8A90A2]"
+    })), /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between text-[11px] text-[#64748B] mt-1"
+    }, /*#__PURE__*/React.createElement("span", null, item.room), /*#__PURE__*/React.createElement("span", {
+      className: "inline-flex items-center gap-1 font-medium"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "users",
+      className: "w-3 h-3 text-[#8A90A2]"
+    }), item.attendees))));
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-4 shadow-soft"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between mb-3"
+  }, /*#__PURE__*/React.createElement("h4", {
+    className: "text-[13px] font-bold text-[#111827]"
+  }, "My Upcoming Bookings"), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return navigateTo("Bookings");
+    },
+    className: "text-xs font-semibold text-[#4F3FE0] hover:underline"
+  }, "View All")), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-2.5"
+  }, upcomingBookings.map(function (bkg) {
+    return /*#__PURE__*/React.createElement("div", {
+      key: bkg.id,
+      className: "flex items-center justify-between bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl p-2.5 hover:border-gray-300 transition-all text-xs"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-2.5 min-w-0"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "text-left leading-tight w-[58px] flex-shrink-0"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "font-bold text-[#111827] text-[11.5px]"
+    }, bkg.date), /*#__PURE__*/React.createElement("div", {
+      className: "text-[10px] text-[#8A90A2]"
+    }, bkg.time)), /*#__PURE__*/React.createElement("div", {
+      className: "w-1 h-8 rounded-full ".concat(bkg.barColor, " flex-shrink-0")
+    }), /*#__PURE__*/React.createElement("div", {
+      className: "truncate"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "font-bold text-[#111827] text-[12px] truncate"
+    }, bkg.title), /*#__PURE__*/React.createElement("div", {
+      className: "text-[11px] text-[#64748B] truncate flex items-center gap-1.5"
+    }, /*#__PURE__*/React.createElement("span", null, bkg.room), /*#__PURE__*/React.createElement("span", null, "\u2022"), /*#__PURE__*/React.createElement("span", null, "\uD83D\uDC65 ", bkg.attendees)))), /*#__PURE__*/React.createElement("span", {
+      className: "px-2 py-0.5 rounded-full text-[10.5px] font-bold flex-shrink-0 ".concat(bkg.statusColor)
+    }, bkg.status));
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-4 shadow-soft"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between mb-2"
+  }, /*#__PURE__*/React.createElement("h4", {
+    className: "text-[13px] font-bold text-[#111827]"
+  }, "Usage & Credits"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[11px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full"
+  }, "2 hrs free remaining")), /*#__PURE__*/React.createElement("div", {
+    className: "w-full h-2 bg-[#E4DEFF] rounded-full overflow-hidden mt-2.5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "h-full bg-[#4F3FE0] rounded-full w-[80%]"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between text-xs mt-2 text-[#64748B]"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "font-bold text-[#111827]"
+  }, "8 / 10 hours used"), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return navigateTo("Billing & Credits");
+    },
+    className: "text-xs font-semibold text-[#4F3FE0] hover:underline"
+  }, "View Details"))))), (activeNav === "My Bookings" || activeNav === "Bookings" || activeNav === "My Reservations") && function () {
+    // Calculate dynamic KPI counts from state
+    var totalCount = upcomingBookings.length;
+    var confirmedCount = upcomingBookings.filter(function (b) {
+      return b.status === "Confirmed";
+    }).length;
+    var pendingCount = upcomingBookings.filter(function (b) {
+      return b.status === "Pending";
+    }).length;
+    var cancelledCount = upcomingBookings.filter(function (b) {
+      return b.status === "Cancelled";
+    }).length;
 
-          // Dynamic filtering logic
-          var filteredBookings = upcomingBookings.filter(function (bkg) {
-            if (bookingsFilterTab !== "All Bookings" && bkg.status !== bookingsFilterTab) {
-              return false;
-            }
-            if (bookingsSearchQuery.trim()) {
-              var q = bookingsSearchQuery.toLowerCase();
-              var matchTitle = (bkg.title || "").toLowerCase().includes(q);
-              var matchRoom = (bkg.room || "").toLowerCase().includes(q);
-              var matchResId = (bkg.resId || "").toLowerCase().includes(q);
-              if (!matchTitle && !matchRoom && !matchResId) return false;
-            }
-            if (bookingsRoomFilter !== "All Rooms" && bkg.room !== bookingsRoomFilter) {
-              return false;
-            }
-            if (bookingsDateFilter === "Today" && bkg.date !== "Today") return false;
-            if (bookingsDateFilter === "Upcoming" && (bkg.status === "Cancelled" || bkg.status === "Completed")) return false;
-            if (bookingsDateFilter === "Past" && bkg.status !== "Completed" && bkg.status !== "Cancelled") return false;
-            return true;
-          });
-          var isFilterActive = bookingsSearchQuery || bookingsRoomFilter !== "All Rooms" || bookingsDateFilter !== "All Dates" || bookingsFilterTab !== "All Bookings";
-          return /*#__PURE__*/_jsxs("div", {
-            className: "space-y-6 animate-fadeIn",
-            children: [/*#__PURE__*/_jsxs("div", {
-              className: "relative rounded-2xl border border-[#ECEEF4] overflow-hidden bg-white shadow-soft flex items-center min-h-[150px] sm:min-h-[170px] max-h-[190px]",
-              children: [/*#__PURE__*/_jsx("div", {
-                className: "absolute inset-0 bg-gradient-to-r from-white via-white/95 via-[#F6F4FF]/75 to-transparent z-10 w-full sm:w-[65%]"
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "absolute right-0 top-0 bottom-0 w-full sm:w-[50%] h-full z-0 overflow-hidden",
-                children: [/*#__PURE__*/_jsx("img", {
-                  src: "assets/rooms/banner-hero.jpg",
-                  onError: function onError(e) {
-                    e.target.onerror = null;
-                    e.target.src = "https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=1200&q=80";
-                  },
-                  alt: "NEXUS HUB Modern Meeting Space",
-                  className: "w-full h-full object-cover object-center"
-                }), /*#__PURE__*/_jsx("div", {
-                  className: "absolute inset-0 bg-gradient-to-r from-[#F6F4FF]/60 via-transparent to-black/10"
-                })]
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "relative z-20 p-6 sm:p-7 max-w-[580px]",
-                children: [/*#__PURE__*/_jsxs("div", {
-                  className: "inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EEEBFF] text-[#4F3FE0] text-[11px] font-bold mb-2",
-                  children: [/*#__PURE__*/_jsx("span", {
-                    className: "w-2 h-2 rounded-full bg-[#4F3FE0] animate-pulse"
-                  }), /*#__PURE__*/_jsx("span", {
-                    children: "RESERVATION COMMAND CENTER \u2022 XYZ TECHNOLOGIES"
-                  })]
-                }), /*#__PURE__*/_jsx("h2", {
-                  className: "text-2xl sm:text-3xl font-black text-[#111827] tracking-tight",
-                  children: "My Bookings & Reservations"
-                }), /*#__PURE__*/_jsx("p", {
-                  className: "text-xs sm:text-sm text-[#64748B] mt-1 leading-relaxed",
-                  children: "Manage, track and modify your meeting room bookings all in one place."
-                }), /*#__PURE__*/_jsx("div", {
-                  className: "mt-3.5",
-                  children: /*#__PURE__*/_jsxs("button", {
-                    onClick: function onClick() {
-                      return navigateTo("Meeting Rooms");
-                    },
-                    className: "bg-[#4F3FE0] hover:bg-[#4335C9] text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow-sm hover:shadow-md active:scale-[0.98] flex items-center gap-2",
-                    children: [/*#__PURE__*/_jsx("span", {
-                      className: "text-sm font-bold",
-                      children: "+"
-                    }), /*#__PURE__*/_jsx("span", {
-                      children: "Book a Meeting Room"
-                    })]
-                  })
-                })]
-              })]
-            }), /*#__PURE__*/_jsxs("div", {
-              className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4",
-              children: [/*#__PURE__*/_jsxs("div", {
-                onClick: function onClick() {
-                  return setBookingsFilterTab("All Bookings");
-                },
-                className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft hover:shadow-card hover:-translate-y-0.5 transition-all cursor-pointer group",
-                children: [/*#__PURE__*/_jsxs("div", {
-                  className: "flex items-center justify-between text-[#8A90A2]",
-                  children: [/*#__PURE__*/_jsx("span", {
-                    className: "text-[11px] font-extrabold uppercase tracking-wider text-[#64748B]",
-                    children: "Total Bookings"
-                  }), /*#__PURE__*/_jsx("div", {
-                    className: "w-9 h-9 rounded-xl bg-purple-50 text-[#4F3FE0] flex items-center justify-center group-hover:scale-105 transition-transform",
-                    children: /*#__PURE__*/_jsx(Icon, {
-                      name: "calendar",
-                      className: "w-5 h-5 text-[#4F3FE0]"
-                    })
-                  })]
-                }), /*#__PURE__*/_jsx("div", {
-                  className: "text-3xl font-black text-[#111827] mt-2",
-                  children: totalCount
-                }), /*#__PURE__*/_jsxs("div", {
-                  className: "text-[11px] font-medium text-[#8A90A2] mt-1 flex items-center gap-1.5",
-                  children: [/*#__PURE__*/_jsx("span", {
-                    className: "w-1.5 h-1.5 rounded-full bg-[#4F3FE0]"
-                  }), /*#__PURE__*/_jsx("span", {
-                    children: "All scheduled sessions"
-                  })]
-                })]
-              }), /*#__PURE__*/_jsxs("div", {
-                onClick: function onClick() {
-                  return setBookingsFilterTab("Confirmed");
-                },
-                className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft hover:shadow-card hover:-translate-y-0.5 transition-all cursor-pointer group",
-                children: [/*#__PURE__*/_jsxs("div", {
-                  className: "flex items-center justify-between text-[#8A90A2]",
-                  children: [/*#__PURE__*/_jsx("span", {
-                    className: "text-[11px] font-extrabold uppercase tracking-wider text-[#64748B]",
-                    children: "Confirmed"
-                  }), /*#__PURE__*/_jsx("div", {
-                    className: "w-9 h-9 rounded-xl bg-emerald-50 text-[#16A66A] flex items-center justify-center group-hover:scale-105 transition-transform",
-                    children: /*#__PURE__*/_jsx(Icon, {
-                      name: "checkCircle",
-                      className: "w-5 h-5 text-[#16A66A]"
-                    })
-                  })]
-                }), /*#__PURE__*/_jsx("div", {
-                  className: "text-3xl font-black text-[#16A66A] mt-2",
-                  children: confirmedCount
-                }), /*#__PURE__*/_jsxs("div", {
-                  className: "text-[11px] font-medium text-[#8A90A2] mt-1 flex items-center gap-1.5",
-                  children: [/*#__PURE__*/_jsx("span", {
-                    className: "w-1.5 h-1.5 rounded-full bg-[#16A66A]"
-                  }), /*#__PURE__*/_jsx("span", {
-                    children: "Guaranteed active slots"
-                  })]
-                })]
-              }), /*#__PURE__*/_jsxs("div", {
-                onClick: function onClick() {
-                  return setBookingsFilterTab("Pending");
-                },
-                className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft hover:shadow-card hover:-translate-y-0.5 transition-all cursor-pointer group",
-                children: [/*#__PURE__*/_jsxs("div", {
-                  className: "flex items-center justify-between text-[#8A90A2]",
-                  children: [/*#__PURE__*/_jsx("span", {
-                    className: "text-[11px] font-extrabold uppercase tracking-wider text-[#64748B]",
-                    children: "Pending"
-                  }), /*#__PURE__*/_jsx("div", {
-                    className: "w-9 h-9 rounded-xl bg-amber-50 text-[#F59E0B] flex items-center justify-center group-hover:scale-105 transition-transform",
-                    children: /*#__PURE__*/_jsx(Icon, {
-                      name: "clock",
-                      className: "w-5 h-5 text-[#F59E0B]"
-                    })
-                  })]
-                }), /*#__PURE__*/_jsx("div", {
-                  className: "text-3xl font-black text-[#F59E0B] mt-2",
-                  children: pendingCount
-                }), /*#__PURE__*/_jsxs("div", {
-                  className: "text-[11px] font-medium text-[#8A90A2] mt-1 flex items-center gap-1.5",
-                  children: [/*#__PURE__*/_jsx("span", {
-                    className: "w-1.5 h-1.5 rounded-full bg-[#F59E0B]"
-                  }), /*#__PURE__*/_jsx("span", {
-                    children: "Awaiting admin review"
-                  })]
-                })]
-              }), /*#__PURE__*/_jsxs("div", {
-                onClick: function onClick() {
-                  return setBookingsFilterTab("Cancelled");
-                },
-                className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft hover:shadow-card hover:-translate-y-0.5 transition-all cursor-pointer group",
-                children: [/*#__PURE__*/_jsxs("div", {
-                  className: "flex items-center justify-between text-[#8A90A2]",
-                  children: [/*#__PURE__*/_jsx("span", {
-                    className: "text-[11px] font-extrabold uppercase tracking-wider text-[#64748B]",
-                    children: "Cancelled"
-                  }), /*#__PURE__*/_jsx("div", {
-                    className: "w-9 h-9 rounded-xl bg-rose-50 text-[#EF4444] flex items-center justify-center group-hover:scale-105 transition-transform",
-                    children: /*#__PURE__*/_jsx(Icon, {
-                      name: "xCircle",
-                      className: "w-5 h-5 text-[#EF4444]"
-                    })
-                  })]
-                }), /*#__PURE__*/_jsx("div", {
-                  className: "text-3xl font-black text-[#EF4444] mt-2",
-                  children: cancelledCount
-                }), /*#__PURE__*/_jsxs("div", {
-                  className: "text-[11px] font-medium text-[#8A90A2] mt-1 flex items-center gap-1.5",
-                  children: [/*#__PURE__*/_jsx("span", {
-                    className: "w-1.5 h-1.5 rounded-full bg-[#EF4444]"
-                  }), /*#__PURE__*/_jsx("span", {
-                    children: "Released & refunded"
-                  })]
-                })]
-              })]
-            }), /*#__PURE__*/_jsxs("div", {
-              className: "flex items-center justify-between flex-wrap gap-3 pt-1",
-              children: [/*#__PURE__*/_jsx("div", {
-                className: "flex items-center gap-2 overflow-x-auto pb-1 max-w-full",
-                children: ["All Bookings", "Confirmed", "Pending", "Cancelled", "Completed"].map(function (tab) {
-                  var isActive = bookingsFilterTab === tab;
-                  return /*#__PURE__*/_jsxs("button", {
-                    onClick: function onClick() {
-                      return setBookingsFilterTab(tab);
-                    },
-                    className: "px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ".concat(isActive ? "bg-[#4F3FE0] text-white shadow-xs" : "bg-white border border-[#ECEEF4] text-[#64748B] hover:text-[#111827] hover:bg-[#F8FAFC]"),
-                    children: [/*#__PURE__*/_jsx("span", {
-                      children: tab
-                    }), /*#__PURE__*/_jsx("span", {
-                      className: "ml-2 text-[10.5px] px-1.5 py-0.2 rounded-full font-extrabold ".concat(isActive ? "bg-white/20 text-white" : "bg-gray-100 text-[#64748B]"),
-                      children: tab === "All Bookings" ? totalCount : upcomingBookings.filter(function (b) {
-                        return b.status === tab;
-                      }).length
-                    })]
-                  }, tab);
-                })
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "text-xs font-semibold text-[#8A90A2]",
-                children: ["Showing ", /*#__PURE__*/_jsx("strong", {
-                  className: "text-[#111827]",
-                  children: filteredBookings.length
-                }), " of ", totalCount, " reservations"]
-              })]
-            }), /*#__PURE__*/_jsxs("div", {
-              className: "bg-white border border-[#ECEEF4] rounded-2xl p-4 shadow-soft flex items-center justify-between flex-wrap gap-3",
-              children: [/*#__PURE__*/_jsx("div", {
-                className: "flex items-center gap-3 flex-1 min-w-[260px]",
-                children: /*#__PURE__*/_jsxs("div", {
-                  className: "relative flex-1",
-                  children: [/*#__PURE__*/_jsx(Icon, {
-                    name: "search",
-                    className: "w-4 h-4 text-[#8A90A2] absolute left-3.5 top-1/2 -translate-y-1/2"
-                  }), /*#__PURE__*/_jsx("input", {
-                    type: "text",
-                    value: bookingsSearchQuery,
-                    onChange: function onChange(e) {
-                      return setBookingsSearchQuery(e.target.value);
-                    },
-                    placeholder: "Search by meeting title, room, or #RES ID...",
-                    className: "w-full bg-[#F6F7FB] border border-[#ECEEF4] rounded-xl pl-10 pr-4 py-2 text-xs text-[#111827] placeholder-[#8A90A2] focus:outline-none focus:border-[#4F3FE0] focus:bg-white transition-all"
-                  }), bookingsSearchQuery && /*#__PURE__*/_jsx("button", {
-                    onClick: function onClick() {
-                      return setBookingsSearchQuery("");
-                    },
-                    className: "absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600",
-                    children: /*#__PURE__*/_jsx(Icon, {
-                      name: "x",
-                      className: "w-3.5 h-3.5"
-                    })
-                  })]
-                })
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "flex items-center gap-2.5 flex-wrap",
-                children: [/*#__PURE__*/_jsxs("div", {
-                  className: "flex items-center gap-1.5 bg-[#F6F7FB] border border-[#ECEEF4] rounded-xl px-3 py-1.5 text-xs text-[#374151]",
-                  children: [/*#__PURE__*/_jsx(Icon, {
-                    name: "calendar",
-                    className: "w-3.5 h-3.5 text-[#8A90A2]"
-                  }), /*#__PURE__*/_jsxs("select", {
-                    value: bookingsDateFilter,
-                    onChange: function onChange(e) {
-                      return setBookingsDateFilter(e.target.value);
-                    },
-                    className: "bg-transparent border-none text-xs font-semibold text-[#374151] focus:outline-none cursor-pointer",
-                    children: [/*#__PURE__*/_jsx("option", {
-                      value: "All Dates",
-                      children: "All Dates"
-                    }), /*#__PURE__*/_jsx("option", {
-                      value: "Today",
-                      children: "Today Only"
-                    }), /*#__PURE__*/_jsx("option", {
-                      value: "Upcoming",
-                      children: "Upcoming Only"
-                    }), /*#__PURE__*/_jsx("option", {
-                      value: "Past",
-                      children: "Past / Archived"
-                    })]
-                  })]
-                }), /*#__PURE__*/_jsxs("div", {
-                  className: "flex items-center gap-1.5 bg-[#F6F7FB] border border-[#ECEEF4] rounded-xl px-3 py-1.5 text-xs text-[#374151]",
-                  children: [/*#__PURE__*/_jsx(Icon, {
-                    name: "building",
-                    className: "w-3.5 h-3.5 text-[#8A90A2]"
-                  }), /*#__PURE__*/_jsxs("select", {
-                    value: bookingsRoomFilter,
-                    onChange: function onChange(e) {
-                      return setBookingsRoomFilter(e.target.value);
-                    },
-                    className: "bg-transparent border-none text-xs font-semibold text-[#374151] focus:outline-none cursor-pointer",
-                    children: [/*#__PURE__*/_jsx("option", {
-                      value: "All Rooms",
-                      children: "All Rooms"
-                    }), rooms.map(function (r) {
-                      return /*#__PURE__*/_jsx("option", {
-                        value: r.name,
-                        children: r.name
-                      }, r.id);
-                    })]
-                  })]
-                }), isFilterActive && /*#__PURE__*/_jsxs("button", {
-                  type: "button",
-                  onClick: function onClick() {
-                    setBookingsSearchQuery("");
-                    setBookingsRoomFilter("All Rooms");
-                    setBookingsDateFilter("All Dates");
-                    setBookingsFilterTab("All Bookings");
-                  },
-                  className: "text-xs font-bold text-[#EF4444] hover:bg-rose-50 px-3 py-1.5 rounded-xl border border-rose-200 transition-all flex items-center gap-1",
-                  children: [/*#__PURE__*/_jsx(Icon, {
-                    name: "x",
-                    className: "w-3 h-3"
-                  }), /*#__PURE__*/_jsx("span", {
-                    children: "Clear Filters"
-                  })]
-                })]
-              })]
-            }), /*#__PURE__*/_jsxs("div", {
-              className: "grid grid-cols-1 lg:grid-cols-12 gap-6 items-start",
-              children: [/*#__PURE__*/_jsx("div", {
-                className: "lg:col-span-8 space-y-3.5",
-                children: filteredBookings.length === 0 ? /*#__PURE__*/_jsxs("div", {
-                  className: "bg-white border border-[#ECEEF4] rounded-2xl p-12 text-center shadow-soft",
-                  children: [/*#__PURE__*/_jsx("div", {
-                    className: "w-14 h-14 rounded-2xl bg-gray-50 text-gray-400 flex items-center justify-center mx-auto mb-3",
-                    children: /*#__PURE__*/_jsx(Icon, {
-                      name: "calendar",
-                      className: "w-7 h-7 text-gray-400"
-                    })
-                  }), /*#__PURE__*/_jsx("h4", {
-                    className: "text-base font-bold text-[#111827]",
-                    children: "No reservations match your filters"
-                  }), /*#__PURE__*/_jsx("p", {
-                    className: "text-xs text-[#8A90A2] mt-1 max-w-sm mx-auto",
-                    children: "Try resetting your search query or selecting a different status tab."
-                  }), /*#__PURE__*/_jsx("button", {
-                    type: "button",
-                    onClick: function onClick() {
-                      setBookingsSearchQuery("");
-                      setBookingsRoomFilter("All Rooms");
-                      setBookingsDateFilter("All Dates");
-                      setBookingsFilterTab("All Bookings");
-                    },
-                    className: "mt-4 px-4 py-2 bg-[#4F3FE0] text-white rounded-xl text-xs font-bold shadow-xs hover:bg-[#4335C9]",
-                    children: "Reset All Filters"
-                  })]
-                }) : filteredBookings.map(function (bkg) {
-                  var isCancelled = bkg.status === "Cancelled";
-                  var isCompleted = bkg.status === "Completed";
-                  var canModify = !isCancelled && !isCompleted;
-                  return /*#__PURE__*/_jsxs("div", {
-                    className: "bg-white border border-[#ECEEF4] rounded-2xl p-4 sm:p-5 shadow-soft hover:shadow-card hover:-translate-y-0.5 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 group",
-                    children: [/*#__PURE__*/_jsxs("div", {
-                      className: "flex items-center gap-3.5 flex-shrink-0",
-                      children: [/*#__PURE__*/_jsxs("div", {
-                        className: "bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl px-2.5 py-2 text-center min-w-[54px] flex flex-col items-center justify-center flex-shrink-0",
-                        children: [/*#__PURE__*/_jsx("span", {
-                          className: "text-lg font-black text-[#111827] leading-none",
-                          children: bkg.day || "30"
-                        }), /*#__PURE__*/_jsx("span", {
-                          className: "text-[10px] font-extrabold text-[#4F3FE0] tracking-wider uppercase mt-1 leading-none",
-                          children: bkg.month || "OCT"
-                        })]
-                      }), /*#__PURE__*/_jsxs("div", {
-                        onClick: function onClick() {
-                          return setDetailsModalBooking(bkg);
-                        },
-                        className: "w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden border border-[#ECEEF4] relative flex-shrink-0 cursor-pointer group-hover:border-[#4F3FE0]/40 transition-all",
-                        title: "View room details for ".concat(bkg.room),
-                        children: [/*#__PURE__*/_jsx("img", {
-                          src: bkg.roomImage || "assets/rooms/mr-01-main.jpg",
-                          onError: function onError(e) {
-                            e.target.onerror = null;
-                            e.target.src = bkg.fallbackImage || "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=400&q=80";
-                          },
-                          alt: bkg.room,
-                          className: "w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300",
-                          loading: "lazy"
-                        }), /*#__PURE__*/_jsx("div", {
-                          className: "absolute inset-0 bg-black/5 hover:bg-transparent transition-colors"
-                        })]
-                      })]
-                    }), /*#__PURE__*/_jsxs("div", {
-                      className: "flex-1 min-w-0",
-                      children: [/*#__PURE__*/_jsxs("div", {
-                        className: "flex items-center gap-2 flex-wrap",
-                        children: [/*#__PURE__*/_jsx("h4", {
-                          onClick: function onClick() {
-                            return setDetailsModalBooking(bkg);
-                          },
-                          className: "text-sm sm:text-[15px] font-black text-[#111827] truncate hover:text-[#4F3FE0] cursor-pointer",
-                          children: bkg.title
-                        }), bkg.isRecurring && /*#__PURE__*/_jsxs("span", {
-                          className: "bg-[#F4F2FF] border border-[#E3DEFF] text-[#4F3FE0] text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1",
-                          children: [/*#__PURE__*/_jsx("span", {
-                            children: "\uD83D\uDD04"
-                          }), /*#__PURE__*/_jsx("span", {
-                            children: "Recurring"
-                          })]
-                        })]
-                      }), /*#__PURE__*/_jsxs("div", {
-                        className: "flex items-center gap-2.5 text-xs text-[#64748B] mt-1 flex-wrap",
-                        children: [/*#__PURE__*/_jsxs("span", {
-                          className: "font-bold text-[#374151] flex items-center gap-1",
-                          children: [/*#__PURE__*/_jsx("span", {
-                            children: "\uD83D\uDCCD"
-                          }), /*#__PURE__*/_jsx("span", {
-                            children: bkg.room
-                          })]
-                        }), /*#__PURE__*/_jsx("span", {
-                          children: "\u2022"
-                        }), /*#__PURE__*/_jsxs("span", {
-                          className: "flex items-center gap-1",
-                          children: [/*#__PURE__*/_jsx("span", {
-                            children: "\uD83D\uDD52"
-                          }), /*#__PURE__*/_jsx("span", {
-                            children: bkg.time
-                          })]
-                        }), /*#__PURE__*/_jsx("span", {
-                          children: "\u2022"
-                        }), /*#__PURE__*/_jsxs("span", {
-                          className: "flex items-center gap-1",
-                          children: [/*#__PURE__*/_jsx("span", {
-                            children: "\uD83D\uDC65"
-                          }), /*#__PURE__*/_jsxs("span", {
-                            children: [bkg.attendees, " attendees"]
-                          })]
-                        }), /*#__PURE__*/_jsx("span", {
-                          children: "\u2022"
-                        }), /*#__PURE__*/_jsxs("span", {
-                          className: "text-[#4F3FE0] font-bold",
-                          children: ["\uD83E\uDE99 ", bkg.credits || 18, " cr"]
-                        }), bkg.resId && /*#__PURE__*/_jsxs("span", {
-                          className: "text-[10px] text-[#8A90A2] font-mono bg-gray-50 px-1.5 py-0.2 rounded border border-[#ECEEF4]",
-                          children: ["#", bkg.resId]
-                        })]
-                      }), bkg.purpose && /*#__PURE__*/_jsxs("p", {
-                        className: "text-[11px] text-[#8A90A2] mt-1 line-clamp-1 italic",
-                        children: ["\u201C", bkg.purpose, "\u201D"]
-                      })]
-                    }), /*#__PURE__*/_jsxs("div", {
-                      className: "flex items-center gap-2 sm:gap-2.5 flex-wrap sm:flex-nowrap justify-between sm:justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-[#ECEEF4]",
-                      children: [/*#__PURE__*/_jsx("span", {
-                        className: "px-2.5 py-1 rounded-full text-[11px] font-bold ".concat(bkg.statusColor || 'bg-gray-100 text-gray-700'),
-                        children: bkg.status
-                      }), canModify ? /*#__PURE__*/_jsxs(_Fragment, {
-                        children: [/*#__PURE__*/_jsx("button", {
-                          type: "button",
-                          onClick: function onClick() {
-                            setRescheduleBooking(bkg);
-                            setRescheduleNewRoom(bkg.room);
-                            setRescheduleNewTime(bkg.time);
-                          },
-                          className: "border border-[#ECEEF4] hover:bg-[#F8FAFC] hover:border-[#4F3FE0]/40 text-[#374151] hover:text-[#4F3FE0] px-3 py-1.5 rounded-xl text-xs font-bold transition-all",
-                          children: "Reschedule"
-                        }), /*#__PURE__*/_jsx("button", {
-                          type: "button",
-                          onClick: function onClick() {
-                            return setCancelModalBooking(bkg);
-                          },
-                          className: "text-rose-500 hover:text-rose-700 hover:bg-rose-50 border border-transparent hover:border-rose-200 text-xs font-bold px-2.5 py-1.5 rounded-xl transition-all",
-                          children: "Cancel"
-                        })]
-                      }) : /*#__PURE__*/_jsx("span", {
-                        className: "text-[11px] font-medium text-[#8A90A2] italic px-1",
-                        children: isCancelled ? "Slot Released" : "Completed"
-                      }), /*#__PURE__*/_jsx("button", {
-                        type: "button",
-                        onClick: function onClick() {
-                          return setDetailsModalBooking(bkg);
-                        },
-                        className: "text-xs font-bold text-[#4F3FE0] hover:bg-[#EEEBFF] px-2.5 py-1.5 rounded-xl transition-all",
-                        title: "View full booking details",
-                        children: "Details \u2192"
-                      })]
-                    })]
-                  }, bkg.id);
-                })
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "lg:col-span-4 space-y-6",
-                children: [/*#__PURE__*/_jsxs("div", {
-                  className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft",
-                  children: [/*#__PURE__*/_jsxs("div", {
-                    className: "flex items-center justify-between pb-3 border-b border-[#ECEEF4] mb-3",
-                    children: [/*#__PURE__*/_jsxs("h4", {
-                      className: "text-xs font-black uppercase tracking-wider text-[#111827] flex items-center gap-2",
-                      children: [/*#__PURE__*/_jsx("span", {
-                        className: "w-2 h-2 rounded-full bg-[#4F3FE0]"
-                      }), /*#__PURE__*/_jsx("span", {
-                        children: "Upcoming Schedule"
-                      })]
-                    }), /*#__PURE__*/_jsx("button", {
-                      type: "button",
-                      onClick: function onClick() {
-                        return navigateTo("Calendar");
-                      },
-                      className: "text-xs font-bold text-[#4F3FE0] hover:underline",
-                      children: "View Calendar \u2192"
-                    })]
-                  }), /*#__PURE__*/_jsxs("div", {
-                    className: "relative pl-4 space-y-4",
-                    children: [/*#__PURE__*/_jsx("div", {
-                      className: "absolute left-[7px] top-2 bottom-2 w-0.5 bg-[#ECEEF4]"
-                    }), upcomingBookings.filter(function (b) {
-                      return b.status === "Confirmed" || b.status === "Pending";
-                    }).slice(0, 4).map(function (item) {
-                      return /*#__PURE__*/_jsxs("div", {
-                        className: "relative group cursor-pointer",
-                        onClick: function onClick() {
-                          return setDetailsModalBooking(item);
-                        },
-                        children: [/*#__PURE__*/_jsx("div", {
-                          className: "absolute -left-4 top-1.5 w-2.5 h-2.5 rounded-full border-2 border-white shadow-xs ".concat(item.status === 'Confirmed' ? 'bg-[#16A66A]' : 'bg-[#F59E0B]')
-                        }), /*#__PURE__*/_jsxs("div", {
-                          className: "bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl p-3 hover:bg-white hover:border-[#4F3FE0]/30 hover:shadow-xs transition-all",
-                          children: [/*#__PURE__*/_jsxs("div", {
-                            className: "flex items-center justify-between text-[11px] mb-1",
-                            children: [/*#__PURE__*/_jsxs("span", {
-                              className: "font-bold text-[#4F3FE0]",
-                              children: [item.date, " \u2022 ", item.time.split("–")[0].trim()]
-                            }), /*#__PURE__*/_jsx("span", {
-                              className: "text-[10px] font-bold px-1.5 py-0.2 rounded-full ".concat(item.status === 'Confirmed' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'),
-                              children: item.status
-                            })]
-                          }), /*#__PURE__*/_jsx("div", {
-                            className: "text-xs font-bold text-[#111827] truncate",
-                            children: item.title
-                          }), /*#__PURE__*/_jsxs("div", {
-                            className: "text-[11px] text-[#8A90A2] mt-0.5 truncate flex items-center gap-1",
-                            children: [/*#__PURE__*/_jsxs("span", {
-                              children: ["\uD83D\uDCCD ", item.room]
-                            }), /*#__PURE__*/_jsx("span", {
-                              children: "\u2022"
-                            }), /*#__PURE__*/_jsxs("span", {
-                              children: ["\uD83D\uDC65 ", item.attendees]
-                            })]
-                          })]
-                        })]
-                      }, item.id);
-                    })]
-                  })]
-                }), /*#__PURE__*/_jsxs("div", {
-                  className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft",
-                  children: [/*#__PURE__*/_jsxs("h4", {
-                    className: "text-xs font-black uppercase tracking-wider text-[#111827] mb-3 flex items-center gap-2",
-                    children: [/*#__PURE__*/_jsx("span", {
-                      className: "w-5 h-5 rounded-lg bg-yellow-50 text-yellow-600 flex items-center justify-center",
-                      children: "\u26A1"
-                    }), /*#__PURE__*/_jsx("span", {
-                      children: "Quick Actions"
-                    })]
-                  }), /*#__PURE__*/_jsxs("div", {
-                    className: "grid grid-cols-2 gap-2.5",
-                    children: [/*#__PURE__*/_jsxs("button", {
-                      type: "button",
-                      onClick: function onClick() {
-                        return openBookingDrawer(rooms[0]);
-                      },
-                      className: "p-3 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#F3EFFE] hover:border-[#6E42E5]/30 transition-all text-center group",
-                      children: [/*#__PURE__*/_jsx("span", {
-                        className: "w-9 h-9 rounded-xl bg-purple-50 text-[#6E42E5] flex items-center justify-center mx-auto mb-1.5 group-hover:scale-105 transition-transform",
-                        children: /*#__PURE__*/_jsx(Icon, {
-                          name: "calendar",
-                          className: "w-4 h-4 text-[#6E42E5]"
-                        })
-                      }), /*#__PURE__*/_jsx("div", {
-                        className: "text-xs font-bold text-[#111827]",
-                        children: "Book a Room"
-                      }), /*#__PURE__*/_jsx("div", {
-                        className: "text-[10px] text-[#8A90A2] mt-0.5",
-                        children: "6 Facilities"
-                      })]
-                    }), /*#__PURE__*/_jsxs("button", {
-                      type: "button",
-                      onClick: function onClick() {
-                        return navigateTo("Calendar");
-                      },
-                      className: "p-3 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#EEF5FF] hover:border-[#2B71FF]/30 transition-all text-center group",
-                      children: [/*#__PURE__*/_jsx("span", {
-                        className: "w-9 h-9 rounded-xl bg-blue-50 text-[#2B71FF] flex items-center justify-center mx-auto mb-1.5 group-hover:scale-105 transition-transform",
-                        children: /*#__PURE__*/_jsx(Icon, {
-                          name: "calendarDays",
-                          className: "w-4 h-4 text-[#2B71FF]"
-                        })
-                      }), /*#__PURE__*/_jsx("div", {
-                        className: "text-xs font-bold text-[#111827]",
-                        children: "Open Calendar"
-                      }), /*#__PURE__*/_jsx("div", {
-                        className: "text-[10px] text-[#8A90A2] mt-0.5",
-                        children: "Weekly Grid"
-                      })]
-                    }), /*#__PURE__*/_jsxs("button", {
-                      type: "button",
-                      onClick: function onClick() {
-                        return navigateTo("Visitors");
-                      },
-                      className: "p-3 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#EEFAF3] hover:border-[#12A150]/30 transition-all text-center group",
-                      children: [/*#__PURE__*/_jsx("span", {
-                        className: "w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-1.5 group-hover:scale-105 transition-transform",
-                        children: /*#__PURE__*/_jsx(Icon, {
-                          name: "userPlus",
-                          className: "w-4 h-4 text-emerald-600"
-                        })
-                      }), /*#__PURE__*/_jsx("div", {
-                        className: "text-xs font-bold text-[#111827]",
-                        children: "Invite Guests"
-                      }), /*#__PURE__*/_jsx("div", {
-                        className: "text-[10px] text-[#8A90A2] mt-0.5",
-                        children: "QR Gate Pass"
-                      })]
-                    }), /*#__PURE__*/_jsxs("button", {
-                      type: "button",
-                      onClick: function onClick() {
-                        return navigateTo("Meeting Rooms");
-                      },
-                      className: "p-3 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#FFF8EC] hover:border-[#F59E0B]/30 transition-all text-center group",
-                      children: [/*#__PURE__*/_jsx("span", {
-                        className: "w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-1.5 group-hover:scale-105 transition-transform",
-                        children: /*#__PURE__*/_jsx(Icon, {
-                          name: "sparkles",
-                          className: "w-4 h-4 text-amber-600"
-                        })
-                      }), /*#__PURE__*/_jsx("div", {
-                        className: "text-xs font-bold text-[#111827]",
-                        children: "Check Live"
-                      }), /*#__PURE__*/_jsx("div", {
-                        className: "text-[10px] text-[#8A90A2] mt-0.5",
-                        children: "5/6 Available"
-                      })]
-                    })]
-                  })]
-                })]
-              })]
-            })]
-          });
-        }(), activeNav === "Calendar" && /*#__PURE__*/_jsxs("div", {
-          className: "space-y-6 animate-fadeIn",
-          children: [/*#__PURE__*/_jsxs("div", {
-            className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft flex items-center justify-between flex-wrap gap-4",
-            children: [/*#__PURE__*/_jsxs("div", {
-              children: [/*#__PURE__*/_jsx("h2", {
-                className: "text-2xl font-black text-[#111827]",
-                children: "Interactive Room Calendar"
-              }), /*#__PURE__*/_jsx("p", {
-                className: "text-xs text-[#8A90A2] mt-1",
-                children: "Real-time room occupancy and timeline scheduling"
-              })]
-            }), /*#__PURE__*/_jsxs("div", {
-              className: "flex items-center gap-2 bg-[#F8FAFC] border border-[#ECEEF4] p-1 rounded-xl",
-              children: [/*#__PURE__*/_jsx("button", {
-                className: "bg-[#4F3FE0] text-white px-3 py-1 rounded-lg text-xs font-bold",
-                children: "Day"
-              }), /*#__PURE__*/_jsx("button", {
-                className: "text-[#64748B] px-3 py-1 rounded-lg text-xs font-bold hover:text-[#111827]",
-                children: "Week"
-              }), /*#__PURE__*/_jsx("button", {
-                className: "text-[#64748B] px-3 py-1 rounded-lg text-xs font-bold hover:text-[#111827]",
-                children: "Month"
-              })]
-            })]
-          }), /*#__PURE__*/_jsxs("div", {
-            className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft space-y-4",
-            children: [/*#__PURE__*/_jsx("div", {
-              className: "grid grid-cols-6 gap-2 text-center font-bold text-xs text-[#64748B] pb-3 border-b border-[#ECEEF4]",
-              children: rooms.map(function (r) {
-                return /*#__PURE__*/_jsx("div", {
-                  className: "truncate px-1",
-                  children: r.name
-                }, r.id);
-              })
-            }), ["09:00 AM", "11:00 AM", "01:00 PM", "03:00 PM", "05:00 PM"].map(function (hour, idx) {
-              return /*#__PURE__*/_jsx("div", {
-                className: "grid grid-cols-6 gap-2 items-center py-3 border-b border-gray-100 text-xs",
-                children: rooms.map(function (r) {
-                  var isBooked = idx === 0 && r.id === "mr-1" || idx === 1 && r.id === "mr-2" || idx === 3 && r.id === "mr-4";
-                  return isBooked ? /*#__PURE__*/_jsxs("div", {
-                    className: "bg-indigo-50 border border-indigo-200 text-[#4F3FE0] p-2 rounded-xl text-center font-bold truncate",
-                    children: ["Occupied (", hour, ")"]
-                  }, r.id) : /*#__PURE__*/_jsx("button", {
-                    onClick: function onClick() {
-                      return openBookingDrawer(r);
-                    },
-                    className: "bg-[#F8FAFC] border border-dashed border-[#ECEEF4] hover:border-[#4F3FE0] hover:bg-[#F3EFFE] text-[#8A90A2] hover:text-[#4F3FE0] p-2 rounded-xl text-center font-medium transition-all",
-                    children: "+ Open Slot"
-                  }, r.id);
-                })
-              }, hour);
-            })]
-          })]
-        }), activeNav === "Billing & Credits" && /*#__PURE__*/_jsxs("div", {
-          className: "space-y-6 animate-fadeIn",
-          children: [/*#__PURE__*/_jsxs("div", {
-            className: "flex items-center justify-between flex-wrap gap-4",
-            children: [/*#__PURE__*/_jsxs("div", {
-              children: [/*#__PURE__*/_jsx("div", {
-                className: "text-[11px] font-extrabold tracking-wider text-[#8A90A2] uppercase mb-1",
-                children: "Billing & Credits"
-              }), /*#__PURE__*/_jsx("h2", {
-                className: "text-2xl sm:text-3xl font-black text-[#111827] tracking-tight",
-                children: "Billing & Meeting Room Credits"
-              }), /*#__PURE__*/_jsx("p", {
-                className: "text-xs sm:text-sm text-[#64748B] mt-1",
-                children: "Track quota, plans, invoices, and transaction activity"
-              })]
-            }), /*#__PURE__*/_jsxs("div", {
-              className: "flex items-center gap-4",
-              children: [/*#__PURE__*/_jsx("div", {
-                className: "relative w-28 h-16 flex-shrink-0 hidden md:block",
-                children: /*#__PURE__*/_jsxs("svg", {
-                  viewBox: "0 0 140 90",
-                  fill: "none",
-                  xmlns: "http://www.w3.org/2000/svg",
-                  className: "w-full h-full drop-shadow-md",
-                  children: [/*#__PURE__*/_jsx("ellipse", {
-                    cx: "65",
-                    cy: "45",
-                    rx: "50",
-                    ry: "30",
-                    fill: "#C7D2FE",
-                    fillOpacity: "0.4",
-                    filter: "blur(14px)"
-                  }), /*#__PURE__*/_jsxs("g", {
-                    transform: "rotate(-7 55 42)",
-                    children: [/*#__PURE__*/_jsx("rect", {
-                      x: "15",
-                      y: "12",
-                      width: "82",
-                      height: "50",
-                      rx: "9",
-                      fill: "url(#cardGrad)"
-                    }), /*#__PURE__*/_jsx("rect", {
-                      x: "25",
-                      y: "24",
-                      width: "13",
-                      height: "10",
-                      rx: "2",
-                      fill: "#FCD34D"
-                    }), /*#__PURE__*/_jsx("line", {
-                      x1: "25",
-                      y1: "29",
-                      x2: "38",
-                      y2: "29",
-                      stroke: "#F59E0B",
-                      strokeWidth: "0.8"
-                    }), /*#__PURE__*/_jsx("line", {
-                      x1: "31.5",
-                      y1: "24",
-                      x2: "31.5",
-                      y2: "34",
-                      stroke: "#F59E0B",
-                      strokeWidth: "0.8"
-                    }), /*#__PURE__*/_jsx("rect", {
-                      x: "25",
-                      y: "44",
-                      width: "36",
-                      height: "4",
-                      rx: "2",
-                      fill: "white",
-                      fillOpacity: "0.85"
-                    }), /*#__PURE__*/_jsx("circle", {
-                      cx: "80",
-                      cy: "44",
-                      r: "5.5",
-                      fill: "#F472B6",
-                      fillOpacity: "0.85"
-                    }), /*#__PURE__*/_jsx("circle", {
-                      cx: "87",
-                      cy: "44",
-                      r: "5.5",
-                      fill: "#FBBF24",
-                      fillOpacity: "0.85"
-                    })]
-                  }), /*#__PURE__*/_jsxs("g", {
-                    transform: "translate(88, 40)",
-                    children: [/*#__PURE__*/_jsx("circle", {
-                      cx: "15",
-                      cy: "15",
-                      r: "13",
-                      fill: "#FBBF24",
-                      stroke: "#F59E0B",
-                      strokeWidth: "1.2"
-                    }), /*#__PURE__*/_jsx("circle", {
-                      cx: "15",
-                      cy: "15",
-                      r: "9.5",
-                      fill: "#FDE68A"
-                    }), /*#__PURE__*/_jsx("text", {
-                      x: "15",
-                      y: "19",
-                      fontSize: "11",
-                      fontWeight: "bold",
-                      textAnchor: "middle",
-                      fill: "#D97706",
-                      children: "\u20B9"
-                    })]
-                  }), /*#__PURE__*/_jsx("circle", {
-                    cx: "18",
-                    cy: "20",
-                    r: "2.5",
-                    fill: "#818CF8",
-                    fillOpacity: "0.8"
-                  }), /*#__PURE__*/_jsx("circle", {
-                    cx: "106",
-                    cy: "16",
-                    r: "2",
-                    fill: "#60A5FA",
-                    fillOpacity: "0.8"
-                  }), /*#__PURE__*/_jsx("circle", {
-                    cx: "98",
-                    cy: "74",
-                    r: "1.8",
-                    fill: "#FCD34D",
-                    fillOpacity: "0.9"
-                  }), /*#__PURE__*/_jsx("defs", {
-                    children: /*#__PURE__*/_jsxs("linearGradient", {
-                      id: "cardGrad",
-                      x1: "15",
-                      y1: "12",
-                      x2: "97",
-                      y2: "62",
-                      gradientUnits: "userSpaceOnUse",
-                      children: [/*#__PURE__*/_jsx("stop", {
-                        stopColor: "#6366F1"
-                      }), /*#__PURE__*/_jsx("stop", {
-                        offset: "0.5",
-                        stopColor: "#4F46E5"
-                      }), /*#__PURE__*/_jsx("stop", {
-                        offset: "1",
-                        stopColor: "#3B82F6"
-                      })]
-                    })
-                  })]
-                })
-              }), /*#__PURE__*/_jsx("button", {
-                type: "button",
-                onClick: function onClick() {
-                  return setShowPurchaseCreditsModal(true);
-                },
-                className: "bg-[#4F3FE0] hover:bg-[#4335C9] text-white px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm hover:shadow-md active:scale-[0.98] flex items-center gap-1.5",
-                children: /*#__PURE__*/_jsx("span", {
-                  children: "+ Purchase Extra Credits"
-                })
-              })]
-            })]
-          }), /*#__PURE__*/_jsxs("div", {
-            className: "grid grid-cols-1 lg:grid-cols-3 gap-5",
-            children: [/*#__PURE__*/_jsxs("div", {
-              className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft flex flex-col justify-between hover:shadow-card transition-all",
-              children: [/*#__PURE__*/_jsxs("div", {
-                children: [/*#__PURE__*/_jsxs("div", {
-                  className: "flex items-center justify-between",
-                  children: [/*#__PURE__*/_jsxs("div", {
-                    className: "flex items-center gap-3",
-                    children: [/*#__PURE__*/_jsx("div", {
-                      className: "w-10 h-10 rounded-xl bg-[#F3EFFE] text-[#4F3FE0] flex items-center justify-center flex-shrink-0",
-                      children: /*#__PURE__*/_jsx(Icon, {
-                        name: "coins",
-                        className: "w-5 h-5 text-[#4F3FE0]"
-                      })
-                    }), /*#__PURE__*/_jsxs("div", {
-                      children: [/*#__PURE__*/_jsx("span", {
-                        className: "text-[11px] font-extrabold uppercase tracking-wider text-[#8A90A2]",
-                        children: "Remaining Balance"
-                      }), /*#__PURE__*/_jsx("div", {
-                        className: "text-2xl sm:text-3xl font-black text-[#111827] mt-0.5",
-                        children: "80 credits"
-                      })]
-                    })]
-                  }), /*#__PURE__*/_jsx(Icon, {
-                    name: "chevronRight",
-                    className: "w-4 h-4 text-[#A0AEC0]"
-                  })]
-                }), /*#__PURE__*/_jsxs("div", {
-                  className: "flex items-center justify-between text-xs text-[#64748B] mt-4 font-medium",
-                  children: [/*#__PURE__*/_jsx("span", {
-                    children: "Out of 120 credits total quota"
-                  }), /*#__PURE__*/_jsx("span", {
-                    className: "font-bold text-[#4F3FE0]",
-                    children: "67% left"
-                  })]
-                }), /*#__PURE__*/_jsx("div", {
-                  className: "w-full h-2 bg-[#EEEBFF] rounded-full mt-2 overflow-hidden",
-                  children: /*#__PURE__*/_jsx("div", {
-                    className: "h-full bg-gradient-to-r from-[#5937F5] to-[#4F3FE0] rounded-full w-[67%]"
-                  })
-                })]
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "flex items-center justify-between text-[11px] font-medium text-[#8A90A2] pt-3 mt-3 border-t border-[#ECEEF4]",
-                children: [/*#__PURE__*/_jsx("span", {
-                  children: "40 credits used"
-                }), /*#__PURE__*/_jsx("span", {
-                  children: "120 total"
-                })]
-              })]
-            }), /*#__PURE__*/_jsxs("div", {
-              className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft flex flex-col justify-between hover:shadow-card transition-all",
-              children: [/*#__PURE__*/_jsxs("div", {
-                children: [/*#__PURE__*/_jsxs("div", {
-                  className: "flex items-center justify-between",
-                  children: [/*#__PURE__*/_jsxs("div", {
-                    className: "flex items-center gap-3",
-                    children: [/*#__PURE__*/_jsx("div", {
-                      className: "w-10 h-10 rounded-xl bg-[#ECFDF5] text-[#059669] flex items-center justify-center flex-shrink-0",
-                      children: /*#__PURE__*/_jsx(Icon, {
-                        name: "clock",
-                        className: "w-5 h-5 text-[#059669]"
-                      })
-                    }), /*#__PURE__*/_jsxs("div", {
-                      children: [/*#__PURE__*/_jsx("span", {
-                        className: "text-[11px] font-extrabold uppercase tracking-wider text-[#8A90A2]",
-                        children: "Monthly Free Hours"
-                      }), /*#__PURE__*/_jsx("div", {
-                        className: "text-2xl sm:text-3xl font-black text-[#059669] mt-0.5",
-                        children: "2.0 hrs left"
-                      })]
-                    })]
-                  }), /*#__PURE__*/_jsx(Icon, {
-                    name: "chevronRight",
-                    className: "w-4 h-4 text-[#A0AEC0]"
-                  })]
-                }), /*#__PURE__*/_jsxs("div", {
-                  className: "flex items-center justify-between text-xs text-[#64748B] mt-4 font-medium",
-                  children: [/*#__PURE__*/_jsx("span", {
-                    children: "8 / 10 hours consumed"
-                  }), /*#__PURE__*/_jsx("span", {
-                    className: "font-bold text-[#059669]",
-                    children: "20% left"
-                  })]
-                }), /*#__PURE__*/_jsx("div", {
-                  className: "w-full h-2 bg-[#E6F4EA] rounded-full mt-2 overflow-hidden",
-                  children: /*#__PURE__*/_jsx("div", {
-                    className: "h-full bg-gradient-to-r from-[#10B981] to-[#059669] rounded-full w-[20%]"
-                  })
-                })]
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "flex items-center justify-between text-[11px] font-medium text-[#8A90A2] pt-3 mt-3 border-t border-[#ECEEF4]",
-                children: [/*#__PURE__*/_jsx("span", {
-                  children: "8 hrs used"
-                }), /*#__PURE__*/_jsx("span", {
-                  children: "10 hrs total"
-                })]
-              })]
-            }), /*#__PURE__*/_jsxs("div", {
-              className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft flex flex-col justify-between hover:shadow-card transition-all",
-              children: [/*#__PURE__*/_jsxs("div", {
-                children: [/*#__PURE__*/_jsxs("div", {
-                  className: "flex items-center justify-between",
-                  children: [/*#__PURE__*/_jsxs("div", {
-                    className: "flex items-center gap-3",
-                    children: [/*#__PURE__*/_jsx("div", {
-                      className: "w-10 h-10 rounded-xl bg-[#FEF3C7] text-[#D97706] flex items-center justify-center flex-shrink-0",
-                      children: /*#__PURE__*/_jsx(Icon, {
-                        name: "crown",
-                        className: "w-5 h-5 text-[#D97706]",
-                        strokeWidth: 2
-                      })
-                    }), /*#__PURE__*/_jsxs("div", {
-                      children: [/*#__PURE__*/_jsx("span", {
-                        className: "text-[11px] font-extrabold uppercase tracking-wider text-[#8A90A2]",
-                        children: "Subscription Plan"
-                      }), /*#__PURE__*/_jsx("div", {
-                        className: "text-xl sm:text-2xl font-black text-[#111827] mt-0.5",
-                        children: "Scale-up Venture"
-                      })]
-                    })]
-                  }), /*#__PURE__*/_jsxs("div", {
-                    className: "flex items-center gap-1.5",
-                    children: [/*#__PURE__*/_jsx("span", {
-                      className: "bg-[#ECFDF5] text-[#059669] text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200",
-                      children: "\u25CF ACTIVE"
-                    }), /*#__PURE__*/_jsx(Icon, {
-                      name: "chevronRight",
-                      className: "w-4 h-4 text-[#A0AEC0]"
-                    })]
-                  })]
-                }), /*#__PURE__*/_jsx("p", {
-                  className: "text-xs text-[#64748B] mt-3 font-medium",
-                  children: "Renews automatically on Nov 1, 2026"
-                })]
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "grid grid-cols-3 gap-2 pt-3 mt-3 border-t border-[#ECEEF4] text-[11px]",
-                children: [/*#__PURE__*/_jsxs("div", {
-                  className: "flex items-center gap-1.5 text-[#374151]",
-                  children: [/*#__PURE__*/_jsx("span", {
-                    className: "text-base",
-                    children: "\uD83D\uDCC5"
-                  }), /*#__PURE__*/_jsxs("div", {
-                    children: [/*#__PURE__*/_jsx("span", {
-                      className: "block text-[9.5px] font-semibold text-[#8A90A2] uppercase",
-                      children: "Monthly"
-                    }), /*#__PURE__*/_jsx("span", {
-                      className: "font-bold text-[#111827]",
-                      children: "10 free hrs"
-                    })]
-                  })]
-                }), /*#__PURE__*/_jsxs("div", {
-                  className: "flex items-center gap-1.5 text-[#374151]",
-                  children: [/*#__PURE__*/_jsx("span", {
-                    className: "text-base",
-                    children: "\uD83E\uDE99"
-                  }), /*#__PURE__*/_jsxs("div", {
-                    children: [/*#__PURE__*/_jsx("span", {
-                      className: "block text-[9.5px] font-semibold text-[#8A90A2] uppercase",
-                      children: "Base quota"
-                    }), /*#__PURE__*/_jsx("span", {
-                      className: "font-bold text-[#111827]",
-                      children: "120 credits"
-                    })]
-                  })]
-                }), /*#__PURE__*/_jsxs("div", {
-                  className: "flex items-center gap-1.5 text-[#374151]",
-                  children: [/*#__PURE__*/_jsx("span", {
-                    className: "text-base",
-                    children: "\u2B50"
-                  }), /*#__PURE__*/_jsxs("div", {
-                    children: [/*#__PURE__*/_jsx("span", {
-                      className: "block text-[9.5px] font-semibold text-[#8A90A2] uppercase",
-                      children: "Extra credits"
-                    }), /*#__PURE__*/_jsx("span", {
-                      className: "font-bold text-[#111827]",
-                      children: "\u20B9500 / 10 cr"
-                    })]
-                  })]
-                })]
-              })]
-            })]
-          }), /*#__PURE__*/_jsxs("div", {
-            className: "grid grid-cols-1 lg:grid-cols-12 gap-6 items-start",
-            children: [/*#__PURE__*/_jsxs("div", {
-              className: "lg:col-span-5 space-y-6",
-              children: [/*#__PURE__*/_jsxs("div", {
-                className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft",
-                children: [/*#__PURE__*/_jsxs("div", {
-                  className: "flex items-center justify-between mb-4",
-                  children: [/*#__PURE__*/_jsxs("h4", {
-                    className: "text-sm font-black text-[#111827] flex items-center gap-2",
-                    children: [/*#__PURE__*/_jsx("span", {
-                      className: "w-6 h-6 rounded-lg bg-purple-50 text-[#4F3FE0] flex items-center justify-center",
-                      children: /*#__PURE__*/_jsx(Icon, {
-                        name: "barChart",
-                        className: "w-3.5 h-3.5 text-[#4F3FE0]"
-                      })
-                    }), /*#__PURE__*/_jsx("span", {
-                      children: "Credit Usage This Month"
-                    })]
-                  }), /*#__PURE__*/_jsx("span", {
-                    className: "text-xs font-semibold text-[#374151] bg-[#F8FAFC] border border-[#ECEEF4] px-2.5 py-1 rounded-lg",
-                    children: "October 2026 \u25BE"
-                  })]
-                }), /*#__PURE__*/_jsxs("div", {
-                  className: "flex flex-col sm:flex-row items-center gap-6 my-2",
-                  children: [/*#__PURE__*/_jsxs("div", {
-                    className: "relative w-36 h-36 flex items-center justify-center flex-shrink-0",
-                    children: [/*#__PURE__*/_jsxs("svg", {
-                      className: "w-full h-full transform -rotate-90",
-                      viewBox: "0 0 120 120",
-                      children: [/*#__PURE__*/_jsx("circle", {
-                        cx: "60",
-                        cy: "60",
-                        r: "48",
-                        stroke: "#EEEBFF",
-                        strokeWidth: "13",
-                        fill: "transparent"
-                      }), /*#__PURE__*/_jsx("circle", {
-                        cx: "60",
-                        cy: "60",
-                        r: "48",
-                        stroke: "#4F3FE0",
-                        strokeWidth: "13",
-                        strokeDasharray: "301.59",
-                        strokeDashoffset: "202.06",
-                        strokeLinecap: "round",
-                        fill: "transparent",
-                        className: "transition-all duration-700 ease-out"
-                      })]
-                    }), /*#__PURE__*/_jsxs("div", {
-                      className: "absolute inset-0 flex flex-col items-center justify-center text-center",
-                      children: [/*#__PURE__*/_jsx("span", {
-                        className: "text-2xl font-black text-[#111827] tracking-tight",
-                        children: "120"
-                      }), /*#__PURE__*/_jsx("span", {
-                        className: "text-[10px] font-semibold text-[#8A90A2]",
-                        children: "Total Credits"
-                      })]
-                    })]
-                  }), /*#__PURE__*/_jsxs("div", {
-                    className: "space-y-3 w-full",
-                    children: [/*#__PURE__*/_jsxs("div", {
-                      className: "flex items-center justify-between text-xs",
-                      children: [/*#__PURE__*/_jsxs("div", {
-                        className: "flex items-center gap-2 font-bold text-[#111827]",
-                        children: [/*#__PURE__*/_jsx("span", {
-                          className: "w-2.5 h-2.5 rounded-full bg-[#4F3FE0]"
-                        }), /*#__PURE__*/_jsx("span", {
-                          children: "40 credits used"
-                        })]
-                      }), /*#__PURE__*/_jsx("span", {
-                        className: "font-semibold text-[#8A90A2]",
-                        children: "33%"
-                      })]
-                    }), /*#__PURE__*/_jsxs("div", {
-                      className: "flex items-center justify-between text-xs",
-                      children: [/*#__PURE__*/_jsxs("div", {
-                        className: "flex items-center gap-2 font-bold text-[#111827]",
-                        children: [/*#__PURE__*/_jsx("span", {
-                          className: "w-2.5 h-2.5 rounded-full bg-[#818CF8]"
-                        }), /*#__PURE__*/_jsx("span", {
-                          children: "80 credits remaining"
-                        })]
-                      }), /*#__PURE__*/_jsx("span", {
-                        className: "font-semibold text-[#8A90A2]",
-                        children: "67%"
-                      })]
-                    })]
-                  })]
-                }), /*#__PURE__*/_jsxs("div", {
-                  className: "mt-5 bg-[#F5F3FF] border border-[#E0E7FF] rounded-xl p-3.5 flex items-center gap-3",
-                  children: [/*#__PURE__*/_jsx("div", {
-                    className: "w-8 h-8 rounded-lg bg-indigo-100 text-[#4338CA] flex items-center justify-center flex-shrink-0 font-bold",
-                    children: "\uD83D\uDCC8"
-                  }), /*#__PURE__*/_jsxs("div", {
-                    children: [/*#__PURE__*/_jsx("div", {
-                      className: "text-xs font-bold text-[#4338CA]",
-                      children: "You're on track!"
-                    }), /*#__PURE__*/_jsx("div", {
-                      className: "text-[11px] text-[#6366F1] mt-0.5",
-                      children: "67% of your monthly quota is still available."
-                    })]
-                  })]
-                })]
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft",
-                children: [/*#__PURE__*/_jsxs("div", {
-                  className: "flex items-center justify-between mb-4",
-                  children: [/*#__PURE__*/_jsxs("h4", {
-                    className: "text-sm font-black text-[#111827] flex items-center gap-2",
-                    children: [/*#__PURE__*/_jsx("span", {
-                      className: "w-6 h-6 rounded-lg bg-purple-50 text-[#4F3FE0] flex items-center justify-center",
-                      children: /*#__PURE__*/_jsx(Icon, {
-                        name: "fileText",
-                        className: "w-3.5 h-3.5 text-[#4F3FE0]"
-                      })
-                    }), /*#__PURE__*/_jsx("span", {
-                      children: "Plan & Billing Details"
-                    })]
-                  }), /*#__PURE__*/_jsx("button", {
-                    type: "button",
-                    onClick: function onClick() {
-                      return showToast("Viewing full subscription tier specifications");
-                    },
-                    className: "text-xs font-bold text-[#4F3FE0] hover:underline",
-                    children: "View Plan \u2192"
-                  })]
-                }), /*#__PURE__*/_jsxs("div", {
-                  className: "grid grid-cols-1 sm:grid-cols-3 gap-3",
-                  children: [/*#__PURE__*/_jsxs("div", {
-                    className: "p-3 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl",
-                    children: [/*#__PURE__*/_jsxs("div", {
-                      className: "text-[10px] font-semibold text-[#8A90A2] uppercase flex items-center gap-1",
-                      children: [/*#__PURE__*/_jsx("span", {
-                        children: "\uD83D\uDCC5"
-                      }), " Next Renewal"]
-                    }), /*#__PURE__*/_jsx("div", {
-                      className: "text-xs font-bold text-[#111827] mt-1",
-                      children: "Nov 1, 2026"
-                    }), /*#__PURE__*/_jsx("div", {
-                      className: "text-[10px] text-emerald-600 font-semibold mt-0.5",
-                      children: "\u25CF Auto-renew enabled"
-                    })]
-                  }), /*#__PURE__*/_jsxs("div", {
-                    className: "p-3 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl",
-                    children: [/*#__PURE__*/_jsxs("div", {
-                      className: "text-[10px] font-semibold text-[#8A90A2] uppercase flex items-center gap-1",
-                      children: [/*#__PURE__*/_jsx("span", {
-                        children: "\uD83D\uDCC4"
-                      }), " Last Invoice"]
-                    }), /*#__PURE__*/_jsxs("div", {
-                      className: "flex items-center gap-1.5 mt-1",
-                      children: [/*#__PURE__*/_jsx("span", {
-                        className: "text-xs font-bold text-[#111827]",
-                        children: "INV-2026-1028"
-                      }), /*#__PURE__*/_jsx("span", {
-                        className: "bg-emerald-50 text-emerald-600 border border-emerald-200 text-[9px] font-bold px-1.5 py-0.2 rounded",
-                        children: "Paid"
-                      })]
-                    }), /*#__PURE__*/_jsx("div", {
-                      className: "text-[10px] text-[#8A90A2] mt-0.5",
-                      children: "28 Oct 2026"
-                    })]
-                  }), /*#__PURE__*/_jsxs("div", {
-                    className: "p-3 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl",
-                    children: [/*#__PURE__*/_jsxs("div", {
-                      className: "text-[10px] font-semibold text-[#8A90A2] uppercase flex items-center gap-1",
-                      children: [/*#__PURE__*/_jsx("span", {
-                        children: "\uD83E\uDE99"
-                      }), " Extra Credits Price"]
-                    }), /*#__PURE__*/_jsx("div", {
-                      className: "text-xs font-bold text-[#111827] mt-1",
-                      children: "\u20B9500 / 10 credits"
-                    }), /*#__PURE__*/_jsx("div", {
-                      className: "text-[10px] text-[#8A90A2] mt-0.5",
-                      children: "Buy additional credits anytime"
-                    })]
-                  })]
-                })]
-              })]
-            }), /*#__PURE__*/_jsx("div", {
-              className: "lg:col-span-7",
-              children: /*#__PURE__*/_jsxs("div", {
-                className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft",
-                children: [/*#__PURE__*/_jsxs("div", {
-                  className: "flex items-center justify-between mb-4",
-                  children: [/*#__PURE__*/_jsxs("h4", {
-                    className: "text-sm font-black text-[#111827] flex items-center gap-2",
-                    children: [/*#__PURE__*/_jsx("span", {
-                      className: "w-6 h-6 rounded-lg bg-purple-50 text-[#4F3FE0] flex items-center justify-center",
-                      children: /*#__PURE__*/_jsx(Icon, {
-                        name: "bookmark",
-                        className: "w-3.5 h-3.5 text-[#4F3FE0]"
-                      })
-                    }), /*#__PURE__*/_jsx("span", {
-                      children: "Recent Credit Ledger"
-                    })]
-                  }), /*#__PURE__*/_jsx("button", {
-                    type: "button",
-                    onClick: function onClick() {
-                      return showToast("Opening full audit ledger with filter controls");
-                    },
-                    className: "text-xs font-bold text-[#4F3FE0] hover:underline",
-                    children: "View All \u2192"
-                  })]
-                }), /*#__PURE__*/_jsx("div", {
-                  className: "divide-y divide-[#ECEEF4]",
-                  children: [{
-                    title: "Session in Collaboration Room",
-                    date: "Today, 03:30 PM",
-                    credits: "-18 credits",
-                    hours: "-1.5 hrs",
-                    iconType: "calendar",
-                    iconBg: "bg-blue-50 text-[#2563EB]"
-                  }, {
-                    title: "Client Meeting in Pitch Arena Nexus",
-                    date: "28 Oct 2026, 11:30 AM",
-                    credits: "-25 credits",
-                    hours: "-1.5 hrs",
-                    iconType: "users",
-                    iconBg: "bg-purple-50 text-[#6E42E5]"
-                  }, {
-                    title: "Monthly Incubator Quota Credited",
-                    date: "01 Oct 2026, 12:00 AM",
-                    credits: "+120 credits",
-                    hours: "+10.0 hrs",
-                    iconType: "gift",
-                    iconBg: "bg-emerald-50 text-[#059669]",
-                    isCredit: true
-                  }, {
-                    title: "Team Sync in Focus Room",
-                    date: "27 Oct 2026, 02:00 PM",
-                    credits: "-12 credits",
-                    hours: "-1.0 hrs",
-                    iconType: "calendar",
-                    iconBg: "bg-blue-50 text-[#2563EB]"
-                  }, {
-                    title: "Product Planning - Boardroom Alpha",
-                    date: "26 Oct 2026, 09:00 AM",
-                    credits: "-20 credits",
-                    hours: "-2.0 hrs",
-                    iconType: "users",
-                    iconBg: "bg-purple-50 text-[#6E42E5]"
-                  }].map(function (tx, idx) {
-                    return /*#__PURE__*/_jsxs("div", {
-                      className: "py-3.5 flex items-center justify-between hover:bg-[#F8FAFC] px-2 rounded-xl transition-all",
-                      children: [/*#__PURE__*/_jsxs("div", {
-                        className: "flex items-center gap-3.5",
-                        children: [/*#__PURE__*/_jsx("div", {
-                          className: "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ".concat(tx.iconBg),
-                          children: /*#__PURE__*/_jsx(Icon, {
-                            name: tx.iconType,
-                            className: "w-5 h-5"
-                          })
-                        }), /*#__PURE__*/_jsxs("div", {
-                          children: [/*#__PURE__*/_jsx("div", {
-                            className: "text-xs font-bold text-[#111827]",
-                            children: tx.title
-                          }), /*#__PURE__*/_jsx("div", {
-                            className: "text-[11px] text-[#8A90A2] mt-0.5",
-                            children: tx.date
-                          })]
-                        })]
-                      }), /*#__PURE__*/_jsxs("div", {
-                        className: "text-right",
-                        children: [/*#__PURE__*/_jsx("div", {
-                          className: "text-xs font-bold ".concat(tx.isCredit ? 'text-emerald-600 font-extrabold' : 'text-[#111827]'),
-                          children: tx.credits
-                        }), /*#__PURE__*/_jsx("div", {
-                          className: "text-[11px] ".concat(tx.isCredit ? 'text-emerald-600 font-medium' : 'text-[#8A90A2]'),
-                          children: tx.hours
-                        })]
-                      })]
-                    }, idx);
-                  })
-                })]
-              })
-            })]
-          })]
-        }), activeNav === "Analytics" && /*#__PURE__*/_jsxs("div", {
-          className: "space-y-6 animate-fadeIn",
-          children: [/*#__PURE__*/_jsxs("div", {
-            className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft",
-            children: [/*#__PURE__*/_jsx("h2", {
-              className: "text-2xl font-black text-[#111827]",
-              children: "Meeting Space Insights & Analytics"
-            }), /*#__PURE__*/_jsx("p", {
-              className: "text-xs text-[#8A90A2] mt-1",
-              children: "Utilization frequency, average party size, and peak discussion hours"
-            })]
-          }), /*#__PURE__*/_jsxs("div", {
-            className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4",
-            children: [/*#__PURE__*/_jsxs("div", {
-              className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft",
-              children: [/*#__PURE__*/_jsx("span", {
-                className: "text-xs font-bold text-[#8A90A2]",
-                children: "Total Booked Hours"
-              }), /*#__PURE__*/_jsx("div", {
-                className: "text-3xl font-black text-[#111827] mt-2",
-                children: "28 hrs"
-              }), /*#__PURE__*/_jsx("span", {
-                className: "text-xs font-bold text-emerald-600 mt-1 block",
-                children: "\u2191 14% vs last month"
-              })]
-            }), /*#__PURE__*/_jsxs("div", {
-              className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft",
-              children: [/*#__PURE__*/_jsx("span", {
-                className: "text-xs font-bold text-[#8A90A2]",
-                children: "Favorite Room"
-              }), /*#__PURE__*/_jsx("div", {
-                className: "text-2xl font-black text-[#4F3FE0] mt-2",
-                children: "Boardroom Alpha"
-              }), /*#__PURE__*/_jsx("span", {
-                className: "text-xs text-[#8A90A2] mt-1 block",
-                children: "82% utilization rate"
-              })]
-            }), /*#__PURE__*/_jsxs("div", {
-              className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft",
-              children: [/*#__PURE__*/_jsx("span", {
-                className: "text-xs font-bold text-[#8A90A2]",
-                children: "Average Attendance"
-              }), /*#__PURE__*/_jsx("div", {
-                className: "text-3xl font-black text-[#111827] mt-2",
-                children: "5.8 pax"
-              }), /*#__PURE__*/_jsx("span", {
-                className: "text-xs text-[#8A90A2] mt-1 block",
-                children: "Healthy meeting density"
-              })]
-            }), /*#__PURE__*/_jsxs("div", {
-              className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft",
-              children: [/*#__PURE__*/_jsx("span", {
-                className: "text-xs font-bold text-[#8A90A2]",
-                children: "Credits Saved"
-              }), /*#__PURE__*/_jsx("div", {
-                className: "text-3xl font-black text-emerald-600 mt-2",
-                children: "\u20B914,500"
-              }), /*#__PURE__*/_jsx("span", {
-                className: "text-xs text-[#8A90A2] mt-1 block",
-                children: "Included with incubator pass"
-              })]
-            })]
-          })]
-        }), activeNav === "Workspace & Desks" && /*#__PURE__*/_jsxs("div", {
-          className: "space-y-6 animate-fadeIn",
-          children: [/*#__PURE__*/_jsxs("div", {
-            className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft flex items-center justify-between flex-wrap gap-4",
-            children: [/*#__PURE__*/_jsxs("div", {
-              children: [/*#__PURE__*/_jsx("h2", {
-                className: "text-2xl font-black text-[#111827]",
-                children: "Workspace & Dedicated Pods"
-              }), /*#__PURE__*/_jsx("p", {
-                className: "text-xs text-[#8A90A2] mt-1",
-                children: "Cyber City Hub \u2022 Ground Floor East Wing"
-              })]
-            }), /*#__PURE__*/_jsx("span", {
-              className: "bg-emerald-50 text-emerald-600 border border-emerald-200 px-3.5 py-1.5 rounded-full text-xs font-bold",
-              children: "Allocated: Dedicated Pod #4"
-            })]
-          }), /*#__PURE__*/_jsxs("div", {
-            className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft",
-            children: [/*#__PURE__*/_jsx("h4", {
-              className: "text-base font-bold text-[#111827] mb-3",
-              children: "Assigned Team Desks"
-            }), /*#__PURE__*/_jsx("div", {
-              className: "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4",
-              children: ["Desk 4A (Alex Morgan)", "Desk 4B (Sarah Chen)", "Desk 4C (David Kim)", "Desk 4D (Priya Patel)", "Desk 4E (Open Floating)", "Desk 4F (Open Floating)"].map(function (d, i) {
-                return /*#__PURE__*/_jsxs("div", {
-                  className: "p-4 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl flex items-center gap-3",
-                  children: [/*#__PURE__*/_jsx("span", {
-                    className: "text-xl",
-                    children: "\uD83E\uDE91"
-                  }), /*#__PURE__*/_jsxs("div", {
-                    children: [/*#__PURE__*/_jsx("div", {
-                      className: "font-bold text-xs text-[#111827]",
-                      children: d
-                    }), /*#__PURE__*/_jsx("div", {
-                      className: "text-[11px] text-emerald-600 font-semibold",
-                      children: "Active & Assigned"
-                    })]
-                  })]
-                }, i);
-              })
-            })]
-          })]
-        }), activeNav === "Visitors" && /*#__PURE__*/_jsxs("div", {
-          className: "space-y-6 animate-fadeIn",
-          children: [/*#__PURE__*/_jsxs("div", {
-            className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft flex items-center justify-between flex-wrap gap-4",
-            children: [/*#__PURE__*/_jsxs("div", {
-              children: [/*#__PURE__*/_jsx("h2", {
-                className: "text-2xl font-black text-[#111827]",
-                children: "Visitor Gate Passes & Invites"
-              }), /*#__PURE__*/_jsx("p", {
-                className: "text-xs text-[#8A90A2] mt-1",
-                children: "Issue instant QR security credentials for client meetings"
-              })]
-            }), /*#__PURE__*/_jsx("button", {
-              onClick: function onClick() {
-                return showToast("Guest pass generator launched");
-              },
-              className: "bg-[#4F3FE0] hover:bg-[#4335C9] text-white px-5 py-2.5 rounded-xl text-xs font-bold",
-              children: "+ Create Guest Pass"
-            })]
-          }), /*#__PURE__*/_jsxs("div", {
-            className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft",
-            children: [/*#__PURE__*/_jsx("h4", {
-              className: "text-base font-bold text-[#111827] mb-3",
-              children: "Today's Expected Visitors"
-            }), /*#__PURE__*/_jsx("div", {
-              className: "space-y-3",
-              children: [{
-                name: "Vikram Malhotra",
-                org: "Sequoia Capital",
-                time: "09:00 AM",
-                room: "Boardroom Alpha",
-                status: "Pass Issued"
-              }, {
-                name: "Dr. Ananya Rao",
-                org: "Apollo Health Tech",
-                time: "03:30 PM",
-                room: "Collaboration Room",
-                status: "Checked In"
-              }].map(function (v, i) {
-                return /*#__PURE__*/_jsxs("div", {
-                  className: "p-4 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl flex items-center justify-between flex-wrap gap-3 text-xs",
-                  children: [/*#__PURE__*/_jsxs("div", {
-                    children: [/*#__PURE__*/_jsx("div", {
-                      className: "font-bold text-sm text-[#111827]",
-                      children: v.name
-                    }), /*#__PURE__*/_jsxs("div", {
-                      className: "text-[#8A90A2] text-xs",
-                      children: [v.org, " \u2022 Visiting for session in ", v.room, " at ", v.time]
-                    })]
-                  }), /*#__PURE__*/_jsx("span", {
-                    className: "bg-blue-50 text-blue-600 border border-blue-200 px-3 py-1 rounded-full font-bold",
-                    children: v.status
-                  })]
-                }, i);
-              })
-            })]
-          })]
-        }), activeNav === "Members" && /*#__PURE__*/_jsxs("div", {
-          className: "space-y-6 animate-fadeIn",
-          children: [/*#__PURE__*/_jsxs("div", {
-            className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft flex items-center justify-between flex-wrap gap-4",
-            children: [/*#__PURE__*/_jsxs("div", {
-              children: [/*#__PURE__*/_jsx("h2", {
-                className: "text-2xl font-black text-[#111827]",
-                children: "Venture Team Directory"
-              }), /*#__PURE__*/_jsx("p", {
-                className: "text-xs text-[#8A90A2] mt-1",
-                children: "XYZ Technologies registered incubator members"
-              })]
-            }), /*#__PURE__*/_jsx("button", {
-              onClick: function onClick() {
-                return showToast("Invite new team member modal opened");
-              },
-              className: "bg-[#4F3FE0] hover:bg-[#4335C9] text-white px-5 py-2.5 rounded-xl text-xs font-bold",
-              children: "+ Invite Member"
-            })]
-          }), /*#__PURE__*/_jsx("div", {
-            className: "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5",
-            children: [{
-              name: "Alex Morgan",
-              role: "Co-Founder & CEO",
-              email: "alex.m@xyztech.io",
-              avatar: "AM"
-            }, {
-              name: "Sarah Chen",
-              role: "CTO & Co-Founder",
-              email: "sarah.c@xyztech.io",
-              avatar: "SC"
-            }, {
-              name: "David Kim",
-              role: "Head of Product",
-              email: "david.k@xyztech.io",
-              avatar: "DK"
-            }, {
-              name: "Priya Patel",
-              role: "Lead AI Engineer",
-              email: "priya.p@xyztech.io",
-              avatar: "PP"
-            }].map(function (m, i) {
-              return /*#__PURE__*/_jsxs("div", {
-                className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft flex items-center gap-3.5",
-                children: [/*#__PURE__*/_jsx("div", {
-                  className: "w-11 h-11 rounded-full bg-gradient-to-tr from-[#4F3FE0] to-[#8B5CF6] text-white font-extrabold flex items-center justify-center text-sm shadow-sm flex-shrink-0",
-                  children: m.avatar
-                }), /*#__PURE__*/_jsxs("div", {
-                  className: "truncate",
-                  children: [/*#__PURE__*/_jsx("div", {
-                    className: "font-bold text-sm text-[#111827] truncate",
-                    children: m.name
-                  }), /*#__PURE__*/_jsx("div", {
-                    className: "text-xs font-medium text-[#4F3FE0]",
-                    children: m.role
-                  }), /*#__PURE__*/_jsx("div", {
-                    className: "text-[11px] text-[#8A90A2] truncate",
-                    children: m.email
-                  })]
-                })]
-              }, i);
-            })
-          })]
-        }), activeNav === "Database Tables" && /*#__PURE__*/_jsxs("div", {
-          className: "space-y-6 animate-fadeIn",
-          children: [/*#__PURE__*/_jsxs("div", {
-            className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft",
-            children: [/*#__PURE__*/_jsxs("div", {
-              className: "flex flex-col md:flex-row md:items-center justify-between gap-4",
-              children: [/*#__PURE__*/_jsxs("div", {
-                className: "flex items-start gap-4",
-                children: [/*#__PURE__*/_jsx("div", {
-                  className: "w-12 h-12 rounded-xl bg-[#EEEBFF] flex items-center justify-center text-[#4F3FE0] flex-shrink-0",
-                  children: /*#__PURE__*/_jsx(Icon, {
-                    name: "database",
-                    className: "w-6 h-6"
-                  })
-                }), /*#__PURE__*/_jsxs("div", {
-                  children: [/*#__PURE__*/_jsxs("div", {
-                    className: "flex items-center gap-2.5",
-                    children: [/*#__PURE__*/_jsx("h2", {
-                      className: "text-2xl font-black text-[#111827]",
-                      children: "Database Tables & Collections"
-                    }), /*#__PURE__*/_jsxs("span", {
-                      className: "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200",
-                      children: [/*#__PURE__*/_jsx("span", {
-                        className: "w-2 h-2 rounded-full bg-emerald-500 animate-pulse"
-                      }), "MongoDB Atlas Connected"]
-                    })]
-                  }), /*#__PURE__*/_jsx("p", {
-                    className: "text-xs text-[#8A90A2] mt-1",
-                    children: "Live multi-tenant collections, index schemas, and records for NEXUS HUB Incubation OS"
-                  })]
-                })]
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "flex items-center gap-2.5 self-start md:self-auto",
-                children: [/*#__PURE__*/_jsxs("button", {
-                  onClick: function onClick() {
-                    return showToast("Database cache flushed. Fetched latest MongoDB Atlas records.");
-                  },
-                  className: "px-3.5 py-2 bg-[#F6F7FB] border border-[#ECEEF4] hover:bg-[#EEEBFF] hover:text-[#4F3FE0] text-[#374151] text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5",
-                  children: [/*#__PURE__*/_jsx(Icon, {
-                    name: "repeat",
-                    className: "w-3.5 h-3.5"
-                  }), /*#__PURE__*/_jsx("span", {
-                    children: "Sync Data"
-                  })]
-                }), /*#__PURE__*/_jsxs("a", {
-                  href: "app.html",
-                  target: "_blank",
-                  rel: "noreferrer",
-                  className: "px-4 py-2 bg-[#111827] hover:bg-black text-white text-xs font-bold rounded-xl transition-all shadow-sm flex items-center gap-1.5",
-                  children: [/*#__PURE__*/_jsx("span", {
-                    children: "Full Admin Shell"
-                  }), /*#__PURE__*/_jsx(Icon, {
-                    name: "externalLink",
-                    className: "w-3.5 h-3.5"
-                  })]
-                })]
-              })]
-            }), /*#__PURE__*/_jsxs("div", {
-              className: "grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-5 border-t border-[#ECEEF4]",
-              children: [/*#__PURE__*/_jsxs("div", {
-                className: "p-3 bg-[#F8F9FD] rounded-xl border border-[#ECEEF4]",
-                children: [/*#__PURE__*/_jsx("div", {
-                  className: "text-[11px] font-semibold text-[#8A90A2]",
-                  children: "Active Cluster"
-                }), /*#__PURE__*/_jsx("div", {
-                  className: "text-sm font-extrabold text-[#111827] mt-0.5",
-                  children: "cluster0.nexus.net"
-                })]
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "p-3 bg-[#F8F9FD] rounded-xl border border-[#ECEEF4]",
-                children: [/*#__PURE__*/_jsx("div", {
-                  className: "text-[11px] font-semibold text-[#8A90A2]",
-                  children: "Collections"
-                }), /*#__PURE__*/_jsxs("div", {
-                  className: "text-sm font-extrabold text-[#4F3FE0] mt-0.5",
-                  children: [Object.keys(DB_COLLECTIONS).length, " Collections"]
-                })]
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "p-3 bg-[#F8F9FD] rounded-xl border border-[#ECEEF4]",
-                children: [/*#__PURE__*/_jsx("div", {
-                  className: "text-[11px] font-semibold text-[#8A90A2]",
-                  children: "Selected Records"
-                }), /*#__PURE__*/_jsxs("div", {
-                  className: "text-sm font-extrabold text-[#111827] mt-0.5",
-                  children: [(DB_COLLECTIONS[dbCollection] || []).length, " Documents"]
-                })]
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "p-3 bg-[#F8F9FD] rounded-xl border border-[#ECEEF4]",
-                children: [/*#__PURE__*/_jsx("div", {
-                  className: "text-[11px] font-semibold text-[#8A90A2]",
-                  children: "Database Latency"
-                }), /*#__PURE__*/_jsx("div", {
-                  className: "text-sm font-extrabold text-emerald-600 mt-0.5",
-                  children: "38ms Ping (Optimal)"
-                })]
-              })]
-            })]
-          }), /*#__PURE__*/_jsxs("div", {
-            className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft space-y-4",
-            children: [/*#__PURE__*/_jsxs("div", {
-              className: "flex flex-col sm:flex-row sm:items-center justify-between gap-3",
-              children: [/*#__PURE__*/_jsx("div", {
-                className: "flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-none",
-                children: Object.keys(DB_COLLECTIONS).map(function (colName) {
-                  var isActive = dbCollection === colName;
-                  var count = DB_COLLECTIONS[colName].length;
-                  return /*#__PURE__*/_jsxs("button", {
-                    onClick: function onClick() {
-                      setDbCollection(colName);
-                      setDbSearch("");
-                    },
-                    className: "px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ".concat(isActive ? "bg-[#4F3FE0] text-white shadow-sm" : "bg-[#F6F7FB] text-[#374151] hover:bg-[#EEEBFF] hover:text-[#4F3FE0]"),
-                    children: [/*#__PURE__*/_jsx("span", {
-                      children: colName
-                    }), /*#__PURE__*/_jsx("span", {
-                      className: "px-1.5 py-0.5 rounded-full text-[10px] font-extrabold ".concat(isActive ? "bg-white/20 text-white" : "bg-white text-[#8A90A2] border border-[#ECEEF4]"),
-                      children: count
-                    })]
-                  }, colName);
-                })
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "relative w-full sm:w-64 flex-shrink-0",
-                children: [/*#__PURE__*/_jsx(Icon, {
-                  name: "search",
-                  className: "w-4 h-4 text-[#8A90A2] absolute left-3 top-1/2 -translate-y-1/2"
-                }), /*#__PURE__*/_jsx("input", {
-                  type: "text",
-                  value: dbSearch,
-                  onChange: function onChange(e) {
-                    return setDbSearch(e.target.value);
-                  },
-                  placeholder: "Search ".concat(dbCollection, "..."),
-                  className: "w-full pl-9 pr-3 py-2 bg-[#F6F7FB] border border-[#ECEEF4] rounded-xl text-xs font-medium text-[#111827] focus:outline-none focus:border-[#4F3FE0] focus:bg-white"
-                })]
-              })]
-            }), /*#__PURE__*/_jsx("div", {
-              className: "overflow-x-auto border border-[#ECEEF4] rounded-xl",
-              children: /*#__PURE__*/_jsxs("table", {
-                className: "w-full text-left border-collapse text-xs",
-                children: [/*#__PURE__*/_jsx("thead", {
-                  children: /*#__PURE__*/_jsxs("tr", {
-                    className: "bg-[#F8F9FD] border-b border-[#ECEEF4] text-[#8A90A2] font-bold uppercase tracking-wider text-[11px]",
-                    children: [/*#__PURE__*/_jsx("th", {
-                      className: "py-3 px-4",
-                      children: "_id"
-                    }), /*#__PURE__*/_jsx("th", {
-                      className: "py-3 px-4",
-                      children: "Identifier / Title"
-                    }), /*#__PURE__*/_jsx("th", {
-                      className: "py-3 px-4",
-                      children: "Attributes"
-                    }), /*#__PURE__*/_jsx("th", {
-                      className: "py-3 px-4",
-                      children: "Status / State"
-                    }), /*#__PURE__*/_jsx("th", {
-                      className: "py-3 px-4 text-right",
-                      children: "Actions"
-                    })]
-                  })
-                }), /*#__PURE__*/_jsx("tbody", {
-                  className: "divide-y divide-[#ECEEF4]",
-                  children: function () {
-                    var rawList = DB_COLLECTIONS[dbCollection] || [];
-                    var filtered = rawList.filter(function (item) {
-                      if (!dbSearch) return true;
-                      var query = dbSearch.toLowerCase();
-                      return Object.values(item).some(function (val) {
-                        return String(val).toLowerCase().includes(query);
-                      });
-                    });
-                    if (filtered.length === 0) {
-                      return /*#__PURE__*/_jsx("tr", {
-                        children: /*#__PURE__*/_jsxs("td", {
-                          colSpan: 5,
-                          className: "py-8 text-center text-xs text-[#8A90A2]",
-                          children: ["No records matched your search in collection ", /*#__PURE__*/_jsx("strong", {
-                            children: dbCollection
-                          })]
-                        })
-                      });
-                    }
-                    return filtered.map(function (row, idx) {
-                      var displayName = row.name || row.label || row.roomName || row.invoiceNumber || row.fullName || "Record #" + (idx + 1);
-                      var subInfo = row.founder || row.type || row.bookedBy || row.recipient || row.company || "";
-                      var status = row.status || "Active";
-                      var statusClasses = status === "Active" || status === "Available" || status === "Confirmed" || status === "Paid" ? "bg-emerald-50 text-emerald-600 border border-emerald-200" : status === "In Use" || status === "In Progress" ? "bg-amber-50 text-amber-600 border border-amber-200" : "bg-indigo-50 text-[#4F3FE0] border border-indigo-200";
-                      return /*#__PURE__*/_jsxs("tr", {
-                        className: "hover:bg-[#F9FAFC] transition-colors",
-                        children: [/*#__PURE__*/_jsx("td", {
-                          className: "py-3 px-4 font-mono text-[11px] text-[#4F3FE0] font-semibold whitespace-nowrap",
-                          children: row._id
-                        }), /*#__PURE__*/_jsxs("td", {
-                          className: "py-3 px-4",
-                          children: [/*#__PURE__*/_jsx("div", {
-                            className: "font-bold text-[#111827]",
-                            children: displayName
-                          }), subInfo && /*#__PURE__*/_jsx("div", {
-                            className: "text-[11px] text-[#8A90A2] mt-0.5",
-                            children: subInfo
-                          })]
-                        }), /*#__PURE__*/_jsx("td", {
-                          className: "py-3 px-4 text-[#374151]",
-                          children: /*#__PURE__*/_jsxs("div", {
-                            className: "flex flex-wrap gap-1.5 max-w-xs",
-                            children: [row.capacity && /*#__PURE__*/_jsxs("span", {
-                              className: "bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] font-medium",
-                              children: ["Cap: ", row.capacity]
-                            }), row.creditsRemaining !== undefined && /*#__PURE__*/_jsxs("span", {
-                              className: "bg-purple-50 text-[#4F3FE0] px-2 py-0.5 rounded text-[10px] font-bold",
-                              children: [row.creditsRemaining, " cr"]
-                            }), row.creditsPerHour && /*#__PURE__*/_jsxs("span", {
-                              className: "bg-purple-50 text-[#4F3FE0] px-2 py-0.5 rounded text-[10px] font-bold",
-                              children: [row.creditsPerHour, " cr/hr"]
-                            }), row.amount && /*#__PURE__*/_jsx("span", {
-                              className: "bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded text-[10px] font-bold",
-                              children: row.amount
-                            }), row.tier && /*#__PURE__*/_jsx("span", {
-                              className: "bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[10px] font-medium",
-                              children: row.tier
-                            }), row.slot && /*#__PURE__*/_jsx("span", {
-                              className: "bg-amber-50 text-amber-700 px-2 py-0.5 rounded text-[10px] font-medium",
-                              children: row.slot
-                            })]
-                          })
-                        }), /*#__PURE__*/_jsx("td", {
-                          className: "py-3 px-4 whitespace-nowrap",
-                          children: /*#__PURE__*/_jsx("span", {
-                            className: "px-2.5 py-1 rounded-full text-[11px] font-bold ".concat(statusClasses),
-                            children: status
-                          })
-                        }), /*#__PURE__*/_jsx("td", {
-                          className: "py-3 px-4 text-right whitespace-nowrap",
-                          children: /*#__PURE__*/_jsx("button", {
-                            onClick: function onClick() {
-                              return setSelectedDbDoc(row);
-                            },
-                            className: "px-3 py-1.5 bg-[#EEEBFF] hover:bg-[#4F3FE0] text-[#4F3FE0] hover:text-white rounded-lg font-bold text-[11px] transition-all",
-                            children: "Inspect JSON"
-                          })
-                        })]
-                      }, row._id || idx);
-                    });
-                  }()
-                })]
-              })
-            })]
-          })]
-        }), selectedDbDoc && /*#__PURE__*/_jsx("div", {
-          className: "fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn",
-          onClick: function onClick() {
-            return setSelectedDbDoc(null);
-          },
-          children: /*#__PURE__*/_jsxs("div", {
-            className: "bg-[#111827] text-white rounded-2xl w-full max-w-xl shadow-2xl border border-gray-700 p-6 space-y-4",
-            onClick: function onClick(e) {
-              return e.stopPropagation();
-            },
-            children: [/*#__PURE__*/_jsxs("div", {
-              className: "flex items-center justify-between pb-3 border-b border-gray-800",
-              children: [/*#__PURE__*/_jsxs("div", {
-                className: "flex items-center gap-2",
-                children: [/*#__PURE__*/_jsx(Icon, {
-                  name: "database",
-                  className: "w-5 h-5 text-[#4F3FE0]"
-                }), /*#__PURE__*/_jsxs("h3", {
-                  className: "font-extrabold text-sm text-white",
-                  children: ["Document Inspector (", selectedDbDoc._id, ")"]
-                })]
-              }), /*#__PURE__*/_jsx("button", {
-                onClick: function onClick() {
-                  return setSelectedDbDoc(null);
-                },
-                className: "w-7 h-7 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white flex items-center justify-center text-xs font-bold",
-                children: "\u2715"
-              })]
-            }), /*#__PURE__*/_jsx("pre", {
-              className: "bg-[#0B0F19] p-4 rounded-xl text-xs font-mono text-emerald-400 overflow-x-auto max-h-96 border border-gray-800 leading-relaxed",
-              children: JSON.stringify(selectedDbDoc, null, 2)
-            }), /*#__PURE__*/_jsxs("div", {
-              className: "flex items-center justify-between pt-2",
-              children: [/*#__PURE__*/_jsx("span", {
-                className: "text-[11px] text-gray-400",
-                children: "Read-only sandbox replica"
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "flex gap-2",
-                children: [/*#__PURE__*/_jsx("button", {
-                  onClick: function onClick() {
-                    var _navigator$clipboard;
-                    (_navigator$clipboard = navigator.clipboard) === null || _navigator$clipboard === void 0 || _navigator$clipboard.writeText(JSON.stringify(selectedDbDoc, null, 2));
-                    showToast("Copied JSON payload to clipboard!");
-                  },
-                  className: "px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-white text-xs font-semibold rounded-lg transition-all",
-                  children: "Copy JSON"
-                }), /*#__PURE__*/_jsx("button", {
-                  onClick: function onClick() {
-                    return setSelectedDbDoc(null);
-                  },
-                  className: "px-4 py-1.5 bg-[#4F3FE0] hover:bg-[#4335C9] text-white text-xs font-bold rounded-lg transition-all",
-                  children: "Close"
-                })]
-              })]
-            })]
-          })
-        }), activeNav === "Settings" && /*#__PURE__*/_jsxs("div", {
-          className: "space-y-6 animate-fadeIn",
-          children: [/*#__PURE__*/_jsxs("div", {
-            className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft",
-            children: [/*#__PURE__*/_jsx("h2", {
-              className: "text-2xl font-black text-[#111827]",
-              children: "Preferences & Integrations"
-            }), /*#__PURE__*/_jsx("p", {
-              className: "text-xs text-[#8A90A2] mt-1",
-              children: "Calendar synchronization, notifications and security"
-            })]
-          }), /*#__PURE__*/_jsxs("div", {
-            className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft space-y-4",
-            children: [/*#__PURE__*/_jsxs("div", {
-              className: "flex items-center justify-between pb-4 border-b border-[#ECEEF4]",
-              children: [/*#__PURE__*/_jsxs("div", {
-                children: [/*#__PURE__*/_jsx("div", {
-                  className: "font-bold text-sm text-[#111827]",
-                  children: "Google Calendar Sync"
-                }), /*#__PURE__*/_jsx("div", {
-                  className: "text-xs text-[#8A90A2]",
-                  children: "Automatically push confirmed room reservations to your company GSuite"
-                })]
-              }), /*#__PURE__*/_jsx("span", {
-                className: "bg-emerald-50 text-emerald-600 font-bold px-3 py-1 rounded-full text-xs",
-                children: "Connected"
-              })]
-            }), /*#__PURE__*/_jsxs("div", {
-              className: "flex items-center justify-between pb-4 border-b border-[#ECEEF4]",
-              children: [/*#__PURE__*/_jsxs("div", {
-                children: [/*#__PURE__*/_jsx("div", {
-                  className: "font-bold text-sm text-[#111827]",
-                  children: "WhatsApp Booking Alerts"
-                }), /*#__PURE__*/_jsx("div", {
-                  className: "text-xs text-[#8A90A2]",
-                  children: "Receive 15-minute room start reminders and access passcodes"
-                })]
-              }), /*#__PURE__*/_jsx("span", {
-                className: "bg-emerald-50 text-emerald-600 font-bold px-3 py-1 rounded-full text-xs",
-                children: "Active (+91 9880012345)"
-              })]
-            }), /*#__PURE__*/_jsxs("div", {
-              className: "pt-2 flex items-center justify-between",
-              children: [/*#__PURE__*/_jsxs("div", {
-                children: [/*#__PURE__*/_jsx("div", {
-                  className: "font-bold text-sm text-[#111827]",
-                  children: "Full Operating System Command Center"
-                }), /*#__PURE__*/_jsx("div", {
-                  className: "text-xs text-[#8A90A2]",
-                  children: "Access complete multi-tenant database tables, invoicing & admin controls"
-                })]
-              }), /*#__PURE__*/_jsxs("a", {
-                href: "app.html",
-                className: "bg-[#111827] text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-black transition-all flex items-center gap-1.5",
-                children: [/*#__PURE__*/_jsx("span", {
-                  children: "Launch Terminal"
-                }), /*#__PURE__*/_jsx(Icon, {
-                  name: "externalLink",
-                  className: "w-3.5 h-3.5"
-                })]
-              })]
-            })]
-          })]
-        })]
-      })]
-    }), bookingModalRoom && /*#__PURE__*/_jsx("div", {
-      className: "fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 z-50 animate-fadeIn",
-      children: /*#__PURE__*/_jsxs("div", {
-        className: "bg-white rounded-3xl max-w-2xl w-full p-5 sm:p-7 shadow-2xl border border-[#ECEEF4] max-h-[92vh] overflow-y-auto relative animate-scaleUp",
-        children: [/*#__PURE__*/_jsxs("div", {
-          className: "flex items-center justify-between pb-4 border-b border-[#ECEEF4]",
-          children: [/*#__PURE__*/_jsxs("div", {
-            className: "flex items-center gap-3",
-            children: [/*#__PURE__*/_jsx("img", {
-              src: bookingModalRoom.image || "assets/rooms/mr-01-main.jpg",
-              alt: bookingModalRoom.name,
-              className: "w-12 h-12 rounded-xl object-cover border border-[#ECEEF4] shadow-xs flex-shrink-0"
-            }), /*#__PURE__*/_jsxs("div", {
-              children: [/*#__PURE__*/_jsxs("div", {
-                className: "flex items-center gap-2",
-                children: [/*#__PURE__*/_jsx("h3", {
-                  className: "text-lg font-black text-[#111827]",
-                  children: bookingModalRoom.name
-                }), /*#__PURE__*/_jsx("span", {
-                  className: "px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#4F3FE0] text-white uppercase tracking-wider",
-                  children: bookingModalRoom.type
-                })]
-              }), /*#__PURE__*/_jsx("p", {
-                className: "text-xs text-[#8A90A2] mt-0.5",
-                children: "Instant confirmation \u2022 Deducts 1 hour credit"
-              })]
-            })]
-          }), /*#__PURE__*/_jsx("button", {
-            type: "button",
-            onClick: function onClick() {
-              setBookingModalRoom(null);
-              setBookingSuccessData(null);
-            },
-            className: "w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 transition-colors",
-            title: "Close",
-            children: /*#__PURE__*/_jsx(Icon, {
-              name: "x",
-              className: "w-4 h-4"
-            })
-          })]
-        }), bookingSuccessData ? /*#__PURE__*/_jsxs("div", {
-          className: "py-6 text-center space-y-4 animate-scaleUp",
-          children: [/*#__PURE__*/_jsx("div", {
-            className: "w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 border-2 border-emerald-200 flex items-center justify-center mx-auto text-2xl font-bold shadow-sm",
-            children: "\u2713"
-          }), /*#__PURE__*/_jsxs("div", {
-            children: [/*#__PURE__*/_jsx("span", {
-              className: "text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200",
-              children: "Reservation Confirmed"
-            }), /*#__PURE__*/_jsx("h3", {
-              className: "text-xl font-black text-[#111827] mt-2",
-              children: bookingSuccessData.title
-            }), /*#__PURE__*/_jsxs("p", {
-              className: "text-xs text-[#8A90A2]",
-              children: ["Booking Reference: ", /*#__PURE__*/_jsxs("strong", {
-                className: "font-mono text-[#111827]",
-                children: ["#", bookingSuccessData.resId]
-              })]
-            })]
-          }), /*#__PURE__*/_jsxs("div", {
-            className: "bg-[#F8FAFC] border border-[#ECEEF4] rounded-2xl p-4 text-left text-xs space-y-2 max-w-md mx-auto",
-            children: [/*#__PURE__*/_jsxs("div", {
-              className: "flex justify-between",
-              children: [/*#__PURE__*/_jsx("span", {
-                className: "text-[#8A90A2]",
-                children: "Facility:"
-              }), /*#__PURE__*/_jsx("strong", {
-                className: "text-[#111827]",
-                children: bookingSuccessData.room
-              })]
-            }), /*#__PURE__*/_jsxs("div", {
-              className: "flex justify-between",
-              children: [/*#__PURE__*/_jsx("span", {
-                className: "text-[#8A90A2]",
-                children: "Date & Time:"
-              }), /*#__PURE__*/_jsxs("strong", {
-                className: "text-[#111827]",
-                children: [bookingSuccessData.date, " \u2022 ", bookingSuccessData.time]
-              })]
-            }), /*#__PURE__*/_jsxs("div", {
-              className: "flex justify-between",
-              children: [/*#__PURE__*/_jsx("span", {
-                className: "text-[#8A90A2]",
-                children: "Duration & Attendees:"
-              }), /*#__PURE__*/_jsxs("strong", {
-                className: "text-[#111827]",
-                children: [bookingSuccessData.duration, " \u2022 ", bookingSuccessData.attendees, " people"]
-              })]
-            }), /*#__PURE__*/_jsxs("div", {
-              className: "flex justify-between",
-              children: [/*#__PURE__*/_jsx("span", {
-                className: "text-[#8A90A2]",
-                children: "Credit Deducted:"
-              }), /*#__PURE__*/_jsxs("span", {
-                className: "text-emerald-600 font-bold",
-                children: ["-", bookingSuccessData.credits, " cr (Covered by Incubation Plan)"]
-              })]
-            })]
-          }), /*#__PURE__*/_jsxs("div", {
-            className: "p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl text-left max-w-md mx-auto space-y-2.5",
-            children: [/*#__PURE__*/_jsxs("div", {
-              className: "flex items-center gap-2",
-              children: [/*#__PURE__*/_jsx("span", {
-                className: "text-base",
-                children: "\uD83D\uDCC5"
-              }), /*#__PURE__*/_jsx("strong", {
-                className: "text-xs font-black text-[#111827]",
-                children: "Sync with Your Calendar"
-              })]
-            }), /*#__PURE__*/_jsx("p", {
-              className: "text-[11px] text-[#64748B] leading-relaxed",
-              children: "Export this reservation directly to Google Calendar or download an .ICS invite for Outlook / Apple Calendar."
-            }), /*#__PURE__*/_jsxs("div", {
-              className: "flex items-center gap-2 pt-1",
-              children: [/*#__PURE__*/_jsxs("a", {
-                href: getGCalUrl(bookingSuccessData),
-                target: "_blank",
-                rel: "noopener noreferrer",
-                className: "flex-1 bg-white hover:bg-blue-50 text-[#2B71FF] border border-blue-300 font-bold py-2 px-3 rounded-xl text-xs text-center shadow-xs flex items-center justify-center gap-1.5 transition-all",
-                children: [/*#__PURE__*/_jsx("span", {
-                  children: "Google Calendar (1-Click)"
-                }), /*#__PURE__*/_jsx(Icon, {
-                  name: "externalLink",
-                  className: "w-3.5 h-3.5"
-                })]
-              }), /*#__PURE__*/_jsx("button", {
-                type: "button",
-                onClick: function onClick() {
-                  return downloadIcsFile(bookingSuccessData);
-                },
-                className: "bg-white hover:bg-gray-50 text-[#374151] border border-gray-300 font-bold py-2 px-3 rounded-xl text-xs shadow-xs transition-all",
-                title: "Download iCal (.ics) file",
-                children: "\uD83D\uDCE5 .ICS"
-              })]
-            })]
-          }), /*#__PURE__*/_jsxs("div", {
-            className: "flex items-center justify-center gap-3 pt-3",
-            children: [/*#__PURE__*/_jsx("button", {
-              type: "button",
-              onClick: function onClick() {
-                setBookingModalRoom(null);
-                setBookingSuccessData(null);
-                navigateTo("My Bookings");
-              },
-              className: "px-5 py-2.5 bg-[#4F3FE0] hover:bg-[#4335C9] text-white rounded-xl text-xs font-bold shadow-sm",
-              children: "View in My Bookings \u2192"
-            }), /*#__PURE__*/_jsx("button", {
-              type: "button",
-              onClick: function onClick() {
-                setBookingModalRoom(null);
-                setBookingSuccessData(null);
-              },
-              className: "px-5 py-2.5 border border-[#ECEEF4] text-[#374151] rounded-xl text-xs font-bold hover:bg-gray-50",
-              children: "Done"
-            })]
-          })]
-        }) : /*#__PURE__*/_jsxs("form", {
-          onSubmit: handleConfirmBookingModal,
-          className: "mt-4 space-y-4",
-          children: [/*#__PURE__*/_jsxs("div", {
-            children: [/*#__PURE__*/_jsxs("label", {
-              className: "block text-xs font-bold text-[#374151] mb-1",
-              children: ["Meeting Title ", /*#__PURE__*/_jsx("span", {
-                className: "text-rose-500",
-                children: "*"
-              })]
-            }), /*#__PURE__*/_jsx("input", {
-              type: "text",
-              required: true,
-              value: bookingTitle,
-              onChange: function onChange(e) {
-                return setBookingTitle(e.target.value);
-              },
-              placeholder: "e.g. Q4 Executive Pitch Session",
-              className: "w-full bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#111827] focus:outline-none focus:border-[#4F3FE0] focus:bg-white transition-all"
-            })]
-          }), /*#__PURE__*/_jsxs("div", {
-            children: [/*#__PURE__*/_jsxs("div", {
-              className: "flex items-center justify-between mb-1.5",
-              children: [/*#__PURE__*/_jsxs("label", {
-                className: "text-xs font-bold text-[#374151] flex items-center gap-1.5",
-                children: [/*#__PURE__*/_jsx(Icon, {
-                  name: "calendar",
-                  className: "w-3.5 h-3.5 text-[#4F3FE0]"
-                }), /*#__PURE__*/_jsx("span", {
-                  children: "Reservation Date"
-                })]
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "flex items-center gap-1.5",
-                children: [/*#__PURE__*/_jsx("button", {
-                  type: "button",
-                  onClick: handleSetToday,
-                  className: "px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all ".concat(bookingDate === getTodayDateIso() ? "bg-[#4F3FE0] text-white border-[#4F3FE0] shadow-xs" : "bg-[#F8FAFC] border-[#ECEEF4] text-[#374151] hover:bg-white hover:border-[#4F3FE0]/40"),
-                  children: "\u26A1 Today"
-                }), /*#__PURE__*/_jsx("button", {
-                  type: "button",
-                  onClick: handleSetNextDay,
-                  className: "px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all ".concat(bookingDate === getTomorrowDateIso() ? "bg-[#4F3FE0] text-white border-[#4F3FE0] shadow-xs" : "bg-[#F8FAFC] border-[#ECEEF4] text-[#374151] hover:bg-white hover:border-[#4F3FE0]/40"),
-                  children: "\u26A1 Next Day"
-                })]
-              })]
-            }), /*#__PURE__*/_jsxs("div", {
-              className: "flex items-center gap-2 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl px-3.5 py-2",
-              children: [/*#__PURE__*/_jsx(Icon, {
-                name: "calendar",
-                className: "w-4 h-4 text-[#8A90A2]"
-              }), /*#__PURE__*/_jsx("input", {
-                type: "date",
-                min: "2026-10-31",
-                value: bookingDate,
-                onChange: function onChange(e) {
-                  return setBookingDate(e.target.value);
-                },
-                className: "bg-transparent text-xs font-bold text-[#111827] outline-none cursor-pointer flex-1"
-              }), /*#__PURE__*/_jsx("span", {
-                className: "text-[11px] text-[#8A90A2] font-medium",
-                children: bookingDate === getTodayDateIso() ? "(Today)" : bookingDate === getTomorrowDateIso() ? "(Tomorrow)" : ""
-              })]
-            })]
-          }), /*#__PURE__*/_jsxs("div", {
-            className: "grid grid-cols-1 sm:grid-cols-2 gap-3",
-            children: [/*#__PURE__*/_jsxs("div", {
-              children: [/*#__PURE__*/_jsxs("label", {
-                className: "block text-xs font-bold text-[#374151] mb-1 flex items-center gap-1.5",
-                children: [/*#__PURE__*/_jsx(Icon, {
-                  name: "clock",
-                  className: "w-3.5 h-3.5 text-[#4F3FE0]"
-                }), /*#__PURE__*/_jsx("span", {
-                  children: "Start Time (12-Hour AM/PM)"
-                })]
-              }), /*#__PURE__*/_jsx("select", {
-                value: bookingStartTime,
-                onChange: function onChange(e) {
-                  return setBookingStartTime(e.target.value);
-                },
-                className: "w-full bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl px-3 py-2 text-xs font-bold text-[#111827] focus:outline-none focus:border-[#4F3FE0] cursor-pointer",
-                children: TIME_SLOTS_12H.map(function (slot) {
-                  var slotInfo = getSlotState(slot, bookingModalRoom, bookingDate, bookingStartTime, bookingDuration);
-                  return /*#__PURE__*/_jsxs("option", {
-                    value: slot,
-                    disabled: slotInfo.disabled && slotInfo.status !== 'selected',
-                    children: [slot, " ", slotInfo.status === 'past' ? '(Past)' : slotInfo.status === 'booked' ? '(Booked)' : slotInfo.status === 'unavailable' ? '(Overlap)' : '(Available)']
-                  }, slot);
-                })
-              })]
-            }), /*#__PURE__*/_jsxs("div", {
-              children: [/*#__PURE__*/_jsxs("label", {
-                className: "block text-xs font-bold text-[#374151] mb-1 flex items-center gap-1.5",
-                children: [/*#__PURE__*/_jsx(Icon, {
-                  name: "clock",
-                  className: "w-3.5 h-3.5 text-[#4F3FE0]"
-                }), /*#__PURE__*/_jsx("span", {
-                  children: "Duration & End Time"
-                })]
-              }), /*#__PURE__*/_jsx("select", {
-                value: bookingDuration,
-                onChange: function onChange(e) {
-                  return setBookingDuration(parseFloat(e.target.value));
-                },
-                className: "w-full bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl px-3 py-2 text-xs font-bold text-[#111827] focus:outline-none focus:border-[#4F3FE0] cursor-pointer",
-                children: [0.5, 1.0, 1.5, 2.0, 3.0, 4.0].map(function (dur) {
-                  var sMin = timeStrToMinutes(bookingStartTime);
-                  var eMin = sMin + Math.round(dur * 60);
-                  var endStr = minutesToTimeStr(eMin);
-                  return /*#__PURE__*/_jsxs("option", {
-                    value: dur,
-                    children: [dur === 0.5 ? "30 mins" : "".concat(dur, " hrs"), " (Ends at $", endStr, ")"]
-                  }, dur);
-                })
-              })]
-            })]
-          }), /*#__PURE__*/_jsxs("div", {
-            children: [/*#__PURE__*/_jsxs("div", {
-              className: "flex items-center justify-between mb-2",
-              children: [/*#__PURE__*/_jsxs("div", {
-                children: [/*#__PURE__*/_jsx("label", {
-                  className: "text-xs font-black uppercase tracking-wider text-[#111827]",
-                  children: "Time Slot Bar & Live Availability"
-                }), /*#__PURE__*/_jsx("p", {
-                  className: "text-[11px] text-[#8A90A2]",
-                  children: isLoadingAvailability ? "Updating live availability..." : "Click any green slot to select your start time"
-                })]
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "flex items-center gap-2 text-[10.5px] font-semibold text-[#64748B] flex-wrap",
-                children: [/*#__PURE__*/_jsxs("span", {
-                  className: "flex items-center gap-1",
-                  children: [/*#__PURE__*/_jsx("span", {
-                    className: "w-2.5 h-2.5 rounded-full bg-emerald-500"
-                  }), " Available"]
-                }), /*#__PURE__*/_jsxs("span", {
-                  className: "flex items-center gap-1",
-                  children: [/*#__PURE__*/_jsx("span", {
-                    className: "w-2.5 h-2.5 rounded-full bg-[#4F3FE0]"
-                  }), " Selected"]
-                }), /*#__PURE__*/_jsxs("span", {
-                  className: "flex items-center gap-1",
-                  children: [/*#__PURE__*/_jsx("span", {
-                    className: "w-2.5 h-2.5 rounded-full bg-gray-400"
-                  }), " Booked"]
-                }), /*#__PURE__*/_jsxs("span", {
-                  className: "flex items-center gap-1",
-                  children: [/*#__PURE__*/_jsx("span", {
-                    className: "w-2.5 h-2.5 rounded-full bg-gray-300"
-                  }), " Past"]
-                })]
-              })]
-            }), /*#__PURE__*/_jsx("div", {
-              className: "grid grid-cols-2 sm:grid-cols-4 gap-2 max-h-48 overflow-y-auto p-1.5 border border-[#ECEEF4] rounded-2xl bg-[#FAFAFC]",
-              children: TIME_SLOTS_12H.map(function (slot) {
-                var slotState = getSlotState(slot, bookingModalRoom, bookingDate, bookingStartTime, bookingDuration);
-                if (slotState.status === "past") {
-                  return /*#__PURE__*/_jsxs("div", {
-                    className: "p-2 rounded-xl border border-gray-200 bg-gray-100 text-gray-400 text-center cursor-not-allowed select-none opacity-50",
-                    title: "This time slot has already passed for today",
-                    children: [/*#__PURE__*/_jsx("div", {
-                      className: "text-[11.5px] font-bold line-through",
-                      children: slot
-                    }), /*#__PURE__*/_jsx("div", {
-                      className: "text-[9.5px] text-gray-500 font-semibold mt-0.5",
-                      children: "\u23F3 Past"
-                    })]
-                  }, slot);
-                }
-                if (slotState.status === "booked") {
-                  return /*#__PURE__*/_jsxs("div", {
-                    className: "p-2 rounded-xl border border-gray-200 bg-gray-100/90 text-gray-400 text-center cursor-not-allowed select-none opacity-60",
-                    title: "Slot already reserved by another founder",
-                    children: [/*#__PURE__*/_jsx("div", {
-                      className: "text-[11.5px] font-bold line-through",
-                      children: slot
-                    }), /*#__PURE__*/_jsx("div", {
-                      className: "text-[9.5px] text-gray-500 font-semibold mt-0.5",
-                      children: "\uD83D\uDD12 Booked"
-                    })]
-                  }, slot);
-                }
-                if (slotState.status === "unavailable") {
-                  return /*#__PURE__*/_jsxs("div", {
-                    className: "p-2 rounded-xl border border-amber-200 bg-amber-50/70 text-amber-700 text-center cursor-not-allowed select-none",
-                    title: "Overlap conflict: Duration would overlap a reserved slot",
-                    children: [/*#__PURE__*/_jsx("div", {
-                      className: "text-[11.5px] font-bold",
-                      children: slot
-                    }), /*#__PURE__*/_jsx("div", {
-                      className: "text-[9.5px] font-semibold text-amber-600 mt-0.5",
-                      children: "Overlap"
-                    })]
-                  }, slot);
-                }
-                if (slotState.status === "selected") {
-                  return /*#__PURE__*/_jsxs("button", {
-                    type: "button",
-                    onClick: function onClick() {
-                      return setBookingStartTime(slot);
-                    },
-                    className: "p-2 rounded-xl border border-[#4F3FE0] bg-[#4F3FE0] text-white text-center shadow-sm ring-2 ring-[#4F3FE0]/25 transition-all",
-                    children: [/*#__PURE__*/_jsx("div", {
-                      className: "text-[11.5px] font-bold",
-                      children: slot
-                    }), /*#__PURE__*/_jsx("div", {
-                      className: "text-[9.5px] font-bold text-purple-100 mt-0.5",
-                      children: "\u2605 Selected"
-                    })]
-                  }, slot);
-                }
-                return /*#__PURE__*/_jsxs("button", {
-                  type: "button",
-                  onClick: function onClick() {
-                    return setBookingStartTime(slot);
-                  },
-                  className: "p-2 rounded-xl border border-emerald-300 bg-emerald-50/50 hover:bg-emerald-100/70 hover:border-emerald-400 text-emerald-950 text-center transition-all hover:shadow-xs active:scale-95",
-                  children: [/*#__PURE__*/_jsx("div", {
-                    className: "text-[11.5px] font-bold",
-                    children: slot
-                  }), /*#__PURE__*/_jsx("div", {
-                    className: "text-[9.5px] font-bold text-emerald-600 mt-0.5",
-                    children: "\u2713 Available"
-                  })]
-                }, slot);
-              })
-            })]
-          }), /*#__PURE__*/_jsxs("div", {
-            children: [/*#__PURE__*/_jsxs("div", {
-              className: "flex items-center justify-between mb-1",
-              children: [/*#__PURE__*/_jsxs("label", {
-                className: "text-xs font-bold text-[#374151] flex items-center gap-1.5",
-                children: [/*#__PURE__*/_jsx(Icon, {
-                  name: "users",
-                  className: "w-3.5 h-3.5 text-[#4F3FE0]"
-                }), /*#__PURE__*/_jsx("span", {
-                  children: "Attendees Count"
-                })]
-              }), /*#__PURE__*/_jsxs("span", {
-                className: "text-[11px] text-[#8A90A2]",
-                children: ["Room Max: ", bookingModalRoom.capacity, " seats"]
-              })]
-            }), /*#__PURE__*/_jsxs("div", {
-              className: "flex items-center gap-3",
-              children: [/*#__PURE__*/_jsx("button", {
-                type: "button",
-                onClick: function onClick() {
-                  return setBookingAttendees(function (prev) {
-                    return Math.max(1, prev - 1);
-                  });
-                },
-                className: "w-9 h-9 rounded-xl border border-[#ECEEF4] bg-[#F8FAFC] hover:bg-white text-lg font-bold flex items-center justify-center text-[#111827]",
-                children: "-"
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "flex-1 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl py-2 text-center text-xs font-black text-[#111827]",
-                children: [bookingAttendees, " attendees"]
-              }), /*#__PURE__*/_jsx("button", {
-                type: "button",
-                onClick: function onClick() {
-                  return setBookingAttendees(function (prev) {
-                    return Math.min(bookingModalRoom.capacity, prev + 1);
-                  });
-                },
-                className: "w-9 h-9 rounded-xl border border-[#ECEEF4] bg-[#F8FAFC] hover:bg-white text-lg font-bold flex items-center justify-center text-[#111827]",
-                children: "+"
-              })]
-            })]
-          }), function () {
-            var hourlyRate = parseInt((bookingModalRoom.rate || "").replace(/[^0-9]/g, ""), 10) || 2000;
-            var sMin = timeStrToMinutes(bookingStartTime);
-            var eMin = sMin + Math.round(bookingDuration * 60);
-            var endStr = minutesToTimeStr(eMin);
-            var currentSelectedState = getSlotState(bookingStartTime, bookingModalRoom, bookingDate, bookingStartTime, bookingDuration);
-            return /*#__PURE__*/_jsxs("div", {
-              className: "bg-[#F8F9FD] border border-[#E3DEFF] rounded-2xl p-4 space-y-2 text-xs",
-              children: [/*#__PURE__*/_jsxs("div", {
-                className: "flex justify-between",
-                children: [/*#__PURE__*/_jsx("span", {
-                  className: "text-[#8A90A2]",
-                  children: "Room Rate:"
-                }), /*#__PURE__*/_jsxs("span", {
-                  className: "font-bold text-[#111827]",
-                  children: [bookingModalRoom.rate, " (Covered by Credits)"]
-                })]
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "flex justify-between",
-                children: [/*#__PURE__*/_jsx("span", {
-                  className: "text-[#8A90A2]",
-                  children: "Date & Time:"
-                }), /*#__PURE__*/_jsxs("span", {
-                  className: "font-bold text-[#4F3FE0]",
-                  children: [bookingDate, " \u2022 ", bookingStartTime, " \u2013 ", endStr, " (", bookingDuration, " hrs)"]
-                })]
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "flex justify-between",
-                children: [/*#__PURE__*/_jsx("span", {
-                  className: "text-[#8A90A2]",
-                  children: "Attendees:"
-                }), /*#__PURE__*/_jsxs("span", {
-                  className: "font-bold text-[#111827]",
-                  children: [bookingAttendees, " people (Capacity: ", bookingModalRoom.capacity, ")"]
-                })]
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "flex justify-between",
-                children: [/*#__PURE__*/_jsx("span", {
-                  className: "text-[#8A90A2]",
-                  children: "Credits Used:"
-                }), /*#__PURE__*/_jsxs("span", {
-                  className: "text-emerald-600 font-bold",
-                  children: ["-", bookingDuration, " cr (", startupCreditsRemaining - bookingDuration, " cr remaining in quota)"]
-                })]
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "flex justify-between pt-1 border-t border-[#E3DEFF]",
-                children: [/*#__PURE__*/_jsx("span", {
-                  className: "font-bold text-[#111827]",
-                  children: "Final Charge:"
-                }), /*#__PURE__*/_jsx("span", {
-                  className: "text-emerald-600 font-black text-sm",
-                  children: "\u20B90.00 (100% Covered)"
-                })]
-              }), currentSelectedState.disabled && !currentSelectedState.isSelected && /*#__PURE__*/_jsxs("div", {
-                className: "p-2 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-[11px] font-bold flex items-center gap-1.5 mt-2",
-                children: [/*#__PURE__*/_jsx("span", {
-                  children: "\u26A0\uFE0F"
-                }), /*#__PURE__*/_jsxs("span", {
-                  children: ["Selected time slot is ", currentSelectedState.label, ". Please pick an available green slot."]
-                })]
-              })]
+    // Dynamic filtering logic
+    var filteredBookings = upcomingBookings.filter(function (bkg) {
+      if (bookingsFilterTab !== "All Bookings" && bkg.status !== bookingsFilterTab) {
+        return false;
+      }
+      if (bookingsSearchQuery.trim()) {
+        var q = bookingsSearchQuery.toLowerCase();
+        var matchTitle = (bkg.title || "").toLowerCase().includes(q);
+        var matchRoom = (bkg.room || "").toLowerCase().includes(q);
+        var matchResId = (bkg.resId || "").toLowerCase().includes(q);
+        if (!matchTitle && !matchRoom && !matchResId) return false;
+      }
+      if (bookingsRoomFilter !== "All Rooms" && bkg.room !== bookingsRoomFilter) {
+        return false;
+      }
+      if (bookingsDateFilter === "Today" && bkg.date !== "Today") return false;
+      if (bookingsDateFilter === "Upcoming" && (bkg.status === "Cancelled" || bkg.status === "Completed")) return false;
+      if (bookingsDateFilter === "Past" && bkg.status !== "Completed" && bkg.status !== "Cancelled") return false;
+      return true;
+    });
+    var isFilterActive = bookingsSearchQuery || bookingsRoomFilter !== "All Rooms" || bookingsDateFilter !== "All Dates" || bookingsFilterTab !== "All Bookings";
+    return /*#__PURE__*/React.createElement("div", {
+      className: "space-y-6 animate-fadeIn"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "relative rounded-2xl border border-[#ECEEF4] overflow-hidden bg-white shadow-soft flex items-center min-h-[150px] sm:min-h-[170px] max-h-[190px]"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "absolute inset-0 bg-gradient-to-r from-white via-white/95 via-[#F6F4FF]/75 to-transparent z-10 w-full sm:w-[65%]"
+    }), /*#__PURE__*/React.createElement("div", {
+      className: "absolute right-0 top-0 bottom-0 w-full sm:w-[50%] h-full z-0 overflow-hidden"
+    }, /*#__PURE__*/React.createElement("img", {
+      src: "assets/rooms/banner-hero.jpg",
+      onError: function onError(e) {
+        e.target.onerror = null;
+        e.target.src = "https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=1200&q=80";
+      },
+      alt: "NEXUS HUB Modern Meeting Space",
+      className: "w-full h-full object-cover object-center"
+    }), /*#__PURE__*/React.createElement("div", {
+      className: "absolute inset-0 bg-gradient-to-r from-[#F6F4FF]/60 via-transparent to-black/10"
+    })), /*#__PURE__*/React.createElement("div", {
+      className: "relative z-20 p-6 sm:p-7 max-w-[580px]"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EEEBFF] text-[#4F3FE0] text-[11px] font-bold mb-2"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "w-2 h-2 rounded-full bg-[#4F3FE0] animate-pulse"
+    }), /*#__PURE__*/React.createElement("span", null, "RESERVATION COMMAND CENTER \u2022 XYZ TECHNOLOGIES")), /*#__PURE__*/React.createElement("h2", {
+      className: "text-2xl sm:text-3xl font-black text-[#111827] tracking-tight"
+    }, "My Bookings & Reservations"), /*#__PURE__*/React.createElement("p", {
+      className: "text-xs sm:text-sm text-[#64748B] mt-1 leading-relaxed"
+    }, "Manage, track and modify your meeting room bookings all in one place."), /*#__PURE__*/React.createElement("div", {
+      className: "mt-3.5"
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: function onClick() {
+        return navigateTo("Meeting Rooms");
+      },
+      className: "bg-[#4F3FE0] hover:bg-[#4335C9] text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow-sm hover:shadow-md active:scale-[0.98] flex items-center gap-2"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-sm font-bold"
+    }, "+"), /*#__PURE__*/React.createElement("span", null, "Book a Meeting Room"))))), /*#__PURE__*/React.createElement("div", {
+      className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+    }, /*#__PURE__*/React.createElement("div", {
+      onClick: function onClick() {
+        return setBookingsFilterTab("All Bookings");
+      },
+      className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft hover:shadow-card hover:-translate-y-0.5 transition-all cursor-pointer group"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between text-[#8A90A2]"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-[11px] font-extrabold uppercase tracking-wider text-[#64748B]"
+    }, "Total Bookings"), /*#__PURE__*/React.createElement("div", {
+      className: "w-9 h-9 rounded-xl bg-purple-50 text-[#4F3FE0] flex items-center justify-center group-hover:scale-105 transition-transform"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "calendar",
+      className: "w-5 h-5 text-[#4F3FE0]"
+    }))), /*#__PURE__*/React.createElement("div", {
+      className: "text-3xl font-black text-[#111827] mt-2"
+    }, totalCount), /*#__PURE__*/React.createElement("div", {
+      className: "text-[11px] font-medium text-[#8A90A2] mt-1 flex items-center gap-1.5"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "w-1.5 h-1.5 rounded-full bg-[#4F3FE0]"
+    }), /*#__PURE__*/React.createElement("span", null, "All scheduled sessions"))), /*#__PURE__*/React.createElement("div", {
+      onClick: function onClick() {
+        return setBookingsFilterTab("Confirmed");
+      },
+      className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft hover:shadow-card hover:-translate-y-0.5 transition-all cursor-pointer group"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between text-[#8A90A2]"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-[11px] font-extrabold uppercase tracking-wider text-[#64748B]"
+    }, "Confirmed"), /*#__PURE__*/React.createElement("div", {
+      className: "w-9 h-9 rounded-xl bg-emerald-50 text-[#16A66A] flex items-center justify-center group-hover:scale-105 transition-transform"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "checkCircle",
+      className: "w-5 h-5 text-[#16A66A]"
+    }))), /*#__PURE__*/React.createElement("div", {
+      className: "text-3xl font-black text-[#16A66A] mt-2"
+    }, confirmedCount), /*#__PURE__*/React.createElement("div", {
+      className: "text-[11px] font-medium text-[#8A90A2] mt-1 flex items-center gap-1.5"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "w-1.5 h-1.5 rounded-full bg-[#16A66A]"
+    }), /*#__PURE__*/React.createElement("span", null, "Guaranteed active slots"))), /*#__PURE__*/React.createElement("div", {
+      onClick: function onClick() {
+        return setBookingsFilterTab("Pending");
+      },
+      className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft hover:shadow-card hover:-translate-y-0.5 transition-all cursor-pointer group"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between text-[#8A90A2]"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-[11px] font-extrabold uppercase tracking-wider text-[#64748B]"
+    }, "Pending"), /*#__PURE__*/React.createElement("div", {
+      className: "w-9 h-9 rounded-xl bg-amber-50 text-[#F59E0B] flex items-center justify-center group-hover:scale-105 transition-transform"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "clock",
+      className: "w-5 h-5 text-[#F59E0B]"
+    }))), /*#__PURE__*/React.createElement("div", {
+      className: "text-3xl font-black text-[#F59E0B] mt-2"
+    }, pendingCount), /*#__PURE__*/React.createElement("div", {
+      className: "text-[11px] font-medium text-[#8A90A2] mt-1 flex items-center gap-1.5"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "w-1.5 h-1.5 rounded-full bg-[#F59E0B]"
+    }), /*#__PURE__*/React.createElement("span", null, "Awaiting admin review"))), /*#__PURE__*/React.createElement("div", {
+      onClick: function onClick() {
+        return setBookingsFilterTab("Cancelled");
+      },
+      className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft hover:shadow-card hover:-translate-y-0.5 transition-all cursor-pointer group"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between text-[#8A90A2]"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-[11px] font-extrabold uppercase tracking-wider text-[#64748B]"
+    }, "Cancelled"), /*#__PURE__*/React.createElement("div", {
+      className: "w-9 h-9 rounded-xl bg-rose-50 text-[#EF4444] flex items-center justify-center group-hover:scale-105 transition-transform"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "xCircle",
+      className: "w-5 h-5 text-[#EF4444]"
+    }))), /*#__PURE__*/React.createElement("div", {
+      className: "text-3xl font-black text-[#EF4444] mt-2"
+    }, cancelledCount), /*#__PURE__*/React.createElement("div", {
+      className: "text-[11px] font-medium text-[#8A90A2] mt-1 flex items-center gap-1.5"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "w-1.5 h-1.5 rounded-full bg-[#EF4444]"
+    }), /*#__PURE__*/React.createElement("span", null, "Released & refunded")))), /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between flex-wrap gap-3 pt-1"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-2 overflow-x-auto pb-1 max-w-full"
+    }, ["All Bookings", "Confirmed", "Pending", "Cancelled", "Completed"].map(function (tab) {
+      var isActive = bookingsFilterTab === tab;
+      return /*#__PURE__*/React.createElement("button", {
+        key: tab,
+        onClick: function onClick() {
+          return setBookingsFilterTab(tab);
+        },
+        className: "px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ".concat(isActive ? "bg-[#4F3FE0] text-white shadow-xs" : "bg-white border border-[#ECEEF4] text-[#64748B] hover:text-[#111827] hover:bg-[#F8FAFC]")
+      }, /*#__PURE__*/React.createElement("span", null, tab), /*#__PURE__*/React.createElement("span", {
+        className: "ml-2 text-[10.5px] px-1.5 py-0.2 rounded-full font-extrabold ".concat(isActive ? "bg-white/20 text-white" : "bg-gray-100 text-[#64748B]")
+      }, tab === "All Bookings" ? totalCount : upcomingBookings.filter(function (b) {
+        return b.status === tab;
+      }).length));
+    })), /*#__PURE__*/React.createElement("div", {
+      className: "text-xs font-semibold text-[#8A90A2]"
+    }, "Showing ", /*#__PURE__*/React.createElement("strong", {
+      className: "text-[#111827]"
+    }, filteredBookings.length), " of ", totalCount, " reservations")), /*#__PURE__*/React.createElement("div", {
+      className: "bg-white border border-[#ECEEF4] rounded-2xl p-4 shadow-soft flex items-center justify-between flex-wrap gap-3"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-3 flex-1 min-w-[260px]"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "relative flex-1"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "search",
+      className: "w-4 h-4 text-[#8A90A2] absolute left-3.5 top-1/2 -translate-y-1/2"
+    }), /*#__PURE__*/React.createElement("input", {
+      type: "text",
+      value: bookingsSearchQuery,
+      onChange: function onChange(e) {
+        return setBookingsSearchQuery(e.target.value);
+      },
+      placeholder: "Search by meeting title, room, or #RES ID...",
+      className: "w-full bg-[#F6F7FB] border border-[#ECEEF4] rounded-xl pl-10 pr-4 py-2 text-xs text-[#111827] placeholder-[#8A90A2] focus:outline-none focus:border-[#4F3FE0] focus:bg-white transition-all"
+    }), bookingsSearchQuery && /*#__PURE__*/React.createElement("button", {
+      onClick: function onClick() {
+        return setBookingsSearchQuery("");
+      },
+      className: "absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "x",
+      className: "w-3.5 h-3.5"
+    })))), /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-2.5 flex-wrap"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-1.5 bg-[#F6F7FB] border border-[#ECEEF4] rounded-xl px-3 py-1.5 text-xs text-[#374151]"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "calendar",
+      className: "w-3.5 h-3.5 text-[#8A90A2]"
+    }), /*#__PURE__*/React.createElement("select", {
+      value: bookingsDateFilter,
+      onChange: function onChange(e) {
+        return setBookingsDateFilter(e.target.value);
+      },
+      className: "bg-transparent border-none text-xs font-semibold text-[#374151] focus:outline-none cursor-pointer"
+    }, /*#__PURE__*/React.createElement("option", {
+      value: "All Dates"
+    }, "All Dates"), /*#__PURE__*/React.createElement("option", {
+      value: "Today"
+    }, "Today Only"), /*#__PURE__*/React.createElement("option", {
+      value: "Upcoming"
+    }, "Upcoming Only"), /*#__PURE__*/React.createElement("option", {
+      value: "Past"
+    }, "Past / Archived"))), /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-1.5 bg-[#F6F7FB] border border-[#ECEEF4] rounded-xl px-3 py-1.5 text-xs text-[#374151]"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "building",
+      className: "w-3.5 h-3.5 text-[#8A90A2]"
+    }), /*#__PURE__*/React.createElement("select", {
+      value: bookingsRoomFilter,
+      onChange: function onChange(e) {
+        return setBookingsRoomFilter(e.target.value);
+      },
+      className: "bg-transparent border-none text-xs font-semibold text-[#374151] focus:outline-none cursor-pointer"
+    }, /*#__PURE__*/React.createElement("option", {
+      value: "All Rooms"
+    }, "All Rooms"), rooms.map(function (r) {
+      return /*#__PURE__*/React.createElement("option", {
+        key: r.id,
+        value: r.name
+      }, r.name);
+    }))), isFilterActive && /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: function onClick() {
+        setBookingsSearchQuery("");
+        setBookingsRoomFilter("All Rooms");
+        setBookingsDateFilter("All Dates");
+        setBookingsFilterTab("All Bookings");
+      },
+      className: "text-xs font-bold text-[#EF4444] hover:bg-rose-50 px-3 py-1.5 rounded-xl border border-rose-200 transition-all flex items-center gap-1"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "x",
+      className: "w-3 h-3"
+    }), /*#__PURE__*/React.createElement("span", null, "Clear Filters")))), /*#__PURE__*/React.createElement("div", {
+      className: "grid grid-cols-1 lg:grid-cols-12 gap-6 items-start"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "lg:col-span-8 space-y-3.5"
+    }, filteredBookings.length === 0 ? /*#__PURE__*/React.createElement("div", {
+      className: "bg-white border border-[#ECEEF4] rounded-2xl p-12 text-center shadow-soft"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "w-14 h-14 rounded-2xl bg-gray-50 text-gray-400 flex items-center justify-center mx-auto mb-3"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "calendar",
+      className: "w-7 h-7 text-gray-400"
+    })), /*#__PURE__*/React.createElement("h4", {
+      className: "text-base font-bold text-[#111827]"
+    }, "No reservations match your filters"), /*#__PURE__*/React.createElement("p", {
+      className: "text-xs text-[#8A90A2] mt-1 max-w-sm mx-auto"
+    }, "Try resetting your search query or selecting a different status tab."), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: function onClick() {
+        setBookingsSearchQuery("");
+        setBookingsRoomFilter("All Rooms");
+        setBookingsDateFilter("All Dates");
+        setBookingsFilterTab("All Bookings");
+      },
+      className: "mt-4 px-4 py-2 bg-[#4F3FE0] text-white rounded-xl text-xs font-bold shadow-xs hover:bg-[#4335C9]"
+    }, "Reset All Filters")) : filteredBookings.map(function (bkg) {
+      var isCancelled = bkg.status === "Cancelled";
+      var isCompleted = bkg.status === "Completed";
+      var canModify = !isCancelled && !isCompleted;
+      return /*#__PURE__*/React.createElement("div", {
+        key: bkg.id,
+        className: "bg-white border border-[#ECEEF4] rounded-2xl p-4 sm:p-5 shadow-soft hover:shadow-card hover:-translate-y-0.5 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 group"
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "flex items-center gap-3.5 flex-shrink-0"
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl px-2.5 py-2 text-center min-w-[54px] flex flex-col items-center justify-center flex-shrink-0"
+      }, /*#__PURE__*/React.createElement("span", {
+        className: "text-lg font-black text-[#111827] leading-none"
+      }, bkg.day || "30"), /*#__PURE__*/React.createElement("span", {
+        className: "text-[10px] font-extrabold text-[#4F3FE0] tracking-wider uppercase mt-1 leading-none"
+      }, bkg.month || "OCT")), /*#__PURE__*/React.createElement("div", {
+        onClick: function onClick() {
+          return setDetailsModalBooking(bkg);
+        },
+        className: "w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden border border-[#ECEEF4] relative flex-shrink-0 cursor-pointer group-hover:border-[#4F3FE0]/40 transition-all",
+        title: "View room details for ".concat(bkg.room)
+      }, /*#__PURE__*/React.createElement("img", {
+        src: bkg.roomImage || "assets/rooms/mr-01-main.jpg",
+        onError: function onError(e) {
+          e.target.onerror = null;
+          e.target.src = bkg.fallbackImage || "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=400&q=80";
+        },
+        alt: bkg.room,
+        className: "w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300",
+        loading: "lazy"
+      }), /*#__PURE__*/React.createElement("div", {
+        className: "absolute inset-0 bg-black/5 hover:bg-transparent transition-colors"
+      }))), /*#__PURE__*/React.createElement("div", {
+        className: "flex-1 min-w-0"
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "flex items-center gap-2 flex-wrap"
+      }, /*#__PURE__*/React.createElement("h4", {
+        onClick: function onClick() {
+          return setDetailsModalBooking(bkg);
+        },
+        className: "text-sm sm:text-[15px] font-black text-[#111827] truncate hover:text-[#4F3FE0] cursor-pointer"
+      }, bkg.title), bkg.isRecurring && /*#__PURE__*/React.createElement("span", {
+        className: "bg-[#F4F2FF] border border-[#E3DEFF] text-[#4F3FE0] text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1"
+      }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDD04"), /*#__PURE__*/React.createElement("span", null, "Recurring"))), /*#__PURE__*/React.createElement("div", {
+        className: "flex items-center gap-2.5 text-xs text-[#64748B] mt-1 flex-wrap"
+      }, /*#__PURE__*/React.createElement("span", {
+        className: "font-bold text-[#374151] flex items-center gap-1"
+      }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDCCD"), /*#__PURE__*/React.createElement("span", null, bkg.room)), /*#__PURE__*/React.createElement("span", null, "\u2022"), /*#__PURE__*/React.createElement("span", {
+        className: "flex items-center gap-1"
+      }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDD52"), /*#__PURE__*/React.createElement("span", null, bkg.time)), /*#__PURE__*/React.createElement("span", null, "\u2022"), /*#__PURE__*/React.createElement("span", {
+        className: "flex items-center gap-1"
+      }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDC65"), /*#__PURE__*/React.createElement("span", null, bkg.attendees, " attendees")), /*#__PURE__*/React.createElement("span", null, "\u2022"), /*#__PURE__*/React.createElement("span", {
+        className: "text-[#4F3FE0] font-bold"
+      }, "\uD83E\uDE99 ", bkg.credits || 18, " cr"), bkg.resId && /*#__PURE__*/React.createElement("span", {
+        className: "text-[10px] text-[#8A90A2] font-mono bg-gray-50 px-1.5 py-0.2 rounded border border-[#ECEEF4]"
+      }, "#", bkg.resId)), bkg.purpose && /*#__PURE__*/React.createElement("p", {
+        className: "text-[11px] text-[#8A90A2] mt-1 line-clamp-1 italic"
+      }, "\u201C", bkg.purpose, "\u201D")), /*#__PURE__*/React.createElement("div", {
+        className: "flex items-center gap-2 sm:gap-2.5 flex-wrap sm:flex-nowrap justify-between sm:justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-[#ECEEF4]"
+      }, /*#__PURE__*/React.createElement("span", {
+        className: "px-2.5 py-1 rounded-full text-[11px] font-bold ".concat(bkg.statusColor || 'bg-gray-100 text-gray-700')
+      }, bkg.status), canModify ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
+        type: "button",
+        onClick: function onClick() {
+          setRescheduleBooking(bkg);
+          setRescheduleNewRoom(bkg.room);
+          setRescheduleNewTime(bkg.time);
+        },
+        className: "border border-[#ECEEF4] hover:bg-[#F8FAFC] hover:border-[#4F3FE0]/40 text-[#374151] hover:text-[#4F3FE0] px-3 py-1.5 rounded-xl text-xs font-bold transition-all"
+      }, "Reschedule"), /*#__PURE__*/React.createElement("button", {
+        type: "button",
+        onClick: function onClick() {
+          return setCancelModalBooking(bkg);
+        },
+        className: "text-rose-500 hover:text-rose-700 hover:bg-rose-50 border border-transparent hover:border-rose-200 text-xs font-bold px-2.5 py-1.5 rounded-xl transition-all"
+      }, "Cancel")) : /*#__PURE__*/React.createElement("span", {
+        className: "text-[11px] font-medium text-[#8A90A2] italic px-1"
+      }, isCancelled ? "Slot Released" : "Completed"), /*#__PURE__*/React.createElement("button", {
+        type: "button",
+        onClick: function onClick() {
+          return setDetailsModalBooking(bkg);
+        },
+        className: "text-xs font-bold text-[#4F3FE0] hover:bg-[#EEEBFF] px-2.5 py-1.5 rounded-xl transition-all",
+        title: "View full booking details"
+      }, "Details \u2192")));
+    })), /*#__PURE__*/React.createElement("div", {
+      className: "lg:col-span-4 space-y-6"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between pb-3 border-b border-[#ECEEF4] mb-3"
+    }, /*#__PURE__*/React.createElement("h4", {
+      className: "text-xs font-black uppercase tracking-wider text-[#111827] flex items-center gap-2"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "w-2 h-2 rounded-full bg-[#4F3FE0]"
+    }), /*#__PURE__*/React.createElement("span", null, "Upcoming Schedule")), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: function onClick() {
+        return navigateTo("Calendar");
+      },
+      className: "text-xs font-bold text-[#4F3FE0] hover:underline"
+    }, "View Calendar \u2192")), /*#__PURE__*/React.createElement("div", {
+      className: "relative pl-4 space-y-4"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "absolute left-[7px] top-2 bottom-2 w-0.5 bg-[#ECEEF4]"
+    }), upcomingBookings.filter(function (b) {
+      return b.status === "Confirmed" || b.status === "Pending";
+    }).slice(0, 4).map(function (item) {
+      return /*#__PURE__*/React.createElement("div", {
+        key: item.id,
+        className: "relative group cursor-pointer",
+        onClick: function onClick() {
+          return setDetailsModalBooking(item);
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "absolute -left-4 top-1.5 w-2.5 h-2.5 rounded-full border-2 border-white shadow-xs ".concat(item.status === 'Confirmed' ? 'bg-[#16A66A]' : 'bg-[#F59E0B]')
+      }), /*#__PURE__*/React.createElement("div", {
+        className: "bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl p-3 hover:bg-white hover:border-[#4F3FE0]/30 hover:shadow-xs transition-all"
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "flex items-center justify-between text-[11px] mb-1"
+      }, /*#__PURE__*/React.createElement("span", {
+        className: "font-bold text-[#4F3FE0]"
+      }, item.date, " \u2022 ", item.time.split("–")[0].trim()), /*#__PURE__*/React.createElement("span", {
+        className: "text-[10px] font-bold px-1.5 py-0.2 rounded-full ".concat(item.status === 'Confirmed' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600')
+      }, item.status)), /*#__PURE__*/React.createElement("div", {
+        className: "text-xs font-bold text-[#111827] truncate"
+      }, item.title), /*#__PURE__*/React.createElement("div", {
+        className: "text-[11px] text-[#8A90A2] mt-0.5 truncate flex items-center gap-1"
+      }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDCCD ", item.room), /*#__PURE__*/React.createElement("span", null, "\u2022"), /*#__PURE__*/React.createElement("span", null, "\uD83D\uDC65 ", item.attendees))));
+    }))), /*#__PURE__*/React.createElement("div", {
+      className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft"
+    }, /*#__PURE__*/React.createElement("h4", {
+      className: "text-xs font-black uppercase tracking-wider text-[#111827] mb-3 flex items-center gap-2"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "w-5 h-5 rounded-lg bg-yellow-50 text-yellow-600 flex items-center justify-center"
+    }, "\u26A1"), /*#__PURE__*/React.createElement("span", null, "Quick Actions")), /*#__PURE__*/React.createElement("div", {
+      className: "grid grid-cols-2 gap-2.5"
+    }, /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: function onClick() {
+        return openBookingDrawer(rooms[0]);
+      },
+      className: "p-3 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#F3EFFE] hover:border-[#6E42E5]/30 transition-all text-center group"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "w-9 h-9 rounded-xl bg-purple-50 text-[#6E42E5] flex items-center justify-center mx-auto mb-1.5 group-hover:scale-105 transition-transform"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "calendar",
+      className: "w-4 h-4 text-[#6E42E5]"
+    })), /*#__PURE__*/React.createElement("div", {
+      className: "text-xs font-bold text-[#111827]"
+    }, "Book a Room"), /*#__PURE__*/React.createElement("div", {
+      className: "text-[10px] text-[#8A90A2] mt-0.5"
+    }, "6 Facilities")), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: function onClick() {
+        return navigateTo("Calendar");
+      },
+      className: "p-3 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#EEF5FF] hover:border-[#2B71FF]/30 transition-all text-center group"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "w-9 h-9 rounded-xl bg-blue-50 text-[#2B71FF] flex items-center justify-center mx-auto mb-1.5 group-hover:scale-105 transition-transform"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "calendarDays",
+      className: "w-4 h-4 text-[#2B71FF]"
+    })), /*#__PURE__*/React.createElement("div", {
+      className: "text-xs font-bold text-[#111827]"
+    }, "Open Calendar"), /*#__PURE__*/React.createElement("div", {
+      className: "text-[10px] text-[#8A90A2] mt-0.5"
+    }, "Weekly Grid")), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: function onClick() {
+        return navigateTo("Visitors");
+      },
+      className: "p-3 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#EEFAF3] hover:border-[#12A150]/30 transition-all text-center group"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-1.5 group-hover:scale-105 transition-transform"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "userPlus",
+      className: "w-4 h-4 text-emerald-600"
+    })), /*#__PURE__*/React.createElement("div", {
+      className: "text-xs font-bold text-[#111827]"
+    }, "Invite Guests"), /*#__PURE__*/React.createElement("div", {
+      className: "text-[10px] text-[#8A90A2] mt-0.5"
+    }, "QR Gate Pass")), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: function onClick() {
+        return navigateTo("Meeting Rooms");
+      },
+      className: "p-3 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#FFF8EC] hover:border-[#F59E0B]/30 transition-all text-center group"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-1.5 group-hover:scale-105 transition-transform"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "sparkles",
+      className: "w-4 h-4 text-amber-600"
+    })), /*#__PURE__*/React.createElement("div", {
+      className: "text-xs font-bold text-[#111827]"
+    }, "Check Live"), /*#__PURE__*/React.createElement("div", {
+      className: "text-[10px] text-[#8A90A2] mt-0.5"
+    }, "5/6 Available")))))));
+  }(), activeNav === "Calendar" && /*#__PURE__*/React.createElement("div", {
+    className: "space-y-6 animate-fadeIn"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft flex items-center justify-between flex-wrap gap-4"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
+    className: "text-2xl font-black text-[#111827]"
+  }, "Interactive Room Calendar"), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-[#8A90A2] mt-1"
+  }, "Real-time room occupancy and timeline scheduling")), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2 bg-[#F8FAFC] border border-[#ECEEF4] p-1 rounded-xl"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "bg-[#4F3FE0] text-white px-3 py-1 rounded-lg text-xs font-bold"
+  }, "Day"), /*#__PURE__*/React.createElement("button", {
+    className: "text-[#64748B] px-3 py-1 rounded-lg text-xs font-bold hover:text-[#111827]"
+  }, "Week"), /*#__PURE__*/React.createElement("button", {
+    className: "text-[#64748B] px-3 py-1 rounded-lg text-xs font-bold hover:text-[#111827]"
+  }, "Month"))), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft space-y-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-6 gap-2 text-center font-bold text-xs text-[#64748B] pb-3 border-b border-[#ECEEF4]"
+  }, rooms.map(function (r) {
+    return /*#__PURE__*/React.createElement("div", {
+      key: r.id,
+      className: "truncate px-1"
+    }, r.name);
+  })), ["09:00 AM", "11:00 AM", "01:00 PM", "03:00 PM", "05:00 PM"].map(function (hour, idx) {
+    return /*#__PURE__*/React.createElement("div", {
+      key: hour,
+      className: "grid grid-cols-6 gap-2 items-center py-3 border-b border-gray-100 text-xs"
+    }, rooms.map(function (r) {
+      var isBooked = idx === 0 && r.id === "mr-1" || idx === 1 && r.id === "mr-2" || idx === 3 && r.id === "mr-4";
+      return isBooked ? /*#__PURE__*/React.createElement("div", {
+        key: r.id,
+        className: "bg-indigo-50 border border-indigo-200 text-[#4F3FE0] p-2 rounded-xl text-center font-bold truncate"
+      }, "Occupied (", hour, ")") : /*#__PURE__*/React.createElement("button", {
+        key: r.id,
+        onClick: function onClick() {
+          return openBookingDrawer(r);
+        },
+        className: "bg-[#F8FAFC] border border-dashed border-[#ECEEF4] hover:border-[#4F3FE0] hover:bg-[#F3EFFE] text-[#8A90A2] hover:text-[#4F3FE0] p-2 rounded-xl text-center font-medium transition-all"
+      }, "+ Open Slot");
+    }));
+  }))), activeNav === "Billing & Credits" && /*#__PURE__*/React.createElement("div", {
+    className: "space-y-6 animate-fadeIn"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between flex-wrap gap-4"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] font-extrabold tracking-wider text-[#8A90A2] uppercase mb-1"
+  }, "Billing & Credits"), /*#__PURE__*/React.createElement("h2", {
+    className: "text-2xl sm:text-3xl font-black text-[#111827] tracking-tight"
+  }, "Billing & Meeting Room Credits"), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs sm:text-sm text-[#64748B] mt-1"
+  }, "Track quota, plans, invoices, and transaction activity")), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "relative w-28 h-16 flex-shrink-0 hidden md:block"
+  }, /*#__PURE__*/React.createElement("svg", {
+    viewBox: "0 0 140 90",
+    fill: "none",
+    xmlns: "http://www.w3.org/2000/svg",
+    className: "w-full h-full drop-shadow-md"
+  }, /*#__PURE__*/React.createElement("ellipse", {
+    cx: "65",
+    cy: "45",
+    rx: "50",
+    ry: "30",
+    fill: "#C7D2FE",
+    fillOpacity: "0.4",
+    filter: "blur(14px)"
+  }), /*#__PURE__*/React.createElement("g", {
+    transform: "rotate(-7 55 42)"
+  }, /*#__PURE__*/React.createElement("rect", {
+    x: "15",
+    y: "12",
+    width: "82",
+    height: "50",
+    rx: "9",
+    fill: "url(#cardGrad)"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "25",
+    y: "24",
+    width: "13",
+    height: "10",
+    rx: "2",
+    fill: "#FCD34D"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "25",
+    y1: "29",
+    x2: "38",
+    y2: "29",
+    stroke: "#F59E0B",
+    strokeWidth: "0.8"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "31.5",
+    y1: "24",
+    x2: "31.5",
+    y2: "34",
+    stroke: "#F59E0B",
+    strokeWidth: "0.8"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "25",
+    y: "44",
+    width: "36",
+    height: "4",
+    rx: "2",
+    fill: "white",
+    fillOpacity: "0.85"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "80",
+    cy: "44",
+    r: "5.5",
+    fill: "#F472B6",
+    fillOpacity: "0.85"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "87",
+    cy: "44",
+    r: "5.5",
+    fill: "#FBBF24",
+    fillOpacity: "0.85"
+  })), /*#__PURE__*/React.createElement("g", {
+    transform: "translate(88, 40)"
+  }, /*#__PURE__*/React.createElement("circle", {
+    cx: "15",
+    cy: "15",
+    r: "13",
+    fill: "#FBBF24",
+    stroke: "#F59E0B",
+    strokeWidth: "1.2"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "15",
+    cy: "15",
+    r: "9.5",
+    fill: "#FDE68A"
+  }), /*#__PURE__*/React.createElement("text", {
+    x: "15",
+    y: "19",
+    fontSize: "11",
+    fontWeight: "bold",
+    textAnchor: "middle",
+    fill: "#D97706"
+  }, "\u20B9")), /*#__PURE__*/React.createElement("circle", {
+    cx: "18",
+    cy: "20",
+    r: "2.5",
+    fill: "#818CF8",
+    fillOpacity: "0.8"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "106",
+    cy: "16",
+    r: "2",
+    fill: "#60A5FA",
+    fillOpacity: "0.8"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "98",
+    cy: "74",
+    r: "1.8",
+    fill: "#FCD34D",
+    fillOpacity: "0.9"
+  }), /*#__PURE__*/React.createElement("defs", null, /*#__PURE__*/React.createElement("linearGradient", {
+    id: "cardGrad",
+    x1: "15",
+    y1: "12",
+    x2: "97",
+    y2: "62",
+    gradientUnits: "userSpaceOnUse"
+  }, /*#__PURE__*/React.createElement("stop", {
+    stopColor: "#6366F1"
+  }), /*#__PURE__*/React.createElement("stop", {
+    offset: "0.5",
+    stopColor: "#4F46E5"
+  }), /*#__PURE__*/React.createElement("stop", {
+    offset: "1",
+    stopColor: "#3B82F6"
+  }))))), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return setShowPurchaseCreditsModal(true);
+    },
+    className: "bg-[#4F3FE0] hover:bg-[#4335C9] text-white px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm hover:shadow-md active:scale-[0.98] flex items-center gap-1.5"
+  }, /*#__PURE__*/React.createElement("span", null, "+ Purchase Extra Credits")))), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-1 lg:grid-cols-3 gap-5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft flex flex-col justify-between hover:shadow-card transition-all"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "w-10 h-10 rounded-xl bg-[#F3EFFE] text-[#4F3FE0] flex items-center justify-center flex-shrink-0"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "coins",
+    className: "w-5 h-5 text-[#4F3FE0]"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    className: "text-[11px] font-extrabold uppercase tracking-wider text-[#8A90A2]"
+  }, "Remaining Balance"), /*#__PURE__*/React.createElement("div", {
+    className: "text-2xl sm:text-3xl font-black text-[#111827] mt-0.5"
+  }, "80 credits"))), /*#__PURE__*/React.createElement(Icon, {
+    name: "chevronRight",
+    className: "w-4 h-4 text-[#A0AEC0]"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between text-xs text-[#64748B] mt-4 font-medium"
+  }, /*#__PURE__*/React.createElement("span", null, "Out of 120 credits total quota"), /*#__PURE__*/React.createElement("span", {
+    className: "font-bold text-[#4F3FE0]"
+  }, "67% left")), /*#__PURE__*/React.createElement("div", {
+    className: "w-full h-2 bg-[#EEEBFF] rounded-full mt-2 overflow-hidden"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "h-full bg-gradient-to-r from-[#5937F5] to-[#4F3FE0] rounded-full w-[67%]"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between text-[11px] font-medium text-[#8A90A2] pt-3 mt-3 border-t border-[#ECEEF4]"
+  }, /*#__PURE__*/React.createElement("span", null, "40 credits used"), /*#__PURE__*/React.createElement("span", null, "120 total"))), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft flex flex-col justify-between hover:shadow-card transition-all"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "w-10 h-10 rounded-xl bg-[#ECFDF5] text-[#059669] flex items-center justify-center flex-shrink-0"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "clock",
+    className: "w-5 h-5 text-[#059669]"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    className: "text-[11px] font-extrabold uppercase tracking-wider text-[#8A90A2]"
+  }, "Monthly Free Hours"), /*#__PURE__*/React.createElement("div", {
+    className: "text-2xl sm:text-3xl font-black text-[#059669] mt-0.5"
+  }, "2.0 hrs left"))), /*#__PURE__*/React.createElement(Icon, {
+    name: "chevronRight",
+    className: "w-4 h-4 text-[#A0AEC0]"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between text-xs text-[#64748B] mt-4 font-medium"
+  }, /*#__PURE__*/React.createElement("span", null, "8 / 10 hours consumed"), /*#__PURE__*/React.createElement("span", {
+    className: "font-bold text-[#059669]"
+  }, "20% left")), /*#__PURE__*/React.createElement("div", {
+    className: "w-full h-2 bg-[#E6F4EA] rounded-full mt-2 overflow-hidden"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "h-full bg-gradient-to-r from-[#10B981] to-[#059669] rounded-full w-[20%]"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between text-[11px] font-medium text-[#8A90A2] pt-3 mt-3 border-t border-[#ECEEF4]"
+  }, /*#__PURE__*/React.createElement("span", null, "8 hrs used"), /*#__PURE__*/React.createElement("span", null, "10 hrs total"))), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft flex flex-col justify-between hover:shadow-card transition-all"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "w-10 h-10 rounded-xl bg-[#FEF3C7] text-[#D97706] flex items-center justify-center flex-shrink-0"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "crown",
+    className: "w-5 h-5 text-[#D97706]",
+    strokeWidth: 2
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    className: "text-[11px] font-extrabold uppercase tracking-wider text-[#8A90A2]"
+  }, "Subscription Plan"), /*#__PURE__*/React.createElement("div", {
+    className: "text-xl sm:text-2xl font-black text-[#111827] mt-0.5"
+  }, "Scale-up Venture"))), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-1.5"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "bg-[#ECFDF5] text-[#059669] text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200"
+  }, "\u25CF ACTIVE"), /*#__PURE__*/React.createElement(Icon, {
+    name: "chevronRight",
+    className: "w-4 h-4 text-[#A0AEC0]"
+  }))), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-[#64748B] mt-3 font-medium"
+  }, "Renews automatically on Nov 1, 2026")), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-3 gap-2 pt-3 mt-3 border-t border-[#ECEEF4] text-[11px]"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-1.5 text-[#374151]"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-base"
+  }, "\uD83D\uDCC5"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    className: "block text-[9.5px] font-semibold text-[#8A90A2] uppercase"
+  }, "Monthly"), /*#__PURE__*/React.createElement("span", {
+    className: "font-bold text-[#111827]"
+  }, "10 free hrs"))), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-1.5 text-[#374151]"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-base"
+  }, "\uD83E\uDE99"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    className: "block text-[9.5px] font-semibold text-[#8A90A2] uppercase"
+  }, "Base quota"), /*#__PURE__*/React.createElement("span", {
+    className: "font-bold text-[#111827]"
+  }, "120 credits"))), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-1.5 text-[#374151]"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-base"
+  }, "\u2B50"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    className: "block text-[9.5px] font-semibold text-[#8A90A2] uppercase"
+  }, "Extra credits"), /*#__PURE__*/React.createElement("span", {
+    className: "font-bold text-[#111827]"
+  }, "\u20B9500 / 10 cr")))))), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-1 lg:grid-cols-12 gap-6 items-start"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "lg:col-span-5 space-y-6"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between mb-4"
+  }, /*#__PURE__*/React.createElement("h4", {
+    className: "text-sm font-black text-[#111827] flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-6 h-6 rounded-lg bg-purple-50 text-[#4F3FE0] flex items-center justify-center"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "barChart",
+    className: "w-3.5 h-3.5 text-[#4F3FE0]"
+  })), /*#__PURE__*/React.createElement("span", null, "Credit Usage This Month")), /*#__PURE__*/React.createElement("span", {
+    className: "text-xs font-semibold text-[#374151] bg-[#F8FAFC] border border-[#ECEEF4] px-2.5 py-1 rounded-lg"
+  }, "October 2026 \u25BE")), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-col sm:flex-row items-center gap-6 my-2"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "relative w-36 h-36 flex items-center justify-center flex-shrink-0"
+  }, /*#__PURE__*/React.createElement("svg", {
+    className: "w-full h-full transform -rotate-90",
+    viewBox: "0 0 120 120"
+  }, /*#__PURE__*/React.createElement("circle", {
+    cx: "60",
+    cy: "60",
+    r: "48",
+    stroke: "#EEEBFF",
+    strokeWidth: "13",
+    fill: "transparent"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "60",
+    cy: "60",
+    r: "48",
+    stroke: "#4F3FE0",
+    strokeWidth: "13",
+    strokeDasharray: "301.59",
+    strokeDashoffset: "202.06",
+    strokeLinecap: "round",
+    fill: "transparent",
+    className: "transition-all duration-700 ease-out"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "absolute inset-0 flex flex-col items-center justify-center text-center"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-2xl font-black text-[#111827] tracking-tight"
+  }, "120"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-semibold text-[#8A90A2]"
+  }, "Total Credits"))), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-3 w-full"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between text-xs"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2 font-bold text-[#111827]"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-2.5 h-2.5 rounded-full bg-[#4F3FE0]"
+  }), /*#__PURE__*/React.createElement("span", null, "40 credits used")), /*#__PURE__*/React.createElement("span", {
+    className: "font-semibold text-[#8A90A2]"
+  }, "33%")), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between text-xs"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2 font-bold text-[#111827]"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-2.5 h-2.5 rounded-full bg-[#818CF8]"
+  }), /*#__PURE__*/React.createElement("span", null, "80 credits remaining")), /*#__PURE__*/React.createElement("span", {
+    className: "font-semibold text-[#8A90A2]"
+  }, "67%")))), /*#__PURE__*/React.createElement("div", {
+    className: "mt-5 bg-[#F5F3FF] border border-[#E0E7FF] rounded-xl p-3.5 flex items-center gap-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "w-8 h-8 rounded-lg bg-indigo-100 text-[#4338CA] flex items-center justify-center flex-shrink-0 font-bold"
+  }, "\uD83D\uDCC8"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "text-xs font-bold text-[#4338CA]"
+  }, "You're on track!"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] text-[#6366F1] mt-0.5"
+  }, "67% of your monthly quota is still available.")))), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between mb-4"
+  }, /*#__PURE__*/React.createElement("h4", {
+    className: "text-sm font-black text-[#111827] flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-6 h-6 rounded-lg bg-purple-50 text-[#4F3FE0] flex items-center justify-center"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "fileText",
+    className: "w-3.5 h-3.5 text-[#4F3FE0]"
+  })), /*#__PURE__*/React.createElement("span", null, "Plan & Billing Details")), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return showToast("Viewing full subscription tier specifications");
+    },
+    className: "text-xs font-bold text-[#4F3FE0] hover:underline"
+  }, "View Plan \u2192")), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-1 sm:grid-cols-3 gap-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "p-3 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-[10px] font-semibold text-[#8A90A2] uppercase flex items-center gap-1"
+  }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDCC5"), " Next Renewal"), /*#__PURE__*/React.createElement("div", {
+    className: "text-xs font-bold text-[#111827] mt-1"
+  }, "Nov 1, 2026"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[10px] text-emerald-600 font-semibold mt-0.5"
+  }, "\u25CF Auto-renew enabled")), /*#__PURE__*/React.createElement("div", {
+    className: "p-3 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-[10px] font-semibold text-[#8A90A2] uppercase flex items-center gap-1"
+  }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDCC4"), " Last Invoice"), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-1.5 mt-1"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-xs font-bold text-[#111827]"
+  }, "INV-2026-1028"), /*#__PURE__*/React.createElement("span", {
+    className: "bg-emerald-50 text-emerald-600 border border-emerald-200 text-[9px] font-bold px-1.5 py-0.2 rounded"
+  }, "Paid")), /*#__PURE__*/React.createElement("div", {
+    className: "text-[10px] text-[#8A90A2] mt-0.5"
+  }, "28 Oct 2026")), /*#__PURE__*/React.createElement("div", {
+    className: "p-3 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-[10px] font-semibold text-[#8A90A2] uppercase flex items-center gap-1"
+  }, /*#__PURE__*/React.createElement("span", null, "\uD83E\uDE99"), " Extra Credits Price"), /*#__PURE__*/React.createElement("div", {
+    className: "text-xs font-bold text-[#111827] mt-1"
+  }, "\u20B9500 / 10 credits"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[10px] text-[#8A90A2] mt-0.5"
+  }, "Buy additional credits anytime"))))), /*#__PURE__*/React.createElement("div", {
+    className: "lg:col-span-7"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between mb-4"
+  }, /*#__PURE__*/React.createElement("h4", {
+    className: "text-sm font-black text-[#111827] flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-6 h-6 rounded-lg bg-purple-50 text-[#4F3FE0] flex items-center justify-center"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "bookmark",
+    className: "w-3.5 h-3.5 text-[#4F3FE0]"
+  })), /*#__PURE__*/React.createElement("span", null, "Recent Credit Ledger")), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return showToast("Opening full audit ledger with filter controls");
+    },
+    className: "text-xs font-bold text-[#4F3FE0] hover:underline"
+  }, "View All \u2192")), /*#__PURE__*/React.createElement("div", {
+    className: "divide-y divide-[#ECEEF4]"
+  }, [{
+    title: "Session in Collaboration Room",
+    date: "Today, 03:30 PM",
+    credits: "-18 credits",
+    hours: "-1.5 hrs",
+    iconType: "calendar",
+    iconBg: "bg-blue-50 text-[#2563EB]"
+  }, {
+    title: "Client Meeting in Pitch Arena Nexus",
+    date: "28 Oct 2026, 11:30 AM",
+    credits: "-25 credits",
+    hours: "-1.5 hrs",
+    iconType: "users",
+    iconBg: "bg-purple-50 text-[#6E42E5]"
+  }, {
+    title: "Monthly Incubator Quota Credited",
+    date: "01 Oct 2026, 12:00 AM",
+    credits: "+120 credits",
+    hours: "+10.0 hrs",
+    iconType: "gift",
+    iconBg: "bg-emerald-50 text-[#059669]",
+    isCredit: true
+  }, {
+    title: "Team Sync in Focus Room",
+    date: "27 Oct 2026, 02:00 PM",
+    credits: "-12 credits",
+    hours: "-1.0 hrs",
+    iconType: "calendar",
+    iconBg: "bg-blue-50 text-[#2563EB]"
+  }, {
+    title: "Product Planning - Boardroom Alpha",
+    date: "26 Oct 2026, 09:00 AM",
+    credits: "-20 credits",
+    hours: "-2.0 hrs",
+    iconType: "users",
+    iconBg: "bg-purple-50 text-[#6E42E5]"
+  }].map(function (tx, idx) {
+    return /*#__PURE__*/React.createElement("div", {
+      key: idx,
+      className: "py-3.5 flex items-center justify-between hover:bg-[#F8FAFC] px-2 rounded-xl transition-all"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-3.5"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ".concat(tx.iconBg)
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: tx.iconType,
+      className: "w-5 h-5"
+    })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      className: "text-xs font-bold text-[#111827]"
+    }, tx.title), /*#__PURE__*/React.createElement("div", {
+      className: "text-[11px] text-[#8A90A2] mt-0.5"
+    }, tx.date))), /*#__PURE__*/React.createElement("div", {
+      className: "text-right"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "text-xs font-bold ".concat(tx.isCredit ? 'text-emerald-600 font-extrabold' : 'text-[#111827]')
+    }, tx.credits), /*#__PURE__*/React.createElement("div", {
+      className: "text-[11px] ".concat(tx.isCredit ? 'text-emerald-600 font-medium' : 'text-[#8A90A2]')
+    }, tx.hours)));
+  })))))), activeNav === "Analytics" && /*#__PURE__*/React.createElement("div", {
+    className: "space-y-6 animate-fadeIn"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft"
+  }, /*#__PURE__*/React.createElement("h2", {
+    className: "text-2xl font-black text-[#111827]"
+  }, "Meeting Space Insights & Analytics"), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-[#8A90A2] mt-1"
+  }, "Utilization frequency, average party size, and peak discussion hours")), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-xs font-bold text-[#8A90A2]"
+  }, "Total Booked Hours"), /*#__PURE__*/React.createElement("div", {
+    className: "text-3xl font-black text-[#111827] mt-2"
+  }, "28 hrs"), /*#__PURE__*/React.createElement("span", {
+    className: "text-xs font-bold text-emerald-600 mt-1 block"
+  }, "\u2191 14% vs last month")), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-xs font-bold text-[#8A90A2]"
+  }, "Favorite Room"), /*#__PURE__*/React.createElement("div", {
+    className: "text-2xl font-black text-[#4F3FE0] mt-2"
+  }, "Boardroom Alpha"), /*#__PURE__*/React.createElement("span", {
+    className: "text-xs text-[#8A90A2] mt-1 block"
+  }, "82% utilization rate")), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-xs font-bold text-[#8A90A2]"
+  }, "Average Attendance"), /*#__PURE__*/React.createElement("div", {
+    className: "text-3xl font-black text-[#111827] mt-2"
+  }, "5.8 pax"), /*#__PURE__*/React.createElement("span", {
+    className: "text-xs text-[#8A90A2] mt-1 block"
+  }, "Healthy meeting density")), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-xs font-bold text-[#8A90A2]"
+  }, "Credits Saved"), /*#__PURE__*/React.createElement("div", {
+    className: "text-3xl font-black text-emerald-600 mt-2"
+  }, "\u20B914,500"), /*#__PURE__*/React.createElement("span", {
+    className: "text-xs text-[#8A90A2] mt-1 block"
+  }, "Included with incubator pass")))), activeNav === "Workspace & Desks" && /*#__PURE__*/React.createElement("div", {
+    className: "space-y-6 animate-fadeIn"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft flex items-center justify-between flex-wrap gap-4"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
+    className: "text-2xl font-black text-[#111827]"
+  }, "Workspace & Dedicated Pods"), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-[#8A90A2] mt-1"
+  }, "Cyber City Hub \u2022 Ground Floor East Wing")), /*#__PURE__*/React.createElement("span", {
+    className: "bg-emerald-50 text-emerald-600 border border-emerald-200 px-3.5 py-1.5 rounded-full text-xs font-bold"
+  }, "Allocated: Dedicated Pod #4")), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft"
+  }, /*#__PURE__*/React.createElement("h4", {
+    className: "text-base font-bold text-[#111827] mb-3"
+  }, "Assigned Team Desks"), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"
+  }, ["Desk 4A (Alex Morgan)", "Desk 4B (Sarah Chen)", "Desk 4C (David Kim)", "Desk 4D (Priya Patel)", "Desk 4E (Open Floating)", "Desk 4F (Open Floating)"].map(function (d, i) {
+    return /*#__PURE__*/React.createElement("div", {
+      key: i,
+      className: "p-4 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl flex items-center gap-3"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-xl"
+    }, "\uD83E\uDE91"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      className: "font-bold text-xs text-[#111827]"
+    }, d), /*#__PURE__*/React.createElement("div", {
+      className: "text-[11px] text-emerald-600 font-semibold"
+    }, "Active & Assigned")));
+  })))), activeNav === "Visitors" && /*#__PURE__*/React.createElement("div", {
+    className: "space-y-6 animate-fadeIn"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft flex items-center justify-between flex-wrap gap-4"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
+    className: "text-2xl font-black text-[#111827]"
+  }, "Visitor Gate Passes & Invites"), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-[#8A90A2] mt-1"
+  }, "Issue instant QR security credentials for client meetings")), /*#__PURE__*/React.createElement("button", {
+    onClick: function onClick() {
+      return showToast("Guest pass generator launched");
+    },
+    className: "bg-[#4F3FE0] hover:bg-[#4335C9] text-white px-5 py-2.5 rounded-xl text-xs font-bold"
+  }, "+ Create Guest Pass")), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft"
+  }, /*#__PURE__*/React.createElement("h4", {
+    className: "text-base font-bold text-[#111827] mb-3"
+  }, "Today's Expected Visitors"), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-3"
+  }, [{
+    name: "Vikram Malhotra",
+    org: "Sequoia Capital",
+    time: "09:00 AM",
+    room: "Boardroom Alpha",
+    status: "Pass Issued"
+  }, {
+    name: "Dr. Ananya Rao",
+    org: "Apollo Health Tech",
+    time: "03:30 PM",
+    room: "Collaboration Room",
+    status: "Checked In"
+  }].map(function (v, i) {
+    return /*#__PURE__*/React.createElement("div", {
+      key: i,
+      className: "p-4 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl flex items-center justify-between flex-wrap gap-3 text-xs"
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      className: "font-bold text-sm text-[#111827]"
+    }, v.name), /*#__PURE__*/React.createElement("div", {
+      className: "text-[#8A90A2] text-xs"
+    }, v.org, " \u2022 Visiting for session in ", v.room, " at ", v.time)), /*#__PURE__*/React.createElement("span", {
+      className: "bg-blue-50 text-blue-600 border border-blue-200 px-3 py-1 rounded-full font-bold"
+    }, v.status));
+  })))), activeNav === "Members" && /*#__PURE__*/React.createElement("div", {
+    className: "space-y-6 animate-fadeIn"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft flex items-center justify-between flex-wrap gap-4"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
+    className: "text-2xl font-black text-[#111827]"
+  }, "Venture Team Directory"), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-[#8A90A2] mt-1"
+  }, "XYZ Technologies registered incubator members")), /*#__PURE__*/React.createElement("button", {
+    onClick: function onClick() {
+      return showToast("Invite new team member modal opened");
+    },
+    className: "bg-[#4F3FE0] hover:bg-[#4335C9] text-white px-5 py-2.5 rounded-xl text-xs font-bold"
+  }, "+ Invite Member")), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5"
+  }, [{
+    name: "Alex Morgan",
+    role: "Co-Founder & CEO",
+    email: "alex.m@xyztech.io",
+    avatar: "AM"
+  }, {
+    name: "Sarah Chen",
+    role: "CTO & Co-Founder",
+    email: "sarah.c@xyztech.io",
+    avatar: "SC"
+  }, {
+    name: "David Kim",
+    role: "Head of Product",
+    email: "david.k@xyztech.io",
+    avatar: "DK"
+  }, {
+    name: "Priya Patel",
+    role: "Lead AI Engineer",
+    email: "priya.p@xyztech.io",
+    avatar: "PP"
+  }].map(function (m, i) {
+    return /*#__PURE__*/React.createElement("div", {
+      key: i,
+      className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft flex items-center gap-3.5"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "w-11 h-11 rounded-full bg-gradient-to-tr from-[#4F3FE0] to-[#8B5CF6] text-white font-extrabold flex items-center justify-center text-sm shadow-sm flex-shrink-0"
+    }, m.avatar), /*#__PURE__*/React.createElement("div", {
+      className: "truncate"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "font-bold text-sm text-[#111827] truncate"
+    }, m.name), /*#__PURE__*/React.createElement("div", {
+      className: "text-xs font-medium text-[#4F3FE0]"
+    }, m.role), /*#__PURE__*/React.createElement("div", {
+      className: "text-[11px] text-[#8A90A2] truncate"
+    }, m.email)));
+  }))), activeNav === "Database Tables" && /*#__PURE__*/React.createElement("div", {
+    className: "space-y-6 animate-fadeIn"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-col md:flex-row md:items-center justify-between gap-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-start gap-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "w-12 h-12 rounded-xl bg-[#EEEBFF] flex items-center justify-center text-[#4F3FE0] flex-shrink-0"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "database",
+    className: "w-6 h-6"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2.5"
+  }, /*#__PURE__*/React.createElement("h2", {
+    className: "text-2xl font-black text-[#111827]"
+  }, "Database Tables & Collections"), /*#__PURE__*/React.createElement("span", {
+    className: "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-2 h-2 rounded-full bg-emerald-500 animate-pulse"
+  }), "MongoDB Atlas Connected")), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-[#8A90A2] mt-1"
+  }, "Live multi-tenant collections, index schemas, and records for NEXUS HUB Incubation OS"))), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2.5 self-start md:self-auto"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: function onClick() {
+      return showToast("Database cache flushed. Fetched latest MongoDB Atlas records.");
+    },
+    className: "px-3.5 py-2 bg-[#F6F7FB] border border-[#ECEEF4] hover:bg-[#EEEBFF] hover:text-[#4F3FE0] text-[#374151] text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "repeat",
+    className: "w-3.5 h-3.5"
+  }), /*#__PURE__*/React.createElement("span", null, "Sync Data")), /*#__PURE__*/React.createElement("a", {
+    href: "app.html",
+    target: "_blank",
+    rel: "noreferrer",
+    className: "px-4 py-2 bg-[#111827] hover:bg-black text-white text-xs font-bold rounded-xl transition-all shadow-sm flex items-center gap-1.5"
+  }, /*#__PURE__*/React.createElement("span", null, "Full Admin Shell"), /*#__PURE__*/React.createElement(Icon, {
+    name: "externalLink",
+    className: "w-3.5 h-3.5"
+  })))), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-5 border-t border-[#ECEEF4]"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "p-3 bg-[#F8F9FD] rounded-xl border border-[#ECEEF4]"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] font-semibold text-[#8A90A2]"
+  }, "Active Cluster"), /*#__PURE__*/React.createElement("div", {
+    className: "text-sm font-extrabold text-[#111827] mt-0.5"
+  }, "cluster0.nexus.net")), /*#__PURE__*/React.createElement("div", {
+    className: "p-3 bg-[#F8F9FD] rounded-xl border border-[#ECEEF4]"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] font-semibold text-[#8A90A2]"
+  }, "Collections"), /*#__PURE__*/React.createElement("div", {
+    className: "text-sm font-extrabold text-[#4F3FE0] mt-0.5"
+  }, Object.keys(DB_COLLECTIONS).length, " Collections")), /*#__PURE__*/React.createElement("div", {
+    className: "p-3 bg-[#F8F9FD] rounded-xl border border-[#ECEEF4]"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] font-semibold text-[#8A90A2]"
+  }, "Selected Records"), /*#__PURE__*/React.createElement("div", {
+    className: "text-sm font-extrabold text-[#111827] mt-0.5"
+  }, (DB_COLLECTIONS[dbCollection] || []).length, " Documents")), /*#__PURE__*/React.createElement("div", {
+    className: "p-3 bg-[#F8F9FD] rounded-xl border border-[#ECEEF4]"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] font-semibold text-[#8A90A2]"
+  }, "Database Latency"), /*#__PURE__*/React.createElement("div", {
+    className: "text-sm font-extrabold text-emerald-600 mt-0.5"
+  }, "38ms Ping (Optimal)")))), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft space-y-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-none"
+  }, Object.keys(DB_COLLECTIONS).map(function (colName) {
+    var isActive = dbCollection === colName;
+    var count = DB_COLLECTIONS[colName].length;
+    return /*#__PURE__*/React.createElement("button", {
+      key: colName,
+      onClick: function onClick() {
+        setDbCollection(colName);
+        setDbSearch("");
+      },
+      className: "px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ".concat(isActive ? "bg-[#4F3FE0] text-white shadow-sm" : "bg-[#F6F7FB] text-[#374151] hover:bg-[#EEEBFF] hover:text-[#4F3FE0]")
+    }, /*#__PURE__*/React.createElement("span", null, colName), /*#__PURE__*/React.createElement("span", {
+      className: "px-1.5 py-0.5 rounded-full text-[10px] font-extrabold ".concat(isActive ? "bg-white/20 text-white" : "bg-white text-[#8A90A2] border border-[#ECEEF4]")
+    }, count));
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "relative w-full sm:w-64 flex-shrink-0"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "search",
+    className: "w-4 h-4 text-[#8A90A2] absolute left-3 top-1/2 -translate-y-1/2"
+  }), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    value: dbSearch,
+    onChange: function onChange(e) {
+      return setDbSearch(e.target.value);
+    },
+    placeholder: "Search ".concat(dbCollection, "..."),
+    className: "w-full pl-9 pr-3 py-2 bg-[#F6F7FB] border border-[#ECEEF4] rounded-xl text-xs font-medium text-[#111827] focus:outline-none focus:border-[#4F3FE0] focus:bg-white"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "overflow-x-auto border border-[#ECEEF4] rounded-xl"
+  }, /*#__PURE__*/React.createElement("table", {
+    className: "w-full text-left border-collapse text-xs"
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", {
+    className: "bg-[#F8F9FD] border-b border-[#ECEEF4] text-[#8A90A2] font-bold uppercase tracking-wider text-[11px]"
+  }, /*#__PURE__*/React.createElement("th", {
+    className: "py-3 px-4"
+  }, "_id"), /*#__PURE__*/React.createElement("th", {
+    className: "py-3 px-4"
+  }, "Identifier / Title"), /*#__PURE__*/React.createElement("th", {
+    className: "py-3 px-4"
+  }, "Attributes"), /*#__PURE__*/React.createElement("th", {
+    className: "py-3 px-4"
+  }, "Status / State"), /*#__PURE__*/React.createElement("th", {
+    className: "py-3 px-4 text-right"
+  }, "Actions"))), /*#__PURE__*/React.createElement("tbody", {
+    className: "divide-y divide-[#ECEEF4]"
+  }, function () {
+    var rawList = DB_COLLECTIONS[dbCollection] || [];
+    var filtered = rawList.filter(function (item) {
+      if (!dbSearch) return true;
+      var query = dbSearch.toLowerCase();
+      return Object.values(item).some(function (val) {
+        return String(val).toLowerCase().includes(query);
+      });
+    });
+    if (filtered.length === 0) {
+      return /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", {
+        colSpan: 5,
+        className: "py-8 text-center text-xs text-[#8A90A2]"
+      }, "No records matched your search in collection ", /*#__PURE__*/React.createElement("strong", null, dbCollection)));
+    }
+    return filtered.map(function (row, idx) {
+      var displayName = row.name || row.label || row.roomName || row.invoiceNumber || row.fullName || "Record #" + (idx + 1);
+      var subInfo = row.founder || row.type || row.bookedBy || row.recipient || row.company || "";
+      var status = row.status || "Active";
+      var statusClasses = status === "Active" || status === "Available" || status === "Confirmed" || status === "Paid" ? "bg-emerald-50 text-emerald-600 border border-emerald-200" : status === "In Use" || status === "In Progress" ? "bg-amber-50 text-amber-600 border border-amber-200" : "bg-indigo-50 text-[#4F3FE0] border border-indigo-200";
+      return /*#__PURE__*/React.createElement("tr", {
+        key: row._id || idx,
+        className: "hover:bg-[#F9FAFC] transition-colors"
+      }, /*#__PURE__*/React.createElement("td", {
+        className: "py-3 px-4 font-mono text-[11px] text-[#4F3FE0] font-semibold whitespace-nowrap"
+      }, row._id), /*#__PURE__*/React.createElement("td", {
+        className: "py-3 px-4"
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "font-bold text-[#111827]"
+      }, displayName), subInfo && /*#__PURE__*/React.createElement("div", {
+        className: "text-[11px] text-[#8A90A2] mt-0.5"
+      }, subInfo)), /*#__PURE__*/React.createElement("td", {
+        className: "py-3 px-4 text-[#374151]"
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "flex flex-wrap gap-1.5 max-w-xs"
+      }, row.capacity && /*#__PURE__*/React.createElement("span", {
+        className: "bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] font-medium"
+      }, "Cap: ", row.capacity), row.creditsRemaining !== undefined && /*#__PURE__*/React.createElement("span", {
+        className: "bg-purple-50 text-[#4F3FE0] px-2 py-0.5 rounded text-[10px] font-bold"
+      }, row.creditsRemaining, " cr"), row.creditsPerHour && /*#__PURE__*/React.createElement("span", {
+        className: "bg-purple-50 text-[#4F3FE0] px-2 py-0.5 rounded text-[10px] font-bold"
+      }, row.creditsPerHour, " cr/hr"), row.amount && /*#__PURE__*/React.createElement("span", {
+        className: "bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded text-[10px] font-bold"
+      }, row.amount), row.tier && /*#__PURE__*/React.createElement("span", {
+        className: "bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[10px] font-medium"
+      }, row.tier), row.slot && /*#__PURE__*/React.createElement("span", {
+        className: "bg-amber-50 text-amber-700 px-2 py-0.5 rounded text-[10px] font-medium"
+      }, row.slot))), /*#__PURE__*/React.createElement("td", {
+        className: "py-3 px-4 whitespace-nowrap"
+      }, /*#__PURE__*/React.createElement("span", {
+        className: "px-2.5 py-1 rounded-full text-[11px] font-bold ".concat(statusClasses)
+      }, status)), /*#__PURE__*/React.createElement("td", {
+        className: "py-3 px-4 text-right whitespace-nowrap"
+      }, /*#__PURE__*/React.createElement("button", {
+        onClick: function onClick() {
+          return setSelectedDbDoc(row);
+        },
+        className: "px-3 py-1.5 bg-[#EEEBFF] hover:bg-[#4F3FE0] text-[#4F3FE0] hover:text-white rounded-lg font-bold text-[11px] transition-all"
+      }, "Inspect JSON")));
+    });
+  }()))))), selectedDbDoc && /*#__PURE__*/React.createElement("div", {
+    className: "fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn",
+    onClick: function onClick() {
+      return setSelectedDbDoc(null);
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-[#111827] text-white rounded-2xl w-full max-w-xl shadow-2xl border border-gray-700 p-6 space-y-4",
+    onClick: function onClick(e) {
+      return e.stopPropagation();
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between pb-3 border-b border-gray-800"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "database",
+    className: "w-5 h-5 text-[#4F3FE0]"
+  }), /*#__PURE__*/React.createElement("h3", {
+    className: "font-extrabold text-sm text-white"
+  }, "Document Inspector (", selectedDbDoc._id, ")")), /*#__PURE__*/React.createElement("button", {
+    onClick: function onClick() {
+      return setSelectedDbDoc(null);
+    },
+    className: "w-7 h-7 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white flex items-center justify-center text-xs font-bold"
+  }, "\u2715")), /*#__PURE__*/React.createElement("pre", {
+    className: "bg-[#0B0F19] p-4 rounded-xl text-xs font-mono text-emerald-400 overflow-x-auto max-h-96 border border-gray-800 leading-relaxed"
+  }, JSON.stringify(selectedDbDoc, null, 2)), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between pt-2"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[11px] text-gray-400"
+  }, "Read-only sandbox replica"), /*#__PURE__*/React.createElement("div", {
+    className: "flex gap-2"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: function onClick() {
+      var _navigator$clipboard;
+      (_navigator$clipboard = navigator.clipboard) === null || _navigator$clipboard === void 0 || _navigator$clipboard.writeText(JSON.stringify(selectedDbDoc, null, 2));
+      showToast("Copied JSON payload to clipboard!");
+    },
+    className: "px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-white text-xs font-semibold rounded-lg transition-all"
+  }, "Copy JSON"), /*#__PURE__*/React.createElement("button", {
+    onClick: function onClick() {
+      return setSelectedDbDoc(null);
+    },
+    className: "px-4 py-1.5 bg-[#4F3FE0] hover:bg-[#4335C9] text-white text-xs font-bold rounded-lg transition-all"
+  }, "Close"))))), activeNav === "Settings" && /*#__PURE__*/React.createElement("div", {
+    className: "space-y-6 animate-fadeIn"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft"
+  }, /*#__PURE__*/React.createElement("h2", {
+    className: "text-2xl font-black text-[#111827]"
+  }, "Preferences & Integrations"), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-[#8A90A2] mt-1"
+  }, "Calendar synchronization, notifications and security")), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft space-y-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between pb-4 border-b border-[#ECEEF4]"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "font-bold text-sm text-[#111827]"
+  }, "Google Calendar Sync"), /*#__PURE__*/React.createElement("div", {
+    className: "text-xs text-[#8A90A2]"
+  }, "Automatically push confirmed room reservations to your company GSuite")), /*#__PURE__*/React.createElement("span", {
+    className: "bg-emerald-50 text-emerald-600 font-bold px-3 py-1 rounded-full text-xs"
+  }, "Connected")), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between pb-4 border-b border-[#ECEEF4]"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "font-bold text-sm text-[#111827]"
+  }, "WhatsApp Booking Alerts"), /*#__PURE__*/React.createElement("div", {
+    className: "text-xs text-[#8A90A2]"
+  }, "Receive 15-minute room start reminders and access passcodes")), /*#__PURE__*/React.createElement("span", {
+    className: "bg-emerald-50 text-emerald-600 font-bold px-3 py-1 rounded-full text-xs"
+  }, "Active (+91 9880012345)")), /*#__PURE__*/React.createElement("div", {
+    className: "pt-2 flex items-center justify-between"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "font-bold text-sm text-[#111827]"
+  }, "Full Operating System Command Center"), /*#__PURE__*/React.createElement("div", {
+    className: "text-xs text-[#8A90A2]"
+  }, "Access complete multi-tenant database tables, invoicing & admin controls")), /*#__PURE__*/React.createElement("a", {
+    href: "app.html",
+    className: "bg-[#111827] text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-black transition-all flex items-center gap-1.5"
+  }, /*#__PURE__*/React.createElement("span", null, "Launch Terminal"), /*#__PURE__*/React.createElement(Icon, {
+    name: "externalLink",
+    className: "w-3.5 h-3.5"
+  }))))))), bookingModalRoom && /*#__PURE__*/React.createElement("div", {
+    className: "fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 z-50 animate-fadeIn"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white rounded-3xl max-w-2xl w-full p-5 sm:p-7 shadow-2xl border border-[#ECEEF4] max-h-[92vh] overflow-y-auto relative animate-scaleUp"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between pb-4 border-b border-[#ECEEF4]"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-3"
+  }, /*#__PURE__*/React.createElement("img", {
+    src: bookingModalRoom.image || "assets/rooms/mr-01-main.jpg",
+    alt: bookingModalRoom.name,
+    className: "w-12 h-12 rounded-xl object-cover border border-[#ECEEF4] shadow-xs flex-shrink-0"
+  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "text-lg font-black text-[#111827]"
+  }, bookingModalRoom.name), /*#__PURE__*/React.createElement("span", {
+    className: "px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#4F3FE0] text-white uppercase tracking-wider"
+  }, bookingModalRoom.type)), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-[#8A90A2] mt-0.5"
+  }, "Instant confirmation \u2022 Deducts 1 hour credit"))), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      setBookingModalRoom(null);
+      setBookingSuccessData(null);
+    },
+    className: "w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 transition-colors",
+    title: "Close"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "x",
+    className: "w-4 h-4"
+  }))), bookingSuccessData ? /*#__PURE__*/React.createElement("div", {
+    className: "py-6 text-center space-y-4 animate-scaleUp"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 border-2 border-emerald-200 flex items-center justify-center mx-auto text-2xl font-bold shadow-sm"
+  }, "\u2713"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    className: "text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200"
+  }, "Reservation Confirmed"), /*#__PURE__*/React.createElement("h3", {
+    className: "text-xl font-black text-[#111827] mt-2"
+  }, bookingSuccessData.title), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-[#8A90A2]"
+  }, "Booking Reference: ", /*#__PURE__*/React.createElement("strong", {
+    className: "font-mono text-[#111827]"
+  }, "#", bookingSuccessData.resId))), /*#__PURE__*/React.createElement("div", {
+    className: "bg-[#F8FAFC] border border-[#ECEEF4] rounded-2xl p-4 text-left text-xs space-y-2 max-w-md mx-auto"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex justify-between"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[#8A90A2]"
+  }, "Facility:"), /*#__PURE__*/React.createElement("strong", {
+    className: "text-[#111827]"
+  }, bookingSuccessData.room)), /*#__PURE__*/React.createElement("div", {
+    className: "flex justify-between"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[#8A90A2]"
+  }, "Date & Time:"), /*#__PURE__*/React.createElement("strong", {
+    className: "text-[#111827]"
+  }, bookingSuccessData.date, " \u2022 ", bookingSuccessData.time)), /*#__PURE__*/React.createElement("div", {
+    className: "flex justify-between"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[#8A90A2]"
+  }, "Duration & Attendees:"), /*#__PURE__*/React.createElement("strong", {
+    className: "text-[#111827]"
+  }, bookingSuccessData.duration, " \u2022 ", bookingSuccessData.attendees, " people")), /*#__PURE__*/React.createElement("div", {
+    className: "flex justify-between"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[#8A90A2]"
+  }, "Credit Deducted:"), /*#__PURE__*/React.createElement("span", {
+    className: "text-emerald-600 font-bold"
+  }, "-", bookingSuccessData.credits, " cr (Covered by Incubation Plan)"))), /*#__PURE__*/React.createElement("div", {
+    className: "p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl text-left max-w-md mx-auto space-y-2.5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-base"
+  }, "\uD83D\uDCC5"), /*#__PURE__*/React.createElement("strong", {
+    className: "text-xs font-black text-[#111827]"
+  }, "Sync with Your Calendar")), /*#__PURE__*/React.createElement("p", {
+    className: "text-[11px] text-[#64748B] leading-relaxed"
+  }, "Export this reservation directly to Google Calendar or download an .ICS invite for Outlook / Apple Calendar."), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2 pt-1"
+  }, /*#__PURE__*/React.createElement("a", {
+    href: getGCalUrl(bookingSuccessData),
+    target: "_blank",
+    rel: "noopener noreferrer",
+    className: "flex-1 bg-white hover:bg-blue-50 text-[#2B71FF] border border-blue-300 font-bold py-2 px-3 rounded-xl text-xs text-center shadow-xs flex items-center justify-center gap-1.5 transition-all"
+  }, /*#__PURE__*/React.createElement("span", null, "Google Calendar (1-Click)"), /*#__PURE__*/React.createElement(Icon, {
+    name: "externalLink",
+    className: "w-3.5 h-3.5"
+  })), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return downloadIcsFile(bookingSuccessData);
+    },
+    className: "bg-white hover:bg-gray-50 text-[#374151] border border-gray-300 font-bold py-2 px-3 rounded-xl text-xs shadow-xs transition-all",
+    title: "Download iCal (.ics) file"
+  }, "\uD83D\uDCE5 .ICS"))), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-center gap-3 pt-3"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      setBookingModalRoom(null);
+      setBookingSuccessData(null);
+      navigateTo("My Bookings");
+    },
+    className: "px-5 py-2.5 bg-[#4F3FE0] hover:bg-[#4335C9] text-white rounded-xl text-xs font-bold shadow-sm"
+  }, "View in My Bookings \u2192"), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      setBookingModalRoom(null);
+      setBookingSuccessData(null);
+    },
+    className: "px-5 py-2.5 border border-[#ECEEF4] text-[#374151] rounded-xl text-xs font-bold hover:bg-gray-50"
+  }, "Done"))) : /*#__PURE__*/React.createElement("form", {
+    onSubmit: handleConfirmBookingModal,
+    className: "mt-4 space-y-4"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-xs font-bold text-[#374151] mb-1"
+  }, "Meeting Title ", /*#__PURE__*/React.createElement("span", {
+    className: "text-rose-500"
+  }, "*")), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    required: true,
+    value: bookingTitle,
+    onChange: function onChange(e) {
+      return setBookingTitle(e.target.value);
+    },
+    placeholder: "e.g. Q4 Executive Pitch Session",
+    className: "w-full bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#111827] focus:outline-none focus:border-[#4F3FE0] focus:bg-white transition-all"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between mb-1.5"
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "text-xs font-bold text-[#374151] flex items-center gap-1.5"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "calendar",
+    className: "w-3.5 h-3.5 text-[#4F3FE0]"
+  }), /*#__PURE__*/React.createElement("span", null, "Reservation Date")), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-1.5"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: handleSetToday,
+    className: "px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all ".concat(bookingDate === getTodayDateIso() ? "bg-[#4F3FE0] text-white border-[#4F3FE0] shadow-xs" : "bg-[#F8FAFC] border-[#ECEEF4] text-[#374151] hover:bg-white hover:border-[#4F3FE0]/40")
+  }, "\u26A1 Today"), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: handleSetNextDay,
+    className: "px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all ".concat(bookingDate === getTomorrowDateIso() ? "bg-[#4F3FE0] text-white border-[#4F3FE0] shadow-xs" : "bg-[#F8FAFC] border-[#ECEEF4] text-[#374151] hover:bg-white hover:border-[#4F3FE0]/40")
+  }, "\u26A1 Next Day"))), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl px-3.5 py-2"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "calendar",
+    className: "w-4 h-4 text-[#8A90A2]"
+  }), /*#__PURE__*/React.createElement("input", {
+    type: "date",
+    min: "2026-10-31",
+    value: bookingDate,
+    onChange: function onChange(e) {
+      return setBookingDate(e.target.value);
+    },
+    className: "bg-transparent text-xs font-bold text-[#111827] outline-none cursor-pointer flex-1"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-[11px] text-[#8A90A2] font-medium"
+  }, bookingDate === getTodayDateIso() ? "(Today)" : bookingDate === getTomorrowDateIso() ? "(Tomorrow)" : ""))), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-1 sm:grid-cols-2 gap-3"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-xs font-bold text-[#374151] mb-1 flex items-center gap-1.5"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "clock",
+    className: "w-3.5 h-3.5 text-[#4F3FE0]"
+  }), /*#__PURE__*/React.createElement("span", null, "Start Time (12-Hour AM/PM)")), /*#__PURE__*/React.createElement("select", {
+    value: bookingStartTime,
+    onChange: function onChange(e) {
+      return setBookingStartTime(e.target.value);
+    },
+    className: "w-full bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl px-3 py-2 text-xs font-bold text-[#111827] focus:outline-none focus:border-[#4F3FE0] cursor-pointer"
+  }, TIME_SLOTS_12H.map(function (slot) {
+    var slotInfo = getSlotState(slot, bookingModalRoom, bookingDate, bookingStartTime, bookingDuration);
+    return /*#__PURE__*/React.createElement("option", {
+      key: slot,
+      value: slot,
+      disabled: slotInfo.disabled && slotInfo.status !== 'selected'
+    }, slot, " ", slotInfo.status === 'past' ? '(Past)' : slotInfo.status === 'booked' ? '(Booked)' : slotInfo.status === 'unavailable' ? '(Overlap)' : '(Available)');
+  }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-xs font-bold text-[#374151] mb-1 flex items-center gap-1.5"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "clock",
+    className: "w-3.5 h-3.5 text-[#4F3FE0]"
+  }), /*#__PURE__*/React.createElement("span", null, "Duration & End Time")), /*#__PURE__*/React.createElement("select", {
+    value: bookingDuration,
+    onChange: function onChange(e) {
+      return setBookingDuration(parseFloat(e.target.value));
+    },
+    className: "w-full bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl px-3 py-2 text-xs font-bold text-[#111827] focus:outline-none focus:border-[#4F3FE0] cursor-pointer"
+  }, [0.5, 1.0, 1.5, 2.0, 3.0, 4.0].map(function (dur) {
+    var sMin = timeStrToMinutes(bookingStartTime);
+    var eMin = sMin + Math.round(dur * 60);
+    var endStr = minutesToTimeStr(eMin);
+    return /*#__PURE__*/React.createElement("option", {
+      key: dur,
+      value: dur
+    }, dur === 0.5 ? "30 mins" : "".concat(dur, " hrs"), " (Ends at $", endStr, ")");
+  })))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between mb-2"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "text-xs font-black uppercase tracking-wider text-[#111827]"
+  }, "Time Slot Bar & Live Availability"), /*#__PURE__*/React.createElement("p", {
+    className: "text-[11px] text-[#8A90A2]"
+  }, isLoadingAvailability ? "Updating live availability..." : "Click any green slot to select your start time")), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2 text-[10.5px] font-semibold text-[#64748B] flex-wrap"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "flex items-center gap-1"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-2.5 h-2.5 rounded-full bg-emerald-500"
+  }), " Available"), /*#__PURE__*/React.createElement("span", {
+    className: "flex items-center gap-1"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-2.5 h-2.5 rounded-full bg-[#4F3FE0]"
+  }), " Selected"), /*#__PURE__*/React.createElement("span", {
+    className: "flex items-center gap-1"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-2.5 h-2.5 rounded-full bg-gray-400"
+  }), " Booked"), /*#__PURE__*/React.createElement("span", {
+    className: "flex items-center gap-1"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-2.5 h-2.5 rounded-full bg-gray-300"
+  }), " Past"))), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-2 sm:grid-cols-4 gap-2 max-h-48 overflow-y-auto p-1.5 border border-[#ECEEF4] rounded-2xl bg-[#FAFAFC]"
+  }, TIME_SLOTS_12H.map(function (slot) {
+    var slotState = getSlotState(slot, bookingModalRoom, bookingDate, bookingStartTime, bookingDuration);
+    if (slotState.status === "past") {
+      return /*#__PURE__*/React.createElement("div", {
+        key: slot,
+        className: "p-2 rounded-xl border border-gray-200 bg-gray-100 text-gray-400 text-center cursor-not-allowed select-none opacity-50",
+        title: "This time slot has already passed for today"
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "text-[11.5px] font-bold line-through"
+      }, slot), /*#__PURE__*/React.createElement("div", {
+        className: "text-[9.5px] text-gray-500 font-semibold mt-0.5"
+      }, "\u23F3 Past"));
+    }
+    if (slotState.status === "booked") {
+      return /*#__PURE__*/React.createElement("div", {
+        key: slot,
+        className: "p-2 rounded-xl border border-gray-200 bg-gray-100/90 text-gray-400 text-center cursor-not-allowed select-none opacity-60",
+        title: "Slot already reserved by another founder"
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "text-[11.5px] font-bold line-through"
+      }, slot), /*#__PURE__*/React.createElement("div", {
+        className: "text-[9.5px] text-gray-500 font-semibold mt-0.5"
+      }, "\uD83D\uDD12 Booked"));
+    }
+    if (slotState.status === "unavailable") {
+      return /*#__PURE__*/React.createElement("div", {
+        key: slot,
+        className: "p-2 rounded-xl border border-amber-200 bg-amber-50/70 text-amber-700 text-center cursor-not-allowed select-none",
+        title: "Overlap conflict: Duration would overlap a reserved slot"
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "text-[11.5px] font-bold"
+      }, slot), /*#__PURE__*/React.createElement("div", {
+        className: "text-[9.5px] font-semibold text-amber-600 mt-0.5"
+      }, "Overlap"));
+    }
+    if (slotState.status === "selected") {
+      return /*#__PURE__*/React.createElement("button", {
+        key: slot,
+        type: "button",
+        onClick: function onClick() {
+          return setBookingStartTime(slot);
+        },
+        className: "p-2 rounded-xl border border-[#4F3FE0] bg-[#4F3FE0] text-white text-center shadow-sm ring-2 ring-[#4F3FE0]/25 transition-all"
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "text-[11.5px] font-bold"
+      }, slot), /*#__PURE__*/React.createElement("div", {
+        className: "text-[9.5px] font-bold text-purple-100 mt-0.5"
+      }, "\u2605 Selected"));
+    }
+    return /*#__PURE__*/React.createElement("button", {
+      key: slot,
+      type: "button",
+      onClick: function onClick() {
+        return setBookingStartTime(slot);
+      },
+      className: "p-2 rounded-xl border border-emerald-300 bg-emerald-50/50 hover:bg-emerald-100/70 hover:border-emerald-400 text-emerald-950 text-center transition-all hover:shadow-xs active:scale-95"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "text-[11.5px] font-bold"
+    }, slot), /*#__PURE__*/React.createElement("div", {
+      className: "text-[9.5px] font-bold text-emerald-600 mt-0.5"
+    }, "\u2713 Available"));
+  }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between mb-1"
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "text-xs font-bold text-[#374151] flex items-center gap-1.5"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "users",
+    className: "w-3.5 h-3.5 text-[#4F3FE0]"
+  }), /*#__PURE__*/React.createElement("span", null, "Attendees Count")), /*#__PURE__*/React.createElement("span", {
+    className: "text-[11px] text-[#8A90A2]"
+  }, "Room Max: ", bookingModalRoom.capacity, " seats")), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-3"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return setBookingAttendees(function (prev) {
+        return Math.max(1, prev - 1);
+      });
+    },
+    className: "w-9 h-9 rounded-xl border border-[#ECEEF4] bg-[#F8FAFC] hover:bg-white text-lg font-bold flex items-center justify-center text-[#111827]"
+  }, "-"), /*#__PURE__*/React.createElement("div", {
+    className: "flex-1 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl py-2 text-center text-xs font-black text-[#111827]"
+  }, bookingAttendees, " attendees"), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return setBookingAttendees(function (prev) {
+        return Math.min(bookingModalRoom.capacity, prev + 1);
+      });
+    },
+    className: "w-9 h-9 rounded-xl border border-[#ECEEF4] bg-[#F8FAFC] hover:bg-white text-lg font-bold flex items-center justify-center text-[#111827]"
+  }, "+"))), function () {
+    var hourlyRate = parseInt((bookingModalRoom.rate || "").replace(/[^0-9]/g, ""), 10) || 2000;
+    var sMin = timeStrToMinutes(bookingStartTime);
+    var eMin = sMin + Math.round(bookingDuration * 60);
+    var endStr = minutesToTimeStr(eMin);
+    var currentSelectedState = getSlotState(bookingStartTime, bookingModalRoom, bookingDate, bookingStartTime, bookingDuration);
+    return /*#__PURE__*/React.createElement("div", {
+      className: "bg-[#F8F9FD] border border-[#E3DEFF] rounded-2xl p-4 space-y-2 text-xs"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex justify-between"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-[#8A90A2]"
+    }, "Room Rate:"), /*#__PURE__*/React.createElement("span", {
+      className: "font-bold text-[#111827]"
+    }, bookingModalRoom.rate, " (Covered by Credits)")), /*#__PURE__*/React.createElement("div", {
+      className: "flex justify-between"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-[#8A90A2]"
+    }, "Date & Time:"), /*#__PURE__*/React.createElement("span", {
+      className: "font-bold text-[#4F3FE0]"
+    }, bookingDate, " \u2022 ", bookingStartTime, " \u2013 ", endStr, " (", bookingDuration, " hrs)")), /*#__PURE__*/React.createElement("div", {
+      className: "flex justify-between"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-[#8A90A2]"
+    }, "Attendees:"), /*#__PURE__*/React.createElement("span", {
+      className: "font-bold text-[#111827]"
+    }, bookingAttendees, " people (Capacity: ", bookingModalRoom.capacity, ")")), /*#__PURE__*/React.createElement("div", {
+      className: "flex justify-between"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-[#8A90A2]"
+    }, "Credits Used:"), /*#__PURE__*/React.createElement("span", {
+      className: "text-emerald-600 font-bold"
+    }, "-", bookingDuration, " cr (", startupCreditsRemaining - bookingDuration, " cr remaining in quota)")), /*#__PURE__*/React.createElement("div", {
+      className: "flex justify-between pt-1 border-t border-[#E3DEFF]"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "font-bold text-[#111827]"
+    }, "Final Charge:"), /*#__PURE__*/React.createElement("span", {
+      className: "text-emerald-600 font-black text-sm"
+    }, "\u20B90.00 (100% Covered)")), currentSelectedState.disabled && !currentSelectedState.isSelected && /*#__PURE__*/React.createElement("div", {
+      className: "p-2 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-[11px] font-bold flex items-center gap-1.5 mt-2"
+    }, /*#__PURE__*/React.createElement("span", null, "\u26A0\uFE0F"), /*#__PURE__*/React.createElement("span", null, "Selected time slot is ", currentSelectedState.label, ". Please pick an available green slot.")));
+  }(), /*#__PURE__*/React.createElement("div", {
+    className: "p-3 bg-blue-50/60 border border-blue-200 rounded-xl flex items-center justify-between text-xs"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2 text-blue-900 font-semibold"
+  }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDCC5"), /*#__PURE__*/React.createElement("span", null, "Auto-generate Google Calendar invite")), /*#__PURE__*/React.createElement("label", {
+    className: "relative inline-flex items-center cursor-pointer"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: bookingSyncGCal,
+    onChange: function onChange(e) {
+      return setBookingSyncGCal(e.target.checked);
+    },
+    className: "sr-only peer"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#4F3FE0]"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-end gap-2.5 pt-2 border-t border-[#ECEEF4]"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return setBookingModalRoom(null);
+    },
+    className: "px-4 py-2.5 border border-[#ECEEF4] text-[#374151] rounded-xl text-xs font-bold hover:bg-gray-50 transition-colors"
+  }, "Cancel"), /*#__PURE__*/React.createElement("button", {
+    type: "submit",
+    className: "px-6 py-2.5 bg-[#4F3FE0] hover:bg-[#4335C9] text-white rounded-xl text-xs font-black shadow-sm active:scale-95 transition-all flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("span", null, "\u26A1 Confirm Reservation")))))), cancelModalBooking && /*#__PURE__*/React.createElement("div", {
+    className: "fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fadeIn"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-[#ECEEF4] relative animate-scaleUp"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between pb-3 border-b border-[#ECEEF4]"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2.5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "w-9 h-9 rounded-xl bg-rose-50 text-[#EF4444] flex items-center justify-center font-bold"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "alertCircle",
+    className: "w-5 h-5 text-[#EF4444]"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", {
+    className: "text-base font-black text-[#111827]"
+  }, "Cancel Reservation"), /*#__PURE__*/React.createElement("p", {
+    className: "text-[11px] text-[#8A90A2]"
+  }, "Review refund policy before confirming"))), /*#__PURE__*/React.createElement("button", {
+    onClick: function onClick() {
+      return setCancelModalBooking(null);
+    },
+    className: "w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "x",
+    className: "w-4 h-4"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "py-4 space-y-3.5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "p-3.5 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl text-xs space-y-1.5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "font-bold text-[#111827] text-sm"
+  }, cancelModalBooking.title), /*#__PURE__*/React.createElement("div", {
+    className: "text-[#64748B] flex items-center gap-1.5"
+  }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDCCD ", cancelModalBooking.room), /*#__PURE__*/React.createElement("span", null, "\u2022"), /*#__PURE__*/React.createElement("span", null, "\uD83D\uDD52 ", cancelModalBooking.time)), /*#__PURE__*/React.createElement("div", {
+    className: "text-emerald-600 font-bold flex items-center gap-1"
+  }, /*#__PURE__*/React.createElement("span", null, "\uD83E\uDE99 Refund Quote:"), /*#__PURE__*/React.createElement("span", null, "+", cancelModalBooking.credits || 18, " credits returned to balance"))), /*#__PURE__*/React.createElement("div", {
+    className: "p-3 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-900 leading-relaxed"
+  }, /*#__PURE__*/React.createElement("strong", null, "NEXUS Cancellation Policy:"), " Meeting room cancellations confirmed >2 hours in advance receive a ", /*#__PURE__*/React.createElement("strong", null, "100% full credit refund"), ". The reserved slot will be released immediately to fellow founders.")), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-end gap-2.5 pt-2 border-t border-[#ECEEF4]"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return setCancelModalBooking(null);
+    },
+    className: "px-4 py-2 border border-[#ECEEF4] text-[#374151] rounded-xl text-xs font-bold hover:bg-gray-50"
+  }, "Keep Booking"), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      setUpcomingBookings(function (prev) {
+        return prev.map(function (b) {
+          if (b.id === cancelModalBooking.id) {
+            return _objectSpread(_objectSpread({}, b), {}, {
+              status: "Cancelled",
+              statusColor: "bg-rose-50 text-rose-600 border border-rose-200",
+              barColor: "bg-rose-500"
             });
-          }(), /*#__PURE__*/_jsxs("div", {
-            className: "p-3 bg-blue-50/60 border border-blue-200 rounded-xl flex items-center justify-between text-xs",
-            children: [/*#__PURE__*/_jsxs("div", {
-              className: "flex items-center gap-2 text-blue-900 font-semibold",
-              children: [/*#__PURE__*/_jsx("span", {
-                children: "\uD83D\uDCC5"
-              }), /*#__PURE__*/_jsx("span", {
-                children: "Auto-generate Google Calendar invite"
-              })]
-            }), /*#__PURE__*/_jsxs("label", {
-              className: "relative inline-flex items-center cursor-pointer",
-              children: [/*#__PURE__*/_jsx("input", {
-                type: "checkbox",
-                checked: bookingSyncGCal,
-                onChange: function onChange(e) {
-                  return setBookingSyncGCal(e.target.checked);
-                },
-                className: "sr-only peer"
-              }), /*#__PURE__*/_jsx("div", {
-                className: "w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#4F3FE0]"
-              })]
-            })]
-          }), /*#__PURE__*/_jsxs("div", {
-            className: "flex items-center justify-end gap-2.5 pt-2 border-t border-[#ECEEF4]",
-            children: [/*#__PURE__*/_jsx("button", {
-              type: "button",
-              onClick: function onClick() {
-                return setBookingModalRoom(null);
-              },
-              className: "px-4 py-2.5 border border-[#ECEEF4] text-[#374151] rounded-xl text-xs font-bold hover:bg-gray-50 transition-colors",
-              children: "Cancel"
-            }), /*#__PURE__*/_jsx("button", {
-              type: "submit",
-              className: "px-6 py-2.5 bg-[#4F3FE0] hover:bg-[#4335C9] text-white rounded-xl text-xs font-black shadow-sm active:scale-95 transition-all flex items-center gap-2",
-              children: /*#__PURE__*/_jsx("span", {
-                children: "\u26A1 Confirm Reservation"
-              })
-            })]
-          })]
-        })]
-      })
-    }), cancelModalBooking && /*#__PURE__*/_jsx("div", {
-      className: "fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fadeIn",
-      children: /*#__PURE__*/_jsxs("div", {
-        className: "bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-[#ECEEF4] relative animate-scaleUp",
-        children: [/*#__PURE__*/_jsxs("div", {
-          className: "flex items-center justify-between pb-3 border-b border-[#ECEEF4]",
-          children: [/*#__PURE__*/_jsxs("div", {
-            className: "flex items-center gap-2.5",
-            children: [/*#__PURE__*/_jsx("div", {
-              className: "w-9 h-9 rounded-xl bg-rose-50 text-[#EF4444] flex items-center justify-center font-bold",
-              children: /*#__PURE__*/_jsx(Icon, {
-                name: "alertCircle",
-                className: "w-5 h-5 text-[#EF4444]"
-              })
-            }), /*#__PURE__*/_jsxs("div", {
-              children: [/*#__PURE__*/_jsx("h3", {
-                className: "text-base font-black text-[#111827]",
-                children: "Cancel Reservation"
-              }), /*#__PURE__*/_jsx("p", {
-                className: "text-[11px] text-[#8A90A2]",
-                children: "Review refund policy before confirming"
-              })]
-            })]
-          }), /*#__PURE__*/_jsx("button", {
-            onClick: function onClick() {
-              return setCancelModalBooking(null);
-            },
-            className: "w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500",
-            children: /*#__PURE__*/_jsx(Icon, {
-              name: "x",
-              className: "w-4 h-4"
-            })
-          })]
-        }), /*#__PURE__*/_jsxs("div", {
-          className: "py-4 space-y-3.5",
-          children: [/*#__PURE__*/_jsxs("div", {
-            className: "p-3.5 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl text-xs space-y-1.5",
-            children: [/*#__PURE__*/_jsx("div", {
-              className: "font-bold text-[#111827] text-sm",
-              children: cancelModalBooking.title
-            }), /*#__PURE__*/_jsxs("div", {
-              className: "text-[#64748B] flex items-center gap-1.5",
-              children: [/*#__PURE__*/_jsxs("span", {
-                children: ["\uD83D\uDCCD ", cancelModalBooking.room]
-              }), /*#__PURE__*/_jsx("span", {
-                children: "\u2022"
-              }), /*#__PURE__*/_jsxs("span", {
-                children: ["\uD83D\uDD52 ", cancelModalBooking.time]
-              })]
-            }), /*#__PURE__*/_jsxs("div", {
-              className: "text-emerald-600 font-bold flex items-center gap-1",
-              children: [/*#__PURE__*/_jsx("span", {
-                children: "\uD83E\uDE99 Refund Quote:"
-              }), /*#__PURE__*/_jsxs("span", {
-                children: ["+", cancelModalBooking.credits || 18, " credits returned to balance"]
-              })]
-            })]
-          }), /*#__PURE__*/_jsxs("div", {
-            className: "p-3 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-900 leading-relaxed",
-            children: [/*#__PURE__*/_jsx("strong", {
-              children: "NEXUS Cancellation Policy:"
-            }), " Meeting room cancellations confirmed >2 hours in advance receive a ", /*#__PURE__*/_jsx("strong", {
-              children: "100% full credit refund"
-            }), ". The reserved slot will be released immediately to fellow founders."]
-          })]
-        }), /*#__PURE__*/_jsxs("div", {
-          className: "flex items-center justify-end gap-2.5 pt-2 border-t border-[#ECEEF4]",
-          children: [/*#__PURE__*/_jsx("button", {
-            type: "button",
-            onClick: function onClick() {
-              return setCancelModalBooking(null);
-            },
-            className: "px-4 py-2 border border-[#ECEEF4] text-[#374151] rounded-xl text-xs font-bold hover:bg-gray-50",
-            children: "Keep Booking"
-          }), /*#__PURE__*/_jsx("button", {
-            type: "button",
-            onClick: function onClick() {
-              setUpcomingBookings(function (prev) {
-                return prev.map(function (b) {
-                  if (b.id === cancelModalBooking.id) {
-                    return _objectSpread(_objectSpread({}, b), {}, {
-                      status: "Cancelled",
-                      statusColor: "bg-rose-50 text-rose-600 border border-rose-200",
-                      barColor: "bg-rose-500"
-                    });
-                  }
-                  return b;
-                });
-              });
-              showToast("Reservation #".concat(cancelModalBooking.resId, " cancelled. ").concat(cancelModalBooking.credits || 18, " credits refunded."));
-              setCancelModalBooking(null);
-            },
-            className: "px-5 py-2 bg-[#EF4444] hover:bg-[#DC2626] text-white rounded-xl text-xs font-bold shadow-sm",
-            children: "Confirm Cancellation"
-          })]
-        })]
-      })
-    }), detailsModalBooking && /*#__PURE__*/_jsx("div", {
-      className: "fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fadeIn",
-      children: /*#__PURE__*/_jsxs("div", {
-        className: "bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-[#ECEEF4] relative animate-scaleUp max-h-[90vh] overflow-y-auto",
-        children: [/*#__PURE__*/_jsxs("div", {
-          className: "flex items-center justify-between pb-3 border-b border-[#ECEEF4]",
-          children: [/*#__PURE__*/_jsxs("div", {
-            className: "flex items-center gap-2.5",
-            children: [/*#__PURE__*/_jsxs("span", {
-              className: "text-[11px] font-mono font-bold bg-gray-100 text-[#374151] px-2 py-0.5 rounded border border-[#ECEEF4]",
-              children: ["#", detailsModalBooking.resId]
-            }), /*#__PURE__*/_jsx("span", {
-              className: "px-2.5 py-0.5 rounded-full text-xs font-bold ".concat(detailsModalBooking.statusColor),
-              children: detailsModalBooking.status
-            })]
-          }), /*#__PURE__*/_jsx("button", {
-            onClick: function onClick() {
-              return setDetailsModalBooking(null);
-            },
-            className: "w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500",
-            children: /*#__PURE__*/_jsx(Icon, {
-              name: "x",
-              className: "w-4 h-4"
-            })
-          })]
-        }), /*#__PURE__*/_jsxs("div", {
-          className: "py-4 space-y-4",
-          children: [/*#__PURE__*/_jsxs("div", {
-            className: "relative h-32 rounded-xl overflow-hidden border border-[#ECEEF4]",
-            children: [/*#__PURE__*/_jsx("img", {
-              src: detailsModalBooking.roomImage || "assets/rooms/mr-01-main.jpg",
-              alt: detailsModalBooking.room,
-              className: "w-full h-full object-cover object-center"
-            }), /*#__PURE__*/_jsx("div", {
-              className: "absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"
-            }), /*#__PURE__*/_jsxs("div", {
-              className: "absolute bottom-2.5 left-3 text-white",
-              children: [/*#__PURE__*/_jsx("div", {
-                className: "text-sm font-black",
-                children: detailsModalBooking.room
-              }), /*#__PURE__*/_jsx("div", {
-                className: "text-[10.5px] text-gray-200",
-                children: "Level 2 \u2022 Collaboration Suite \u2022 Ground Floor East Wing"
-              })]
-            })]
-          }), /*#__PURE__*/_jsxs("div", {
-            children: [/*#__PURE__*/_jsx("h3", {
-              className: "text-lg font-black text-[#111827]",
-              children: detailsModalBooking.title
-            }), /*#__PURE__*/_jsx("p", {
-              className: "text-xs text-[#64748B] mt-1 leading-relaxed",
-              children: detailsModalBooking.purpose || "Meeting session scheduled for venture development and collaboration."
-            })]
-          }), /*#__PURE__*/_jsxs("div", {
-            className: "grid grid-cols-2 gap-3 text-xs",
-            children: [/*#__PURE__*/_jsxs("div", {
-              className: "p-3 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl",
-              children: [/*#__PURE__*/_jsx("div", {
-                className: "text-[10px] font-bold text-[#8A90A2] uppercase",
-                children: "Scheduled Time"
-              }), /*#__PURE__*/_jsx("div", {
-                className: "font-bold text-[#111827] mt-1",
-                children: detailsModalBooking.fullDate || detailsModalBooking.date
-              }), /*#__PURE__*/_jsx("div", {
-                className: "text-[#64748B] text-[11px] mt-0.5",
-                children: detailsModalBooking.time
-              })]
-            }), /*#__PURE__*/_jsxs("div", {
-              className: "p-3 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl",
-              children: [/*#__PURE__*/_jsx("div", {
-                className: "text-[10px] font-bold text-[#8A90A2] uppercase",
-                children: "Party Size"
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "font-bold text-[#111827] mt-1",
-                children: [detailsModalBooking.attendees, " Attendees"]
-              }), /*#__PURE__*/_jsx("div", {
-                className: "text-[#64748B] text-[11px] mt-0.5",
-                children: "Alex Morgan (Host)"
-              })]
-            }), /*#__PURE__*/_jsxs("div", {
-              className: "p-3 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl",
-              children: [/*#__PURE__*/_jsx("div", {
-                className: "text-[10px] font-bold text-[#8A90A2] uppercase",
-                children: "Quota Consumed"
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "font-bold text-[#4F3FE0] mt-1",
-                children: ["\uD83E\uDE99 ", detailsModalBooking.credits || 18, " credits"]
-              }), /*#__PURE__*/_jsx("div", {
-                className: "text-[10px] text-emerald-600 font-semibold mt-0.5",
-                children: "\u25CF Deducted from quota"
-              })]
-            }), /*#__PURE__*/_jsxs("div", {
-              className: "p-3 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl",
-              children: [/*#__PURE__*/_jsx("div", {
-                className: "text-[10px] font-bold text-[#8A90A2] uppercase",
-                children: "Calendar Sync"
-              }), /*#__PURE__*/_jsxs("div", {
-                className: "font-bold text-emerald-600 mt-1 flex items-center gap-1",
-                children: [/*#__PURE__*/_jsx("span", {
-                  children: "Synced"
-                }), /*#__PURE__*/_jsx("span", {
-                  children: "\u2705"
-                })]
-              }), /*#__PURE__*/_jsx("div", {
-                className: "text-[10px] text-[#8A90A2] mt-0.5",
-                children: "Google / Outlook active"
-              })]
-            })]
-          }), detailsModalBooking.isRecurring && /*#__PURE__*/_jsxs("div", {
-            className: "p-3 bg-[#F4F2FF] border border-[#E3DEFF] rounded-xl text-xs flex items-center gap-2 text-[#4F3FE0]",
-            children: [/*#__PURE__*/_jsx("span", {
-              className: "text-base",
-              children: "\uD83D\uDD04"
-            }), /*#__PURE__*/_jsxs("div", {
-              children: [/*#__PURE__*/_jsx("strong", {
-                children: "Recurring Series:"
-              }), " ", detailsModalBooking.recurringPattern || "Weekly schedule active"]
-            })]
-          })]
-        }), /*#__PURE__*/_jsxs("div", {
-          className: "flex items-center justify-between pt-3 border-t border-[#ECEEF4]",
-          children: [detailsModalBooking.status !== "Cancelled" && detailsModalBooking.status !== "Completed" ? /*#__PURE__*/_jsxs("div", {
-            className: "flex items-center gap-2",
-            children: [/*#__PURE__*/_jsx("button", {
-              type: "button",
-              onClick: function onClick() {
-                var target = detailsModalBooking;
-                setDetailsModalBooking(null);
-                setRescheduleBooking(target);
-                setRescheduleNewRoom(target.room);
-                setRescheduleNewTime(target.time);
-              },
-              className: "px-3.5 py-1.5 border border-[#ECEEF4] text-[#374151] hover:text-[#4F3FE0] rounded-xl text-xs font-bold hover:bg-gray-50",
-              children: "Reschedule"
-            }), /*#__PURE__*/_jsx("button", {
-              type: "button",
-              onClick: function onClick() {
-                var target = detailsModalBooking;
-                setDetailsModalBooking(null);
-                setCancelModalBooking(target);
-              },
-              className: "px-3.5 py-1.5 text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-xl text-xs font-bold",
-              children: "Cancel Booking"
-            })]
-          }) : /*#__PURE__*/_jsx("div", {}), /*#__PURE__*/_jsx("button", {
-            type: "button",
-            onClick: function onClick() {
-              return setDetailsModalBooking(null);
-            },
-            className: "px-5 py-2 bg-[#111827] hover:bg-black text-white rounded-xl text-xs font-bold shadow-sm",
-            children: "Close"
-          })]
-        })]
-      })
-    }), showPurchaseCreditsModal && /*#__PURE__*/_jsx("div", {
-      className: "fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fadeIn",
-      children: /*#__PURE__*/_jsxs("div", {
-        className: "bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-[#ECEEF4] relative animate-scaleUp",
-        children: [/*#__PURE__*/_jsxs("div", {
-          className: "flex items-center justify-between pb-3 border-b border-[#ECEEF4]",
-          children: [/*#__PURE__*/_jsxs("div", {
-            children: [/*#__PURE__*/_jsx("h3", {
-              className: "text-lg font-black text-[#111827]",
-              children: "Purchase Extra Credits"
-            }), /*#__PURE__*/_jsx("p", {
-              className: "text-xs text-[#8A90A2]",
-              children: "Instant credit top-up \u2022 No expiration"
-            })]
-          }), /*#__PURE__*/_jsx("button", {
-            onClick: function onClick() {
-              return setShowPurchaseCreditsModal(false);
-            },
-            className: "w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500",
-            children: /*#__PURE__*/_jsx(Icon, {
-              name: "x",
-              className: "w-4 h-4"
-            })
-          })]
-        }), /*#__PURE__*/_jsxs("div", {
-          className: "py-4 space-y-3",
-          children: [/*#__PURE__*/_jsx("div", {
-            className: "text-xs font-bold text-[#111827]",
-            children: "Select Credit Package:"
-          }), /*#__PURE__*/_jsx("div", {
-            className: "grid grid-cols-3 gap-2.5",
-            children: [{
-              credits: 10,
-              price: "₹500",
-              tag: "Basic"
-            }, {
-              credits: 25,
-              price: "₹1,200",
-              tag: "Popular",
-              best: true
-            }, {
-              credits: 50,
-              price: "₹2,200",
-              tag: "Best Value"
-            }].map(function (pkg) {
-              return /*#__PURE__*/_jsxs("button", {
-                type: "button",
-                onClick: function onClick() {
-                  return setSelectedCreditTier(pkg.credits);
-                },
-                className: "p-3 rounded-xl border text-center transition-all ".concat(selectedCreditTier === pkg.credits ? "border-[#4F3FE0] bg-[#EEEBFF] text-[#4F3FE0] shadow-xs" : "border-[#ECEEF4] bg-[#F8FAFC] text-[#374151] hover:bg-white"),
-                children: [/*#__PURE__*/_jsx("div", {
-                  className: "text-[10px] font-bold uppercase tracking-wider text-[#8A90A2]",
-                  children: pkg.tag
-                }), /*#__PURE__*/_jsxs("div", {
-                  className: "text-lg font-black text-[#111827] mt-0.5",
-                  children: [pkg.credits, " cr"]
-                }), /*#__PURE__*/_jsx("div", {
-                  className: "text-xs font-bold text-[#4F3FE0] mt-0.5",
-                  children: pkg.price
-                })]
-              }, pkg.credits);
-            })
-          }), /*#__PURE__*/_jsxs("div", {
-            className: "p-3 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl text-xs space-y-1.5 mt-3",
-            children: [/*#__PURE__*/_jsxs("div", {
-              className: "flex items-center justify-between text-[#64748B]",
-              children: [/*#__PURE__*/_jsx("span", {
-                children: "Startup Account:"
-              }), /*#__PURE__*/_jsx("strong", {
-                className: "text-[#111827]",
-                children: "XYZ Technologies"
-              })]
-            }), /*#__PURE__*/_jsxs("div", {
-              className: "flex items-center justify-between text-[#64748B]",
-              children: [/*#__PURE__*/_jsx("span", {
-                children: "Payment Gateway:"
-              }), /*#__PURE__*/_jsx("span", {
-                className: "text-[#4F3FE0] font-bold",
-                children: "Razorpay Express (UPI / Cards)"
-              })]
-            })]
-          })]
-        }), /*#__PURE__*/_jsxs("div", {
-          className: "flex items-center justify-end gap-2.5 pt-2 border-t border-[#ECEEF4]",
-          children: [/*#__PURE__*/_jsx("button", {
-            type: "button",
-            onClick: function onClick() {
-              return setShowPurchaseCreditsModal(false);
-            },
-            className: "px-4 py-2 border border-[#ECEEF4] text-[#374151] rounded-xl text-xs font-bold hover:bg-gray-50",
-            children: "Cancel"
-          }), /*#__PURE__*/_jsx("button", {
-            type: "button",
-            onClick: function onClick() {
-              setShowPurchaseCreditsModal(false);
-              showToast("\uD83C\uDF89 Top-up successful! +".concat(selectedCreditTier, " extra credits credited."));
-            },
-            className: "px-5 py-2 bg-[#4F3FE0] hover:bg-[#4335C9] text-white rounded-xl text-xs font-bold shadow-sm",
-            children: "Confirm & Top-up"
-          })]
-        })]
-      })
-    }), toastMessage && /*#__PURE__*/_jsxs("div", {
-      className: "fixed bottom-6 right-6 bg-[#111827] text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg border border-gray-700 z-50 flex items-center gap-2 animate-bounce",
-      children: [/*#__PURE__*/_jsx("span", {
-        children: "\u26A1"
-      }), /*#__PURE__*/_jsx("span", {
-        children: toastMessage
-      })]
-    })]
-  });
+          }
+          return b;
+        });
+      });
+      showToast("Reservation #".concat(cancelModalBooking.resId, " cancelled. ").concat(cancelModalBooking.credits || 18, " credits refunded."));
+      setCancelModalBooking(null);
+    },
+    className: "px-5 py-2 bg-[#EF4444] hover:bg-[#DC2626] text-white rounded-xl text-xs font-bold shadow-sm"
+  }, "Confirm Cancellation")))), detailsModalBooking && /*#__PURE__*/React.createElement("div", {
+    className: "fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fadeIn"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-[#ECEEF4] relative animate-scaleUp max-h-[90vh] overflow-y-auto"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between pb-3 border-b border-[#ECEEF4]"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2.5"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[11px] font-mono font-bold bg-gray-100 text-[#374151] px-2 py-0.5 rounded border border-[#ECEEF4]"
+  }, "#", detailsModalBooking.resId), /*#__PURE__*/React.createElement("span", {
+    className: "px-2.5 py-0.5 rounded-full text-xs font-bold ".concat(detailsModalBooking.statusColor)
+  }, detailsModalBooking.status)), /*#__PURE__*/React.createElement("button", {
+    onClick: function onClick() {
+      return setDetailsModalBooking(null);
+    },
+    className: "w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "x",
+    className: "w-4 h-4"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "py-4 space-y-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "relative h-32 rounded-xl overflow-hidden border border-[#ECEEF4]"
+  }, /*#__PURE__*/React.createElement("img", {
+    src: detailsModalBooking.roomImage || "assets/rooms/mr-01-main.jpg",
+    alt: detailsModalBooking.room,
+    className: "w-full h-full object-cover object-center"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "absolute bottom-2.5 left-3 text-white"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-sm font-black"
+  }, detailsModalBooking.room), /*#__PURE__*/React.createElement("div", {
+    className: "text-[10.5px] text-gray-200"
+  }, "Level 2 \u2022 Collaboration Suite \u2022 Ground Floor East Wing"))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", {
+    className: "text-lg font-black text-[#111827]"
+  }, detailsModalBooking.title), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-[#64748B] mt-1 leading-relaxed"
+  }, detailsModalBooking.purpose || "Meeting session scheduled for venture development and collaboration.")), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-2 gap-3 text-xs"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "p-3 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-[10px] font-bold text-[#8A90A2] uppercase"
+  }, "Scheduled Time"), /*#__PURE__*/React.createElement("div", {
+    className: "font-bold text-[#111827] mt-1"
+  }, detailsModalBooking.fullDate || detailsModalBooking.date), /*#__PURE__*/React.createElement("div", {
+    className: "text-[#64748B] text-[11px] mt-0.5"
+  }, detailsModalBooking.time)), /*#__PURE__*/React.createElement("div", {
+    className: "p-3 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-[10px] font-bold text-[#8A90A2] uppercase"
+  }, "Party Size"), /*#__PURE__*/React.createElement("div", {
+    className: "font-bold text-[#111827] mt-1"
+  }, detailsModalBooking.attendees, " Attendees"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[#64748B] text-[11px] mt-0.5"
+  }, "Alex Morgan (Host)")), /*#__PURE__*/React.createElement("div", {
+    className: "p-3 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-[10px] font-bold text-[#8A90A2] uppercase"
+  }, "Quota Consumed"), /*#__PURE__*/React.createElement("div", {
+    className: "font-bold text-[#4F3FE0] mt-1"
+  }, "\uD83E\uDE99 ", detailsModalBooking.credits || 18, " credits"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[10px] text-emerald-600 font-semibold mt-0.5"
+  }, "\u25CF Deducted from quota")), /*#__PURE__*/React.createElement("div", {
+    className: "p-3 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-[10px] font-bold text-[#8A90A2] uppercase"
+  }, "Calendar Sync"), /*#__PURE__*/React.createElement("div", {
+    className: "font-bold text-emerald-600 mt-1 flex items-center gap-1"
+  }, /*#__PURE__*/React.createElement("span", null, "Synced"), /*#__PURE__*/React.createElement("span", null, "\u2705")), /*#__PURE__*/React.createElement("div", {
+    className: "text-[10px] text-[#8A90A2] mt-0.5"
+  }, "Google / Outlook active"))), detailsModalBooking.isRecurring && /*#__PURE__*/React.createElement("div", {
+    className: "p-3 bg-[#F4F2FF] border border-[#E3DEFF] rounded-xl text-xs flex items-center gap-2 text-[#4F3FE0]"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-base"
+  }, "\uD83D\uDD04"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, "Recurring Series:"), " ", detailsModalBooking.recurringPattern || "Weekly schedule active"))), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between pt-3 border-t border-[#ECEEF4]"
+  }, detailsModalBooking.status !== "Cancelled" && detailsModalBooking.status !== "Completed" ? /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      var target = detailsModalBooking;
+      setDetailsModalBooking(null);
+      setRescheduleBooking(target);
+      setRescheduleNewRoom(target.room);
+      setRescheduleNewTime(target.time);
+    },
+    className: "px-3.5 py-1.5 border border-[#ECEEF4] text-[#374151] hover:text-[#4F3FE0] rounded-xl text-xs font-bold hover:bg-gray-50"
+  }, "Reschedule"), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      var target = detailsModalBooking;
+      setDetailsModalBooking(null);
+      setCancelModalBooking(target);
+    },
+    className: "px-3.5 py-1.5 text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-xl text-xs font-bold"
+  }, "Cancel Booking")) : /*#__PURE__*/React.createElement("div", null), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return setDetailsModalBooking(null);
+    },
+    className: "px-5 py-2 bg-[#111827] hover:bg-black text-white rounded-xl text-xs font-bold shadow-sm"
+  }, "Close")))), showPurchaseCreditsModal && /*#__PURE__*/React.createElement("div", {
+    className: "fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fadeIn"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-[#ECEEF4] relative animate-scaleUp"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between pb-3 border-b border-[#ECEEF4]"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", {
+    className: "text-lg font-black text-[#111827]"
+  }, "Purchase Extra Credits"), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-[#8A90A2]"
+  }, "Instant credit top-up \u2022 No expiration")), /*#__PURE__*/React.createElement("button", {
+    onClick: function onClick() {
+      return setShowPurchaseCreditsModal(false);
+    },
+    className: "w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "x",
+    className: "w-4 h-4"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "py-4 space-y-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-xs font-bold text-[#111827]"
+  }, "Select Credit Package:"), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-3 gap-2.5"
+  }, [{
+    credits: 10,
+    price: "₹500",
+    tag: "Basic"
+  }, {
+    credits: 25,
+    price: "₹1,200",
+    tag: "Popular",
+    best: true
+  }, {
+    credits: 50,
+    price: "₹2,200",
+    tag: "Best Value"
+  }].map(function (pkg) {
+    return /*#__PURE__*/React.createElement("button", {
+      key: pkg.credits,
+      type: "button",
+      onClick: function onClick() {
+        return setSelectedCreditTier(pkg.credits);
+      },
+      className: "p-3 rounded-xl border text-center transition-all ".concat(selectedCreditTier === pkg.credits ? "border-[#4F3FE0] bg-[#EEEBFF] text-[#4F3FE0] shadow-xs" : "border-[#ECEEF4] bg-[#F8FAFC] text-[#374151] hover:bg-white")
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "text-[10px] font-bold uppercase tracking-wider text-[#8A90A2]"
+    }, pkg.tag), /*#__PURE__*/React.createElement("div", {
+      className: "text-lg font-black text-[#111827] mt-0.5"
+    }, pkg.credits, " cr"), /*#__PURE__*/React.createElement("div", {
+      className: "text-xs font-bold text-[#4F3FE0] mt-0.5"
+    }, pkg.price));
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "p-3 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl text-xs space-y-1.5 mt-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between text-[#64748B]"
+  }, /*#__PURE__*/React.createElement("span", null, "Startup Account:"), /*#__PURE__*/React.createElement("strong", {
+    className: "text-[#111827]"
+  }, "XYZ Technologies")), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between text-[#64748B]"
+  }, /*#__PURE__*/React.createElement("span", null, "Payment Gateway:"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[#4F3FE0] font-bold"
+  }, "Razorpay Express (UPI / Cards)")))), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-end gap-2.5 pt-2 border-t border-[#ECEEF4]"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return setShowPurchaseCreditsModal(false);
+    },
+    className: "px-4 py-2 border border-[#ECEEF4] text-[#374151] rounded-xl text-xs font-bold hover:bg-gray-50"
+  }, "Cancel"), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      setShowPurchaseCreditsModal(false);
+      showToast("\uD83C\uDF89 Top-up successful! +".concat(selectedCreditTier, " extra credits credited."));
+    },
+    className: "px-5 py-2 bg-[#4F3FE0] hover:bg-[#4335C9] text-white rounded-xl text-xs font-bold shadow-sm"
+  }, "Confirm & Top-up")))), toastMessage && /*#__PURE__*/React.createElement("div", {
+    className: "fixed bottom-6 right-6 bg-[#111827] text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg border border-gray-700 z-50 flex items-center gap-2 animate-bounce"
+  }, /*#__PURE__*/React.createElement("span", null, "\u26A1"), /*#__PURE__*/React.createElement("span", null, toastMessage)));
 }
-ReactDOM.render(/*#__PURE__*/_jsx(MeetingRoomsApp, {}), document.getElementById('root'));
+ReactDOM.render(/*#__PURE__*/React.createElement(MeetingRoomsApp, null), document.getElementById('root'));
 window._nexusHubMounted = true;

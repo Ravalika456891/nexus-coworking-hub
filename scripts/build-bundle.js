@@ -32,7 +32,10 @@ async function build() {
   console.log('Compiling JSX of size:', jsxCode.length);
 
   const output = Babel.transform(jsxCode, {
-    presets: ['react', 'env'],
+    presets: [
+      ['react', { runtime: 'classic' }],
+      ['env', { modules: false }]
+    ],
     filename: 'meeting-rooms.jsx'
   });
 

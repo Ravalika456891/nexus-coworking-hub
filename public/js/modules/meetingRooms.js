@@ -944,7 +944,6 @@ const MeetingRoomsModule = {
         </aside>
 
       </div>
-    `;
       </div>
 
       <!-- Sticky Multi-Select Booking Action Bar -->
