@@ -251,12 +251,12 @@ async function handleApi(req, res, parsedUrl) {
       return sendJson(res, result.ok ? 200 : 400, result);
     }
 
-    if (pathname === '/api/dashboard/summary' && req.method === 'GET') {
-      const role = req.headers['x-user-role'] || searchParams.get('role') || 'incubator_admin';
+    if ((pathname === '/api/dashboard/summary' || pathname === '/api/startup/dashboard-summary') && req.method === 'GET') {
+      const role = req.headers['x-user-role'] || searchParams.get('role') || (pathname.includes('/startup') ? 'startup' : 'incubator_admin');
       const startupId = req.headers['x-startup-id'] || searchParams.get('startupId') || 'STP-XYZ';
       const month = searchParams.get('month');
 
-      if (role === 'startup' || role === 'startup_member') {
+      if (role === 'startup' || role === 'startup_member' || pathname.includes('/startup')) {
         const summary = await db.getStartupDashboardSummary(startupId, month, role);
         return sendJson(res, 200, summary);
       }
