@@ -11,7 +11,10 @@ import {
   Clock,
   Sparkles,
   ExternalLink,
-  Database
+  Database,
+  Bookmark,
+  CalendarDays,
+  UserPlus
 } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
@@ -44,6 +47,21 @@ export default function MeetingRoomsPage() {
 
   const [bookingModalRoom, setBookingModalRoom] = useState<Room | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [dashScheduleTab, setDashScheduleTab] = useState<'today' | 'upcoming'>('today');
+
+  const getGreeting = () => {
+    const hr = new Date().getHours();
+    if (hr < 12) return 'Good morning';
+    if (hr < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
+
+  const DASHBOARD_ACTIVITIES = [
+    { id: 'act-1', time: '12m ago', icon: Calendar, title: 'Room Reservation Confirmed', desc: 'Collaboration Room reserved for Today at 03:00 PM (30 credits)', user: 'Alex Morgan' },
+    { id: 'act-2', time: '1h ago', icon: Users, title: 'Visitor Gate Pass Issued', desc: 'Pass #VP-9021 issued for Kiran Mehta (Apex Ventures)', user: 'David Chen' },
+    { id: 'act-3', time: 'Yesterday', icon: CreditCard, title: 'Monthly Credit Grant Active', desc: '+80 credits added under Growth Startup Package', user: 'System Auto-Credit' },
+    { id: 'act-4', time: '2 days ago', icon: Building, title: 'Smart Lock Keycard Verified', desc: 'Access active for Suite 401 & 24/7 Floor Turnstiles', user: 'Incubation Security' }
+  ];
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -184,219 +202,426 @@ export default function MeetingRoomsPage() {
           {/* ── 1. DASHBOARD VIEW ── */}
           {activeNav === 'Dashboard' && (
             <div className="space-y-6 animate-fadeIn">
+              {/* Top Section: Personalized Welcome & High-Level Pulse */}
               <div className="bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft flex items-center justify-between flex-wrap gap-4">
-                <div>
-                  <h2 className="text-2xl font-black text-[#111827] flex items-center gap-2">
-                    <span>⚡</span> Good evening, Alex!
-                  </h2>
-                  <p className="text-sm text-[#64748B] mt-1">Here's what's happening at XYZ Technologies today.</p>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#4F3FE0] to-[#7B6FF0] text-white flex items-center justify-center font-black text-xl shadow-md shadow-indigo-100 flex-shrink-0">
+                    ⚡
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-black text-[#111827] tracking-tight flex items-center gap-2">
+                      <span>{getGreeting()}, Alex!</span>
+                    </h2>
+                    <p className="text-xs text-[#64748B] mt-1 flex items-center gap-2">
+                      <span>Welcome to the <strong>XYZ Technologies</strong> venture command center.</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      <span className="text-emerald-700 font-bold text-[11px]">24/7 Facility Access Active</span>
+                    </p>
+                  </div>
                 </div>
+
                 <div className="flex items-center gap-3">
-                  <span className="bg-[#F8FAFC] border border-[#ECEEF4] rounded-full px-3.5 py-1.5 text-xs font-bold text-[#334155]">
-                    📅 Fri, 30 Oct 2026
+                  <span className="bg-[#F8FAFC] border border-[#ECEEF4] rounded-full px-3.5 py-1.5 text-xs font-bold text-[#334155] flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-[#4F3FE0]" />
+                    <span>Sat, 31 Oct 2026</span>
                   </span>
                   <span className="bg-[#EEEBFF] border border-[#E3DEFF] rounded-full px-3.5 py-1.5 text-xs font-bold text-[#4F3FE0]">
-                    🚀 Founder Portal
+                    🚀 Batch 2026-A
                   </span>
+                  <button
+                    onClick={() => navigateTo('Meeting Rooms')}
+                    className="bg-[#4F3FE0] hover:bg-[#4335C9] text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-sm flex items-center gap-1.5"
+                  >
+                    <span>+ Reserve Space</span>
+                  </button>
                 </div>
               </div>
 
-              {/* 4 Clean KPI Cards */}
+              {/* Top Section: Four Elevated KPI Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Card 1: Upcoming Meetings */}
                 <div
                   onClick={() => navigateTo('Bookings')}
-                  className="bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft hover:shadow-card hover:-translate-y-1 transition-all cursor-pointer"
+                  className="bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft hover:shadow-card hover:-translate-y-1 transition-all cursor-pointer group"
                 >
                   <div className="flex items-center justify-between text-[#8A90A2]">
-                    <span className="text-xs font-bold uppercase tracking-wider">Upcoming Meetings</span>
-                    <div className="w-9 h-9 rounded-xl bg-purple-50 text-[#6E42E5] flex items-center justify-center">
+                    <span className="text-xs font-bold uppercase tracking-wider text-[#64748B]">Upcoming Meetings</span>
+                    <div className="w-9 h-9 rounded-xl bg-purple-50 text-[#6E42E5] flex items-center justify-center group-hover:scale-105 transition-transform">
                       <Calendar className="w-5 h-5 text-[#6E42E5]" />
                     </div>
                   </div>
-                  <div className="text-3xl font-black text-[#111827] mt-3">{upcomingBookings.length}</div>
-                  <div className="flex items-center justify-between text-xs text-[#8A90A2] mt-2 pt-2 border-t border-[#ECEEF4]">
-                    <span>Today at 03:00 PM</span>
-                    <span className="text-[#4F3FE0] font-bold">My Bookings &rarr;</span>
+                  <div className="text-3xl font-black text-[#111827] mt-3">
+                    {upcomingBookings.length}
+                    <span className="text-xs font-bold text-emerald-600 ml-2 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                      100% Confirmed
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-[#8A90A2] mt-3 pt-3 border-t border-[#ECEEF4]">
+                    <span className="text-[#374151] font-medium">Next: Today at 03:00 PM</span>
+                    <span className="text-[#4F3FE0] font-bold group-hover:translate-x-0.5 transition-transform">View &rarr;</span>
                   </div>
                 </div>
 
+                {/* Card 2: Available Rooms */}
                 <div
                   onClick={() => navigateTo('Meeting Rooms')}
-                  className="bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft hover:shadow-card hover:-translate-y-1 transition-all cursor-pointer"
+                  className="bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft hover:shadow-card hover:-translate-y-1 transition-all cursor-pointer group"
                 >
                   <div className="flex items-center justify-between text-[#8A90A2]">
-                    <span className="text-xs font-bold uppercase tracking-wider">Available Rooms</span>
-                    <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                    <span className="text-xs font-bold uppercase tracking-wider text-[#64748B]">Available Rooms</span>
+                    <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-105 transition-transform">
                       <Building className="w-5 h-5 text-emerald-600" />
                     </div>
                   </div>
                   <div className="text-3xl font-black text-[#059669] mt-3">
                     5 <span className="text-base text-[#8A90A2] font-semibold">/ 6</span>
+                    <span className="text-xs font-bold text-[#059669] ml-2 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                      83% Ready
+                    </span>
                   </div>
-                  <div className="flex items-center justify-between text-xs text-[#8A90A2] mt-2 pt-2 border-t border-[#ECEEF4]">
-                    <span>Open right now</span>
-                    <span className="text-[#4F3FE0] font-bold">Book Room &rarr;</span>
+                  <div className="flex items-center justify-between text-xs text-[#8A90A2] mt-3 pt-3 border-t border-[#ECEEF4]">
+                    <span className="text-[#374151] font-medium">Alpha, Focus &amp; Studio</span>
+                    <span className="text-[#4F3FE0] font-bold group-hover:translate-x-0.5 transition-transform">Book &rarr;</span>
                   </div>
                 </div>
 
+                {/* Card 3: Remaining Credits */}
                 <div
                   onClick={() => navigateTo('Billing & Credits')}
-                  className="bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft hover:shadow-card hover:-translate-y-1 transition-all cursor-pointer"
+                  className="bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft hover:shadow-card hover:-translate-y-1 transition-all cursor-pointer group"
                 >
                   <div className="flex items-center justify-between text-[#8A90A2]">
-                    <span className="text-xs font-bold uppercase tracking-wider">Remaining Credits</span>
-                    <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                    <span className="text-xs font-bold uppercase tracking-wider text-[#64748B]">Remaining Credits</span>
+                    <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-105 transition-transform">
                       <CreditCard className="w-5 h-5 text-blue-600" />
                     </div>
                   </div>
                   <div className="text-3xl font-black text-[#2563eb] mt-3">
-                    80 <span className="text-sm font-semibold text-[#8A90A2]">credits</span>
+                    80 <span className="text-sm font-semibold text-[#8A90A2]">/ 120 cr</span>
                   </div>
-                  <div className="flex items-center justify-between text-xs text-[#8A90A2] mt-2 pt-2 border-t border-[#ECEEF4]">
-                    <span>66% quota left</span>
-                    <span className="text-[#4F3FE0] font-bold">Billing &rarr;</span>
+                  <div className="w-full bg-[#ECEEF4] rounded-full h-1.5 mt-2 overflow-hidden">
+                    <div className="bg-[#4F3FE0] h-full rounded-full" style={{ width: '66%' }}></div>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-[#8A90A2] mt-3 pt-2 border-t border-[#ECEEF4]">
+                    <span className="text-[#374151] font-medium">Renews in 24 hours</span>
+                    <span className="text-[#4F3FE0] font-bold group-hover:translate-x-0.5 transition-transform">Top Up &rarr;</span>
                   </div>
                 </div>
 
+                {/* Card 4: Workspace Desks */}
                 <div
-                  onClick={() => navigateTo('Bookings')}
-                  className="bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft hover:shadow-card hover:-translate-y-1 transition-all cursor-pointer"
+                  onClick={() => navigateTo('Workspace & Desks')}
+                  className="bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft hover:shadow-card hover:-translate-y-1 transition-all cursor-pointer group"
                 >
                   <div className="flex items-center justify-between text-[#8A90A2]">
-                    <span className="text-xs font-bold uppercase tracking-wider">Pending Requests</span>
-                    <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
-                      <Clock className="w-5 h-5 text-amber-600" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-[#64748B]">Workspace &amp; Team</span>
+                    <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-105 transition-transform">
+                      <Users className="w-5 h-5 text-amber-600" />
                     </div>
                   </div>
-                  <div className="text-3xl font-black text-[#111827] mt-3">0</div>
-                  <div className="flex items-center justify-between text-xs text-[#8A90A2] mt-2 pt-2 border-t border-[#ECEEF4]">
-                    <span>All approved ✓</span>
-                    <span className="text-[#4F3FE0] font-bold">Review &rarr;</span>
+                  <div className="text-3xl font-black text-[#111827] mt-3">
+                    6 <span className="text-sm font-semibold text-[#8A90A2]">desks</span>
+                    <span className="text-xs font-bold text-[#4F3FE0] ml-2 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200">
+                      Suite 401
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-[#8A90A2] mt-3 pt-3 border-t border-[#ECEEF4]">
+                    <span className="text-[#374151] font-medium">8 Team Members Active</span>
+                    <span className="text-[#4F3FE0] font-bold group-hover:translate-x-0.5 transition-transform">Desks &rarr;</span>
                   </div>
                 </div>
               </div>
 
-              {/* Middle Grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="space-y-6">
-                  <div className="bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft">
-                    <h4 className="text-sm font-black text-[#111827] mb-3">⚡ Quick Actions</h4>
-                    <div className="grid grid-cols-2 gap-3">
+              {/* Main Section: Quick Actions, Facilities Overview & Today's Schedule */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                {/* Left Column (7 cols): Quick Actions & Facilities Overview */}
+                <div className="lg:col-span-7 space-y-6">
+                  {/* Quick Actions Container */}
+                  <div className="bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h4 className="text-sm font-black text-[#111827] flex items-center gap-2">
+                          <span>⚡</span> Quick Launchpad
+                        </h4>
+                        <p className="text-xs text-[#8A90A2] mt-0.5">Instant one-click shortcuts to key operational workflows</p>
+                      </div>
+                      <span className="text-[11px] font-bold text-[#64748B] bg-[#F8FAFC] px-2.5 py-1 rounded-full border border-[#ECEEF4]">
+                        Shortcuts
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       <button
                         type="button"
                         onClick={() => navigateTo('Meeting Rooms')}
-                        className="flex items-center gap-3 p-3 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#F3EFFE] transition-all text-left"
+                        className="flex flex-col items-center justify-center p-3.5 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#F3EFFE] hover:border-[#6E42E5]/40 transition-all text-center group"
                       >
-                        <span className="w-9 h-9 rounded-xl bg-purple-50 text-[#6E42E5] flex items-center justify-center">📅</span>
-                        <div>
-                          <div className="text-xs font-bold text-[#111827]">Book a Room</div>
-                          <div className="text-[10.5px] text-[#8A90A2]">Conference &amp; Pods</div>
-                        </div>
+                        <span className="w-10 h-10 rounded-xl bg-purple-50 text-[#6E42E5] flex items-center justify-center group-hover:scale-110 transition-transform mb-2">
+                          <Calendar className="w-5 h-5 text-[#6E42E5]" />
+                        </span>
+                        <span className="text-xs font-bold text-[#111827]">Book Room</span>
+                        <span className="text-[10px] text-[#8A90A2] mt-0.5">6 Facilities</span>
                       </button>
 
                       <button
                         type="button"
                         onClick={() => navigateTo('Bookings')}
-                        className="flex items-center gap-3 p-3 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#EEF5FF] transition-all text-left"
+                        className="flex flex-col items-center justify-center p-3.5 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#EEF5FF] hover:border-[#2B71FF]/40 transition-all text-center group"
                       >
-                        <span className="w-9 h-9 rounded-xl bg-blue-50 text-[#2B71FF] flex items-center justify-center">📑</span>
-                        <div>
-                          <div className="text-xs font-bold text-[#111827]">My Bookings</div>
-                          <div className="text-[10.5px] text-[#8A90A2]">Active Reservations</div>
-                        </div>
+                        <span className="w-10 h-10 rounded-xl bg-blue-50 text-[#2B71FF] flex items-center justify-center group-hover:scale-110 transition-transform mb-2">
+                          <Bookmark className="w-5 h-5 text-[#2B71FF]" />
+                        </span>
+                        <span className="text-xs font-bold text-[#111827]">My Bookings</span>
+                        <span className="text-[10px] text-[#8A90A2] mt-0.5">3 Active</span>
                       </button>
 
                       <button
                         type="button"
                         onClick={() => navigateTo('Calendar')}
-                        className="flex items-center gap-3 p-3 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#EEFAF3] transition-all text-left"
+                        className="flex flex-col items-center justify-center p-3.5 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#EEFAF3] hover:border-[#12A150]/40 transition-all text-center group"
                       >
-                        <span className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">📆</span>
-                        <div>
-                          <div className="text-xs font-bold text-[#111827]">Open Calendar</div>
-                          <div className="text-[10.5px] text-[#8A90A2]">Schedule Timeline</div>
-                        </div>
+                        <span className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform mb-2">
+                          <CalendarDays className="w-5 h-5 text-emerald-600" />
+                        </span>
+                        <span className="text-xs font-bold text-[#111827]">Calendar</span>
+                        <span className="text-[10px] text-[#8A90A2] mt-0.5">Full Grid</span>
                       </button>
 
                       <button
                         type="button"
                         onClick={() => navigateTo('Visitors')}
-                        className="flex items-center gap-3 p-3 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#FFF5EC] transition-all text-left"
+                        className="flex flex-col items-center justify-center p-3.5 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#FFF5EC] hover:border-[#F36B20]/40 transition-all text-center group"
                       >
-                        <span className="w-9 h-9 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center">👥</span>
-                        <div>
-                          <div className="text-xs font-bold text-[#111827]">Invite Guests</div>
-                          <div className="text-[10.5px] text-[#8A90A2]">Visitor Gate Pass</div>
-                        </div>
+                        <span className="w-10 h-10 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center group-hover:scale-110 transition-transform mb-2">
+                          <UserPlus className="w-5 h-5 text-orange-600" />
+                        </span>
+                        <span className="text-xs font-bold text-[#111827]">Guest Pass</span>
+                        <span className="text-[10px] text-[#8A90A2] mt-0.5">Invite Visitors</span>
                       </button>
                     </div>
                   </div>
 
-                  <div className="bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="text-sm font-black text-[#111827]">🏢 Venture Facilities Overview</h4>
-                      <span className="text-xs font-bold text-[#4F3FE0] cursor-pointer" onClick={() => navigateTo('Workspace & Desks')}>
-                        Pod #4 &rarr;
+                  {/* Venture Facilities & Office Suite Overview */}
+                  <div className="bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h4 className="text-sm font-black text-[#111827] flex items-center gap-2">
+                          <span>🏢</span> Venture Facilities &amp; Lease Overview
+                        </h4>
+                        <p className="text-xs text-[#8A90A2] mt-0.5">Assigned physical space and operational amenities</p>
+                      </div>
+                      <span
+                        onClick={() => navigateTo('Workspace & Desks')}
+                        className="text-xs font-bold text-[#4F3FE0] hover:underline cursor-pointer"
+                      >
+                        Manage Space &rarr;
                       </span>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="p-3 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl">
-                        <span className="text-[10.5px] font-bold text-[#8A90A2] uppercase">Active Team</span>
-                        <div className="text-base font-black text-[#111827] mt-0.5">8 Members</div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div className="p-3.5 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl">
+                        <span className="text-[10px] font-bold text-[#8A90A2] uppercase tracking-wider">Office Suite</span>
+                        <div className="text-sm font-black text-[#111827] mt-1">Suite 401</div>
+                        <span className="text-[11px] text-[#64748B] block mt-0.5">Floor 4 (Executive Wing)</span>
                       </div>
-                      <div className="p-3 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl">
-                        <span className="text-[10.5px] font-bold text-[#8A90A2] uppercase">Assigned Space</span>
-                        <div className="text-base font-black text-[#111827] mt-0.5">Pod #4 (6 Desks)</div>
+
+                      <div className="p-3.5 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl">
+                        <span className="text-[10px] font-bold text-[#8A90A2] uppercase tracking-wider">Desks &amp; Seats</span>
+                        <div className="text-sm font-black text-[#111827] mt-1">6 Dedicated</div>
+                        <span className="text-[11px] text-[#64748B] block mt-0.5">8 Keycards issued</span>
                       </div>
-                      <div className="p-3 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl">
-                        <span className="text-[10.5px] font-bold text-[#8A90A2] uppercase">Invoices Due</span>
-                        <div className="text-base font-black text-emerald-600 mt-0.5">All Settled ✓</div>
+
+                      <div className="p-3.5 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl">
+                        <span className="text-[10px] font-bold text-[#8A90A2] uppercase tracking-wider">Lease Billing</span>
+                        <div className="text-sm font-black text-emerald-600 mt-1">$2,400 / mo</div>
+                        <span className="text-[11px] text-emerald-700 font-semibold block mt-0.5">Settled &amp; Current ✓</span>
                       </div>
-                      <div className="p-3 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl">
-                        <span className="text-[10.5px] font-bold text-[#8A90A2] uppercase">Next Milestone</span>
-                        <div className="text-sm font-black text-[#4F3FE0] mt-0.5">Beta Prototype (Nov 15)</div>
+
+                      <div className="p-3.5 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl">
+                        <span className="text-[10px] font-bold text-[#8A90A2] uppercase tracking-wider">Wi-Fi &amp; Access</span>
+                        <div className="text-sm font-black text-[#4F3FE0] mt-1">1 Gbps Fiber</div>
+                        <span className="text-[11px] text-[#64748B] block mt-0.5">24/7 RFID Smart Lock</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft flex flex-col justify-between">
+                {/* Right Column (5 cols): Today's Schedule Live Interactive Widget */}
+                <div className="lg:col-span-5 bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between mb-4">
                       <div>
-                        <h4 className="text-sm font-black text-[#111827]">🗓️ Today's Schedule</h4>
-                        <p className="text-xs text-[#8A90A2] mt-0.5">Chronological room allocations</p>
+                        <h4 className="text-sm font-black text-[#111827] flex items-center gap-2">
+                          <span>🗓️</span> Schedule &amp; Bookings
+                        </h4>
+                        <p className="text-xs text-[#8A90A2] mt-0.5">Chronological reservation timeline</p>
                       </div>
-                      <button onClick={() => navigateTo('Calendar')} className="text-xs font-bold text-[#4F3FE0] hover:underline">
-                        Open Calendar &rarr;
-                      </button>
+                      {/* Segmented Tab Switcher */}
+                      <div className="flex items-center p-1 bg-[#F6F7FB] border border-[#ECEEF4] rounded-xl">
+                        <button
+                          onClick={() => setDashScheduleTab('today')}
+                          className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                            dashScheduleTab === 'today'
+                              ? 'bg-white text-[#4F3FE0] shadow-xs'
+                              : 'text-[#8A90A2] hover:text-[#111827]'
+                          }`}
+                        >
+                          Today ({todaysSchedule.length})
+                        </button>
+                        <button
+                          onClick={() => setDashScheduleTab('upcoming')}
+                          className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                            dashScheduleTab === 'upcoming'
+                              ? 'bg-white text-[#4F3FE0] shadow-xs'
+                              : 'text-[#8A90A2] hover:text-[#111827]'
+                          }`}
+                        >
+                          Upcoming ({upcomingBookings.length})
+                        </button>
+                      </div>
                     </div>
 
+                    {/* List Items */}
                     <div className="space-y-3">
-                      {todaysSchedule.map((item, idx) => (
-                        <div key={idx} className="flex items-center gap-3 p-3 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl">
-                          <div className="w-[84px] text-[11px] font-bold text-[#64748B] flex-shrink-0">{item.time}</div>
-                          <div className="w-1.5 h-8 rounded-full bg-[#4F3FE0] flex-shrink-0" />
-                          <div className="flex-1 truncate">
-                            <div className="text-xs font-bold text-[#111827] truncate">{item.title}</div>
-                            <div className="text-[11px] text-[#8A90A2]">{item.room} • 👥 {item.attendees} pax</div>
+                      {dashScheduleTab === 'today' ? (
+                        todaysSchedule.map((item, idx) => (
+                          <div
+                            key={idx}
+                            className="flex items-center gap-3 p-3.5 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl hover:border-[#4F3FE0]/30 transition-colors"
+                          >
+                            <div className="w-[84px] text-[11px] font-bold text-[#64748B] flex-shrink-0">
+                              {item.time.split('–')[0].trim()}
+                            </div>
+                            <div className="w-1.5 h-8 rounded-full bg-[#4F3FE0] flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <div className="text-xs font-bold text-[#111827] truncate">{item.title}</div>
+                              <div className="text-[11px] text-[#8A90A2] truncate">
+                                {item.room} • 👥 {item.attendees} pax
+                              </div>
+                            </div>
+                            <span className="bg-emerald-50 text-emerald-600 border border-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0">
+                              Confirmed
+                            </span>
                           </div>
-                          <span className="bg-emerald-50 text-emerald-600 border border-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                            Confirmed
-                          </span>
-                        </div>
-                      ))}
+                        ))
+                      ) : (
+                        upcomingBookings.map((bkg) => (
+                          <div
+                            key={bkg.id}
+                            className="flex items-center gap-3 p-3.5 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl hover:border-[#4F3FE0]/30 transition-colors"
+                          >
+                            <div className="w-[84px] text-[11px] font-bold text-[#64748B] flex-shrink-0">
+                              {bkg.date} • {bkg.time}
+                            </div>
+                            <div className="w-1.5 h-8 rounded-full bg-emerald-500 flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <div className="text-xs font-bold text-[#111827] truncate">{bkg.title}</div>
+                              <div className="text-[11px] text-[#8A90A2] truncate">
+                                {bkg.room} • 👥 {bkg.attendees} pax
+                              </div>
+                            </div>
+                            <span className="bg-blue-50 text-blue-600 border border-blue-200 text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0">
+                              {bkg.status}
+                            </span>
+                          </div>
+                        ))
+                      )}
                     </div>
                   </div>
 
-                  <div className="mt-4 pt-3 border-t border-[#ECEEF4] flex items-center justify-between text-xs text-[#64748B]">
-                    <span>Need to book a new slot?</span>
+                  <div className="mt-5 pt-4 border-t border-[#ECEEF4] flex items-center justify-between text-xs text-[#64748B]">
+                    <span>Need a private room right now?</span>
                     <button
                       onClick={() => navigateTo('Meeting Rooms')}
-                      className="bg-[#4F3FE0] text-white px-3.5 py-1.5 rounded-lg text-xs font-bold hover:bg-[#4335C9]"
+                      className="bg-[#4F3FE0] text-white px-3.5 py-1.5 rounded-xl text-xs font-bold hover:bg-[#4335C9] transition-all"
                     >
                       + Reserve Space
                     </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Secondary Section: Recent Activity & Incubation Milestones */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                {/* Left: Recent Activity Feed (7 cols) */}
+                <div className="lg:col-span-7 bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-[#ECEEF4]">
+                    <div>
+                      <h4 className="text-sm font-black text-[#111827] flex items-center gap-2">
+                        <span>🕒</span> Recent Venture Activity
+                      </h4>
+                      <p className="text-xs text-[#8A90A2] mt-0.5">Audit log of room bookings, credit updates, and team actions</p>
+                    </div>
+                    <span className="text-[11px] font-bold text-[#4F3FE0] cursor-pointer" onClick={() => navigateTo('Analytics')}>
+                      Full Audit Log &rarr;
+                    </span>
+                  </div>
+
+                  <div className="divide-y divide-[#ECEEF4]">
+                    {DASHBOARD_ACTIVITIES.map((act) => {
+                      const IconComponent = act.icon;
+                      return (
+                        <div key={act.id} className="py-3 flex items-start justify-between gap-3 first:pt-1 last:pb-1">
+                          <div className="flex items-start gap-3">
+                            <div className="w-8 h-8 rounded-xl bg-[#F6F7FB] border border-[#ECEEF4] flex items-center justify-center text-[#4F3FE0] flex-shrink-0 mt-0.5">
+                              <IconComponent className="w-4 h-4 text-[#4F3FE0]" />
+                            </div>
+                            <div>
+                              <div className="text-xs font-bold text-[#111827]">{act.title}</div>
+                              <div className="text-[11px] text-[#64748B] mt-0.5">{act.desc}</div>
+                              <div className="text-[10px] text-[#8A90A2] mt-1 font-medium">By: {act.user}</div>
+                            </div>
+                          </div>
+                          <span className="text-[11px] font-semibold text-[#8A90A2] whitespace-nowrap bg-[#F8FAFC] px-2 py-0.5 rounded-md border border-[#ECEEF4]">
+                            {act.time}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Right: Milestones & Facility Advisory (5 cols) */}
+                <div className="lg:col-span-5 space-y-6">
+                  {/* Milestone Card */}
+                  <div className="bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft space-y-4">
+                    <div className="flex items-center justify-between pb-3 border-b border-[#ECEEF4]">
+                      <div>
+                        <h4 className="text-sm font-black text-[#111827] flex items-center gap-2">
+                          <span>🎯</span> Incubation Milestone
+                        </h4>
+                        <p className="text-xs text-[#8A90A2] mt-0.5">Next milestone evaluation target</p>
+                      </div>
+                      <span className="bg-indigo-50 text-[#4F3FE0] font-bold text-[10.5px] px-2.5 py-0.5 rounded-full border border-indigo-200">
+                        15 Days Left
+                      </span>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-extrabold text-[#111827]">Q4 Venture Demo Day Readiness</span>
+                        <span className="font-black text-[#4F3FE0]">75%</span>
+                      </div>
+                      <div className="w-full bg-[#F1F3F9] rounded-full h-2 mt-2 overflow-hidden">
+                        <div className="bg-gradient-to-r from-[#4F3FE0] to-[#7B6FF0] h-full rounded-full" style={{ width: '75%' }}></div>
+                      </div>
+                      <p className="text-[11px] text-[#64748B] mt-2">
+                        Pitch deck draft submitted. Pitch Arena practice session scheduled for Nov 10, 2026.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Facility Operational Notice */}
+                  <div className="bg-amber-50/60 border border-amber-200/80 rounded-2xl p-5 shadow-soft">
+                    <div className="flex items-start gap-3">
+                      <span className="text-lg">📢</span>
+                      <div>
+                        <h5 className="text-xs font-black text-amber-900">Facility Maintenance Advisory</h5>
+                        <p className="text-[11px] text-amber-800 mt-1 leading-relaxed">
+                          Routine fiber network optimization will take place on Sunday between 02:00 AM – 03:30 AM IST. Backup 5G links will remain active with no downtime anticipated.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
