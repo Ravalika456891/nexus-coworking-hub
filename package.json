@@ -4,7 +4,7 @@
   "description": "Full lifecycle Co-Working & Startup Incubation Management System",
   "main": "server.js",
   "scripts": {
-    "build": "next build",
+    "build": "node scripts/sync-public.js && next build",
     "start": "node server.js",
     "dev": "node server.js",
     "server": "node server.js",
