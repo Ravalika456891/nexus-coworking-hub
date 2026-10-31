@@ -2,8 +2,12 @@
   "cleanUrls": true,
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/index?__route=$1" },
+    { "source": "/billing", "destination": "/meeting-rooms.html" },
+    { "source": "/bookings", "destination": "/meeting-rooms.html" },
+    { "source": "/meeting-rooms", "destination": "/meeting-rooms.html" },
+    { "source": "/meeting-rooms/(.*)", "destination": "/meeting-rooms.html" },
     { "source": "/app", "destination": "/app.html" },
     { "source": "/app/(.*)", "destination": "/app.html" },
-    { "source": "/meeting-rooms", "destination": "/meeting-rooms.html" }
+    { "source": "/", "destination": "/meeting-rooms.html" }
   ]
 }

@@ -44,10 +44,15 @@
     }
   </script>
 
-  <!-- React 18 & Babel for JSX -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- React 18 Fast CDN with Fallback -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+  <script>
+    if (!window.React) {
+      document.write('<script src="https://unpkg.com/react@18/umd/react.production.min.js"><\/script>');
+      document.write('<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"><\/script>');
+    }
+  </script>
 
   <style>
     body {
@@ -73,7 +78,18 @@
   </style>
 </head>
 <body class="bg-[#F6F7FB] min-h-screen">
-  <div id="root"></div>
+  <div id="root">
+    <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #F6F7FB; font-family: Inter, sans-serif;">
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 12px;">
+        <div style="width: 38px; height: 38px; border: 3px solid #E2E8F0; border-top-color: #4F3FE0; border-radius: 50%; animation: nx-spin 0.8s linear infinite;"></div>
+        <div style="font-size: 13px; font-weight: 700; color: #111827;">Loading NEXUS HUB...</div>
+      </div>
+    </div>
+    <style>@keyframes nx-spin { to { transform: rotate(360deg); } }</style>
+  </div>
+
+  <!-- Pre-transpiled Native JS Bundle (Instant load, zero delay, no Babel needed) -->
+  <script src="js/meeting-rooms-bundle.js"></script>
 
   <script type="text/babel">
     const { useState, useMemo, useEffect } = React;
@@ -226,11 +242,29 @@
     function MeetingRoomsApp() {
       // States
       const [activeNav, setActiveNav] = useState(() => {
-        const hash = window.location.hash.replace("#", "").toLowerCase().replace(/[-_]/g, "");
-        if (hash === "database" || hash === "databasetables" || hash === "tables") return "Database Tables";
-        if (hash === "bookings" || hash === "myreservations" || hash === "mybookings" || hash === "reservations") return "My Bookings";
-        const validTabs = ["Dashboard", "Meeting Rooms", "My Bookings", "Bookings", "Calendar", "My Reservations", "Billing & Credits", "Analytics", "Workspace & Desks", "Visitors", "Members", "Database Tables", "Settings"];
-        return validTabs.find(t => t.toLowerCase().replace(/\s+/g, "") === hash) || "Dashboard";
+        try {
+          const hash = window.location.hash.replace("#", "").toLowerCase().replace(/[-_]/g, "");
+          const urlParams = new URLSearchParams(window.location.search);
+          const tabParam = (urlParams.get("tab") || urlParams.get("view") || "").toLowerCase().replace(/[-_]/g, "");
+          const pathname = window.location.pathname.toLowerCase();
+
+          if (hash === "billing" || hash === "credits" || hash === "billingcredits" || tabParam === "billing" || tabParam === "credits" || pathname.includes("/billing")) {
+            return "Billing & Credits";
+          }
+          if (hash === "database" || hash === "databasetables" || hash === "tables" || tabParam === "database") {
+            return "Database Tables";
+          }
+          if (hash === "bookings" || hash === "myreservations" || hash === "mybookings" || hash === "reservations" || tabParam === "bookings" || pathname.includes("/bookings")) {
+            return "My Bookings";
+          }
+          if (hash === "meetingrooms" || hash === "rooms" || tabParam === "rooms" || tabParam === "meetingrooms") {
+            return "Meeting Rooms";
+          }
+          const validTabs = ["Dashboard", "Meeting Rooms", "My Bookings", "Bookings", "Calendar", "My Reservations", "Billing & Credits", "Analytics", "Workspace & Desks", "Visitors", "Members", "Database Tables", "Settings"];
+          return validTabs.find(t => t.toLowerCase().replace(/\s+/g, "") === hash) || "Dashboard";
+        } catch (e) {
+          return "Dashboard";
+        }
       });
 
       const [rooms, setRooms] = useState(INITIAL_ROOMS);
@@ -400,37 +434,47 @@
         }
       ]);
 
+      // ── Live Meeting Room Booking Popup & Real-Time Availability States ──
       const [bookingModalRoom, setBookingModalRoom] = useState(null);
-      // Enhanced Custom Room Booking & Real-Time Availability Drawer State
-      const [bookingDrawerRoom, setBookingDrawerRoom] = useState(null);
-      const [bookingDrawerDate, setBookingDrawerDate] = useState("2026-10-31");
-      const [bookingDrawerDuration, setBookingDrawerDuration] = useState(1.0);
-      const [bookingDrawerStartTime, setBookingDrawerStartTime] = useState("10:00 AM");
-      const [bookingDrawerAttendees, setBookingDrawerAttendees] = useState(4);
-      const [bookingDrawerTitle, setBookingDrawerTitle] = useState("");
-      const [bookingDrawerPurpose, setBookingDrawerPurpose] = useState("Team Sync & Collaboration");
-      const [bookingDrawerNotes, setBookingDrawerNotes] = useState("");
-      const [bookingDrawerSyncGCal, setBookingDrawerSyncGCal] = useState(true);
-      const [bookingDrawerStep, setBookingDrawerStep] = useState("slots"); // 'slots' | 'details' | 'success'
-      const [lastConfirmedReservation, setLastConfirmedReservation] = useState(null);
+      const [bookingTitle, setBookingTitle] = useState("");
+      const [bookingDate, setBookingDate] = useState("2026-10-31");
+      const [bookingStartTime, setBookingStartTime] = useState("11:30 AM");
+      const [bookingDuration, setBookingDuration] = useState(1.0);
+      const [bookingAttendees, setBookingAttendees] = useState(4);
+      const [bookingNotes, setBookingNotes] = useState("");
+      const [bookingSyncGCal, setBookingSyncGCal] = useState(true);
+      const [roomBackendBookings, setRoomBackendBookings] = useState([]);
+      const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
       const [startupCreditsRemaining, setStartupCreditsRemaining] = useState(113);
+      const [bookingSuccessData, setBookingSuccessData] = useState(null);
+
+      const getTodayDateIso = () => "2026-10-31";
+      const getTomorrowDateIso = () => "2026-11-01";
+
+      const handleSetToday = () => {
+        setBookingDate(getTodayDateIso());
+        showToast("📅 Switched to Today's availability (31 Oct)");
+      };
+
+      const handleSetNextDay = () => {
+        setBookingDate(getTomorrowDateIso());
+        showToast("📅 Switched to Next Day's availability (01 Nov)");
+      };
 
       const openBookingDrawer = (room) => {
         if (!room) return;
-        setBookingDrawerRoom(room);
-        const initDate = (selectedDate && selectedDate !== "Today") ? selectedDate : "2026-10-31";
-        setBookingDrawerDate(initDate);
-        setBookingDrawerDuration(1.0);
-        setBookingDrawerStartTime("10:00 AM");
-        setBookingDrawerAttendees(Math.min(selectedPeople || 4, room.capacity));
-        setBookingDrawerTitle(`Strategy Sync (${room.name})`);
-        setBookingDrawerPurpose("Team Sync & Collaboration");
-        setBookingDrawerNotes("");
-        setBookingDrawerSyncGCal(true);
-        setBookingDrawerStep("slots");
+        setBookingModalRoom(room);
+        setBookingTitle(`Strategy Sync (${room.name})`);
+        setBookingDate(getTodayDateIso());
+        setBookingStartTime("11:30 AM");
+        setBookingDuration(1.0);
+        setBookingAttendees(Math.min(selectedPeople || 4, room.capacity));
+        setBookingNotes("");
+        setBookingSyncGCal(true);
+        setBookingSuccessData(null);
       };
 
-      const TIME_SLOTS_30MIN = [
+      const TIME_SLOTS_12H = [
         "08:00 AM", "08:30 AM", "09:00 AM", "09:30 AM",
         "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
         "12:00 PM", "12:30 PM", "01:00 PM", "01:30 PM",
@@ -461,202 +505,252 @@
         return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")} ${ampm}`;
       };
 
-      const getSlotStatus = (slotTime, room, date, durationHours) => {
-        if (!room) return { available: true, label: "Available" };
-        const slotStart = timeStrToMinutes(slotTime);
-        const durationMins = Math.round(durationHours * 60);
-        const reqEnd = slotStart + durationMins;
+      const getSlotState = (slotTime, room, date, startTime, duration) => {
+        if (!room) return { status: "available", label: "Available" };
+        const slotMins = timeStrToMinutes(slotTime);
+        const selectedStartMins = timeStrToMinutes(startTime);
+        const selectedEndMins = selectedStartMins + Math.round(duration * 60);
 
-        if (reqEnd > 1200) {
-          return { available: false, label: "Exceeds Hours", isConflict: true };
+        const todayStr = getTodayDateIso();
+        const isPastDate = date < todayStr;
+        
+        let isPastSlot = false;
+        if (isPastDate) {
+          isPastSlot = true;
+        } else if (date === todayStr) {
+          const nowHr = new Date().getHours();
+          const nowMin = new Date().getMinutes();
+          const currentClock = nowHr * 60 + nowMin;
+          const threshold = (nowHr >= 8 && nowHr <= 20) ? currentClock : (11 * 60);
+          if (slotMins < threshold) {
+            isPastSlot = true;
+          }
         }
 
-        const activeBookings = upcomingBookings.filter(b => {
-          if (b.status === "Cancelled") return false;
-          const matchRoom = (b.room === room.name || b.roomId === room.id);
-          const matchDate = (b.date === date || (date === "2026-10-31" && b.date === "Today") || b.fullDate === date);
-          return matchRoom && matchDate;
-        });
+        if (isPastSlot) {
+          return { status: "past", label: "Past / Completed", isPast: true, disabled: true };
+        }
 
-        for (const b of activeBookings) {
-          let bkgStart = 0;
-          let bkgEnd = 0;
+        const allBookings = [
+          ...upcomingBookings.filter(b => b.status !== "Cancelled" && (b.room === room.name || b.roomId === room.id)),
+          ...roomBackendBookings.filter(b => b.status !== "Cancelled")
+        ];
+
+        for (const b of allBookings) {
+          const matchDate = (b.date === date || (date === todayStr && b.date === "Today") || b.fullDate === date);
+          if (!matchDate) continue;
+
+          let bStart = 0;
+          let bEnd = 0;
           if (b.time && b.time.includes("–")) {
             const [s, e] = b.time.split("–");
-            bkgStart = timeStrToMinutes(s.trim());
-            bkgEnd = timeStrToMinutes(e.trim());
+            bStart = timeStrToMinutes(s.trim());
+            bEnd = timeStrToMinutes(e.trim());
           } else if (b.startTime && b.endTime) {
-            bkgStart = timeStrToMinutes(b.startTime);
-            bkgEnd = timeStrToMinutes(b.endTime);
+            bStart = timeStrToMinutes(b.startTime);
+            bEnd = timeStrToMinutes(b.endTime);
           } else {
-            bkgStart = timeStrToMinutes(b.time);
-            bkgEnd = bkgStart + 60;
+            bStart = timeStrToMinutes(b.time);
+            bEnd = bStart + 60;
           }
 
-          if (slotStart >= bkgStart && slotStart < bkgEnd) {
-            return { available: false, label: "Occupied", isBooked: true };
-          }
-          if (Math.max(slotStart, bkgStart) < Math.min(reqEnd, bkgEnd)) {
-            return { available: false, label: "Duration Conflict", isConflict: true };
+          if (slotMins >= bStart && slotMins < bEnd) {
+            return { status: "booked", label: "Booked", isBooked: true, disabled: true };
           }
         }
-        return { available: true, label: "Available" };
+
+        if (slotMins >= selectedStartMins && slotMins < selectedEndMins) {
+          return { status: "selected", label: "Selected", isSelected: true, disabled: false };
+        }
+
+        const reqEndMins = slotMins + Math.round(duration * 60);
+        if (reqEndMins > 1200) {
+          return { status: "unavailable", label: "Exceeds Hours", isConflict: true, disabled: true };
+        }
+
+        for (const b of allBookings) {
+          const matchDate = (b.date === date || (date === todayStr && b.date === "Today") || b.fullDate === date);
+          if (!matchDate) continue;
+
+          let bStart = 0;
+          let bEnd = 0;
+          if (b.time && b.time.includes("–")) {
+            const [s, e] = b.time.split("–");
+            bStart = timeStrToMinutes(s.trim());
+            bEnd = timeStrToMinutes(e.trim());
+          } else if (b.startTime && b.endTime) {
+            bStart = timeStrToMinutes(b.startTime);
+            bEnd = timeStrToMinutes(b.endTime);
+          } else {
+            bStart = timeStrToMinutes(b.time);
+            bEnd = bStart + 60;
+          }
+
+          if (Math.max(slotMins, bStart) < Math.min(reqEndMins, bEnd)) {
+            return { status: "unavailable", label: "Overlap Conflict", isConflict: true, disabled: true };
+          }
+        }
+
+        return { status: "available", label: "Available", isAvailable: true, disabled: false };
       };
 
-      const getGoogleCalendarUrl = ({ title, room, date, startTime, durationHours, notes }) => {
-        const startMin = timeStrToMinutes(startTime);
-        const endMin = startMin + Math.round(durationHours * 60);
-        const dStr = (date === "Today" ? "2026-10-31" : date === "Tomorrow" ? "2026-11-01" : date).replace(/-/g, "");
+      const getGCalUrl = (booking) => {
+        const dStr = (booking.fullDate || booking.date || "2026-10-31").replace(/-/g, "").replace("Today", "20261031");
+        const startMin = timeStrToMinutes(booking.startTime);
+        const endMin = timeStrToMinutes(booking.endTime);
         const startH = String(Math.floor(startMin / 60)).padStart(2, "0");
         const startM = String(startMin % 60).padStart(2, "0");
         const endH = String(Math.floor(endMin / 60)).padStart(2, "0");
         const endM = String(endMin % 60).padStart(2, "0");
         const startIso = `${dStr}T${startH}${startM}00`;
         const endIso = `${dStr}T${endH}${endM}00`;
-
-        const text = encodeURIComponent(`${title} • ${room ? room.name : "NEXUS HUB"}`);
+        const text = encodeURIComponent(`${booking.title} • ${booking.room}`);
         const details = encodeURIComponent(
-          `Meeting Room Reservation at NEXUS HUB\nFacility: ${room ? room.name : "Meeting Space"}\nAttendees: Up to ${room ? room.capacity : 6} people\nNotes: ${notes || "Equipped with 4K display, wireless casting, and conference mic."}\n\nPowered by NEXUS HUB Incubation Operating System`
+          `NEXUS HUB Reservation: ${booking.room}\nDuration: ${booking.duration}\nAttendees: ${booking.attendees} people\nLocation: Ground Floor East Wing, NEXUS HUB Innovation Campus`
         );
-        const location = encodeURIComponent(`${room ? room.name : "Meeting Room"}, NEXUS HUB Innovation Campus, Ground Floor East Wing`);
-        return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${startIso}/${endIso}&details=${details}&location=${location}`;
+        const loc = encodeURIComponent(`${booking.room}, NEXUS HUB Innovation Campus`);
+        return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${startIso}/${endIso}&details=${details}&location=${loc}`;
       };
 
-      const downloadIcs = ({ title, room, date, startTime, durationHours, notes, resId }) => {
-        const startMin = timeStrToMinutes(startTime);
-        const endMin = startMin + Math.round(durationHours * 60);
-        const dStr = (date === "Today" ? "20261031" : date === "Tomorrow" ? "20261101" : date.replace(/-/g, ""));
+      const downloadIcsFile = (booking) => {
+        const dStr = (booking.fullDate || booking.date || "2026-10-31").replace(/-/g, "").replace("Today", "20261031");
+        const startMin = timeStrToMinutes(booking.startTime);
+        const endMin = timeStrToMinutes(booking.endTime);
         const startH = String(Math.floor(startMin / 60)).padStart(2, "0");
         const startM = String(startMin % 60).padStart(2, "0");
         const endH = String(Math.floor(endMin / 60)).padStart(2, "0");
         const endM = String(endMin % 60).padStart(2, "0");
 
-        const icsData = [
+        const ics = [
           "BEGIN:VCALENDAR",
           "VERSION:2.0",
-          "PRODID:-//NEXUS HUB//Meeting Room Reservation//EN",
+          "PRODID:-//NEXUS HUB//Booking//EN",
           "CALSCALE:GREGORIAN",
           "METHOD:PUBLISH",
           "BEGIN:VEVENT",
-          `UID:${resId || Date.now()}@nexushub.co`,
+          `UID:${booking.resId || Date.now()}@nexushub.co`,
           `DTSTAMP:${dStr}T000000Z`,
           `DTSTART:${dStr}T${startH}${startM}00`,
           `DTEND:${dStr}T${endH}${endM}00`,
-          `SUMMARY:${title} - ${room ? room.name : "Meeting Room"}`,
-          `DESCRIPTION:${notes || "NEXUS HUB Meeting Room Reservation"}`,
-          `LOCATION:${room ? room.name : "NEXUS HUB"} Innovation Campus`,
+          `SUMMARY:${booking.title} - ${booking.room}`,
+          `DESCRIPTION:NEXUS HUB Reservation for ${booking.attendees} attendees`,
+          `LOCATION:${booking.room}, NEXUS HUB`,
           "STATUS:CONFIRMED",
           "END:VEVENT",
           "END:VCALENDAR"
         ].join("\r\n");
 
-        const blob = new Blob([icsData], { type: "text/calendar;charset=utf-8" });
+        const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `nexus-booking-${(resId || "bkg").toLowerCase()}.ics`;
+        a.download = `nexus-${(booking.resId || "bkg").toLowerCase()}.ics`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       };
 
-      const handleDrawerConfirmBooking = (e) => {
+      const handleConfirmBookingModal = (e) => {
         if (e) e.preventDefault();
-        if (!bookingDrawerRoom) return;
+        if (!bookingModalRoom) return;
 
-        const slotStatus = getSlotStatus(bookingDrawerStartTime, bookingDrawerRoom, bookingDrawerDate, bookingDrawerDuration);
-        if (!slotStatus.available) {
-          showToast(`⚠️ Conflict: Selected slot is ${slotStatus.label}. Please pick an available time slot.`);
+        const slotState = getSlotState(bookingStartTime, bookingModalRoom, bookingDate, bookingStartTime, bookingDuration);
+        if (slotState.disabled && !slotState.isSelected) {
+          showToast(`⚠️ Conflict: Selected start time is ${slotState.label}. Please pick an available slot.`);
           return;
         }
 
-        const startMin = timeStrToMinutes(bookingDrawerStartTime);
-        const endMin = startMin + Math.round(bookingDrawerDuration * 60);
+        const startMin = timeStrToMinutes(bookingStartTime);
+        const endMin = startMin + Math.round(bookingDuration * 60);
         const endTimeStr = minutesToTimeStr(endMin);
-        const formattedTimeRange = `${bookingDrawerStartTime} – ${endTimeStr}`;
+        const formattedRange = `${bookingStartTime} – ${endTimeStr}`;
         const resId = `RES-2026-${Math.floor(1000 + Math.random() * 9000)}`;
-        const title = bookingDrawerTitle.trim() || `Strategy Sync (${bookingDrawerRoom.name})`;
-        const hourlyRate = parseInt((bookingDrawerRoom.rate || "").replace(/[^0-9]/g, ""), 10) || 2000;
-        const totalCost = Math.round(hourlyRate * bookingDrawerDuration);
+        const title = bookingTitle.trim() || `Strategy Sync (${bookingModalRoom.name})`;
+        const hourlyRate = parseInt((bookingModalRoom.rate || "").replace(/[^0-9]/g, ""), 10) || 2000;
+        const totalCost = Math.round(hourlyRate * bookingDuration);
 
-        setStartupCreditsRemaining(prev => Math.max(0, prev - bookingDrawerDuration));
+        setStartupCreditsRemaining(prev => Math.max(0, prev - bookingDuration));
 
-        const newReservation = {
+        const newBooking = {
           id: `bkg-${Date.now()}`,
           resId: resId,
-          date: bookingDrawerDate === "2026-10-31" ? "Today" : bookingDrawerDate,
-          fullDate: bookingDrawerDate,
-          time: formattedTimeRange,
-          startTime: bookingDrawerStartTime,
+          date: bookingDate === "2026-10-31" ? "Today" : bookingDate,
+          fullDate: bookingDate,
+          time: formattedRange,
+          startTime: bookingStartTime,
           endTime: endTimeStr,
-          duration: `${bookingDrawerDuration} hrs`,
+          duration: `${bookingDuration} hrs`,
           title: title,
-          purpose: bookingDrawerPurpose,
-          room: bookingDrawerRoom.name,
-          roomId: bookingDrawerRoom.id,
-          roomImage: bookingDrawerRoom.image || "assets/rooms/mr-01-main.jpg",
-          attendees: bookingDrawerAttendees,
-          credits: bookingDrawerDuration,
+          room: bookingModalRoom.name,
+          roomId: bookingModalRoom.id,
+          roomImage: bookingModalRoom.image || "assets/rooms/mr-01-main.jpg",
+          attendees: bookingAttendees,
+          credits: bookingDuration,
           cost: totalCost,
-          notes: bookingDrawerNotes,
+          notes: bookingNotes,
           status: "Confirmed",
           statusColor: "bg-emerald-50 text-emerald-600 border border-emerald-200",
           barColor: "bg-emerald-500",
           createdAt: new Date().toISOString()
         };
 
-        setUpcomingBookings(prev => [newReservation, ...prev]);
+        setUpcomingBookings(prev => [newBooking, ...prev]);
 
-        if (bookingDrawerDate === "2026-10-31" || bookingDrawerDate === "Today") {
+        if (bookingDate === "2026-10-31" || bookingDate === "Today") {
           setTodaysSchedule(prev => [
             ...prev,
             {
-              time: formattedTimeRange,
+              time: formattedRange,
               title: title,
-              room: bookingDrawerRoom.name,
-              attendees: bookingDrawerAttendees,
+              room: bookingModalRoom.name,
+              attendees: bookingAttendees,
               dotColor: "bg-emerald-500",
               tintColor: "border-l-4 border-l-emerald-500"
             }
           ]);
         }
 
-        setLastConfirmedReservation(newReservation);
-        setBookingDrawerStep("success");
-        showToast(`🎉 Room booked! ${bookingDrawerRoom.name} confirmed (#${resId})`);
+        setBookingSuccessData(newBooking);
+        showToast(`🎉 Room booked! ${bookingModalRoom.name} confirmed (#${resId})`);
 
         try {
           fetch('/api/meeting-rooms/book', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              roomId: bookingDrawerRoom.id || "MR-01",
+              roomId: bookingModalRoom.id || "MR-01",
               startupId: "STP-XYZ",
               startupName: "XYZ Technologies",
               title: title,
-              purpose: bookingDrawerPurpose,
-              date: bookingDrawerDate,
-              startTime: bookingDrawerStartTime,
+              date: bookingDate,
+              startTime: bookingStartTime,
               endTime: endTimeStr,
-              attendees: bookingDrawerAttendees,
+              attendees: bookingAttendees,
               cost: totalCost
             })
           }).catch(err => console.log('Backend sync offline:', err));
-        } catch (err) {}
+        } catch (e) {}
       };
-      const [showPurchaseCreditsModal, setShowPurchaseCreditsModal] = useState(false);
-      const [selectedCreditTier, setSelectedCreditTier] = useState(25);
-      const [meetingTitleInput, setMeetingTitleInput] = useState("");
-      const [toastMessage, setToastMessage] = useState(null);
-      const [dashScheduleTab, setDashScheduleTab] = useState("today");
 
-      const getGreeting = () => {
-        const hr = new Date().getHours();
-        if (hr < 12) return "Good morning";
-        if (hr < 17) return "Good afternoon";
-        return "Good evening";
-      };
+      useEffect(() => {
+        if (!bookingModalRoom || !bookingDate) return;
+        setIsLoadingAvailability(true);
+        fetch(`/api/meeting-rooms/availability?date=${bookingDate}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data && data.ok && data.rooms) {
+              const r = data.rooms.find(x => x.id === bookingModalRoom.id || x.name === bookingModalRoom.name);
+              if (r && r.bookings) {
+                setRoomBackendBookings(r.bookings);
+              } else {
+                setRoomBackendBookings([]);
+              }
+            }
+          })
+          .catch(e => console.log("Availability offline fallback:", e))
+          .finally(() => setIsLoadingAvailability(false));
+      }, [bookingModalRoom, bookingDate]);
 
       const DASHBOARD_ACTIVITIES = [
         { id: "act-1", time: "12m ago", icon: "calendar", title: "Room Reservation Confirmed", desc: "Collaboration Room reserved for Today at 03:00 PM (30 credits)", user: "Alex Morgan" },
@@ -722,6 +816,10 @@
       useEffect(() => {
         const handleHashChange = () => {
           const hash = window.location.hash.replace("#", "").toLowerCase().replace(/[-_]/g, "");
+          if (hash === "billing" || hash === "credits" || hash === "billingcredits") {
+            setActiveNav("Billing & Credits");
+            return;
+          }
           if (hash === "database" || hash === "databasetables" || hash === "tables") {
             setActiveNav("Database Tables");
             return;
@@ -3304,728 +3402,466 @@
               MODAL: CONFIRM RESERVATION
               ========================================================================= */}
           {/* =========================================================================
-              CUSTOM ROOM DETAILS & REAL-TIME AVAILABILITY SLIDE-OUT DRAWER
+              ENHANCED MEETING ROOM BOOKING POPUP & REAL-TIME AVAILABILITY
               ========================================================================= */}
-          {bookingDrawerRoom && (
-            <div className="fixed inset-0 z-50 overflow-hidden flex justify-end animate-fadeIn">
-              {/* Dark Overlay Backdrop */}
-              <div
-                onClick={() => setBookingDrawerRoom(null)}
-                className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
-              />
-
-              {/* Drawer Container (Desktop: Right-Side Drawer / Mobile: Full Screen) */}
-              <div className="relative w-full sm:max-w-xl md:max-w-2xl bg-white h-full shadow-2xl flex flex-col z-10 animate-slideLeft overflow-hidden">
-                {/* Header with Meeting Room Photo & Details */}
-                <div className="relative h-44 sm:h-48 w-full flex-shrink-0 overflow-hidden bg-gray-900">
-                  <img
-                    src={bookingDrawerRoom.image || "assets/rooms/mr-01-main.jpg"}
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = bookingDrawerRoom.fallbackImage || "assets/rooms/mr-01-main.jpg";
-                    }}
-                    alt={bookingDrawerRoom.name}
-                    className="w-full h-full object-cover object-center"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-transparent" />
-
-                  {/* Close Button */}
-                  <button
-                    type="button"
-                    onClick={() => setBookingDrawerRoom(null)}
-                    className="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/40 hover:bg-black/75 backdrop-blur-sm text-white flex items-center justify-center transition-all z-20"
-                    title="Close Drawer"
-                  >
-                    <Icon name="x" className="w-5 h-5" />
-                  </button>
-
-                  {/* Room Meta Badges & Title */}
-                  <div className="absolute bottom-3 left-4 right-4 text-white z-10">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-[#4F3FE0] text-white uppercase tracking-wider">
-                        {bookingDrawerRoom.type}
-                      </span>
-                      <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-emerald-500 text-white flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                        Live Available
-                      </span>
-                    </div>
-                    <h2 className="text-xl sm:text-2xl font-black">{bookingDrawerRoom.name}</h2>
-                    <div className="flex items-center gap-2.5 text-xs text-gray-200 mt-1 font-medium flex-wrap">
-                      <span className="inline-flex items-center gap-1">
-                        <Icon name="users" className="w-3.5 h-3.5 text-gray-300" />
-                        Up to {bookingDrawerRoom.capacity} people
-                      </span>
-                      <span>•</span>
-                      <span className="text-yellow-300 font-bold">{bookingDrawerRoom.rate}</span>
-                      <span>•</span>
-                      <span>Ground Floor East Wing</span>
+          {bookingModalRoom && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 z-50 animate-fadeIn">
+              <div className="bg-white rounded-3xl max-w-2xl w-full p-5 sm:p-7 shadow-2xl border border-[#ECEEF4] max-h-[92vh] overflow-y-auto relative animate-scaleUp">
+                
+                {/* 1. HEADER */}
+                <div className="flex items-center justify-between pb-4 border-b border-[#ECEEF4]">
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={bookingModalRoom.image || "assets/rooms/mr-01-main.jpg"}
+                      alt={bookingModalRoom.name}
+                      className="w-12 h-12 rounded-xl object-cover border border-[#ECEEF4] shadow-xs flex-shrink-0"
+                    />
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-lg font-black text-[#111827]">{bookingModalRoom.name}</h3>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#4F3FE0] text-white uppercase tracking-wider">
+                          {bookingModalRoom.type}
+                        </span>
+                      </div>
+                      <p className="text-xs text-[#8A90A2] mt-0.5">
+                        Instant confirmation • Deducts 1 hour credit
+                      </p>
                     </div>
                   </div>
-                </div>
-
-                {/* Step Progress Tabs */}
-                <div className="flex border-b border-[#ECEEF4] bg-[#F8FAFC] text-xs font-bold text-center flex-shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => bookingDrawerStep !== 'success' && setBookingDrawerStep('slots')}
-                    className={`flex-1 py-3 border-b-2 transition-all ${
-                      bookingDrawerStep === 'slots'
-                        ? 'border-[#4F3FE0] text-[#4F3FE0] bg-white'
-                        : 'border-transparent text-[#64748B] hover:text-[#111827]'
-                    }`}
-                  >
-                    1. Time &amp; Slots
-                  </button>
                   <button
                     type="button"
                     onClick={() => {
-                      if (bookingDrawerStep === 'slots') {
-                        const status = getSlotStatus(bookingDrawerStartTime, bookingDrawerRoom, bookingDrawerDate, bookingDrawerDuration);
-                        if (status.available) setBookingDrawerStep('details');
-                        else showToast("Please pick an available slot first");
-                      }
+                      setBookingModalRoom(null);
+                      setBookingSuccessData(null);
                     }}
-                    className={`flex-1 py-3 border-b-2 transition-all ${
-                      bookingDrawerStep === 'details'
-                        ? 'border-[#4F3FE0] text-[#4F3FE0] bg-white'
-                        : 'border-transparent text-[#64748B]'
-                    }`}
-                  >
-                    2. Meeting Details &amp; Sync
-                  </button>
-                  <button
-                    type="button"
-                    disabled={bookingDrawerStep !== 'success'}
-                    className={`flex-1 py-3 border-b-2 transition-all ${
-                      bookingDrawerStep === 'success'
-                        ? 'border-emerald-600 text-emerald-600 bg-white'
-                        : 'border-transparent text-[#A0A6B8] cursor-not-allowed'
-                    }`}
-                  >
-                    3. Confirmation
-                  </button>
-                </div>
-
-                {/* Scrollable Content Body */}
-                <div className="flex-1 overflow-y-auto p-5 space-y-5">
-                  {/* STEP 1: DATE, DURATION & LIVE SLOTS */}
-                  {bookingDrawerStep === 'slots' && (() => {
-                    const hourlyRate = parseInt((bookingDrawerRoom.rate || "").replace(/[^0-9]/g, ""), 10) || 2000;
-                    const estimatedPrice = Math.round(hourlyRate * bookingDrawerDuration);
-                    const currentSlotStatus = getSlotStatus(bookingDrawerStartTime, bookingDrawerRoom, bookingDrawerDate, bookingDrawerDuration);
-                    const startMin = timeStrToMinutes(bookingDrawerStartTime);
-                    const endMin = startMin + Math.round(bookingDrawerDuration * 60);
-                    const endTimeStr = minutesToTimeStr(endMin);
-
-                    return (
-                      <div className="space-y-5">
-                        {/* 1. Date Selector */}
-                        <div>
-                          <label className="block text-xs font-black uppercase tracking-wider text-[#111827] mb-2">
-                            Select Reservation Date
-                          </label>
-                          <div className="grid grid-cols-3 gap-2 mb-2">
-                            {[
-                              { label: "Today (31 Oct)", val: "2026-10-31" },
-                              { label: "Tomorrow (01 Nov)", val: "2026-11-01" },
-                              { label: "Monday (03 Nov)", val: "2026-11-03" }
-                            ].map(d => (
-                              <button
-                                key={d.val}
-                                type="button"
-                                onClick={() => setBookingDrawerDate(d.val)}
-                                className={`py-2 px-2 rounded-xl text-xs font-bold border transition-all text-center ${
-                                  bookingDrawerDate === d.val
-                                    ? "bg-[#4F3FE0] text-white border-[#4F3FE0] shadow-xs"
-                                    : "bg-[#F8FAFC] border-[#ECEEF4] text-[#374151] hover:bg-white"
-                                }`}
-                              >
-                                {d.label}
-                              </button>
-                            ))}
-                          </div>
-                          <div className="flex items-center gap-2 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl px-3 py-2 text-xs">
-                            <span className="text-[#64748B] font-medium">Or pick any date:</span>
-                            <input
-                              type="date"
-                              min="2026-10-31"
-                              value={bookingDrawerDate}
-                              onChange={(e) => setBookingDrawerDate(e.target.value)}
-                              className="bg-transparent font-bold text-[#111827] outline-none cursor-pointer flex-1 text-right"
-                            />
-                          </div>
-                        </div>
-
-                        {/* 2. Duration Selector */}
-                        <div>
-                          <div className="flex items-center justify-between mb-2">
-                            <label className="text-xs font-black uppercase tracking-wider text-[#111827]">
-                              Booking Duration
-                            </label>
-                            <span className="text-[11px] font-bold text-[#4F3FE0]">
-                              {bookingDrawerDuration} hrs selected
-                            </span>
-                          </div>
-                          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                            {[
-                              { label: "30 min", val: 0.5 },
-                              { label: "1.0 hr", val: 1.0 },
-                              { label: "1.5 hrs", val: 1.5 },
-                              { label: "2.0 hrs", val: 2.0 },
-                              { label: "3.0 hrs", val: 3.0 },
-                              { label: "4.0 hrs", val: 4.0 }
-                            ].map(dur => (
-                              <button
-                                key={dur.val}
-                                type="button"
-                                onClick={() => setBookingDrawerDuration(dur.val)}
-                                className={`py-2 rounded-xl text-xs font-bold border transition-all text-center ${
-                                  bookingDrawerDuration === dur.val
-                                    ? "bg-[#4F3FE0] text-white border-[#4F3FE0] shadow-xs"
-                                    : "bg-[#F8FAFC] border-[#ECEEF4] text-[#374151] hover:bg-white hover:border-[#4F3FE0]/40"
-                                }`}
-                              >
-                                {dur.label}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* 3. Live Availability Slots Grid */}
-                        <div>
-                          <div className="flex items-center justify-between mb-2">
-                            <div>
-                              <label className="text-xs font-black uppercase tracking-wider text-[#111827]">
-                                Real-Time Availability Slots
-                              </label>
-                              <p className="text-[11px] text-[#8A90A2]">30-minute intervals • Overlap prevention active</p>
-                            </div>
-                            <div className="flex items-center gap-2 text-[10px] font-semibold text-[#64748B]">
-                              <span className="flex items-center gap-1">
-                                <span className="w-2 h-2 rounded-full bg-emerald-500" /> Free
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <span className="w-2 h-2 rounded-full bg-[#4F3FE0]" /> Selected
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <span className="w-2 h-2 rounded-full bg-gray-400" /> Booked
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-56 overflow-y-auto p-1 border border-[#ECEEF4] rounded-2xl bg-[#FAFAFC]">
-                            {TIME_SLOTS_30MIN.map(slot => {
-                              const status = getSlotStatus(slot, bookingDrawerRoom, bookingDrawerDate, bookingDrawerDuration);
-                              const isSelected = bookingDrawerStartTime === slot;
-
-                              if (status.isBooked) {
-                                return (
-                                  <div
-                                    key={slot}
-                                    className="p-2.5 rounded-xl border border-gray-200 bg-gray-100/90 text-gray-400 text-center cursor-not-allowed select-none opacity-70"
-                                    title="Slot already reserved by another founder"
-                                  >
-                                    <div className="text-xs font-bold line-through">{slot}</div>
-                                    <div className="text-[10px] font-semibold text-gray-500 mt-0.5">🔒 Booked</div>
-                                  </div>
-                                );
-                              }
-
-                              if (status.isConflict) {
-                                return (
-                                  <div
-                                    key={slot}
-                                    className="p-2.5 rounded-xl border border-amber-200 bg-amber-50/60 text-amber-700 text-center cursor-not-allowed select-none"
-                                    title="Requested duration would overlap an existing reservation"
-                                  >
-                                    <div className="text-xs font-bold">{slot}</div>
-                                    <div className="text-[9.5px] font-semibold text-amber-600 mt-0.5">Overlap conflict</div>
-                                  </div>
-                                );
-                              }
-
-                              return (
-                                <button
-                                  key={slot}
-                                  type="button"
-                                  onClick={() => setBookingDrawerStartTime(slot)}
-                                  className={`p-2.5 rounded-xl border text-center transition-all ${
-                                    isSelected
-                                      ? "bg-[#4F3FE0] text-white border-[#4F3FE0] shadow-md ring-2 ring-[#4F3FE0]/25"
-                                      : "bg-white border-[#ECEEF4] text-[#111827] hover:border-[#4F3FE0] hover:bg-[#F4F2FF] hover:shadow-xs"
-                                  }`}
-                                >
-                                  <div className="text-xs font-bold">{slot}</div>
-                                  <div className={`text-[10px] font-semibold mt-0.5 ${isSelected ? "text-purple-100" : "text-emerald-600"}`}>
-                                    {isSelected ? "★ Selected" : "✓ Available"}
-                                  </div>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-
-                        {/* 4. Selected Time Window Callout */}
-                        <div className="p-3.5 bg-[#F4F2FF] border border-[#E0D8FF] rounded-xl flex items-center justify-between text-xs">
-                          <div>
-                            <span className="text-[#8A90A2] font-semibold block text-[11px]">Selected Time Window:</span>
-                            <span className="font-extrabold text-[#4F3FE0] text-sm">
-                              {bookingDrawerDate} • {bookingDrawerStartTime} – {endTimeStr}
-                            </span>
-                          </div>
-                          <span className="px-2.5 py-1 rounded-full bg-white text-[#4F3FE0] font-bold shadow-xs border border-[#E0D8FF] text-[11px]">
-                            {bookingDrawerDuration} hrs
-                          </span>
-                        </div>
-
-                        {/* 5. Price & Credits Calculation Summary */}
-                        <div className="p-4 bg-[#F8FAFC] border border-[#ECEEF4] rounded-2xl space-y-2 text-xs">
-                          <div className="flex items-center justify-between text-[#64748B]">
-                            <span>Hourly Rate:</span>
-                            <strong className="text-[#111827] font-bold">₹{hourlyRate.toLocaleString()}/hour</strong>
-                          </div>
-                          <div className="flex items-center justify-between text-[#64748B]">
-                            <span>Duration Requested:</span>
-                            <strong className="text-[#111827] font-bold">{bookingDrawerDuration} hour(s)</strong>
-                          </div>
-                          <div className="flex items-center justify-between text-[#64748B]">
-                            <span>Estimated Room Value:</span>
-                            <strong className="text-[#111827] font-bold">₹{estimatedPrice.toLocaleString()}</strong>
-                          </div>
-                          <div className="flex items-center justify-between text-[#64748B]">
-                            <span>Startup Incubation Quota:</span>
-                            <span className="text-emerald-600 font-bold">Covered by Startup Plan</span>
-                          </div>
-                          <div className="pt-2 border-t border-[#ECEEF4] flex items-center justify-between">
-                            <div>
-                              <div className="text-[11px] text-[#8A90A2]">Credit Balance Impact:</div>
-                              <div className="font-bold text-[#111827] text-xs">
-                                -{bookingDrawerDuration} cr ({startupCreditsRemaining - bookingDrawerDuration} cr left)
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <div className="text-[10px] uppercase font-bold text-[#8A90A2]">Net Payable</div>
-                              <div className="text-base font-black text-emerald-600">₹0 (100% Free)</div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Step 1 Footer Action */}
-                        <div className="flex items-center justify-end gap-2.5 pt-2">
-                          <button
-                            type="button"
-                            onClick={() => setBookingDrawerRoom(null)}
-                            className="px-4 py-2.5 border border-[#ECEEF4] text-[#374151] rounded-xl text-xs font-bold hover:bg-gray-50"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            type="button"
-                            disabled={!currentSlotStatus.available}
-                            onClick={() => setBookingDrawerStep('details')}
-                            className={`px-6 py-2.5 rounded-xl text-xs font-bold text-white shadow-sm transition-all flex items-center gap-1.5 ${
-                              currentSlotStatus.available
-                                ? "bg-[#4F3FE0] hover:bg-[#4335C9] active:scale-95"
-                                : "bg-gray-300 cursor-not-allowed"
-                            }`}
-                          >
-                            <span>Continue to Details</span>
-                            <span>&rarr;</span>
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })()}
-
-                  {/* STEP 2: MEETING DETAILS & GOOGLE CALENDAR SYNC */}
-                  {bookingDrawerStep === 'details' && (() => {
-                    const startMin = timeStrToMinutes(bookingDrawerStartTime);
-                    const endMin = startMin + Math.round(bookingDrawerDuration * 60);
-                    const endTimeStr = minutesToTimeStr(endMin);
-
-                    return (
-                      <form onSubmit={handleDrawerConfirmBooking} className="space-y-4">
-                        {/* Quick Summary Pill */}
-                        <div className="p-3 bg-[#F4F2FF] border border-[#E0D8FF] rounded-xl flex items-center justify-between text-xs">
-                          <div>
-                            <div className="font-bold text-[#4F3FE0]">{bookingDrawerRoom.name}</div>
-                            <div className="text-[11px] text-[#64748B]">
-                              {bookingDrawerDate} • {bookingDrawerStartTime} – {endTimeStr} ({bookingDrawerDuration} hrs)
-                            </div>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setBookingDrawerStep('slots')}
-                            className="text-[11px] font-bold text-[#4F3FE0] hover:underline"
-                          >
-                            Change Slot
-                          </button>
-                        </div>
-
-                        {/* Meeting Title Input */}
-                        <div>
-                          <label className="block text-xs font-black uppercase tracking-wider text-[#111827] mb-1">
-                            Meeting Title <span className="text-rose-500">*</span>
-                          </label>
-                          <input
-                            type="text"
-                            required
-                            value={bookingDrawerTitle}
-                            onChange={(e) => setBookingDrawerTitle(e.target.value)}
-                            placeholder="e.g. Client Strategy & Demo Session"
-                            className="w-full bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#111827] focus:outline-none focus:border-[#4F3FE0] focus:bg-white"
-                          />
-                          <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                            <span className="text-[10px] text-[#8A90A2]">Suggestions:</span>
-                            {["Strategy Sync", "Sprint Demo", "Client Pitch", "Investor Update"].map(s => (
-                              <button
-                                key={s}
-                                type="button"
-                                onClick={() => setBookingDrawerTitle(`${s} (${bookingDrawerRoom.name})`)}
-                                className="text-[10px] bg-gray-100 hover:bg-gray-200 text-[#374151] px-2 py-0.5 rounded-full"
-                              >
-                                {s}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Purpose Selector */}
-                        <div>
-                          <label className="block text-xs font-black uppercase tracking-wider text-[#111827] mb-1">
-                            Meeting Purpose / Category
-                          </label>
-                          <select
-                            value={bookingDrawerPurpose}
-                            onChange={(e) => setBookingDrawerPurpose(e.target.value)}
-                            className="w-full bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#111827] focus:outline-none focus:border-[#4F3FE0] cursor-pointer"
-                          >
-                            <option value="Team Sync & Collaboration">Team Sync &amp; Collaboration</option>
-                            <option value="Client Pitch & Presentation">Client Pitch &amp; Presentation</option>
-                            <option value="Board & Executive Meeting">Board &amp; Executive Meeting</option>
-                            <option value="Sprint Planning & Demo">Sprint Planning &amp; Demo</option>
-                            <option value="Investor Review">Investor Review</option>
-                            <option value="Interview & Recruiting">Interview &amp; Recruiting</option>
-                          </select>
-                        </div>
-
-                        {/* Attendees Counter */}
-                        <div>
-                          <div className="flex items-center justify-between mb-1">
-                            <label className="text-xs font-black uppercase tracking-wider text-[#111827]">
-                              Number of Attendees
-                            </label>
-                            <span className="text-[11px] text-[#8A90A2]">
-                              Max Room Capacity: {bookingDrawerRoom.capacity} seats
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <button
-                              type="button"
-                              onClick={() => setBookingDrawerAttendees(prev => Math.max(1, prev - 1))}
-                              className="w-9 h-9 rounded-xl border border-[#ECEEF4] bg-[#F8FAFC] hover:bg-white text-lg font-bold flex items-center justify-center text-[#111827]"
-                            >
-                              -
-                            </button>
-                            <div className="flex-1 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl py-2 text-center text-sm font-black text-[#111827]">
-                              {bookingDrawerAttendees} people
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => setBookingDrawerAttendees(prev => Math.min(bookingDrawerRoom.capacity, prev + 1))}
-                              className="w-9 h-9 rounded-xl border border-[#ECEEF4] bg-[#F8FAFC] hover:bg-white text-lg font-bold flex items-center justify-center text-[#111827]"
-                            >
-                              +
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Optional Notes */}
-                        <div>
-                          <label className="block text-xs font-black uppercase tracking-wider text-[#111827] mb-1">
-                            Notes / AV &amp; Room Requirements (Optional)
-                          </label>
-                          <textarea
-                            rows={2}
-                            value={bookingDrawerNotes}
-                            onChange={(e) => setBookingDrawerNotes(e.target.value)}
-                            placeholder="e.g. Need 4K HDMI adapter, lapel microphones, and extra whiteboard markers."
-                            className="w-full bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl p-3 text-xs text-[#111827] focus:outline-none focus:border-[#4F3FE0] focus:bg-white"
-                          />
-                        </div>
-
-                        {/* Google Calendar Sync Option */}
-                        <div className="p-3.5 bg-gradient-to-r from-blue-50/70 to-indigo-50/70 border border-blue-200/80 rounded-2xl flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl bg-white text-blue-600 flex items-center justify-center shadow-xs font-black text-sm">
-                              📅
-                            </div>
-                            <div>
-                              <div className="text-xs font-black text-[#111827]">Sync with Google Calendar</div>
-                              <div className="text-[11px] text-[#64748B]">Auto-generates event with campus location link</div>
-                            </div>
-                          </div>
-                          <label className="relative inline-flex items-center cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={bookingDrawerSyncGCal}
-                              onChange={(e) => setBookingDrawerSyncGCal(e.target.checked)}
-                              className="sr-only peer"
-                            />
-                            <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#4F3FE0]"></div>
-                          </label>
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#ECEEF4]">
-                          <button
-                            type="button"
-                            onClick={() => setBookingDrawerStep('slots')}
-                            className="px-4 py-2.5 border border-[#ECEEF4] text-[#374151] rounded-xl text-xs font-bold hover:bg-gray-50"
-                          >
-                            &larr; Back
-                          </button>
-                          <button
-                            type="submit"
-                            className="px-6 py-2.5 bg-[#4F3FE0] hover:bg-[#4335C9] text-white rounded-xl text-xs font-black shadow-sm active:scale-95 transition-all flex items-center gap-2"
-                          >
-                            <span>⚡ Confirm Reservation</span>
-                          </button>
-                        </div>
-                      </form>
-                    );
-                  })()}
-
-                  {/* STEP 3: SUCCESS & 1-CLICK GOOGLE CALENDAR SYNC */}
-                  {bookingDrawerStep === 'success' && lastConfirmedReservation && (() => {
-                    const gcalUrl = getGoogleCalendarUrl({
-                      title: lastConfirmedReservation.title,
-                      room: bookingDrawerRoom,
-                      date: lastConfirmedReservation.fullDate || lastConfirmedReservation.date,
-                      startTime: lastConfirmedReservation.startTime,
-                      durationHours: parseFloat(lastConfirmedReservation.duration) || 1.0,
-                      notes: lastConfirmedReservation.notes
-                    });
-
-                    return (
-                      <div className="py-4 text-center space-y-4 animate-scaleUp">
-                        <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 border-2 border-emerald-200 flex items-center justify-center mx-auto text-2xl shadow-sm">
-                          ✓
-                        </div>
-                        <div>
-                          <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                            Reservation Confirmed
-                          </span>
-                          <h3 className="text-xl font-black text-[#111827] mt-1.5">
-                            {lastConfirmedReservation.title}
-                          </h3>
-                          <p className="text-xs text-[#8A90A2]">
-                            Reference Code: <strong className="font-mono text-[#111827]">#{lastConfirmedReservation.resId}</strong>
-                          </p>
-                        </div>
-
-                        {/* Reservation Summary Card */}
-                        <div className="bg-[#F8FAFC] border border-[#ECEEF4] rounded-2xl p-4 text-left text-xs space-y-2 max-w-md mx-auto">
-                          <div className="flex justify-between">
-                            <span className="text-[#8A90A2]">Room Facility:</span>
-                            <strong className="text-[#111827]">{lastConfirmedReservation.room}</strong>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-[#8A90A2]">Date &amp; Time:</span>
-                            <strong className="text-[#111827]">{lastConfirmedReservation.date} • {lastConfirmedReservation.time}</strong>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-[#8A90A2]">Duration &amp; Attendees:</span>
-                            <strong className="text-[#111827]">{lastConfirmedReservation.duration} • {lastConfirmedReservation.attendees} attendees</strong>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-[#8A90A2]">Credit Deducted:</span>
-                            <span className="text-emerald-600 font-bold">-{lastConfirmedReservation.credits} cr (Incubation Quota)</span>
-                          </div>
-                        </div>
-
-                        {/* Google Calendar One-Click Sync Section */}
-                        <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl text-left max-w-md mx-auto space-y-2.5">
-                          <div className="flex items-center gap-2">
-                            <span className="text-base">📅</span>
-                            <strong className="text-xs font-black text-[#111827]">Add to Your Calendar</strong>
-                          </div>
-                          <p className="text-[11px] text-[#64748B] leading-relaxed">
-                            Sync this meeting to your schedule so your attendees receive notifications and campus location links.
-                          </p>
-                          <div className="flex items-center gap-2 pt-1">
-                            <a
-                              href={gcalUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex-1 bg-white hover:bg-blue-50 text-[#2B71FF] border border-blue-300 font-bold py-2 px-3 rounded-xl text-xs text-center shadow-xs flex items-center justify-center gap-1.5 transition-all"
-                            >
-                              <span>Google Calendar (1-Click)</span>
-                              <Icon name="externalLink" className="w-3.5 h-3.5" />
-                            </a>
-                            <button
-                              type="button"
-                              onClick={() => downloadIcs({
-                                title: lastConfirmedReservation.title,
-                                room: bookingDrawerRoom,
-                                date: lastConfirmedReservation.fullDate || lastConfirmedReservation.date,
-                                startTime: lastConfirmedReservation.startTime,
-                                durationHours: parseFloat(lastConfirmedReservation.duration) || 1.0,
-                                notes: lastConfirmedReservation.notes,
-                                resId: lastConfirmedReservation.resId
-                              })}
-                              className="bg-white hover:bg-gray-50 text-[#374151] border border-gray-300 font-bold py-2 px-3 rounded-xl text-xs shadow-xs transition-all"
-                              title="Download iCal (.ics) file for Outlook or Apple Calendar"
-                            >
-                              📥 .ICS
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Navigation Actions */}
-                        <div className="flex items-center justify-center gap-3 pt-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setBookingDrawerRoom(null);
-                              navigateTo("My Bookings");
-                            }}
-                            className="px-5 py-2.5 bg-[#4F3FE0] hover:bg-[#4335C9] text-white rounded-xl text-xs font-bold shadow-sm"
-                          >
-                            View in My Bookings &rarr;
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setBookingDrawerRoom(null)}
-                            className="px-5 py-2.5 border border-[#ECEEF4] text-[#374151] rounded-xl text-xs font-bold hover:bg-gray-50"
-                          >
-                            Done
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ── Reschedule Reservation Modal ── */}
-          {rescheduleBooking && (
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fadeIn">
-              <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-[#ECEEF4] relative animate-scaleUp">
-                <div className="flex items-center justify-between pb-3 border-b border-[#ECEEF4]">
-                  <div>
-                    <h3 className="text-lg font-black text-[#111827]">Reschedule Reservation</h3>
-                    <p className="text-xs text-[#8A90A2]">Modify slot timing or choose an alternate meeting facility</p>
-                  </div>
-                  <button
-                    onClick={() => setRescheduleBooking(null)}
-                    className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500"
+                    className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 transition-colors"
+                    title="Close"
                   >
                     <Icon name="x" className="w-4 h-4" />
                   </button>
                 </div>
 
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    setUpcomingBookings(prev => prev.map(b => {
-                      if (b.id === rescheduleBooking.id) {
-                        return {
-                          ...b,
-                          date: rescheduleNewDate,
-                          fullDate: rescheduleNewDate,
-                          time: rescheduleNewTime,
-                          room: rescheduleNewRoom || b.room,
-                          status: "Confirmed",
-                          statusColor: "bg-emerald-50 text-emerald-600 border border-emerald-200"
-                        };
-                      }
-                      return b;
-                    }));
-                    showToast(`✅ Reservation #${rescheduleBooking.resId} rescheduled to ${rescheduleNewDate} at ${rescheduleNewTime}`);
-                    setRescheduleBooking(null);
-                  }}
-                  className="py-4 space-y-4"
-                >
-                  {/* Current Slot Info Card */}
-                  <div className="p-3.5 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl text-xs space-y-1">
-                    <div className="font-bold text-[#111827] flex items-center justify-between">
-                      <span>{rescheduleBooking.title}</span>
-                      <span className="text-[#8A90A2] font-mono">#{rescheduleBooking.resId}</span>
+                {/* 2. MAIN POPUP CONTENT / SUCCESS VIEW */}
+                {bookingSuccessData ? (
+                  <div className="py-6 text-center space-y-4 animate-scaleUp">
+                    <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 border-2 border-emerald-200 flex items-center justify-center mx-auto text-2xl font-bold shadow-sm">
+                      ✓
                     </div>
-                    <div className="text-[#64748B]">
-                      Current: <strong>{rescheduleBooking.room}</strong> on {rescheduleBooking.fullDate || rescheduleBooking.date} at {rescheduleBooking.time}
+                    <div>
+                      <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+                        Reservation Confirmed
+                      </span>
+                      <h3 className="text-xl font-black text-[#111827] mt-2">{bookingSuccessData.title}</h3>
+                      <p className="text-xs text-[#8A90A2]">
+                        Booking Reference: <strong className="font-mono text-[#111827]">#{bookingSuccessData.resId}</strong>
+                      </p>
+                    </div>
+
+                    <div className="bg-[#F8FAFC] border border-[#ECEEF4] rounded-2xl p-4 text-left text-xs space-y-2 max-w-md mx-auto">
+                      <div className="flex justify-between">
+                        <span className="text-[#8A90A2]">Facility:</span>
+                        <strong className="text-[#111827]">{bookingSuccessData.room}</strong>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-[#8A90A2]">Date &amp; Time:</span>
+                        <strong className="text-[#111827]">{bookingSuccessData.date} • {bookingSuccessData.time}</strong>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-[#8A90A2]">Duration &amp; Attendees:</span>
+                        <strong className="text-[#111827]">{bookingSuccessData.duration} • {bookingSuccessData.attendees} people</strong>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-[#8A90A2]">Credit Deducted:</span>
+                        <span className="text-emerald-600 font-bold">-{bookingSuccessData.credits} cr (Covered by Incubation Plan)</span>
+                      </div>
+                    </div>
+
+                    {/* Google Calendar 1-Click Sync */}
+                    <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl text-left max-w-md mx-auto space-y-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-base">📅</span>
+                        <strong className="text-xs font-black text-[#111827]">Sync with Your Calendar</strong>
+                      </div>
+                      <p className="text-[11px] text-[#64748B] leading-relaxed">
+                        Export this reservation directly to Google Calendar or download an .ICS invite for Outlook / Apple Calendar.
+                      </p>
+                      <div className="flex items-center gap-2 pt-1">
+                        <a
+                          href={getGCalUrl(bookingSuccessData)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 bg-white hover:bg-blue-50 text-[#2B71FF] border border-blue-300 font-bold py-2 px-3 rounded-xl text-xs text-center shadow-xs flex items-center justify-center gap-1.5 transition-all"
+                        >
+                          <span>Google Calendar (1-Click)</span>
+                          <Icon name="externalLink" className="w-3.5 h-3.5" />
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => downloadIcsFile(bookingSuccessData)}
+                          className="bg-white hover:bg-gray-50 text-[#374151] border border-gray-300 font-bold py-2 px-3 rounded-xl text-xs shadow-xs transition-all"
+                          title="Download iCal (.ics) file"
+                        >
+                          📥 .ICS
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-center gap-3 pt-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setBookingModalRoom(null);
+                          setBookingSuccessData(null);
+                          navigateTo("My Bookings");
+                        }}
+                        className="px-5 py-2.5 bg-[#4F3FE0] hover:bg-[#4335C9] text-white rounded-xl text-xs font-bold shadow-sm"
+                      >
+                        View in My Bookings &rarr;
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setBookingModalRoom(null);
+                          setBookingSuccessData(null);
+                        }}
+                        className="px-5 py-2.5 border border-[#ECEEF4] text-[#374151] rounded-xl text-xs font-bold hover:bg-gray-50"
+                      >
+                        Done
+                      </button>
                     </div>
                   </div>
+                ) : (
+                  <form onSubmit={handleConfirmBookingModal} className="mt-4 space-y-4">
+                    {/* FIELD 1: MEETING TITLE */}
+                    <div>
+                      <label className="block text-xs font-bold text-[#374151] mb-1">
+                        Meeting Title <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={bookingTitle}
+                        onChange={(e) => setBookingTitle(e.target.value)}
+                        placeholder="e.g. Q4 Executive Pitch Session"
+                        className="w-full bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#111827] focus:outline-none focus:border-[#4F3FE0] focus:bg-white transition-all"
+                      />
+                    </div>
 
-                  {/* New Date Picker */}
-                  <div>
-                    <label className="block text-xs font-bold text-[#374151] mb-1">Select New Date</label>
-                    <input
-                      type="date"
-                      value={rescheduleNewDate}
-                      onChange={(e) => setRescheduleNewDate(e.target.value)}
-                      className="w-full bg-[#F6F7FB] border border-[#ECEEF4] rounded-xl px-3.5 py-2 text-xs font-semibold text-[#111827] focus:outline-none focus:border-[#4F3FE0]"
-                      required
-                    />
-                  </div>
+                    {/* FIELD 2: DATE PICKER WITH TODAY & NEXT DAY QUICK ACTIONS */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-xs font-bold text-[#374151] flex items-center gap-1.5">
+                          <Icon name="calendar" className="w-3.5 h-3.5 text-[#4F3FE0]" />
+                          <span>Reservation Date</span>
+                        </label>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={handleSetToday}
+                            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all ${
+                              bookingDate === getTodayDateIso()
+                                ? "bg-[#4F3FE0] text-white border-[#4F3FE0] shadow-xs"
+                                : "bg-[#F8FAFC] border-[#ECEEF4] text-[#374151] hover:bg-white hover:border-[#4F3FE0]/40"
+                            }`}
+                          >
+                            ⚡ Today
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleSetNextDay}
+                            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all ${
+                              bookingDate === getTomorrowDateIso()
+                                ? "bg-[#4F3FE0] text-white border-[#4F3FE0] shadow-xs"
+                                : "bg-[#F8FAFC] border-[#ECEEF4] text-[#374151] hover:bg-white hover:border-[#4F3FE0]/40"
+                            }`}
+                          >
+                            ⚡ Next Day
+                          </button>
+                        </div>
+                      </div>
 
-                  {/* New Time Slot Selector */}
-                  <div>
-                    <label className="block text-xs font-bold text-[#374151] mb-1">Select New Time Slot</label>
-                    <select
-                      value={rescheduleNewTime}
-                      onChange={(e) => setRescheduleNewTime(e.target.value)}
-                      className="w-full bg-[#F6F7FB] border border-[#ECEEF4] rounded-xl px-3.5 py-2 text-xs font-semibold text-[#111827] focus:outline-none focus:border-[#4F3FE0] cursor-pointer"
-                    >
-                      <option value="09:00 AM – 10:30 AM">09:00 AM – 10:30 AM (Available)</option>
-                      <option value="11:00 AM – 12:30 PM">11:00 AM – 12:30 PM (Available)</option>
-                      <option value="02:00 PM – 03:30 PM">02:00 PM – 03:30 PM (Available)</option>
-                      <option value="04:00 PM – 05:30 PM">04:00 PM – 05:30 PM (Available)</option>
-                      <option value="06:00 PM – 07:30 PM">06:00 PM – 07:30 PM (Available)</option>
-                    </select>
-                  </div>
+                      {/* Calendar Native Picker */}
+                      <div className="flex items-center gap-2 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl px-3.5 py-2">
+                        <Icon name="calendar" className="w-4 h-4 text-[#8A90A2]" />
+                        <input
+                          type="date"
+                          min="2026-10-31"
+                          value={bookingDate}
+                          onChange={(e) => setBookingDate(e.target.value)}
+                          className="bg-transparent text-xs font-bold text-[#111827] outline-none cursor-pointer flex-1"
+                        />
+                        <span className="text-[11px] text-[#8A90A2] font-medium">
+                          {bookingDate === getTodayDateIso() ? "(Today)" : bookingDate === getTomorrowDateIso() ? "(Tomorrow)" : ""}
+                        </span>
+                      </div>
+                    </div>
 
-                  {/* Room Change Option */}
-                  <div>
-                    <label className="block text-xs font-bold text-[#374151] mb-1">Select Meeting Facility</label>
-                    <select
-                      value={rescheduleNewRoom}
-                      onChange={(e) => setRescheduleNewRoom(e.target.value)}
-                      className="w-full bg-[#F6F7FB] border border-[#ECEEF4] rounded-xl px-3.5 py-2 text-xs font-semibold text-[#111827] focus:outline-none focus:border-[#4F3FE0] cursor-pointer"
-                    >
-                      {rooms.map(r => (
-                        <option key={r.id} value={r.name}>{r.name} ({r.type} • {r.capacity} seats)</option>
-                      ))}
-                    </select>
-                  </div>
+                    {/* FIELD 3: TIME PICKER (12-HOUR FORMAT WITH AM/PM) */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-[#374151] mb-1 flex items-center gap-1.5">
+                          <Icon name="clock" className="w-3.5 h-3.5 text-[#4F3FE0]" />
+                          <span>Start Time (12-Hour AM/PM)</span>
+                        </label>
+                        <select
+                          value={bookingStartTime}
+                          onChange={(e) => setBookingStartTime(e.target.value)}
+                          className="w-full bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl px-3 py-2 text-xs font-bold text-[#111827] focus:outline-none focus:border-[#4F3FE0] cursor-pointer"
+                        >
+                          {TIME_SLOTS_12H.map(slot => {
+                            const slotInfo = getSlotState(slot, bookingModalRoom, bookingDate, bookingStartTime, bookingDuration);
+                            return (
+                              <option
+                                key={slot}
+                                value={slot}
+                                disabled={slotInfo.disabled && slotInfo.status !== 'selected'}
+                              >
+                                {slot} {slotInfo.status === 'past' ? '(Past)' : slotInfo.status === 'booked' ? '(Booked)' : slotInfo.status === 'unavailable' ? '(Overlap)' : '(Available)'}
+                              </option>
+                            );
+                          })}
+                        </select>
+                      </div>
 
-                  {/* Credit Impact Notice */}
-                  <div className="p-3 bg-indigo-50/60 border border-indigo-100 rounded-xl text-xs flex items-center justify-between text-[#4338CA]">
-                    <span>🪙 Quota Impact:</span>
-                    <strong className="font-bold">0 cr extra • Pre-authorized quota transferred</strong>
-                  </div>
+                      <div>
+                        <label className="block text-xs font-bold text-[#374151] mb-1 flex items-center gap-1.5">
+                          <Icon name="clock" className="w-3.5 h-3.5 text-[#4F3FE0]" />
+                          <span>Duration &amp; End Time</span>
+                        </label>
+                        <select
+                          value={bookingDuration}
+                          onChange={(e) => setBookingDuration(parseFloat(e.target.value))}
+                          className="w-full bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl px-3 py-2 text-xs font-bold text-[#111827] focus:outline-none focus:border-[#4F3FE0] cursor-pointer"
+                        >
+                          {[0.5, 1.0, 1.5, 2.0, 3.0, 4.0].map(dur => {
+                            const sMin = timeStrToMinutes(bookingStartTime);
+                            const eMin = sMin + Math.round(dur * 60);
+                            const endStr = minutesToTimeStr(eMin);
+                            return (
+                              <option key={dur} value={dur}>
+                                {dur === 0.5 ? "30 mins" : `${dur} hrs`} (Ends at ${endStr})
+                              </option>
+                            );
+                          })}
+                        </select>
+                      </div>
+                    </div>
 
-                  {/* Actions */}
-                  <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-[#ECEEF4]">
-                    <button
-                      type="button"
-                      onClick={() => setRescheduleBooking(null)}
-                      className="px-4 py-2 border border-[#ECEEF4] text-[#374151] rounded-xl text-xs font-bold hover:bg-gray-50"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-5 py-2 bg-[#4F3FE0] hover:bg-[#4335C9] text-white rounded-xl text-xs font-bold shadow-sm"
-                    >
-                      Confirm Reschedule
-                    </button>
-                  </div>
-                </form>
+                    {/* FIELD 4: VISIBLE TIME SLOT BAR / AVAILABILITY SECTION */}
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <label className="text-xs font-black uppercase tracking-wider text-[#111827]">
+                            Time Slot Bar &amp; Live Availability
+                          </label>
+                          <p className="text-[11px] text-[#8A90A2]">
+                            {isLoadingAvailability ? "Updating live availability..." : "Click any green slot to select your start time"}
+                          </p>
+                        </div>
+                        {/* Legend */}
+                        <div className="flex items-center gap-2 text-[10.5px] font-semibold text-[#64748B] flex-wrap">
+                          <span className="flex items-center gap-1">
+                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Available
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <span className="w-2.5 h-2.5 rounded-full bg-[#4F3FE0]" /> Selected
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <span className="w-2.5 h-2.5 rounded-full bg-gray-400" /> Booked
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <span className="w-2.5 h-2.5 rounded-full bg-gray-300" /> Past
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* 12-Hour AM/PM Slots Grid */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 max-h-48 overflow-y-auto p-1.5 border border-[#ECEEF4] rounded-2xl bg-[#FAFAFC]">
+                        {TIME_SLOTS_12H.map(slot => {
+                          const slotState = getSlotState(slot, bookingModalRoom, bookingDate, bookingStartTime, bookingDuration);
+                          
+                          if (slotState.status === "past") {
+                            return (
+                              <div
+                                key={slot}
+                                className="p-2 rounded-xl border border-gray-200 bg-gray-100 text-gray-400 text-center cursor-not-allowed select-none opacity-50"
+                                title="This time slot has already passed for today"
+                              >
+                                <div className="text-[11.5px] font-bold line-through">{slot}</div>
+                                <div className="text-[9.5px] text-gray-500 font-semibold mt-0.5">⏳ Past</div>
+                              </div>
+                            );
+                          }
+
+                          if (slotState.status === "booked") {
+                            return (
+                              <div
+                                key={slot}
+                                className="p-2 rounded-xl border border-gray-200 bg-gray-100/90 text-gray-400 text-center cursor-not-allowed select-none opacity-60"
+                                title="Slot already reserved by another founder"
+                              >
+                                <div className="text-[11.5px] font-bold line-through">{slot}</div>
+                                <div className="text-[9.5px] text-gray-500 font-semibold mt-0.5">🔒 Booked</div>
+                              </div>
+                            );
+                          }
+
+                          if (slotState.status === "unavailable") {
+                            return (
+                              <div
+                                key={slot}
+                                className="p-2 rounded-xl border border-amber-200 bg-amber-50/70 text-amber-700 text-center cursor-not-allowed select-none"
+                                title="Overlap conflict: Duration would overlap a reserved slot"
+                              >
+                                <div className="text-[11.5px] font-bold">{slot}</div>
+                                <div className="text-[9.5px] font-semibold text-amber-600 mt-0.5">Overlap</div>
+                              </div>
+                            );
+                          }
+
+                          if (slotState.status === "selected") {
+                            return (
+                              <button
+                                key={slot}
+                                type="button"
+                                onClick={() => setBookingStartTime(slot)}
+                                className="p-2 rounded-xl border border-[#4F3FE0] bg-[#4F3FE0] text-white text-center shadow-sm ring-2 ring-[#4F3FE0]/25 transition-all"
+                              >
+                                <div className="text-[11.5px] font-bold">{slot}</div>
+                                <div className="text-[9.5px] font-bold text-purple-100 mt-0.5">★ Selected</div>
+                              </button>
+                            );
+                          }
+
+                          return (
+                            <button
+                              key={slot}
+                              type="button"
+                              onClick={() => setBookingStartTime(slot)}
+                              className="p-2 rounded-xl border border-emerald-300 bg-emerald-50/50 hover:bg-emerald-100/70 hover:border-emerald-400 text-emerald-950 text-center transition-all hover:shadow-xs active:scale-95"
+                            >
+                              <div className="text-[11.5px] font-bold">{slot}</div>
+                              <div className="text-[9.5px] font-bold text-emerald-600 mt-0.5">✓ Available</div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* FIELD 5: ATTENDEES COUNT */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-xs font-bold text-[#374151] flex items-center gap-1.5">
+                          <Icon name="users" className="w-3.5 h-3.5 text-[#4F3FE0]" />
+                          <span>Attendees Count</span>
+                        </label>
+                        <span className="text-[11px] text-[#8A90A2]">
+                          Room Max: {bookingModalRoom.capacity} seats
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setBookingAttendees(prev => Math.max(1, prev - 1))}
+                          className="w-9 h-9 rounded-xl border border-[#ECEEF4] bg-[#F8FAFC] hover:bg-white text-lg font-bold flex items-center justify-center text-[#111827]"
+                        >
+                          -
+                        </button>
+                        <div className="flex-1 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl py-2 text-center text-xs font-black text-[#111827]">
+                          {bookingAttendees} attendees
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setBookingAttendees(prev => Math.min(bookingModalRoom.capacity, prev + 1))}
+                          className="w-9 h-9 rounded-xl border border-[#ECEEF4] bg-[#F8FAFC] hover:bg-white text-lg font-bold flex items-center justify-center text-[#111827]"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* 3. DYNAMIC SUMMARY BOX */}
+                    {(() => {
+                      const hourlyRate = parseInt((bookingModalRoom.rate || "").replace(/[^0-9]/g, ""), 10) || 2000;
+                      const sMin = timeStrToMinutes(bookingStartTime);
+                      const eMin = sMin + Math.round(bookingDuration * 60);
+                      const endStr = minutesToTimeStr(eMin);
+                      const currentSelectedState = getSlotState(bookingStartTime, bookingModalRoom, bookingDate, bookingStartTime, bookingDuration);
+
+                      return (
+                        <div className="bg-[#F8F9FD] border border-[#E3DEFF] rounded-2xl p-4 space-y-2 text-xs">
+                          <div className="flex justify-between">
+                            <span className="text-[#8A90A2]">Room Rate:</span>
+                            <span className="font-bold text-[#111827]">{bookingModalRoom.rate} (Covered by Credits)</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-[#8A90A2]">Date &amp; Time:</span>
+                            <span className="font-bold text-[#4F3FE0]">
+                              {bookingDate} • {bookingStartTime} – {endStr} ({bookingDuration} hrs)
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-[#8A90A2]">Attendees:</span>
+                            <span className="font-bold text-[#111827]">
+                              {bookingAttendees} people (Capacity: {bookingModalRoom.capacity})
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-[#8A90A2]">Credits Used:</span>
+                            <span className="text-emerald-600 font-bold">
+                              -{bookingDuration} cr ({startupCreditsRemaining - bookingDuration} cr remaining in quota)
+                            </span>
+                          </div>
+                          <div className="flex justify-between pt-1 border-t border-[#E3DEFF]">
+                            <span className="font-bold text-[#111827]">Final Charge:</span>
+                            <span className="text-emerald-600 font-black text-sm">₹0.00 (100% Covered)</span>
+                          </div>
+
+                          {currentSelectedState.disabled && !currentSelectedState.isSelected && (
+                            <div className="p-2 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-[11px] font-bold flex items-center gap-1.5 mt-2">
+                              <span>⚠️</span>
+                              <span>Selected time slot is {currentSelectedState.label}. Please pick an available green slot.</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+
+                    {/* Google Calendar Sync Option */}
+                    <div className="p-3 bg-blue-50/60 border border-blue-200 rounded-xl flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2 text-blue-900 font-semibold">
+                        <span>📅</span>
+                        <span>Auto-generate Google Calendar invite</span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={bookingSyncGCal}
+                          onChange={(e) => setBookingSyncGCal(e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#4F3FE0]"></div>
+                      </label>
+                    </div>
+
+                    {/* 4. FOOTER BUTTONS */}
+                    <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-[#ECEEF4]">
+                      <button
+                        type="button"
+                        onClick={() => setBookingModalRoom(null)}
+                        className="px-4 py-2.5 border border-[#ECEEF4] text-[#374151] rounded-xl text-xs font-bold hover:bg-gray-50 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-6 py-2.5 bg-[#4F3FE0] hover:bg-[#4335C9] text-white rounded-xl text-xs font-black shadow-sm active:scale-95 transition-all flex items-center gap-2"
+                      >
+                        <span>⚡ Confirm Reservation</span>
+                      </button>
+                    </div>
+                  </form>
+                )}
               </div>
             </div>
           )}
