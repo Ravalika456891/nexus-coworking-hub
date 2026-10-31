@@ -39,3 +39,4 @@ copyFile(path.join(root, 'index.html'), path.join(pub, 'index.html'));
 copyFile(path.join(root, 'cancellation.js'), path.join(pub, 'cancellation.js'));
 
 console.log('✅ [sync-public] Successfully synchronized all static assets to public/');
+

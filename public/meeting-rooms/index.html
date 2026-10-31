@@ -1605,7 +1605,7 @@
 
 
               {/* ── VIEW 3: MY BOOKINGS & RESERVATIONS (Command Center Alignment) ── */}
-              {(activeNav === "My Bookings" || activeNav === "Bookings" || activeNav === "My Reservations") && {
+              {(activeNav === "My Bookings" || activeNav === "Bookings" || activeNav === "My Reservations") && (() => {
                 // Calculate dynamic KPI counts from state
                 const totalCount = upcomingBookings.length;
                 const confirmedCount = upcomingBookings.filter(b => b.status === "Confirmed").length;
@@ -2156,7 +2156,7 @@
                     </div>
                   </div>
                 );
-              }}
+              })()}
 
 
               {/* ── VIEW 4: CALENDAR TIMELINE ── */}
