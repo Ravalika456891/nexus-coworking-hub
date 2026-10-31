@@ -121,7 +121,12 @@
         trendingUp: <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.5 4.5 7.5-7.5M21 8.25V12m0-3.75h-3.75" />,
         coins: <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />,
         gift: <path strokeLinecap="round" strokeLinejoin="round" d="M21 11.25v8.25a1.5 1.5 0 01-1.5 1.5H4.5a1.5 1.5 0 01-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 109.375 7.5H12m0-2.625V21m0-16.125A2.625 2.625 0 1114.625 7.5H12m-9 3.75h18" />,
-        sparkles: <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
+        sparkles: <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />,
+        checkCircle: <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />,
+        xCircle: <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />,
+        alertCircle: <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />,
+        calendarCheck: <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5m-8.25-3.75l2.25 2.25 4.5-4.5" />,
+        filter: <path strokeLinecap="round" strokeLinejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />
       };
 
       return (
@@ -240,38 +245,124 @@
       const [upcomingBookings, setUpcomingBookings] = useState([
         {
           id: "bkg-1",
+          resId: "RES-8901",
           date: "Today",
-          time: "03:00 PM",
+          day: "30",
+          month: "OCT",
+          fullDate: "Fri, 30 Oct 2026",
+          time: "03:30 PM – 05:00 PM",
           title: "Design Review",
           room: "Collaboration Room",
+          roomId: "mr-4",
+          roomImage: "assets/rooms/mr-04-main.jpg",
+          fallbackImage: "https://images.unsplash.com/photo-1527192491265-7e15c55b1ed2?auto=format&fit=crop&w=800&q=80",
           attendees: 6,
+          credits: 18,
           status: "Confirmed",
+          isRecurring: false,
+          purpose: "Sprint 4 UI/UX walkthrough, component polish and QA review.",
           statusColor: "bg-emerald-50 text-emerald-600 border border-emerald-200",
           barColor: "bg-blue-500"
         },
         {
           id: "bkg-2",
+          resId: "RES-8902",
           date: "31 Oct",
-          time: "10:00 AM",
+          day: "31",
+          month: "OCT",
+          fullDate: "Sat, 31 Oct 2026",
+          time: "10:00 AM – 11:30 AM",
           title: "Weekly Sync",
           room: "Pitch Arena Nexus",
+          roomId: "mr-2",
+          roomImage: "assets/rooms/mr-02-main.jpg",
+          fallbackImage: "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=800&q=80",
           attendees: 4,
+          credits: 25,
           status: "Confirmed",
+          isRecurring: true,
+          recurringPattern: "Every Friday & Saturday",
+          purpose: "Executive growth metrics, cap-table update & cohort deliverables.",
           statusColor: "bg-emerald-50 text-emerald-600 border border-emerald-200",
           barColor: "bg-emerald-500"
         },
         {
           id: "bkg-3",
+          resId: "RES-8903",
           date: "02 Nov",
-          time: "11:00 AM",
-          title: "Product Demo",
+          day: "02",
+          month: "NOV",
+          fullDate: "Mon, 02 Nov 2026",
+          time: "11:00 AM – 12:30 PM",
+          title: "Product Demo & Pitch",
           room: "Boardroom Alpha",
+          roomId: "mr-1",
+          roomImage: "assets/rooms/mr-01-main.jpg",
+          fallbackImage: "https://images.unsplash.com/photo-1517502884422-41eaead166d4?auto=format&fit=crop&w=800&q=80",
           attendees: 8,
+          credits: 30,
           status: "Pending",
+          isRecurring: false,
+          purpose: "Venture pitch to seed angel syndicates and incubation advisors.",
           statusColor: "bg-amber-50 text-amber-600 border border-amber-200",
           barColor: "bg-amber-500"
+        },
+        {
+          id: "bkg-4",
+          resId: "RES-8904",
+          date: "03 Nov",
+          day: "03",
+          month: "NOV",
+          fullDate: "Tue, 03 Nov 2026",
+          time: "02:00 PM – 04:00 PM",
+          title: "Client Strategy Session",
+          room: "Training Room",
+          roomId: "mr-5",
+          roomImage: "assets/rooms/mr-05-main.jpg",
+          fallbackImage: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=800&q=80",
+          attendees: 12,
+          credits: 40,
+          status: "Cancelled",
+          isRecurring: false,
+          purpose: "Quarterly strategic roadmap session with enterprise partner.",
+          statusColor: "bg-rose-50 text-rose-600 border border-rose-200",
+          barColor: "bg-rose-500"
+        },
+        {
+          id: "bkg-5",
+          resId: "RES-8905",
+          date: "28 Oct",
+          day: "28",
+          month: "OCT",
+          fullDate: "Wed, 28 Oct 2026",
+          time: "04:00 PM – 05:00 PM",
+          title: "Sprint Retrospective",
+          room: "Focus Room",
+          roomId: "mr-3",
+          roomImage: "assets/rooms/mr-03-main.jpg",
+          fallbackImage: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=800&q=80",
+          attendees: 4,
+          credits: 12,
+          status: "Completed",
+          isRecurring: true,
+          recurringPattern: "Bi-weekly Wednesdays",
+          purpose: "Sprint 3 team reflection, process blockers and action items.",
+          statusColor: "bg-slate-100 text-slate-700 border border-slate-200",
+          barColor: "bg-slate-400"
         }
       ]);
+
+      // My Bookings Filtering & Modal States
+      const [bookingsFilterTab, setBookingsFilterTab] = useState("All Bookings");
+      const [bookingsSearchQuery, setBookingsSearchQuery] = useState("");
+      const [bookingsRoomFilter, setBookingsRoomFilter] = useState("All Rooms");
+      const [bookingsDateFilter, setBookingsDateFilter] = useState("All Dates");
+      const [rescheduleBooking, setRescheduleBooking] = useState(null);
+      const [rescheduleNewDate, setRescheduleNewDate] = useState("2026-11-04");
+      const [rescheduleNewTime, setRescheduleNewTime] = useState("02:00 PM – 03:30 PM");
+      const [rescheduleNewRoom, setRescheduleNewRoom] = useState("");
+      const [cancelModalBooking, setCancelModalBooking] = useState(null);
+      const [detailsModalBooking, setDetailsModalBooking] = useState(null);
 
       const [todaysSchedule, setTodaysSchedule] = useState([
         {
@@ -1512,79 +1603,559 @@
               )}
 
 
-              {/* ── VIEW 3: BOOKINGS / MY RESERVATIONS ── */}
-              {(activeNav === "My Bookings" || activeNav === "Bookings" || activeNav === "My Reservations") && (
-                <div className="space-y-6 animate-fadeIn">
-                  <div className="flex items-center justify-between flex-wrap gap-4 bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft">
-                    <div>
-                      <h2 className="text-2xl font-black text-[#111827]">My Bookings &amp; Reservations</h2>
-                      <p className="text-xs text-[#8A90A2] mt-1">Manage active conference slots, recurring meetings and approvals</p>
-                    </div>
-                    <button
-                      onClick={() => navigateTo("Meeting Rooms")}
-                      className="bg-[#4F3FE0] hover:bg-[#4335C9] text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm"
-                    >
-                      + Book a Meeting Room
-                    </button>
-                  </div>
+              {/* ── VIEW 3: MY BOOKINGS & RESERVATIONS (Command Center Alignment) ── */}
+              {(activeNav === "My Bookings" || activeNav === "Bookings" || activeNav === "My Reservations") && {
+                // Calculate dynamic KPI counts from state
+                const totalCount = upcomingBookings.length;
+                const confirmedCount = upcomingBookings.filter(b => b.status === "Confirmed").length;
+                const pendingCount = upcomingBookings.filter(b => b.status === "Pending").length;
+                const cancelledCount = upcomingBookings.filter(b => b.status === "Cancelled").length;
 
-                  <div className="bg-white border border-[#ECEEF4] rounded-2xl overflow-hidden shadow-soft">
-                    <div className="p-4 border-b border-[#ECEEF4] flex items-center justify-between flex-wrap gap-3">
-                      <div className="flex items-center gap-2">
-                        {["All Bookings", "Confirmed", "Pending", "Completed"].map(tab => (
-                          <button key={tab} className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-[#374151] hover:bg-[#F8FAFC]">
-                            {tab}
-                          </button>
-                        ))}
+                // Dynamic filtering logic
+                const filteredBookings = upcomingBookings.filter(bkg => {
+                  if (bookingsFilterTab !== "All Bookings" && bkg.status !== bookingsFilterTab) {
+                    return false;
+                  }
+                  if (bookingsSearchQuery.trim()) {
+                    const q = bookingsSearchQuery.toLowerCase();
+                    const matchTitle = (bkg.title || "").toLowerCase().includes(q);
+                    const matchRoom = (bkg.room || "").toLowerCase().includes(q);
+                    const matchResId = (bkg.resId || "").toLowerCase().includes(q);
+                    if (!matchTitle && !matchRoom && !matchResId) return false;
+                  }
+                  if (bookingsRoomFilter !== "All Rooms" && bkg.room !== bookingsRoomFilter) {
+                    return false;
+                  }
+                  if (bookingsDateFilter === "Today" && bkg.date !== "Today") return false;
+                  if (bookingsDateFilter === "Upcoming" && (bkg.status === "Cancelled" || bkg.status === "Completed")) return false;
+                  if (bookingsDateFilter === "Past" && bkg.status !== "Completed" && bkg.status !== "Cancelled") return false;
+                  return true;
+                });
+
+                const isFilterActive = bookingsSearchQuery || bookingsRoomFilter !== "All Rooms" || bookingsDateFilter !== "All Dates" || bookingsFilterTab !== "All Bookings";
+
+                return (
+                  <div className="space-y-6 animate-fadeIn">
+                    {/* Section 2: Page Header with Room Photo & Purple Gradient */}
+                    <div className="relative rounded-2xl border border-[#ECEEF4] overflow-hidden bg-white shadow-soft flex items-center min-h-[150px] sm:min-h-[170px] max-h-[190px]">
+                      {/* Smooth White-to-Lavender Gradient Overlay on Left */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-white via-white/95 via-[#F6F4FF]/75 to-transparent z-10 w-full sm:w-[65%]" />
+
+                      {/* Attractive Meeting Room Photography on Right */}
+                      <div className="absolute right-0 top-0 bottom-0 w-full sm:w-[50%] h-full z-0 overflow-hidden">
+                        <img
+                          src="assets/rooms/banner-hero.jpg"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = "https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=1200&q=80";
+                          }}
+                          alt="NEXUS HUB Modern Meeting Space"
+                          className="w-full h-full object-cover object-center"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-r from-[#F6F4FF]/60 via-transparent to-black/10" />
                       </div>
-                      <span className="text-xs font-semibold text-[#8A90A2]">{upcomingBookings.length} Total Bookings</span>
+
+                      {/* Banner Left Content */}
+                      <div className="relative z-20 p-6 sm:p-7 max-w-[580px]">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EEEBFF] text-[#4F3FE0] text-[11px] font-bold mb-2">
+                          <span className="w-2 h-2 rounded-full bg-[#4F3FE0] animate-pulse"></span>
+                          <span>RESERVATION COMMAND CENTER • XYZ TECHNOLOGIES</span>
+                        </div>
+
+                        <h2 className="text-2xl sm:text-3xl font-black text-[#111827] tracking-tight">
+                          My Bookings &amp; Reservations
+                        </h2>
+                        <p className="text-xs sm:text-sm text-[#64748B] mt-1 leading-relaxed">
+                          Manage, track and modify your meeting room bookings all in one place.
+                        </p>
+
+                        <div className="mt-3.5">
+                          <button
+                            onClick={() => navigateTo("Meeting Rooms")}
+                            className="bg-[#4F3FE0] hover:bg-[#4335C9] text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow-sm hover:shadow-md active:scale-[0.98] flex items-center gap-2"
+                          >
+                            <span className="text-sm font-bold">+</span>
+                            <span>Book a Meeting Room</span>
+                          </button>
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="divide-y divide-[#ECEEF4]">
-                      {upcomingBookings.map(bkg => (
-                        <div key={bkg.id} className="p-4 flex items-center justify-between flex-wrap gap-4 hover:bg-[#F8FAFC] transition-all">
-                          <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-xl bg-purple-50 text-[#4F3FE0] flex items-center justify-center font-bold text-lg flex-shrink-0">
-                              📅
+                    {/* Section 3: Four Booking Summary Cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {/* Card 1: Total Bookings */}
+                      <div
+                        onClick={() => setBookingsFilterTab("All Bookings")}
+                        className="bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft hover:shadow-card hover:-translate-y-0.5 transition-all cursor-pointer group"
+                      >
+                        <div className="flex items-center justify-between text-[#8A90A2]">
+                          <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#64748B]">Total Bookings</span>
+                          <div className="w-9 h-9 rounded-xl bg-purple-50 text-[#4F3FE0] flex items-center justify-center group-hover:scale-105 transition-transform">
+                            <Icon name="calendar" className="w-5 h-5 text-[#4F3FE0]" />
+                          </div>
+                        </div>
+                        <div className="text-3xl font-black text-[#111827] mt-2">
+                          {totalCount}
+                        </div>
+                        <div className="text-[11px] font-medium text-[#8A90A2] mt-1 flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#4F3FE0]"></span>
+                          <span>All scheduled sessions</span>
+                        </div>
+                      </div>
+
+                      {/* Card 2: Confirmed */}
+                      <div
+                        onClick={() => setBookingsFilterTab("Confirmed")}
+                        className="bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft hover:shadow-card hover:-translate-y-0.5 transition-all cursor-pointer group"
+                      >
+                        <div className="flex items-center justify-between text-[#8A90A2]">
+                          <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#64748B]">Confirmed</span>
+                          <div className="w-9 h-9 rounded-xl bg-emerald-50 text-[#16A66A] flex items-center justify-center group-hover:scale-105 transition-transform">
+                            <Icon name="checkCircle" className="w-5 h-5 text-[#16A66A]" />
+                          </div>
+                        </div>
+                        <div className="text-3xl font-black text-[#16A66A] mt-2">
+                          {confirmedCount}
+                        </div>
+                        <div className="text-[11px] font-medium text-[#8A90A2] mt-1 flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#16A66A]"></span>
+                          <span>Guaranteed active slots</span>
+                        </div>
+                      </div>
+
+                      {/* Card 3: Pending */}
+                      <div
+                        onClick={() => setBookingsFilterTab("Pending")}
+                        className="bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft hover:shadow-card hover:-translate-y-0.5 transition-all cursor-pointer group"
+                      >
+                        <div className="flex items-center justify-between text-[#8A90A2]">
+                          <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#64748B]">Pending</span>
+                          <div className="w-9 h-9 rounded-xl bg-amber-50 text-[#F59E0B] flex items-center justify-center group-hover:scale-105 transition-transform">
+                            <Icon name="clock" className="w-5 h-5 text-[#F59E0B]" />
+                          </div>
+                        </div>
+                        <div className="text-3xl font-black text-[#F59E0B] mt-2">
+                          {pendingCount}
+                        </div>
+                        <div className="text-[11px] font-medium text-[#8A90A2] mt-1 flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B]"></span>
+                          <span>Awaiting admin review</span>
+                        </div>
+                      </div>
+
+                      {/* Card 4: Cancelled */}
+                      <div
+                        onClick={() => setBookingsFilterTab("Cancelled")}
+                        className="bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft hover:shadow-card hover:-translate-y-0.5 transition-all cursor-pointer group"
+                      >
+                        <div className="flex items-center justify-between text-[#8A90A2]">
+                          <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#64748B]">Cancelled</span>
+                          <div className="w-9 h-9 rounded-xl bg-rose-50 text-[#EF4444] flex items-center justify-center group-hover:scale-105 transition-transform">
+                            <Icon name="xCircle" className="w-5 h-5 text-[#EF4444]" />
+                          </div>
+                        </div>
+                        <div className="text-3xl font-black text-[#EF4444] mt-2">
+                          {cancelledCount}
+                        </div>
+                        <div className="text-[11px] font-medium text-[#8A90A2] mt-1 flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#EF4444]"></span>
+                          <span>Released &amp; refunded</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Section 4: Booking Filter Tabs */}
+                    <div className="flex items-center justify-between flex-wrap gap-3 pt-1">
+                      <div className="flex items-center gap-2 overflow-x-auto pb-1 max-w-full">
+                        {["All Bookings", "Confirmed", "Pending", "Cancelled", "Completed"].map(tab => {
+                          const isActive = bookingsFilterTab === tab;
+                          return (
+                            <button
+                              key={tab}
+                              onClick={() => setBookingsFilterTab(tab)}
+                              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                                isActive
+                                  ? "bg-[#4F3FE0] text-white shadow-xs"
+                                  : "bg-white border border-[#ECEEF4] text-[#64748B] hover:text-[#111827] hover:bg-[#F8FAFC]"
+                              }`}
+                            >
+                              <span>{tab}</span>
+                              <span className={`ml-2 text-[10.5px] px-1.5 py-0.2 rounded-full font-extrabold ${
+                                isActive ? "bg-white/20 text-white" : "bg-gray-100 text-[#64748B]"
+                              }`}>
+                                {tab === "All Bookings" ? totalCount : upcomingBookings.filter(b => b.status === tab).length}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <div className="text-xs font-semibold text-[#8A90A2]">
+                        Showing <strong className="text-[#111827]">{filteredBookings.length}</strong> of {totalCount} reservations
+                      </div>
+                    </div>
+
+                    {/* Section 5: Search and Filter Controls Toolbar */}
+                    <div className="bg-white border border-[#ECEEF4] rounded-2xl p-4 shadow-soft flex items-center justify-between flex-wrap gap-3">
+                      <div className="flex items-center gap-3 flex-1 min-w-[260px]">
+                        <div className="relative flex-1">
+                          <Icon name="search" className="w-4 h-4 text-[#8A90A2] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                          <input
+                            type="text"
+                            value={bookingsSearchQuery}
+                            onChange={(e) => setBookingsSearchQuery(e.target.value)}
+                            placeholder="Search by meeting title, room, or #RES ID..."
+                            className="w-full bg-[#F6F7FB] border border-[#ECEEF4] rounded-xl pl-10 pr-4 py-2 text-xs text-[#111827] placeholder-[#8A90A2] focus:outline-none focus:border-[#4F3FE0] focus:bg-white transition-all"
+                          />
+                          {bookingsSearchQuery && (
+                            <button
+                              onClick={() => setBookingsSearchQuery("")}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                            >
+                              <Icon name="x" className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        {/* Date Filter */}
+                        <div className="flex items-center gap-1.5 bg-[#F6F7FB] border border-[#ECEEF4] rounded-xl px-3 py-1.5 text-xs text-[#374151]">
+                          <Icon name="calendar" className="w-3.5 h-3.5 text-[#8A90A2]" />
+                          <select
+                            value={bookingsDateFilter}
+                            onChange={(e) => setBookingsDateFilter(e.target.value)}
+                            className="bg-transparent border-none text-xs font-semibold text-[#374151] focus:outline-none cursor-pointer"
+                          >
+                            <option value="All Dates">All Dates</option>
+                            <option value="Today">Today Only</option>
+                            <option value="Upcoming">Upcoming Only</option>
+                            <option value="Past">Past / Archived</option>
+                          </select>
+                        </div>
+
+                        {/* Room Filter */}
+                        <div className="flex items-center gap-1.5 bg-[#F6F7FB] border border-[#ECEEF4] rounded-xl px-3 py-1.5 text-xs text-[#374151]">
+                          <Icon name="building" className="w-3.5 h-3.5 text-[#8A90A2]" />
+                          <select
+                            value={bookingsRoomFilter}
+                            onChange={(e) => setBookingsRoomFilter(e.target.value)}
+                            className="bg-transparent border-none text-xs font-semibold text-[#374151] focus:outline-none cursor-pointer"
+                          >
+                            <option value="All Rooms">All Rooms</option>
+                            {rooms.map(r => (
+                              <option key={r.id} value={r.name}>{r.name}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Clear Filters Button */}
+                        {isFilterActive && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setBookingsSearchQuery("");
+                              setBookingsRoomFilter("All Rooms");
+                              setBookingsDateFilter("All Dates");
+                              setBookingsFilterTab("All Bookings");
+                            }}
+                            className="text-xs font-bold text-[#EF4444] hover:bg-rose-50 px-3 py-1.5 rounded-xl border border-rose-200 transition-all flex items-center gap-1"
+                          >
+                            <Icon name="x" className="w-3 h-3" />
+                            <span>Clear Filters</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Section 6 & 8 & 9: Main Content 2-Column Section */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                      {/* Left Column (8 cols): Reservation Cards */}
+                      <div className="lg:col-span-8 space-y-3.5">
+                        {filteredBookings.length === 0 ? (
+                          <div className="bg-white border border-[#ECEEF4] rounded-2xl p-12 text-center shadow-soft">
+                            <div className="w-14 h-14 rounded-2xl bg-gray-50 text-gray-400 flex items-center justify-center mx-auto mb-3">
+                              <Icon name="calendar" className="w-7 h-7 text-gray-400" />
                             </div>
-                            <div>
-                              <div className="font-bold text-sm text-[#111827]">{bkg.title}</div>
-                              <div className="text-xs text-[#64748B] flex items-center gap-2 mt-0.5">
-                                <span>📍 {bkg.room}</span>
-                                <span>•</span>
-                                <span>🕒 {bkg.date} at {bkg.time}</span>
-                                <span>•</span>
-                                <span>👥 {bkg.attendees} attendees</span>
+                            <h4 className="text-base font-bold text-[#111827]">No reservations match your filters</h4>
+                            <p className="text-xs text-[#8A90A2] mt-1 max-w-sm mx-auto">
+                              Try resetting your search query or selecting a different status tab.
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setBookingsSearchQuery("");
+                                setBookingsRoomFilter("All Rooms");
+                                setBookingsDateFilter("All Dates");
+                                setBookingsFilterTab("All Bookings");
+                              }}
+                              className="mt-4 px-4 py-2 bg-[#4F3FE0] text-white rounded-xl text-xs font-bold shadow-xs hover:bg-[#4335C9]"
+                            >
+                              Reset All Filters
+                            </button>
+                          </div>
+                        ) : (
+                          filteredBookings.map(bkg => {
+                            const isCancelled = bkg.status === "Cancelled";
+                            const isCompleted = bkg.status === "Completed";
+                            const canModify = !isCancelled && !isCompleted;
+
+                            return (
+                              <div
+                                key={bkg.id}
+                                className="bg-white border border-[#ECEEF4] rounded-2xl p-4 sm:p-5 shadow-soft hover:shadow-card hover:-translate-y-0.5 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 group"
+                              >
+                                {/* Left Section: Date Badge & Meeting Room Thumbnail */}
+                                <div className="flex items-center gap-3.5 flex-shrink-0">
+                                  {/* Date Badge */}
+                                  <div className="bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl px-2.5 py-2 text-center min-w-[54px] flex flex-col items-center justify-center flex-shrink-0">
+                                    <span className="text-lg font-black text-[#111827] leading-none">
+                                      {bkg.day || "30"}
+                                    </span>
+                                    <span className="text-[10px] font-extrabold text-[#4F3FE0] tracking-wider uppercase mt-1 leading-none">
+                                      {bkg.month || "OCT"}
+                                    </span>
+                                  </div>
+
+                                  {/* Room Thumbnail */}
+                                  <div
+                                    onClick={() => setDetailsModalBooking(bkg)}
+                                    className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden border border-[#ECEEF4] relative flex-shrink-0 cursor-pointer group-hover:border-[#4F3FE0]/40 transition-all"
+                                    title={`View room details for ${bkg.room}`}
+                                  >
+                                    <img
+                                      src={bkg.roomImage || "assets/rooms/mr-01-main.jpg"}
+                                      onError={(e) => {
+                                        e.target.onerror = null;
+                                        e.target.src = bkg.fallbackImage || "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=400&q=80";
+                                      }}
+                                      alt={bkg.room}
+                                      className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
+                                      loading="lazy"
+                                    />
+                                    <div className="absolute inset-0 bg-black/5 hover:bg-transparent transition-colors" />
+                                  </div>
+                                </div>
+
+                                {/* Center Section: Meeting Info & Meta */}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <h4
+                                      onClick={() => setDetailsModalBooking(bkg)}
+                                      className="text-sm sm:text-[15px] font-black text-[#111827] truncate hover:text-[#4F3FE0] cursor-pointer"
+                                    >
+                                      {bkg.title}
+                                    </h4>
+                                    {bkg.isRecurring && (
+                                      <span className="bg-[#F4F2FF] border border-[#E3DEFF] text-[#4F3FE0] text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                                        <span>🔄</span>
+                                        <span>Recurring</span>
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  <div className="flex items-center gap-2.5 text-xs text-[#64748B] mt-1 flex-wrap">
+                                    <span className="font-bold text-[#374151] flex items-center gap-1">
+                                      <span>📍</span>
+                                      <span>{bkg.room}</span>
+                                    </span>
+                                    <span>•</span>
+                                    <span className="flex items-center gap-1">
+                                      <span>🕒</span>
+                                      <span>{bkg.time}</span>
+                                    </span>
+                                    <span>•</span>
+                                    <span className="flex items-center gap-1">
+                                      <span>👥</span>
+                                      <span>{bkg.attendees} attendees</span>
+                                    </span>
+                                    <span>•</span>
+                                    <span className="text-[#4F3FE0] font-bold">
+                                      🪙 {bkg.credits || 18} cr
+                                    </span>
+                                    {bkg.resId && (
+                                      <span className="text-[10px] text-[#8A90A2] font-mono bg-gray-50 px-1.5 py-0.2 rounded border border-[#ECEEF4]">
+                                        #{bkg.resId}
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {bkg.purpose && (
+                                    <p className="text-[11px] text-[#8A90A2] mt-1 line-clamp-1 italic">
+                                      &ldquo;{bkg.purpose}&rdquo;
+                                    </p>
+                                  )}
+                                </div>
+
+                                {/* Right Section: Status Pill & Action Buttons */}
+                                <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap sm:flex-nowrap justify-between sm:justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-[#ECEEF4]">
+                                  <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${bkg.statusColor || 'bg-gray-100 text-gray-700'}`}>
+                                    {bkg.status}
+                                  </span>
+
+                                  {canModify ? (
+                                    <>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setRescheduleBooking(bkg);
+                                          setRescheduleNewRoom(bkg.room);
+                                          setRescheduleNewTime(bkg.time);
+                                        }}
+                                        className="border border-[#ECEEF4] hover:bg-[#F8FAFC] hover:border-[#4F3FE0]/40 text-[#374151] hover:text-[#4F3FE0] px-3 py-1.5 rounded-xl text-xs font-bold transition-all"
+                                      >
+                                        Reschedule
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => setCancelModalBooking(bkg)}
+                                        className="text-rose-500 hover:text-rose-700 hover:bg-rose-50 border border-transparent hover:border-rose-200 text-xs font-bold px-2.5 py-1.5 rounded-xl transition-all"
+                                      >
+                                        Cancel
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <span className="text-[11px] font-medium text-[#8A90A2] italic px-1">
+                                      {isCancelled ? "Slot Released" : "Completed"}
+                                    </span>
+                                  )}
+
+                                  <button
+                                    type="button"
+                                    onClick={() => setDetailsModalBooking(bkg)}
+                                    className="text-xs font-bold text-[#4F3FE0] hover:bg-[#EEEBFF] px-2.5 py-1.5 rounded-xl transition-all"
+                                    title="View full booking details"
+                                  >
+                                    Details &rarr;
+                                  </button>
+                                </div>
                               </div>
-                            </div>
+                            );
+                          })
+                        )}
+                      </div>
+
+                      {/* Right Column (4 cols): Upcoming Schedule Sidebar + Quick Actions */}
+                      <div className="lg:col-span-4 space-y-6">
+                        {/* Section 8: Upcoming Schedule Sidebar */}
+                        <div className="bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft">
+                          <div className="flex items-center justify-between pb-3 border-b border-[#ECEEF4] mb-3">
+                            <h4 className="text-xs font-black uppercase tracking-wider text-[#111827] flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full bg-[#4F3FE0]"></span>
+                              <span>Upcoming Schedule</span>
+                            </h4>
+                            <button
+                              type="button"
+                              onClick={() => navigateTo("Calendar")}
+                              className="text-xs font-bold text-[#4F3FE0] hover:underline"
+                            >
+                              View Calendar &rarr;
+                            </button>
                           </div>
 
-                          <div className="flex items-center gap-3">
-                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${bkg.statusColor}`}>
-                              {bkg.status}
+                          <div className="relative pl-4 space-y-4">
+                            {/* Vertical Connector Line */}
+                            <div className="absolute left-[7px] top-2 bottom-2 w-0.5 bg-[#ECEEF4]" />
+
+                            {upcomingBookings
+                              .filter(b => b.status === "Confirmed" || b.status === "Pending")
+                              .slice(0, 4)
+                              .map(item => (
+                                <div key={item.id} className="relative group cursor-pointer" onClick={() => setDetailsModalBooking(item)}>
+                                  {/* Dot */}
+                                  <div className={`absolute -left-4 top-1.5 w-2.5 h-2.5 rounded-full border-2 border-white shadow-xs ${
+                                    item.status === 'Confirmed' ? 'bg-[#16A66A]' : 'bg-[#F59E0B]'
+                                  }`} />
+
+                                  <div className="bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl p-3 hover:bg-white hover:border-[#4F3FE0]/30 hover:shadow-xs transition-all">
+                                    <div className="flex items-center justify-between text-[11px] mb-1">
+                                      <span className="font-bold text-[#4F3FE0]">{item.date} • {item.time.split("–")[0].trim()}</span>
+                                      <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
+                                        item.status === 'Confirmed' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
+                                      }`}>
+                                        {item.status}
+                                      </span>
+                                    </div>
+                                    <div className="text-xs font-bold text-[#111827] truncate">{item.title}</div>
+                                    <div className="text-[11px] text-[#8A90A2] mt-0.5 truncate flex items-center gap-1">
+                                      <span>📍 {item.room}</span>
+                                      <span>•</span>
+                                      <span>👥 {item.attendees}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+
+                        {/* Section 9: Quick Actions Panel */}
+                        <div className="bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft">
+                          <h4 className="text-xs font-black uppercase tracking-wider text-[#111827] mb-3 flex items-center gap-2">
+                            <span className="w-5 h-5 rounded-lg bg-yellow-50 text-yellow-600 flex items-center justify-center">
+                              ⚡
                             </span>
+                            <span>Quick Actions</span>
+                          </h4>
+
+                          <div className="grid grid-cols-2 gap-2.5">
+                            {/* 1. Book a Room */}
                             <button
-                              onClick={() => showToast(`Rescheduling flow opened for ${bkg.title}`)}
-                              className="border border-[#ECEEF4] hover:bg-gray-100 text-[#374151] px-3 py-1.5 rounded-xl text-xs font-bold"
+                              type="button"
+                              onClick={() => setBookingModalRoom(rooms[0])}
+                              className="p-3 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#F3EFFE] hover:border-[#6E42E5]/30 transition-all text-center group"
                             >
-                              Reschedule
+                              <span className="w-9 h-9 rounded-xl bg-purple-50 text-[#6E42E5] flex items-center justify-center mx-auto mb-1.5 group-hover:scale-105 transition-transform">
+                                <Icon name="calendar" className="w-4 h-4 text-[#6E42E5]" />
+                              </span>
+                              <div className="text-xs font-bold text-[#111827]">Book a Room</div>
+                              <div className="text-[10px] text-[#8A90A2] mt-0.5">6 Facilities</div>
                             </button>
+
+                            {/* 2. Open Calendar */}
                             <button
-                              onClick={() => {
-                                setUpcomingBookings(prev => prev.filter(x => x.id !== bkg.id));
-                                showToast(`Cancelled booking for ${bkg.title}`);
-                              }}
-                              className="text-red-500 hover:text-red-700 text-xs font-bold px-2 py-1"
+                              type="button"
+                              onClick={() => navigateTo("Calendar")}
+                              className="p-3 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#EEF5FF] hover:border-[#2B71FF]/30 transition-all text-center group"
                             >
-                              Cancel
+                              <span className="w-9 h-9 rounded-xl bg-blue-50 text-[#2B71FF] flex items-center justify-center mx-auto mb-1.5 group-hover:scale-105 transition-transform">
+                                <Icon name="calendarDays" className="w-4 h-4 text-[#2B71FF]" />
+                              </span>
+                              <div className="text-xs font-bold text-[#111827]">Open Calendar</div>
+                              <div className="text-[10px] text-[#8A90A2] mt-0.5">Weekly Grid</div>
+                            </button>
+
+                            {/* 3. Invite Guests */}
+                            <button
+                              type="button"
+                              onClick={() => navigateTo("Visitors")}
+                              className="p-3 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#EEFAF3] hover:border-[#12A150]/30 transition-all text-center group"
+                            >
+                              <span className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-1.5 group-hover:scale-105 transition-transform">
+                                <Icon name="userPlus" className="w-4 h-4 text-emerald-600" />
+                              </span>
+                              <div className="text-xs font-bold text-[#111827]">Invite Guests</div>
+                              <div className="text-[10px] text-[#8A90A2] mt-0.5">QR Gate Pass</div>
+                            </button>
+
+                            {/* 4. Check Availability */}
+                            <button
+                              type="button"
+                              onClick={() => navigateTo("Meeting Rooms")}
+                              className="p-3 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#FFF8EC] hover:border-[#F59E0B]/30 transition-all text-center group"
+                            >
+                              <span className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-1.5 group-hover:scale-105 transition-transform">
+                                <Icon name="sparkles" className="w-4 h-4 text-amber-600" />
+                              </span>
+                              <div className="text-xs font-bold text-[#111827]">Check Live</div>
+                              <div className="text-[10px] text-[#8A90A2] mt-0.5">5/6 Available</div>
                             </button>
                           </div>
                         </div>
-                      ))}
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                );
+              }}
 
 
               {/* ── VIEW 4: CALENDAR TIMELINE ── */}
@@ -2548,7 +3119,328 @@
             </div>
           )}
 
-          {/* ── Purchase Extra Credits Modal ── */}
+          {/* ── Reschedule Reservation Modal ── */}
+          {rescheduleBooking && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fadeIn">
+              <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-[#ECEEF4] relative animate-scaleUp">
+                <div className="flex items-center justify-between pb-3 border-b border-[#ECEEF4]">
+                  <div>
+                    <h3 className="text-lg font-black text-[#111827]">Reschedule Reservation</h3>
+                    <p className="text-xs text-[#8A90A2]">Modify slot timing or choose an alternate meeting facility</p>
+                  </div>
+                  <button
+                    onClick={() => setRescheduleBooking(null)}
+                    className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500"
+                  >
+                    <Icon name="x" className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    setUpcomingBookings(prev => prev.map(b => {
+                      if (b.id === rescheduleBooking.id) {
+                        return {
+                          ...b,
+                          date: rescheduleNewDate,
+                          fullDate: rescheduleNewDate,
+                          time: rescheduleNewTime,
+                          room: rescheduleNewRoom || b.room,
+                          status: "Confirmed",
+                          statusColor: "bg-emerald-50 text-emerald-600 border border-emerald-200"
+                        };
+                      }
+                      return b;
+                    }));
+                    showToast(`✅ Reservation #${rescheduleBooking.resId} rescheduled to ${rescheduleNewDate} at ${rescheduleNewTime}`);
+                    setRescheduleBooking(null);
+                  }}
+                  className="py-4 space-y-4"
+                >
+                  {/* Current Slot Info Card */}
+                  <div className="p-3.5 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl text-xs space-y-1">
+                    <div className="font-bold text-[#111827] flex items-center justify-between">
+                      <span>{rescheduleBooking.title}</span>
+                      <span className="text-[#8A90A2] font-mono">#{rescheduleBooking.resId}</span>
+                    </div>
+                    <div className="text-[#64748B]">
+                      Current: <strong>{rescheduleBooking.room}</strong> on {rescheduleBooking.fullDate || rescheduleBooking.date} at {rescheduleBooking.time}
+                    </div>
+                  </div>
+
+                  {/* New Date Picker */}
+                  <div>
+                    <label className="block text-xs font-bold text-[#374151] mb-1">Select New Date</label>
+                    <input
+                      type="date"
+                      value={rescheduleNewDate}
+                      onChange={(e) => setRescheduleNewDate(e.target.value)}
+                      className="w-full bg-[#F6F7FB] border border-[#ECEEF4] rounded-xl px-3.5 py-2 text-xs font-semibold text-[#111827] focus:outline-none focus:border-[#4F3FE0]"
+                      required
+                    />
+                  </div>
+
+                  {/* New Time Slot Selector */}
+                  <div>
+                    <label className="block text-xs font-bold text-[#374151] mb-1">Select New Time Slot</label>
+                    <select
+                      value={rescheduleNewTime}
+                      onChange={(e) => setRescheduleNewTime(e.target.value)}
+                      className="w-full bg-[#F6F7FB] border border-[#ECEEF4] rounded-xl px-3.5 py-2 text-xs font-semibold text-[#111827] focus:outline-none focus:border-[#4F3FE0] cursor-pointer"
+                    >
+                      <option value="09:00 AM – 10:30 AM">09:00 AM – 10:30 AM (Available)</option>
+                      <option value="11:00 AM – 12:30 PM">11:00 AM – 12:30 PM (Available)</option>
+                      <option value="02:00 PM – 03:30 PM">02:00 PM – 03:30 PM (Available)</option>
+                      <option value="04:00 PM – 05:30 PM">04:00 PM – 05:30 PM (Available)</option>
+                      <option value="06:00 PM – 07:30 PM">06:00 PM – 07:30 PM (Available)</option>
+                    </select>
+                  </div>
+
+                  {/* Room Change Option */}
+                  <div>
+                    <label className="block text-xs font-bold text-[#374151] mb-1">Select Meeting Facility</label>
+                    <select
+                      value={rescheduleNewRoom}
+                      onChange={(e) => setRescheduleNewRoom(e.target.value)}
+                      className="w-full bg-[#F6F7FB] border border-[#ECEEF4] rounded-xl px-3.5 py-2 text-xs font-semibold text-[#111827] focus:outline-none focus:border-[#4F3FE0] cursor-pointer"
+                    >
+                      {rooms.map(r => (
+                        <option key={r.id} value={r.name}>{r.name} ({r.type} • {r.capacity} seats)</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Credit Impact Notice */}
+                  <div className="p-3 bg-indigo-50/60 border border-indigo-100 rounded-xl text-xs flex items-center justify-between text-[#4338CA]">
+                    <span>🪙 Quota Impact:</span>
+                    <strong className="font-bold">0 cr extra • Pre-authorized quota transferred</strong>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-[#ECEEF4]">
+                    <button
+                      type="button"
+                      onClick={() => setRescheduleBooking(null)}
+                      className="px-4 py-2 border border-[#ECEEF4] text-[#374151] rounded-xl text-xs font-bold hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-5 py-2 bg-[#4F3FE0] hover:bg-[#4335C9] text-white rounded-xl text-xs font-bold shadow-sm"
+                    >
+                      Confirm Reschedule
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* ── Cancellation Confirmation Modal ── */}
+          {cancelModalBooking && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fadeIn">
+              <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-[#ECEEF4] relative animate-scaleUp">
+                <div className="flex items-center justify-between pb-3 border-b border-[#ECEEF4]">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-rose-50 text-[#EF4444] flex items-center justify-center font-bold">
+                      <Icon name="alertCircle" className="w-5 h-5 text-[#EF4444]" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-black text-[#111827]">Cancel Reservation</h3>
+                      <p className="text-[11px] text-[#8A90A2]">Review refund policy before confirming</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setCancelModalBooking(null)}
+                    className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500"
+                  >
+                    <Icon name="x" className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="py-4 space-y-3.5">
+                  <div className="p-3.5 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl text-xs space-y-1.5">
+                    <div className="font-bold text-[#111827] text-sm">{cancelModalBooking.title}</div>
+                    <div className="text-[#64748B] flex items-center gap-1.5">
+                      <span>📍 {cancelModalBooking.room}</span>
+                      <span>•</span>
+                      <span>🕒 {cancelModalBooking.time}</span>
+                    </div>
+                    <div className="text-emerald-600 font-bold flex items-center gap-1">
+                      <span>🪙 Refund Quote:</span>
+                      <span>+{cancelModalBooking.credits || 18} credits returned to balance</span>
+                    </div>
+                  </div>
+
+                  {/* Policy Explanation */}
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-900 leading-relaxed">
+                    <strong>NEXUS Cancellation Policy:</strong> Meeting room cancellations confirmed &gt;2 hours in advance receive a <strong>100% full credit refund</strong>. The reserved slot will be released immediately to fellow founders.
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-[#ECEEF4]">
+                  <button
+                    type="button"
+                    onClick={() => setCancelModalBooking(null)}
+                    className="px-4 py-2 border border-[#ECEEF4] text-[#374151] rounded-xl text-xs font-bold hover:bg-gray-50"
+                  >
+                    Keep Booking
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUpcomingBookings(prev => prev.map(b => {
+                        if (b.id === cancelModalBooking.id) {
+                          return {
+                            ...b,
+                            status: "Cancelled",
+                            statusColor: "bg-rose-50 text-rose-600 border border-rose-200",
+                            barColor: "bg-rose-500"
+                          };
+                        }
+                        return b;
+                      }));
+                      showToast(`Reservation #${cancelModalBooking.resId} cancelled. ${cancelModalBooking.credits || 18} credits refunded.`);
+                      setCancelModalBooking(null);
+                    }}
+                    className="px-5 py-2 bg-[#EF4444] hover:bg-[#DC2626] text-white rounded-xl text-xs font-bold shadow-sm"
+                  >
+                    Confirm Cancellation
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Reservation Details Modal ── */}
+          {detailsModalBooking && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fadeIn">
+              <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-[#ECEEF4] relative animate-scaleUp max-h-[90vh] overflow-y-auto">
+                <div className="flex items-center justify-between pb-3 border-b border-[#ECEEF4]">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-[11px] font-mono font-bold bg-gray-100 text-[#374151] px-2 py-0.5 rounded border border-[#ECEEF4]">
+                      #{detailsModalBooking.resId}
+                    </span>
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${detailsModalBooking.statusColor}`}>
+                      {detailsModalBooking.status}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setDetailsModalBooking(null)}
+                    className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500"
+                  >
+                    <Icon name="x" className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="py-4 space-y-4">
+                  {/* Meeting Room Hero Banner */}
+                  <div className="relative h-32 rounded-xl overflow-hidden border border-[#ECEEF4]">
+                    <img
+                      src={detailsModalBooking.roomImage || "assets/rooms/mr-01-main.jpg"}
+                      alt={detailsModalBooking.room}
+                      className="w-full h-full object-cover object-center"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                    <div className="absolute bottom-2.5 left-3 text-white">
+                      <div className="text-sm font-black">{detailsModalBooking.room}</div>
+                      <div className="text-[10.5px] text-gray-200">Level 2 • Collaboration Suite • Ground Floor East Wing</div>
+                    </div>
+                  </div>
+
+                  {/* Title & Purpose */}
+                  <div>
+                    <h3 className="text-lg font-black text-[#111827]">{detailsModalBooking.title}</h3>
+                    <p className="text-xs text-[#64748B] mt-1 leading-relaxed">
+                      {detailsModalBooking.purpose || "Meeting session scheduled for venture development and collaboration."}
+                    </p>
+                  </div>
+
+                  {/* 2-Column Specs Grid */}
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div className="p-3 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl">
+                      <div className="text-[10px] font-bold text-[#8A90A2] uppercase">Scheduled Time</div>
+                      <div className="font-bold text-[#111827] mt-1">{detailsModalBooking.fullDate || detailsModalBooking.date}</div>
+                      <div className="text-[#64748B] text-[11px] mt-0.5">{detailsModalBooking.time}</div>
+                    </div>
+
+                    <div className="p-3 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl">
+                      <div className="text-[10px] font-bold text-[#8A90A2] uppercase">Party Size</div>
+                      <div className="font-bold text-[#111827] mt-1">{detailsModalBooking.attendees} Attendees</div>
+                      <div className="text-[#64748B] text-[11px] mt-0.5">Alex Morgan (Host)</div>
+                    </div>
+
+                    <div className="p-3 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl">
+                      <div className="text-[10px] font-bold text-[#8A90A2] uppercase">Quota Consumed</div>
+                      <div className="font-bold text-[#4F3FE0] mt-1">🪙 {detailsModalBooking.credits || 18} credits</div>
+                      <div className="text-[10px] text-emerald-600 font-semibold mt-0.5">● Deducted from quota</div>
+                    </div>
+
+                    <div className="p-3 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl">
+                      <div className="text-[10px] font-bold text-[#8A90A2] uppercase">Calendar Sync</div>
+                      <div className="font-bold text-emerald-600 mt-1 flex items-center gap-1">
+                        <span>Synced</span>
+                        <span>✅</span>
+                      </div>
+                      <div className="text-[10px] text-[#8A90A2] mt-0.5">Google / Outlook active</div>
+                    </div>
+                  </div>
+
+                  {/* Recurrence Banner */}
+                  {detailsModalBooking.isRecurring && (
+                    <div className="p-3 bg-[#F4F2FF] border border-[#E3DEFF] rounded-xl text-xs flex items-center gap-2 text-[#4F3FE0]">
+                      <span className="text-base">🔄</span>
+                      <div>
+                        <strong>Recurring Series:</strong> {detailsModalBooking.recurringPattern || "Weekly schedule active"}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer Controls */}
+                <div className="flex items-center justify-between pt-3 border-t border-[#ECEEF4]">
+                  {detailsModalBooking.status !== "Cancelled" && detailsModalBooking.status !== "Completed" ? (
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const target = detailsModalBooking;
+                          setDetailsModalBooking(null);
+                          setRescheduleBooking(target);
+                          setRescheduleNewRoom(target.room);
+                          setRescheduleNewTime(target.time);
+                        }}
+                        className="px-3.5 py-1.5 border border-[#ECEEF4] text-[#374151] hover:text-[#4F3FE0] rounded-xl text-xs font-bold hover:bg-gray-50"
+                      >
+                        Reschedule
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const target = detailsModalBooking;
+                          setDetailsModalBooking(null);
+                          setCancelModalBooking(target);
+                        }}
+                        className="px-3.5 py-1.5 text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-xl text-xs font-bold"
+                      >
+                        Cancel Booking
+                      </button>
+                    </div>
+                  ) : <div />}
+
+                  <button
+                    type="button"
+                    onClick={() => setDetailsModalBooking(null)}
+                    className="px-5 py-2 bg-[#111827] hover:bg-black text-white rounded-xl text-xs font-bold shadow-sm"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
           {showPurchaseCreditsModal && (
             <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fadeIn">
               <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-[#ECEEF4] relative animate-scaleUp">

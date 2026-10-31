@@ -9,7 +9,7 @@ export type RoomType =
 
 export type RoomStatus = 'Available' | 'In Use';
 
-export type BookingStatus = 'Confirmed' | 'Pending' | 'In progress' | 'Completed';
+export type BookingStatus = 'Confirmed' | 'Pending' | 'In progress' | 'Completed' | 'Cancelled';
 
 export interface Room {
   id: string;
@@ -40,14 +40,25 @@ export interface TodayScheduleItem {
 
 export interface UpcomingBooking {
   id: string;
+  resId?: string;
   date: string;
+  day?: string;
+  month?: string;
+  fullDate?: string;
   time: string;
   title: string;
   room: string;
+  roomId?: string;
+  roomImage?: string;
+  fallbackImage?: string;
   attendees: number;
+  credits?: number;
   status: BookingStatus;
   statusColor: string;
   barColor: string;
+  isRecurring?: boolean;
+  recurringPattern?: string;
+  purpose?: string;
 }
 
 export interface StartupPlan {
