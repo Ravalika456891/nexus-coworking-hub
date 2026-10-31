@@ -14,7 +14,14 @@ import {
   Database,
   Bookmark,
   CalendarDays,
-  UserPlus
+  UserPlus,
+  Coins,
+  ChevronRight,
+  TrendingUp,
+  Gift,
+  Crown,
+  BarChart3,
+  ArrowRight
 } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
@@ -825,37 +832,409 @@ export default function MeetingRoomsPage() {
             </div>
           )}
 
-          {/* ── 5. BILLING & CREDITS VIEW ── */}
+          {/* ── 5. BILLING & CREDITS VIEW (Command Center Alignment) ── */}
           {activeNav === 'Billing & Credits' && (
             <div className="space-y-6 animate-fadeIn">
-              <div className="bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft flex items-center justify-between flex-wrap gap-4">
+              {/* Top Page Header with 3D Card Illustration and Purchase Button */}
+              <div className="flex items-center justify-between flex-wrap gap-4">
                 <div>
-                  <h2 className="text-2xl font-black text-[#111827]">Billing &amp; Meeting Room Credits</h2>
-                  <p className="text-xs text-[#8A90A2] mt-1">Live quota allowance, invoices &amp; transaction statements</p>
+                  <div className="text-[11px] font-extrabold tracking-wider text-[#8A90A2] uppercase mb-1">
+                    Billing &amp; Credits
+                  </div>
+                  <h2 className="text-2xl sm:text-3xl font-black text-[#111827] tracking-tight">
+                    Billing &amp; Meeting Room Credits
+                  </h2>
+                  <p className="text-xs sm:text-sm text-[#64748B] mt-1">
+                    Track quota, plans, invoices, and transaction activity
+                  </p>
                 </div>
-                <button
-                  onClick={() => showToast('Purchasing 50 bonus credits via Razorpay gateway')}
-                  className="bg-[#4F3FE0] hover:bg-[#4335C9] text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm"
-                >
-                  + Purchase Extra Credits
-                </button>
+
+                <div className="flex items-center gap-4">
+                  {/* 3D Floating Credit Card + Coin Illustration */}
+                  <div className="relative w-28 h-16 flex-shrink-0 hidden md:block">
+                    <svg viewBox="0 0 140 90" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full drop-shadow-md">
+                      <ellipse cx="65" cy="45" rx="50" ry="30" fill="#C7D2FE" fillOpacity="0.4" filter="blur(14px)" />
+                      <g transform="rotate(-7 55 42)">
+                        <rect x="15" y="12" width="82" height="50" rx="9" fill="url(#cardGradNext)" />
+                        <rect x="25" y="24" width="13" height="10" rx="2" fill="#FCD34D" />
+                        <line x1="25" y1="29" x2="38" y2="29" stroke="#F59E0B" strokeWidth="0.8" />
+                        <line x1="31.5" y1="24" x2="31.5" y2="34" stroke="#F59E0B" strokeWidth="0.8" />
+                        <rect x="25" y="44" width="36" height="4" rx="2" fill="white" fillOpacity="0.85" />
+                        <circle cx="80" cy="44" r="5.5" fill="#F472B6" fillOpacity="0.85" />
+                        <circle cx="87" cy="44" r="5.5" fill="#FBBF24" fillOpacity="0.85" />
+                      </g>
+                      <g transform="translate(88, 40)">
+                        <circle cx="15" cy="15" r="13" fill="#FBBF24" stroke="#F59E0B" strokeWidth="1.2" />
+                        <circle cx="15" cy="15" r="9.5" fill="#FDE68A" />
+                        <text x="15" y="19" fontSize="11" fontWeight="bold" textAnchor="middle" fill="#D97706">₹</text>
+                      </g>
+                      <circle cx="18" cy="20" r="2.5" fill="#818CF8" fillOpacity="0.8" />
+                      <circle cx="106" cy="16" r="2" fill="#60A5FA" fillOpacity="0.8" />
+                      <circle cx="98" cy="74" r="1.8" fill="#FCD34D" fillOpacity="0.9" />
+                      <defs>
+                        <linearGradient id="cardGradNext" x1="15" y1="12" x2="97" y2="62" gradientUnits="userSpaceOnUse">
+                          <stop stopColor="#6366F1" />
+                          <stop offset="0.5" stopColor="#4F46E5" />
+                          <stop offset="1" stopColor="#3B82F6" />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                  </div>
+
+                  {/* Primary CTA Button */}
+                  <button
+                    type="button"
+                    onClick={() => showToast('Opening instant credit top-up checkout')}
+                    className="bg-[#4F3FE0] hover:bg-[#4335C9] text-white px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm hover:shadow-md active:scale-[0.98] flex items-center gap-1.5"
+                  >
+                    <span>+ Purchase Extra Credits</span>
+                  </button>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                <div className="bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft">
-                  <span className="text-xs font-bold text-[#8A90A2] uppercase tracking-wider">Remaining Balance</span>
-                  <div className="text-3xl font-black text-[#4F3FE0] mt-2">80 credits</div>
-                  <div className="text-xs text-[#64748B] mt-1">Out of 120 credits total quota</div>
+              {/* Section: Three KPI Cards */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                {/* Card 1: Remaining Balance */}
+                <div className="bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft flex flex-col justify-between hover:shadow-card transition-all">
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-[#F3EFFE] text-[#4F3FE0] flex items-center justify-center flex-shrink-0">
+                          <Coins className="w-5 h-5 text-[#4F3FE0]" />
+                        </div>
+                        <div>
+                          <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#8A90A2]">Remaining Balance</span>
+                          <div className="text-2xl sm:text-3xl font-black text-[#111827] mt-0.5">80 credits</div>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-[#A0AEC0]" />
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs text-[#64748B] mt-4 font-medium">
+                      <span>Out of 120 credits total quota</span>
+                      <span className="font-bold text-[#4F3FE0]">67% left</span>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="w-full h-2 bg-[#EEEBFF] rounded-full mt-2 overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-[#5937F5] to-[#4F3FE0] rounded-full w-[67%]" />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px] font-medium text-[#8A90A2] pt-3 mt-3 border-t border-[#ECEEF4]">
+                    <span>40 credits used</span>
+                    <span>120 total</span>
+                  </div>
                 </div>
-                <div className="bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft">
-                  <span className="text-xs font-bold text-[#8A90A2] uppercase tracking-wider">Monthly Free Hours</span>
-                  <div className="text-3xl font-black text-emerald-600 mt-2">2.0 hrs left</div>
-                  <div className="text-xs text-[#64748B] mt-1">8 / 10 hours consumed</div>
+
+                {/* Card 2: Monthly Free Hours */}
+                <div className="bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft flex flex-col justify-between hover:shadow-card transition-all">
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-[#ECFDF5] text-[#059669] flex items-center justify-center flex-shrink-0">
+                          <Clock className="w-5 h-5 text-[#059669]" />
+                        </div>
+                        <div>
+                          <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#8A90A2]">Monthly Free Hours</span>
+                          <div className="text-2xl sm:text-3xl font-black text-[#059669] mt-0.5">2.0 hrs left</div>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-[#A0AEC0]" />
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs text-[#64748B] mt-4 font-medium">
+                      <span>8 / 10 hours consumed</span>
+                      <span className="font-bold text-[#059669]">20% left</span>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="w-full h-2 bg-[#E6F4EA] rounded-full mt-2 overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-[#10B981] to-[#059669] rounded-full w-[20%]" />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px] font-medium text-[#8A90A2] pt-3 mt-3 border-t border-[#ECEEF4]">
+                    <span>8 hrs used</span>
+                    <span>10 hrs total</span>
+                  </div>
                 </div>
-                <div className="bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft">
-                  <span className="text-xs font-bold text-[#8A90A2] uppercase tracking-wider">Subscription Plan</span>
-                  <div className="text-2xl font-black text-[#111827] mt-2">Scale-up Venture</div>
-                  <div className="text-xs text-[#64748B] mt-1">Renews automatically on Nov 1, 2026</div>
+
+                {/* Card 3: Subscription Plan */}
+                <div className="bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft flex flex-col justify-between hover:shadow-card transition-all">
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-[#FEF3C7] text-[#D97706] flex items-center justify-center flex-shrink-0">
+                          <Crown className="w-5 h-5 text-[#D97706]" />
+                        </div>
+                        <div>
+                          <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#8A90A2]">Subscription Plan</span>
+                          <div className="text-xl sm:text-2xl font-black text-[#111827] mt-0.5">Scale-up Venture</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="bg-[#ECFDF5] text-[#059669] text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200">
+                          ● ACTIVE
+                        </span>
+                        <ChevronRight className="w-4 h-4 text-[#A0AEC0]" />
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-[#64748B] mt-3 font-medium">
+                      Renews automatically on Nov 1, 2026
+                    </p>
+                  </div>
+
+                  {/* 3 mini items */}
+                  <div className="grid grid-cols-3 gap-2 pt-3 mt-3 border-t border-[#ECEEF4] text-[11px]">
+                    <div className="flex items-center gap-1.5 text-[#374151]">
+                      <span className="text-base">📅</span>
+                      <div>
+                        <span className="block text-[9.5px] font-semibold text-[#8A90A2] uppercase">Monthly</span>
+                        <span className="font-bold text-[#111827]">10 free hrs</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[#374151]">
+                      <span className="text-base">🪙</span>
+                      <div>
+                        <span className="block text-[9.5px] font-semibold text-[#8A90A2] uppercase">Base quota</span>
+                        <span className="font-bold text-[#111827]">120 credits</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[#374151]">
+                      <span className="text-base">⭐</span>
+                      <div>
+                        <span className="block text-[9.5px] font-semibold text-[#8A90A2] uppercase">Extra credits</span>
+                        <span className="font-bold text-[#111827]">₹500 / 10 cr</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section: Main 2-Column Layout */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                {/* Left Column (5 cols): Donut Chart & Plan Details */}
+                <div className="lg:col-span-5 space-y-6">
+                  {/* Card: Credit Usage This Month */}
+                  <div className="bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-sm font-black text-[#111827] flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-lg bg-purple-50 text-[#4F3FE0] flex items-center justify-center">
+                          <BarChart3 className="w-3.5 h-3.5 text-[#4F3FE0]" />
+                        </span>
+                        <span>Credit Usage This Month</span>
+                      </h4>
+                      <span className="text-xs font-semibold text-[#374151] bg-[#F8FAFC] border border-[#ECEEF4] px-2.5 py-1 rounded-lg">
+                        October 2026 ▾
+                      </span>
+                    </div>
+
+                    {/* Donut and Legend */}
+                    <div className="flex flex-col sm:flex-row items-center gap-6 my-2">
+                      {/* Circular SVG Donut */}
+                      <div className="relative w-36 h-36 flex items-center justify-center flex-shrink-0">
+                        <svg className="w-full h-full transform -rotate-90" viewBox="0 0 120 120">
+                          <circle
+                            cx="60"
+                            cy="60"
+                            r="48"
+                            stroke="#EEEBFF"
+                            strokeWidth="13"
+                            fill="transparent"
+                          />
+                          <circle
+                            cx="60"
+                            cy="60"
+                            r="48"
+                            stroke="#4F3FE0"
+                            strokeWidth="13"
+                            strokeDasharray="301.59"
+                            strokeDashoffset="202.06"
+                            strokeLinecap="round"
+                            fill="transparent"
+                            className="transition-all duration-700 ease-out"
+                          />
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                          <span className="text-2xl font-black text-[#111827] tracking-tight">120</span>
+                          <span className="text-[10px] font-semibold text-[#8A90A2]">Total Credits</span>
+                        </div>
+                      </div>
+
+                      {/* Legend */}
+                      <div className="space-y-3 w-full">
+                        <div className="flex items-center justify-between text-xs">
+                          <div className="flex items-center gap-2 font-bold text-[#111827]">
+                            <span className="w-2.5 h-2.5 rounded-full bg-[#4F3FE0]" />
+                            <span>40 credits used</span>
+                          </div>
+                          <span className="font-semibold text-[#8A90A2]">33%</span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <div className="flex items-center gap-2 font-bold text-[#111827]">
+                            <span className="w-2.5 h-2.5 rounded-full bg-[#818CF8]" />
+                            <span>80 credits remaining</span>
+                          </div>
+                          <span className="font-semibold text-[#8A90A2]">67%</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* On Track Callout Card */}
+                    <div className="mt-5 bg-[#F5F3FF] border border-[#E0E7FF] rounded-xl p-3.5 flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-indigo-100 text-[#4338CA] flex items-center justify-center flex-shrink-0 font-bold">
+                        <TrendingUp className="w-4 h-4 text-[#4338CA]" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-[#4338CA]">You&apos;re on track!</div>
+                        <div className="text-[11px] text-[#6366F1] mt-0.5">67% of your monthly quota is still available.</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card: Plan & Billing Details */}
+                  <div className="bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-sm font-black text-[#111827] flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-lg bg-purple-50 text-[#4F3FE0] flex items-center justify-center">
+                          <FileText className="w-3.5 h-3.5 text-[#4F3FE0]" />
+                        </span>
+                        <span>Plan &amp; Billing Details</span>
+                      </h4>
+                      <button
+                        type="button"
+                        onClick={() => showToast('Viewing full subscription tier specifications')}
+                        className="text-xs font-bold text-[#4F3FE0] hover:underline"
+                      >
+                        View Plan &rarr;
+                      </button>
+                    </div>
+
+                    {/* 3 Detail columns */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="p-3 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl">
+                        <div className="text-[10px] font-semibold text-[#8A90A2] uppercase flex items-center gap-1">
+                          <span>📅</span> Next Renewal
+                        </div>
+                        <div className="text-xs font-bold text-[#111827] mt-1">Nov 1, 2026</div>
+                        <div className="text-[10px] text-emerald-600 font-semibold mt-0.5">● Auto-renew enabled</div>
+                      </div>
+
+                      <div className="p-3 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl">
+                        <div className="text-[10px] font-semibold text-[#8A90A2] uppercase flex items-center gap-1">
+                          <span>📄</span> Last Invoice
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <span className="text-xs font-bold text-[#111827]">INV-2026-1028</span>
+                          <span className="bg-emerald-50 text-emerald-600 border border-emerald-200 text-[9px] font-bold px-1.5 py-0.2 rounded">
+                            Paid
+                          </span>
+                        </div>
+                        <div className="text-[10px] text-[#8A90A2] mt-0.5">28 Oct 2026</div>
+                      </div>
+
+                      <div className="p-3 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl">
+                        <div className="text-[10px] font-semibold text-[#8A90A2] uppercase flex items-center gap-1">
+                          <span>🪙</span> Extra Credits Price
+                        </div>
+                        <div className="text-xs font-bold text-[#111827] mt-1">₹500 / 10 credits</div>
+                        <div className="text-[10px] text-[#8A90A2] mt-0.5">Buy additional credits anytime</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Column (7 cols): Recent Credit Ledger */}
+                <div className="lg:col-span-7">
+                  <div className="bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-sm font-black text-[#111827] flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-lg bg-purple-50 text-[#4F3FE0] flex items-center justify-center">
+                          <Bookmark className="w-3.5 h-3.5 text-[#4F3FE0]" />
+                        </span>
+                        <span>Recent Credit Ledger</span>
+                      </h4>
+                      <button
+                        type="button"
+                        onClick={() => showToast('Opening full audit ledger with filter controls')}
+                        className="text-xs font-bold text-[#4F3FE0] hover:underline"
+                      >
+                        View All &rarr;
+                      </button>
+                    </div>
+
+                    {/* List of 5 transactions */}
+                    <div className="divide-y divide-[#ECEEF4]">
+                      {[
+                        {
+                          title: 'Session in Collaboration Room',
+                          date: 'Today, 03:30 PM',
+                          credits: '-18 credits',
+                          hours: '-1.5 hrs',
+                          icon: Calendar,
+                          iconBg: 'bg-blue-50 text-[#2563EB]'
+                        },
+                        {
+                          title: 'Client Meeting in Pitch Arena Nexus',
+                          date: '28 Oct 2026, 11:30 AM',
+                          credits: '-25 credits',
+                          hours: '-1.5 hrs',
+                          icon: Users,
+                          iconBg: 'bg-purple-50 text-[#6E42E5]'
+                        },
+                        {
+                          title: 'Monthly Incubator Quota Credited',
+                          date: '01 Oct 2026, 12:00 AM',
+                          credits: '+120 credits',
+                          hours: '+10.0 hrs',
+                          icon: Gift,
+                          iconBg: 'bg-emerald-50 text-[#059669]',
+                          isCredit: true
+                        },
+                        {
+                          title: 'Team Sync in Focus Room',
+                          date: '27 Oct 2026, 02:00 PM',
+                          credits: '-12 credits',
+                          hours: '-1.0 hrs',
+                          icon: Calendar,
+                          iconBg: 'bg-blue-50 text-[#2563EB]'
+                        },
+                        {
+                          title: 'Product Planning - Boardroom Alpha',
+                          date: '26 Oct 2026, 09:00 AM',
+                          credits: '-20 credits',
+                          hours: '-2.0 hrs',
+                          icon: Users,
+                          iconBg: 'bg-purple-50 text-[#6E42E5]'
+                        }
+                      ].map((tx, idx) => {
+                        const TxIcon = tx.icon;
+                        return (
+                          <div key={idx} className="py-3.5 flex items-center justify-between hover:bg-[#F8FAFC] px-2 rounded-xl transition-all">
+                            <div className="flex items-center gap-3.5">
+                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${tx.iconBg}`}>
+                                <TxIcon className="w-5 h-5" />
+                              </div>
+                              <div>
+                                <div className="text-xs font-bold text-[#111827]">{tx.title}</div>
+                                <div className="text-[11px] text-[#8A90A2] mt-0.5">{tx.date}</div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className={`text-xs font-bold ${tx.isCredit ? 'text-emerald-600 font-extrabold' : 'text-[#111827]'}`}>
+                                {tx.credits}
+                              </div>
+                              <div className={`text-[11px] ${tx.isCredit ? 'text-emerald-600 font-medium' : 'text-[#8A90A2]'}`}>
+                                {tx.hours}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
