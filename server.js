@@ -10,9 +10,13 @@ const MIME_TYPES = {
   '.json': 'application/json; charset=utf-8',
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
+  '.avif': 'image/avif',
   '.svg': 'image/svg+xml',
   '.ico': 'image/x-icon'
 };
+const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.avif', '.svg', '.ico']);
 
 const db = require('./db');
 
@@ -52,6 +56,7 @@ if (!process.env.VERCEL) {
         fn.includes('.vercel') ||
         fn.includes('.system_generated') ||
         fn.includes('.env') ||
+        fn.includes('assets/rooms/uploads') ||
         fn.endsWith('.log') ||
         fn.endsWith('.tmp')
       ) {
@@ -68,11 +73,25 @@ if (!process.env.VERCEL) {
   }
 }
 
-function parseJsonBody(req) {
+function parseJsonBody(req, maxBytes = 0) {
   return new Promise((resolve, reject) => {
     let body = '';
-    req.on('data', chunk => { body += chunk; });
+    let size = 0;
+    let aborted = false;
+    req.on('data', chunk => {
+      if (aborted) return;
+      size += chunk.length;
+      if (maxBytes && size > maxBytes) {
+        aborted = true;
+        const err = new Error('Request body too large');
+        err.statusCode = 413;
+        reject(err);
+        return;
+      }
+      body += chunk;
+    });
     req.on('end', () => {
+      if (aborted) return;
       try {
         resolve(body ? JSON.parse(body) : {});
       } catch (err) {
@@ -234,10 +253,14 @@ async function handleApi(req, res, parsedUrl) {
 
     if (pathname === '/api/dashboard/summary' && req.method === 'GET') {
       const role = req.headers['x-user-role'] || searchParams.get('role') || 'incubator_admin';
-      if (role === 'startup') {
-        return sendJson(res, 403, { ok: false, error: 'Access denied: Admin only' });
-      }
+      const startupId = req.headers['x-startup-id'] || searchParams.get('startupId') || 'STP-XYZ';
       const month = searchParams.get('month');
+
+      if (role === 'startup' || role === 'startup_member') {
+        const summary = await db.getStartupDashboardSummary(startupId, month, role);
+        return sendJson(res, 200, summary);
+      }
+
       const summary = await db.getDashboardSummary(month);
       return sendJson(res, 200, summary);
     }
@@ -319,18 +342,174 @@ async function handleApi(req, res, parsedUrl) {
       }
     }
 
-    if (pathname === '/api/meeting-rooms/update-time' && req.method === 'POST') {
+    if ((pathname === '/api/meeting-rooms/update-time' || pathname === '/api/meeting-rooms/reschedule') && (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH')) {
       const body = await parseJsonBody(req);
       const { roomId, bookingId, date, startTime, endTime } = body;
       if (!roomId || !bookingId || !date || !startTime || !endTime) {
         return sendJson(res, 400, { ok: false, error: 'roomId, bookingId, date, startTime, and endTime are required' });
       }
-      const result = await db.updateMeetingRoomBookingTimeWindowAtomic(body);
+      const requestingStartupId = body.requestingStartupId || req.headers['x-startup-id'] || null;
+      const userRole = body.userRole || req.headers['x-user-role'] || null;
+      const result = await db.updateMeetingRoomBookingTimeWindowAtomic({
+        ...body,
+        requestingStartupId,
+        userRole
+      });
       if (result.ok) {
-        broadcastMeetingRoomUpdate({ action: 'updated', roomId, bookingId, booking: result.booking });
+        broadcastMeetingRoomUpdate({ action: 'updated', roomId: result.roomId || roomId, previousRoomId: roomId, bookingId, booking: result.booking });
         return sendJson(res, 200, result);
       } else {
         return sendJson(res, result.status || 400, result);
+      }
+    }
+
+    if (pathname === '/api/meeting-rooms/book-recurring' && req.method === 'POST') {
+      const body = await parseJsonBody(req);
+      const result = await db.reserveRecurringMeetingRoomAtomic(body);
+      if (result.ok) {
+        broadcastMeetingRoomUpdate({ action: 'booked_recurring', roomId: body.roomId, seriesId: result.seriesId, bookings: result.bookings });
+        return sendJson(res, result.status || 201, result);
+      }
+      return sendJson(res, result.status || 409, result);
+    }
+
+    if (pathname === '/api/meeting-rooms/cancel-series' && req.method === 'POST') {
+      const body = await parseJsonBody(req);
+      const requestingStartupId = body.requestingStartupId || req.headers['x-startup-id'] || null;
+      const userRole = body.userRole || req.headers['x-user-role'] || null;
+      const result = await db.cancelRecurringSeriesAtomic({ ...body, requestingStartupId, userRole });
+      if (result.ok) {
+        broadcastMeetingRoomUpdate({ action: 'cancelled_series', seriesId: body.seriesId, cancelledCount: result.cancelledCount });
+        return sendJson(res, 200, result);
+      }
+      return sendJson(res, result.status || 400, result);
+    }
+
+    if (pathname === '/api/meeting-rooms/analytics' && req.method === 'GET') {
+      const range = parsedUrl.searchParams.get('range') || 'all';
+      const startDate = parsedUrl.searchParams.get('startDate') || null;
+      const endDate = parsedUrl.searchParams.get('endDate') || null;
+      const startupId = parsedUrl.searchParams.get('startupId') || null;
+      const analytics = await db.getMeetingRoomsAnalytics({ range, startDate, endDate, startupId });
+      return sendJson(res, 200, analytics);
+    }
+
+    // Admin: Meeting room image upload (JSON body with base64 data; the client
+    // resizes/compresses to WebP before upload). Validated + stored by db.js.
+    if (pathname === '/api/meeting-rooms/images/upload' && req.method === 'POST') {
+      let body;
+      try {
+        body = await parseJsonBody(req, 4 * 1024 * 1024); // fits Vercel's 4.5 MB request limit
+      } catch (err) {
+        return sendJson(res, err.statusCode || 400, { ok: false, code: 'PAYLOAD_TOO_LARGE', message: 'Image upload is too large. Maximum request size is 4 MB.' });
+      }
+      const userRole = req.headers['x-user-role'] || body.userRole;
+      const result = await db.uploadMeetingRoomImageAtomic({ ...body, userRole });
+      return sendJson(res, result.status || (result.ok ? 201 : 400), result);
+    }
+
+    // Public: Serve an uploaded meeting room image stored in MongoDB
+    if (pathname === '/api/meeting-rooms/images/file' && req.method === 'GET') {
+      const file = await db.getMeetingRoomImageFile(searchParams.get('id'), searchParams.get('size') === 'thumb' ? 'thumb' : 'full');
+      if (!file) {
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        return res.end('Image not found');
+      }
+      res.writeHead(200, {
+        'Content-Type': file.mime,
+        'Content-Length': file.buffer.length,
+        'Cache-Control': 'public, max-age=31536000, immutable', // ids are unique per upload
+        'X-Content-Type-Options': 'nosniff'
+      });
+      return res.end(file.buffer);
+    }
+
+    if (pathname === '/api/meeting-rooms/admin' && req.method === 'POST') {
+      const body = await parseJsonBody(req);
+      const userRole = body.userRole || req.headers['x-user-role'] || 'super_admin';
+      const result = await db.manageMeetingRoomAdminAtomic({ ...body, userRole });
+      if (result.ok) {
+        broadcastMeetingRoomUpdate({ action: 'admin_updated', adminAction: body.action, room: result.room, policies: result.policies });
+        return sendJson(res, result.status || 200, result);
+      }
+      return sendJson(res, result.status || 403, result);
+    }
+
+    // Admin: Maintenance Blocks CRUD
+    if (pathname === '/api/meeting-rooms/maintenance') {
+      const userRole = req.headers['x-user-role'] || 'super_admin';
+      if (req.method === 'GET') {
+        const roomId = searchParams.get('roomId') || null;
+        const result = await db.manageMeetingRoomMaintenanceAtomic({ action: 'list', userRole, roomId });
+        return sendJson(res, result.status || 200, result);
+      }
+      if (req.method === 'POST') {
+        const body = await parseJsonBody(req);
+        const result = await db.manageMeetingRoomMaintenanceAtomic({ ...body, userRole });
+        if (result.ok) {
+          broadcastMeetingRoomUpdate({ action: 'maintenance_updated', block: result.block });
+        }
+        return sendJson(res, result.status || (result.ok ? 200 : 403), result);
+      }
+    }
+
+    // Admin: All Reservations (with filters)
+    if (pathname === '/api/meeting-rooms/reservations' && req.method === 'GET') {
+      const userRole = req.headers['x-user-role'] || searchParams.get('userRole') || 'super_admin';
+      const result = await db.getMeetingRoomReservations({
+        userRole,
+        startupId: searchParams.get('startupId') || undefined,
+        roomId: searchParams.get('roomId') || undefined,
+        status: searchParams.get('status') || undefined,
+        paymentStatus: searchParams.get('paymentStatus') || undefined,
+        dateFrom: searchParams.get('dateFrom') || undefined,
+        dateTo: searchParams.get('dateTo') || undefined,
+        page: searchParams.get('page') || 1,
+        limit: searchParams.get('limit') || 50
+      });
+      return sendJson(res, result.status || (result.ok ? 200 : 403), result);
+    }
+
+    // Admin: Export Reservations as CSV
+    if (pathname === '/api/meeting-rooms/export-csv' && req.method === 'GET') {
+      const userRole = req.headers['x-user-role'] || searchParams.get('userRole') || 'super_admin';
+      const result = await db.getMeetingRoomReservations({
+        userRole,
+        startupId: searchParams.get('startupId') || undefined,
+        roomId: searchParams.get('roomId') || undefined,
+        status: searchParams.get('status') || undefined,
+        dateFrom: searchParams.get('dateFrom') || undefined,
+        dateTo: searchParams.get('dateTo') || undefined,
+        page: 1,
+        limit: 5000
+      });
+      if (!result.ok) return sendJson(res, 403, result);
+      const rows = result.reservations || [];
+      const headers = ['Booking ID','Startup','Room','Date','Start Time','End Time','Duration (hrs)','Attendees','Purpose','Status','Cost (INR)','Invoice ID','Created At'];
+      const csv = [headers.join(','), ...rows.map(r => [
+        r.id, `"${(r.startupName || '').replace(/"/g, '""')}"`, `"${(r.roomName || '').replace(/"/g, '""')}"`,
+        r.date, r.startTime, r.endTime, r.duration || '', r.attendees || '',
+        `"${(r.purpose || r.title || '').replace(/"/g, '""')}"`, r.status || '',
+        r.cost || 0, r.invoiceId || '', r.createdAt || ''
+      ].join(','))].join('\n');
+      res.writeHead(200, {
+        'Content-Type': 'text/csv; charset=utf-8',
+        'Content-Disposition': `attachment; filename="meeting-reservations-${new Date().toISOString().split('T')[0]}.csv"`,
+        'Access-Control-Allow-Origin': '*'
+      });
+      return res.end(csv);
+    }
+
+    if (pathname === '/api/meeting-rooms/calendar-sync') {
+      if (req.method === 'GET') {
+        const startupId = parsedUrl.searchParams.get('startupId') || 'STP-XYZ';
+        const statusRes = await db.syncExternalCalendarEvent({ action: 'status', startupId });
+        return sendJson(res, 200, statusRes);
+      }
+      if (req.method === 'POST') {
+        const body = await parseJsonBody(req);
+        const syncRes = await db.syncExternalCalendarEvent(body);
+        return sendJson(res, syncRes.status || (syncRes.ok ? 200 : 400), syncRes);
       }
     }
 
@@ -419,8 +598,9 @@ async function handler(req, res) {
     return handleApi(req, res, parsedUrl);
   }
 
-  if (reqUrl === '/' || reqUrl === '') reqUrl = '/index.html';
+  if (reqUrl === '/' || reqUrl === '') reqUrl = '/meeting-rooms.html';
   if (reqUrl === '/app' || reqUrl === '/app/') reqUrl = '/app.html';
+  if (reqUrl === '/meeting-rooms' || reqUrl === '/meeting-rooms/') reqUrl = '/meeting-rooms.html';
 
   let filePath = path.join(__dirname, reqUrl);
   let ext = path.extname(filePath).toLowerCase();
@@ -443,11 +623,17 @@ async function handler(req, res) {
         res.end(`Server Error: ${err.code}`);
       }
     } else {
+      // Images are cacheable (room photos rarely change); code/HTML stays no-cache for live reload.
+      const cacheHeaders = IMAGE_EXTENSIONS.has(ext)
+        ? { 'Cache-Control': 'public, max-age=86400' }
+        : {
+            'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          };
       res.writeHead(200, {
         'Content-Type': contentType,
-        'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
-        'Pragma': 'no-cache',
-        'Expires': '0'
+        ...cacheHeaders
       });
       res.end(content);
     }

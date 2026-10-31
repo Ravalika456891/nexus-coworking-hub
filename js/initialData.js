@@ -1065,6 +1065,12 @@ window.INITIAL_DATA = {
       amenities: ["4K Dual Display", "Cisco Webex Kit", "Smart Glass", "Executive Leather", "Polycom Audio"],
       icon: "🏢",
       badgeColor: "#6366f1",
+      description: "Executive boardroom for investor meetings, board reviews and leadership offsites. Seats 16 around a solid oak table with dual 4K displays, Webex video conferencing and switchable smart-glass privacy walls.",
+      images: [
+        { id: "MR-01-IMG-1", url: "/assets/rooms/mr-01-main.jpg", thumbUrl: "/assets/rooms/thumbs/mr-01-main.jpg", width: 1376, alt: "Boardroom Alpha – main room view with 16-seat oak conference table", caption: "Main room view" },
+        { id: "MR-01-IMG-2", url: "/assets/rooms/mr-01-table.jpg", thumbUrl: "/assets/rooms/thumbs/mr-01-table.jpg", width: 1376, alt: "Boardroom Alpha – conference table and executive leather seating", caption: "Conference table & seating" },
+        { id: "MR-01-IMG-3", url: "/assets/rooms/mr-01-av.jpg", thumbUrl: "/assets/rooms/thumbs/mr-01-av.jpg", width: 1376, alt: "Boardroom Alpha – dual 4K displays with video conferencing camera and soundbar", caption: "Presentation equipment" }
+      ],
       bookings: [
         {
           id: "BKG-101",
@@ -1100,6 +1106,12 @@ window.INITIAL_DATA = {
       amenities: ["Laser Projector & Stage", "Wireless Lapel Mics", "Livestream Console", "Acoustic Baffles"],
       icon: "🎤",
       badgeColor: "#8b5cf6",
+      description: "Presentation hall for demo days, pitch rehearsals and community events. Raised stage with laser projector, wireless lapel mics, livestream console and acoustic ceiling baffles for 35 guests.",
+      images: [
+        { id: "MR-02-IMG-1", url: "/assets/rooms/mr-02-main.jpg", thumbUrl: "/assets/rooms/thumbs/mr-02-main.jpg", width: 1376, alt: "Pitch Arena Nexus – view from the audience toward the stage and projection screen", caption: "Main room view" },
+        { id: "MR-02-IMG-2", url: "/assets/rooms/mr-02-stage.jpg", thumbUrl: "/assets/rooms/thumbs/mr-02-stage.jpg", width: 1376, alt: "Pitch Arena Nexus – stage with lectern, wireless microphone and projection screen", caption: "Stage & presentation equipment" },
+        { id: "MR-02-IMG-3", url: "/assets/rooms/mr-02-seating.jpg", thumbUrl: "/assets/rooms/thumbs/mr-02-seating.jpg", width: 1376, alt: "Pitch Arena Nexus – audience seating rows under acoustic ceiling baffles", caption: "Audience seating" }
+      ],
       bookings: [
         {
           id: "BKG-103",
@@ -1123,6 +1135,12 @@ window.INITIAL_DATA = {
       amenities: ["Floor-to-Ceiling Whiteboard", "Apple TV AirPlay", "Magnetic Sticky Wall", "Ergonomic Chairs"],
       icon: "💡",
       badgeColor: "#10b981",
+      description: "Creative workshop room for design sprints and team brainstorming. Floor-to-ceiling whiteboard, magnetic sticky-note wall, AirPlay screen and ergonomic seating for 8.",
+      images: [
+        { id: "MR-03-IMG-1", url: "/assets/rooms/mr-03-main.jpg", thumbUrl: "/assets/rooms/thumbs/mr-03-main.jpg", width: 1376, alt: "Brainstorm Pod Beta – main room view with oval table and whiteboard wall", caption: "Main room view" },
+        { id: "MR-03-IMG-2", url: "/assets/rooms/mr-03-whiteboard.jpg", thumbUrl: "/assets/rooms/thumbs/mr-03-whiteboard.jpg", width: 1376, alt: "Brainstorm Pod Beta – floor-to-ceiling whiteboard and sticky-note collaboration wall", caption: "Whiteboard & collaboration area" },
+        { id: "MR-03-IMG-3", url: "/assets/rooms/mr-03-table.jpg", thumbUrl: "/assets/rooms/thumbs/mr-03-table.jpg", width: 1376, alt: "Brainstorm Pod Beta – collaborative table with ergonomic mesh chairs", caption: "Table & seating" }
+      ],
       bookings: []
     },
     {
@@ -1133,6 +1151,39 @@ window.INITIAL_DATA = {
       amenities: ["High-Def Webcam", "Noise Dampening", "Dual 27-inch Monitors", "Fast Mesh Wi-Fi 7"],
       icon: "🎧",
       badgeColor: "#06b6d4",
+      description: "Quiet, acoustically treated room for focused work, interviews and video calls. Dual 27-inch monitors, HD webcam and Wi-Fi 7 for up to 4 people.",
+      images: [
+        { id: "MR-04-IMG-1", url: "/assets/rooms/mr-04-main.jpg", thumbUrl: "/assets/rooms/thumbs/mr-04-main.jpg", width: 1376, alt: "Focus Room Quantum – compact video call room with acoustic felt wall", caption: "Main room view" },
+        { id: "MR-04-IMG-2", url: "/assets/rooms/mr-04-desk.jpg", thumbUrl: "/assets/rooms/thumbs/mr-04-desk.jpg", width: 1376, alt: "Focus Room Quantum – desk with dual 27-inch monitors and HD webcam", caption: "Desk & video call setup" }
+      ],
+      bookings: []
+    },
+    {
+      id: "MR-05",
+      name: "Training Room",
+      capacity: 20,
+      hourlyRate: 2200,
+      amenities: ["Interactive Projector", "Flexible Modular Desks", "Wireless Presentation", "High-Speed Wi-Fi"],
+      icon: "🎓",
+      badgeColor: "#3b82f6",
+      description: "Spacious training hall ideal for technical onboarding, developer bootcamps, and cohort workshops. Features modular seating for 20.",
+      images: [
+        { id: "MR-05-IMG-1", url: "/assets/rooms/mr-05-main.jpg", thumbUrl: "/assets/rooms/thumbs/mr-05-main.jpg", width: 1200, alt: "Training Room – modular classroom layout", caption: "Classroom setup" }
+      ],
+      bookings: []
+    },
+    {
+      id: "MR-06",
+      name: "Creative Studio",
+      capacity: 8,
+      hourlyRate: 1200,
+      amenities: ["Podcast Audio Kit", "Softbox Lighting", "Modular Seating", "4K Video Cam"],
+      icon: "🎨",
+      badgeColor: "#ec4899",
+      description: "Multi-functional studio space tailored for podcast recording, design sprints, content creation, and creative team syncs.",
+      images: [
+        { id: "MR-06-IMG-1", url: "/assets/rooms/mr-06-main.jpg", thumbUrl: "/assets/rooms/thumbs/mr-06-main.jpg", width: 1200, alt: "Creative Studio – vibrant collaborative lounge", caption: "Studio space" }
+      ],
       bookings: []
     }
   ],

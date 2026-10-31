@@ -10,6 +10,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/design-system.css?v=20261025_09">
   <link rel="stylesheet" href="css/components.css?v=20261026_11">
+  <link rel="stylesheet" href="css/clean-room-ui.css?v=20261030_01">
+  <link rel="stylesheet" href="css/clean-dashboard-ui.css?v=20261030_01">
   <style>
     /* Invoice type selector buttons */
     .inv-type-btn {
@@ -339,101 +341,85 @@
         </div>
       </div>
 
-      <div class="nav-section-title">Lifecycle Stages</div>
-
       <nav class="sidebar-nav">
-        <a class="nav-item active" data-tab="dashboard">
+        <a class="nav-item" data-tab="dashboard">
           <span class="nav-item-icon">📊</span>
-          <span class="nav-item-text">Admin Dashboard</span>
+          <span class="nav-item-text">Dashboard</span>
         </a>
 
-        <a class="nav-item" data-tab="onboarding">
-          <span class="nav-item-icon">🚀</span>
-          <span class="nav-item-text">Startup Onboarding</span>
+        <a class="nav-item active" data-tab="meetingRooms" id="nav-item-meetingRooms" style="background: rgba(99, 102, 241, 0.12); color: #4338ca; font-weight: 700; border-radius: 10px;">
+          <span class="nav-item-icon">📅</span>
+          <span class="nav-item-text">Meeting Rooms</span>
         </a>
 
-        <a class="nav-item" data-tab="startupTables" id="nav-item-startup-tables">
-          <span class="nav-item-icon">📋</span>
-          <span class="nav-item-text">List of Startup</span>
-          <span class="nav-item-badge" style="background: rgba(34, 197, 94, 0.16); color: #16a34a; font-weight: 700;">Live DB</span>
+        <a class="nav-item" data-tab="bookings" id="nav-item-bookings">
+          <span class="nav-item-icon">📑</span>
+          <span class="nav-item-text">My Bookings</span>
         </a>
+
+        <a class="nav-item" data-tab="calendar" id="nav-item-calendar">
+          <span class="nav-item-icon">📆</span>
+          <span class="nav-item-text">Calendar</span>
+        </a>
+
+        <a class="nav-item" data-tab="billingCredits" id="nav-item-billingCredits">
+          <span class="nav-item-icon">💳</span>
+          <span class="nav-item-text">Credits &amp; Billing</span>
+        </a>
+
+        <a class="nav-item" data-tab="roomAnalytics" id="nav-item-roomAnalytics">
+          <span class="nav-item-icon">📈</span>
+          <span class="nav-item-text">Analytics</span>
+        </a>
+
+        <!-- Admin Only Group (Logical aggregation) -->
+        <a class="nav-item admin-only-nav" data-tab="adminRooms" id="nav-item-adminRooms" style="display: none; background: rgba(245, 158, 11, 0.08); color: #b45309; font-weight: 700; border-radius: 10px;">
+          <span class="nav-item-icon">🛡️</span>
+          <span class="nav-item-text">Room Administration</span>
+        </a>
+
+        <div style="height: 1px; background: #e2e8f0; margin: 10px 14px;"></div>
 
         <a class="nav-item" data-tab="workspace">
           <span class="nav-item-icon">🏢</span>
-          <span class="nav-item-text">Workspaces & Desks</span>
-        </a>
-
-        <a class="nav-item" data-tab="meetingRooms" id="nav-item-meetingRooms">
-          <span class="nav-item-icon">📅</span>
-          <span class="nav-item-text">Meeting Rooms</span>
-          <span class="nav-item-badge" id="nav-badge-my-rooms" style="background: rgba(37, 99, 235, 0.15); color: #2563eb; font-weight: 700;">My Rooms</span>
-        </a>
-
-        <a class="nav-item" data-tab="billing">
-          <span class="nav-item-icon">🧾</span>
-          <span class="nav-item-text">Rent & Invoices</span>
-        </a>
-
-        <a class="nav-item" data-tab="payments">
-          <span class="nav-item-icon">💳</span>
-          <span class="nav-item-text">Payments & Ledger</span>
-        </a>
-
-        <a class="nav-item" data-tab="incubation">
-          <span class="nav-item-icon">🌱</span>
-          <span class="nav-item-text">Incubation Journey</span>
-        </a>
-
-        <a class="nav-item" data-tab="milestones">
-          <span class="nav-item-icon">🎯</span>
-          <span class="nav-item-text">Milestones</span>
-        </a>
-
-        <a class="nav-item" data-tab="reports">
-          <span class="nav-item-icon">📈</span>
-          <span class="nav-item-text">Reports & Analytics</span>
+          <span class="nav-item-text">Workspaces &amp; Desks</span>
         </a>
 
         <a class="nav-item" data-tab="contact">
-          <span class="nav-item-icon">📍</span>
-          <span class="nav-item-text">Contact Hub</span>
-          <span class="nav-item-badge" style="background: rgba(237, 68, 27, 0.12); color: #ed441b; font-weight: 700;">Ecosystem</span>
+          <span class="nav-item-icon">👥</span>
+          <span class="nav-item-text">Visitors</span>
         </a>
 
-        <a class="nav-item" data-tab="leads" id="nav-item-leads">
-          <span class="nav-item-icon">📥</span>
-          <span class="nav-item-text">Leads & Inbound</span>
-          <span class="nav-item-badge" style="background: rgba(34, 197, 94, 0.16); color: #16a34a; font-weight: 700;">Live DB</span>
+        <a class="nav-item" data-tab="startupTables">
+          <span class="nav-item-icon">👥</span>
+          <span class="nav-item-text">Members</span>
         </a>
 
-        <a class="nav-item" data-tab="database" id="nav-item-database">
+        <a class="nav-item" data-tab="database">
           <span class="nav-item-icon">🗄️</span>
           <span class="nav-item-text">Database Tables</span>
-          <span class="nav-item-badge" style="background: rgba(34, 197, 94, 0.16); color: #16a34a; font-weight: 700;">10 Tables</span>
-        </a>
-
-        <a href="index.html" class="nav-item" style="margin-top: 8px; border: 1px solid rgba(237, 68, 27, 0.3); background: rgba(237, 68, 27, 0.06); border-radius: 8px;">
-          <span class="nav-item-icon">🌐</span>
-          <span class="nav-item-text" style="color: #ed441b; font-weight: 600;">Public Website</span>
         </a>
       </nav>
 
-      <!-- Sidebar Mini Lifecycle Journey Progress -->
-      <div class="sidebar-lifecycle-pill">
-        <div class="lifecycle-pill-header">
-          <span>Lifecycle Progress</span>
-          <span>9 Stages</span>
+      <!-- Sidebar Plan Card -->
+      <div class="sidebar-plan-card" style="margin: 16px 14px 10px 14px; background: #ffffff; border: 1.5px solid rgba(99, 102, 241, 0.2); border-radius: 14px; padding: 14px 16px; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.06);">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+          <span style="font-size: 11.5px; font-weight: 800; color: #4338ca; display: flex; align-items: center; gap: 5px;">
+            <span>👑</span> Startup Plan
+          </span>
         </div>
-        <div class="lifecycle-steps-row">
-          <div class="step-indicator active"></div>
-          <div class="step-indicator active"></div>
-          <div class="step-indicator active"></div>
-          <div class="step-indicator active"></div>
-          <div class="step-indicator active"></div>
-          <div class="step-indicator active"></div>
-          <div class="step-indicator active"></div>
-          <div class="step-indicator active"></div>
+        <div style="font-size: 18px; font-weight: 900; color: #1e1b4b; line-height: 1.2;">
+          120 credits
         </div>
+        <div style="margin: 8px 0 6px 0; background: #e0e7ff; height: 6px; border-radius: 999px; overflow: hidden;">
+          <div style="background: linear-gradient(90deg, #6366f1, #8b5cf6); width: 66%; height: 100%; border-radius: 999px;"></div>
+        </div>
+        <div style="font-size: 10.5px; color: #64748b; font-weight: 600; margin-bottom: 10px;">
+          80 credits left
+        </div>
+        <button type="button" class="btn btn-sm btn-primary" onclick="if(window.MeetingRoomsModule) MeetingRoomsModule.switchTab('creditsBilling')" style="width: 100%; border-radius: 8px; font-size: 11.5px; font-weight: 700; padding: 7px 10px; background: #4f46e5; border-color: #4338ca; box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);">
+          Upgrade Plan
+        </button>
       </div>
 
       <div class="sidebar-footer">
@@ -466,16 +452,42 @@
 
           <div class="search-box">
             <span class="search-icon">🔍</span>
-            <input type="text" class="search-input" id="global-search-input" placeholder="Search startups, desks, invoices...">
+            <input type="text" class="search-input" id="global-search-input" placeholder="Search rooms, amenities, or location...">
           </div>
         </div>
 
         <div class="header-right">
-          <!-- Quick Stat Badge -->
-          <div class="header-stat-badge" id="header-stat-pill">
-            <span style="color: var(--status-success); font-weight: 700;">● 84% Occupied</span>
-            <span style="color: var(--border-medium);">•</span>
-            <span style="color: var(--accent-primary); font-weight: 700;">₹3.6L MRR</span>
+          <!-- Active Tenant / Startup Selector (From Reference UI) -->
+          <div class="tenant-selector-wrapper" style="display: flex; align-items: center; gap: 8px;">
+            <a href="meeting-rooms.html" class="hide-mobile" style="border-radius: 999px; font-size: 11.5px; font-weight: 700; color: #4F3FE0; border: 1.5px solid rgba(79, 63, 224, 0.3); background: #F4F2FF; text-decoration: none; padding: 5px 12px; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s ease;" title="Open Pixel-Accurate React Meeting Rooms Dashboard">
+              <span>⚡</span> <span>React UI View</span>
+            </a>
+            <div style="display: flex; align-items: center; gap: 6px; background: #f8fafc; border: 1.5px solid #e2e8f0; padding: 5px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; color: #1e293b;">
+              <span style="color: #6366f1;">📍</span>
+              <select id="header-startup-select" style="background: transparent; border: none; font-size: 12px; font-weight: 700; color: #1e293b; outline: none; cursor: pointer;" onchange="if(window.MeetingRoomsModule) MeetingRoomsModule.setStartupFilter(this.value)">
+                <option value="STP-XYZ">XYZ Technologies (STP-XYZ)</option>
+                <option value="STP-01">NeuroPulse AI (STP-01)</option>
+                <option value="STP-02">BioGenic Health (STP-02)</option>
+                <option value="STP-03">FinEdge Protocol (STP-03)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Notification Bell -->
+          <button class="btn-icon" style="position: relative; background: #f8fafc; border: 1px solid #e2e8f0; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;" title="Notifications">
+            <span style="font-size: 15px;">🔔</span>
+            <span style="position: absolute; top: 7px; right: 8px; width: 7px; height: 7px; background: #ef4444; border-radius: 50%; border: 1.5px solid #fff;"></span>
+          </button>
+
+          <!-- User Profile Avatar Pill -->
+          <div style="display: flex; align-items: center; gap: 8px; padding-left: 4px;">
+            <div style="width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #a855f7); color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; box-shadow: 0 2px 8px rgba(99,102,241,0.25);">
+              AM
+            </div>
+            <div style="line-height: 1.2; text-align: left;" class="hide-mobile">
+              <div style="font-size: 12.5px; font-weight: 800; color: #0f172a;">Alex Morgan</div>
+              <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">Co-Founder</div>
+            </div>
           </div>
 
           <!-- Developer Tools Dropdown Menu (Hides dev items in production) -->
@@ -581,16 +593,17 @@
   <div class="toast-container" id="toast-container"></div>
 
   <!-- Scripts -->
-  <script src="js/initialData.js?v=20261026_01"></script>
-  <script src="js/store.js?v=20261026_06"></script>
-  <script src="js/modules/dashboard.js?v=20261025_04"></script>
+  <script src="js/initialData.js?v=20261029_01"></script>
+  <script src="js/store.js?v=20261029_02"></script>
+  <script src="js/modules/dashboard.js?v=20261029_01"></script>
   <script src="js/modules/onboarding.js?v=20261025_04"></script>
   <script src="js/modules/startupTables.js?v=20261025_04"></script>
-  <script src="cancellation.js?v=20261028_01"></script>
+  <script src="cancellation.js?v=20261029_01"></script>
   <script src="js/modules/workspace.js?v=20261026_05"></script>
-  <script src="js/modules/meetingRooms.js?v=20261026_12"></script>
+  <script src="js/modules/roomGallery.js?v=20261030_01"></script>
+  <script src="js/modules/meetingRooms.js?v=20261029_02"></script>
   <script src="js/modules/invoice.js?v=20261026_01"></script>
-  <script src="js/modules/billing.js?v=20261026_04"></script>
+  <script src="js/modules/billing.js?v=20261029_01"></script>
   <script src="js/modules/payments.js?v=20261026_05"></script>
   <script src="js/modules/incubation.js?v=20261026_01"></script>
   <script src="js/modules/milestones.js?v=20261025_04"></script>

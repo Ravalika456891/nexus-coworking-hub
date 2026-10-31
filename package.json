@@ -4,8 +4,14 @@
   "description": "Full lifecycle Co-Working & Startup Incubation Management System",
   "main": "server.js",
   "scripts": {
+    "build": "next build",
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "server": "node server.js",
+    "next:dev": "next dev",
+    "next:build": "next build",
+    "next:start": "next start",
+    "test": "node tests/dashboardSummary.test.js && node tests/startupDashboard.test.js"
   },
   "keywords": [
     "coworking",
@@ -13,12 +19,28 @@
     "startup-management",
     "workspace-allocation",
     "billing",
-    "invoicing"
+    "invoicing",
+    "nextjs",
+    "typescript",
+    "tailwind"
   ],
   "author": "Antigravity",
   "license": "MIT",
   "dependencies": {
     "dotenv": "^18.0.7",
-    "mongodb": "^7.7.0"
+    "lucide-react": "^0.460.0",
+    "mongodb": "^7.7.0",
+    "next": "^14.2.15",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.6",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.14",
+    "typescript": "^5.6.3"
   }
 }

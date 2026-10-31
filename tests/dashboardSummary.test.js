@@ -193,6 +193,13 @@ async function runTests() {
   await testAsync('Test 6: Running invoicing twice creates no duplicates and reports skipped startups', async () => {
     const testPeriod = 'January 2027';
 
+    // Ensure clean slate before test
+    const cleanBefore = await db.getAppState();
+    if (cleanBefore && cleanBefore.invoices) {
+      cleanBefore.invoices = cleanBefore.invoices.filter(i => i.billingPeriod !== testPeriod);
+      await db.saveAppState(cleanBefore);
+    }
+
     // Run 1: First generation
     const run1 = await db.generateInvoicesBatchAtomic({ billingPeriod: testPeriod });
     assert.strictEqual(run1.ok, true, 'Run 1 must succeed');

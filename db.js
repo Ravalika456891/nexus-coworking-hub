@@ -325,19 +325,34 @@ async function deleteTableRecord(tableName, id) {
 }
 
 // -------------------------------------------------------------
-// Existing Helpers Preserved
+// Existing Helpers Preserved (with resilient in-memory fallback)
 // -------------------------------------------------------------
+let memoryAppState = null;
+
 async function getAppState() {
   const database = await connectDB();
-  if (!database) return null;
+  if (!database) {
+    if (!memoryAppState) {
+      memoryAppState = JSON.parse(JSON.stringify(loadInitialSeedData()));
+    }
+    return memoryAppState;
+  }
   const col = database.collection('app_state');
   const doc = await col.findOne({ _id: 'current_state' });
-  return doc ? doc.state : null;
+  if (doc && doc.state) {
+    memoryAppState = doc.state;
+    return doc.state;
+  }
+  if (!memoryAppState) {
+    memoryAppState = JSON.parse(JSON.stringify(loadInitialSeedData()));
+  }
+  return memoryAppState;
 }
 
 async function saveAppState(state) {
+  memoryAppState = state;
   const database = await connectDB();
-  if (!database) return false;
+  if (!database) return true;
   const col = database.collection('app_state');
   await col.updateOne(
     { _id: 'current_state' },
@@ -602,7 +617,7 @@ function hasBookingConflict(existing, newB) {
   if (existing.date !== newB.date) return false;
   if (existing.status === 'Cancelled') return false;
   if (existing.id && newB.id && existing.id === newB.id) return false;
-  return (existing.startTime < newB.endTime && existing.endTime > newB.startTime);
+  return (toMinutes(existing.startTime) < toMinutes(newB.endTime) && toMinutes(existing.endTime) > toMinutes(newB.startTime));
 }
 
 // Same startup concurrent booking conflict check:
@@ -614,7 +629,7 @@ function hasStartupConcurrentConflict(existing, newB) {
   if (existing.date !== newB.date) return false;
   if (existing.status === 'Cancelled') return false;
   if (existing.id && newB.id && existing.id === newB.id) return false;
-  return (existing.startTime < newB.endTime && existing.endTime > newB.startTime);
+  return (toMinutes(existing.startTime) < toMinutes(newB.endTime) && toMinutes(existing.endTime) > toMinutes(newB.startTime));
 }
 
 // Initialize MongoDB indexes including partial unique index on meeting_room_slots
@@ -761,7 +776,20 @@ function findBookingAlternatives(allRooms, req) {
 async function reserveMeetingRoomSlotsAtomic(bookingReq) {
   await bookingMutex.acquire();
   try {
-    const { roomId, startupId, startupName, title, date, startTime, endTime, attendees, cost } = bookingReq;
+    const {
+      roomId,
+      startupId,
+      startupName,
+      title,
+      purpose,
+      date,
+      startTime,
+      endTime,
+      attendees,
+      requestedAmenities,
+      specialRequests,
+      cost
+    } = bookingReq;
 
     if (!roomId || !startupId || !date || !startTime || !endTime) {
       return { ok: false, status: 400, message: 'Missing required booking fields (roomId, startupId, date, startTime, endTime).' };
@@ -802,8 +830,148 @@ async function reserveMeetingRoomSlotsAtomic(bookingReq) {
 
     // Check startup attendees vs capacity
     const reqAttendees = parseInt(attendees || 4, 10);
+    if (isNaN(reqAttendees) || reqAttendees < 1) {
+      return { ok: false, status: 400, code: 'INVALID_ATTENDEES', message: 'Number of attendees must be at least 1.' };
+    }
     if (reqAttendees > room.capacity) {
-      return { ok: false, status: 400, message: `Attendees (${reqAttendees}) exceed ${room.name} capacity of ${room.capacity} pax.` };
+      return {
+        ok: false,
+        status: 400,
+        code: 'CAPACITY_EXCEEDED',
+        message: `Attendees (${reqAttendees}) exceed ${room.name} capacity of ${room.capacity} pax.`
+      };
+    }
+
+    const durationHrs = Math.max(0.25, durationMin / 60);
+
+    // Enforce Booking Policies (if user is not admin)
+    const policies = (appState && appState.meetingRoomPolicies) || {};
+    const isAdminUser = bookingReq.userRole === 'admin' || bookingReq.userRole === 'super_admin' || bookingReq.userRole === 'incubation_admin' || bookingReq.userRole === 'incubator_admin';
+
+    if (!isAdminUser) {
+      // 1. Max duration policy
+      if (policies.maxDurationHours && durationHrs > Number(policies.maxDurationHours)) {
+        return {
+          ok: false,
+          status: 400,
+          code: 'MAX_DURATION_EXCEEDED',
+          message: `Booking duration (${durationHrs}h) exceeds the maximum allowed duration of ${policies.maxDurationHours} hours.`
+        };
+      }
+
+      // 2. Advance booking window
+      if (policies.advanceBookingDays) {
+        const dPartsNow = ist.date.split('-').map(Number);
+        const dPartsReq = date.split('-').map(Number);
+        const nowUtc = Date.UTC(dPartsNow[0], dPartsNow[1] - 1, dPartsNow[2]);
+        const reqUtc = Date.UTC(dPartsReq[0], dPartsReq[1] - 1, dPartsReq[2]);
+        const daysDiff = Math.round((reqUtc - nowUtc) / (1000 * 60 * 60 * 24));
+        if (daysDiff > Number(policies.advanceBookingDays)) {
+          return {
+            ok: false,
+            status: 400,
+            code: 'ADVANCE_BOOKING_EXCEEDED',
+            message: `Reservations can only be made up to ${policies.advanceBookingDays} days in advance.`
+          };
+        }
+      }
+
+      // 3. Minimum advance notice
+      if (policies.minAdvanceNoticeMins && date === ist.date) {
+        if ((startMin - ist.minutes) < Number(policies.minAdvanceNoticeMins)) {
+          return {
+            ok: false,
+            status: 400,
+            code: 'MIN_ADVANCE_NOTICE_REQUIRED',
+            message: `Reservations require at least ${policies.minAdvanceNoticeMins} minutes advance notice.`
+          };
+        }
+      }
+
+      // 4. Maximum active reservations per startup
+      if (policies.maxActiveReservationsPerStartup) {
+        let activeStartupBookingsCount = 0;
+        for (const rm of rooms) {
+          (rm.bookings || []).forEach(b => {
+            if (b.startupId === startupId && b.status !== 'Cancelled') {
+              if (b.date > ist.date || (b.date === ist.date && toMinutes(b.endTime) > ist.minutes)) {
+                activeStartupBookingsCount++;
+              }
+            }
+          });
+        }
+        if (activeStartupBookingsCount >= Number(policies.maxActiveReservationsPerStartup)) {
+          return {
+            ok: false,
+            status: 400,
+            code: 'MAX_ACTIVE_RESERVATIONS_EXCEEDED',
+            message: `Your startup has reached the maximum limit of ${policies.maxActiveReservationsPerStartup} active reservations.`
+          };
+        }
+      }
+
+      // 5. Maximum daily booking hours per startup
+      if (policies.maxDailyBookingHoursPerStartup) {
+        let existingDailyHrs = 0;
+        for (const rm of rooms) {
+          (rm.bookings || []).forEach(b => {
+            if (b.startupId === startupId && b.date === date && b.status !== 'Cancelled') {
+              existingDailyHrs += (Number(b.duration) || 0);
+            }
+          });
+        }
+        if ((existingDailyHrs + durationHrs) > Number(policies.maxDailyBookingHoursPerStartup)) {
+          return {
+            ok: false,
+            status: 400,
+            code: 'MAX_DAILY_HOURS_EXCEEDED',
+            message: `This booking would exceed your startup's daily limit of ${policies.maxDailyBookingHoursPerStartup} hours on ${date} (already booked: ${existingDailyHrs.toFixed(1)}h).`
+          };
+        }
+      }
+    }
+
+    // Check if room is under maintenance (static flag or timed maintenance block)
+    const isStaticMaintenance = Boolean(room.status === 'Under Maintenance' || room.underMaintenance === true || room.maintenance === true);
+    const bookingStartISO = `${date}T${startTime}:00`;
+    const bookingEndISO = `${date}T${endTime}:00`;
+    const timedBlocks = (appState && Array.isArray(appState.maintenanceBlocks)) ? appState.maintenanceBlocks : [];
+    const activeTimedBlock = timedBlocks.find(b => {
+      if (b.roomId !== roomId || b.status === 'cancelled') return false;
+      const bStart = b.startDateTime ? (b.startDateTime.length === 16 ? b.startDateTime + ':00' : b.startDateTime) : '';
+      const bEnd = b.endDateTime ? (b.endDateTime.length === 16 ? b.endDateTime + ':00' : b.endDateTime) : '';
+      return (bStart < bookingEndISO && bEnd > bookingStartISO);
+    });
+
+    if (isStaticMaintenance || activeTimedBlock) {
+      const reason = activeTimedBlock ? activeTimedBlock.reason : (room.maintenanceReason || 'Scheduled facility maintenance');
+      const alternatives = findBookingAlternatives(rooms, { roomId, date, startTime, endTime, attendees: reqAttendees, startupId });
+      return {
+        ok: false,
+        status: 409,
+        code: activeTimedBlock ? 'ROOM_UNDER_TIMED_MAINTENANCE' : 'ROOM_MAINTENANCE',
+        message: `${room.name} is under maintenance (${reason}) and unavailable for booking at this time.`,
+        alternatives,
+        maintenanceBlock: activeTimedBlock || null
+      };
+    }
+
+    // Idempotency Check: prevent duplicate booking & duplicate billing on network retry
+    const idempotencyKey = bookingReq.idempotencyKey ? String(bookingReq.idempotencyKey).trim() : null;
+    if (idempotencyKey) {
+      const existingIdempotent = (room.bookings || []).find(b => b.idempotencyKey === idempotencyKey && b.status !== 'Cancelled');
+      if (existingIdempotent) {
+        return {
+          ok: true,
+          status: 200,
+          idempotentReplay: true,
+          booking: existingIdempotent,
+          invoice: existingIdempotent.invoiceId && appState && Array.isArray(appState.invoices)
+            ? appState.invoices.find(i => i.id === existingIdempotent.invoiceId) || null
+            : null,
+          message: `Successfully booked ${room.name}! (Idempotent replay)`
+        };
+      }
     }
 
     // 3. Multi-room concurrent user conflict check:
@@ -846,21 +1014,93 @@ async function reserveMeetingRoomSlotsAtomic(bookingReq) {
       };
     }
 
+    // Trusted Backend Pricing & Credit Deduction Calculation
+    let finalCost = cost !== undefined ? Number(cost) : 0;
+    const startupRecord = (appState && Array.isArray(appState.startups))
+      ? appState.startups.find(s => s.id === startupId)
+      : null;
+
+    // Check if this is a multi-occurrence recurring reservation request
+    if (bookingReq.recurrence && bookingReq.recurrence.frequency && bookingReq.recurrence.frequency !== 'none' && Number(bookingReq.recurrence.count || 1) > 1 && !bookingReq._singleOccurrence) {
+      bookingMutex.release();
+      try {
+        return await reserveRecurringMeetingRoomAtomic(bookingReq);
+      } finally {
+        await bookingMutex.acquire();
+      }
+    }
+
+    let creditHoursUsed = 0;
+    let overageHours = 0;
+    if (startupRecord) {
+      const includedHrs = startupRecord.includedMeetingHours !== undefined ? Number(startupRecord.includedMeetingHours) : 12;
+      const usedHrs = Number(startupRecord.usedMeetingHours || 0);
+      const remainingCredits = Math.max(0, includedHrs - usedHrs);
+      creditHoursUsed = Math.min(remainingCredits, durationHrs);
+      overageHours = Math.max(0, Number((durationHrs - creditHoursUsed).toFixed(2)));
+      if (cost === undefined) {
+        const rate = Number(startupRecord.additionalHourRate || room.hourlyRate || 1000);
+        finalCost = overageHours > 0 ? Math.round(overageHours * rate) : 0;
+      }
+      startupRecord.usedMeetingHours = Number((usedHrs + creditHoursUsed).toFixed(2));
+    }
+
+    // Check if booking policy requires admin approval for long durations or premium rooms
+    const approvalThreshold = Number(policies.requireApprovalAboveHours || 0);
+    const isPremium = Boolean(room.isPremium || room.premium);
+    const requiresApproval = (
+      !isAdminUser &&
+      (
+        (approvalThreshold > 0 && durationHrs > approvalThreshold) ||
+        (policies.premiumRoomRequiresApproval && isPremium) ||
+        bookingReq.requiresApproval === true
+      )
+    );
+    const initialStatus = requiresApproval
+      ? 'Pending Approval'
+      : (bookingReq.status || 'Confirmed');
+
     // 5. Construct Confirmed Booking Object:
     const bookingId = `BKG-${Math.floor(100 + Math.random() * 900)}`;
+    const normalizedAmenities = Array.isArray(requestedAmenities)
+      ? requestedAmenities
+      : (typeof requestedAmenities === 'string' && requestedAmenities.trim()
+          ? requestedAmenities.split(',').map(s => s.trim()).filter(Boolean)
+          : []);
+
     const newBooking = {
       id: bookingId,
+      roomId,
       startupId,
-      startupName: startupName || 'Partner Venture',
-      title: title || 'Strategic Planning Session',
+      startupName: startupName || (startupRecord && startupRecord.name) || 'Partner Venture',
+      title: title || purpose || 'Meeting Room Reservation',
+      purpose: purpose || title || 'General Sync',
       date,
       startTime,
       endTime,
+      duration: durationHrs,
+      creditHoursUsed,
+      overageHours,
       attendees: reqAttendees,
-      cost: Number(cost || 0),
-      status: 'Confirmed',
+      requestedAmenities: normalizedAmenities,
+      specialRequests: specialRequests ? String(specialRequests).trim() : '',
+      cost: Number(finalCost || 0),
+      status: initialStatus,
+      idempotencyKey: idempotencyKey || null,
+      seriesId: bookingReq.seriesId || null,
+      recurrence: bookingReq.recurrence || null,
+      calendarSync: bookingReq.calendarSync || {},
       createdAt: new Date().toISOString()
     };
+
+    // Sync Overage Charge to Invoices if cost > 0
+    let syncedInvoice = null;
+    if (newBooking.cost > 0 && appState) {
+      syncedInvoice = syncBookingOverageToInvoice(appState, newBooking, room, startupRecord);
+      if (syncedInvoice) {
+        newBooking.invoiceId = syncedInvoice.id;
+      }
+    }
 
     if (!room.bookings) room.bookings = [];
     room.bookings.push(newBooking);
@@ -872,12 +1112,12 @@ async function reserveMeetingRoomSlotsAtomic(bookingReq) {
         await initMeetingRoomIndexes();
         const slotsCol = database.collection('meeting_room_slots');
 
-        // Insert slot records for each 1-hr interval bucket covered
-        const startH = Math.floor(startMin / 60);
-        const endH = Math.ceil(endMin / 60);
+        // Insert slot records for each 15-min interval bucket covered (supports 30-min & 60-min bookings without false collision)
         const slotDocs = [];
-        for (let h = startH; h < endH; h++) {
-          const slotHour = `${h < 10 ? '0' : ''}${h}:00`;
+        for (let m = startMin; m < endMin; m += 15) {
+          const h = Math.floor(m / 60);
+          const minPart = m % 60;
+          const slotHour = `${h < 10 ? '0' : ''}${h}:${minPart < 10 ? '0' : ''}${minPart}`;
           slotDocs.push({
             roomId,
             date,
@@ -898,8 +1138,12 @@ async function reserveMeetingRoomSlotsAtomic(bookingReq) {
         const mrCol = database.collection('meeting_rooms');
         await mrCol.updateOne({ id: roomId }, { $set: { bookings: room.bookings } }, { upsert: true });
       } catch (dbErr) {
-        // If duplicate key error on slot hour
+        // If duplicate key error on slot bucket
         if (dbErr.code === 11000) {
+          room.bookings = (room.bookings || []).filter(b => b.id !== bookingId);
+          try {
+            await database.collection('meeting_room_slots').deleteMany({ roomId, bookingId });
+          } catch (_) {}
           const alternatives = findBookingAlternatives(rooms, { roomId, date, startTime, endTime, attendees: reqAttendees, startupId });
           return {
             ok: false,
@@ -931,6 +1175,7 @@ async function reserveMeetingRoomSlotsAtomic(bookingReq) {
       ok: true,
       status: 201,
       booking: newBooking,
+      invoice: syncedInvoice,
       message: `Successfully booked ${room.name}!`
     };
   } finally {
@@ -1025,7 +1270,7 @@ async function cancelBooking(arg1, arg2, arg3) {
     if (!booking) return { ok: false, status: 404, message: 'Booking not found.' };
 
     // 1. Verify owner or admin
-    const isAdmin = userRole === 'admin' || (!userRole && !requestingStartupId);
+    const isAdmin = userRole === 'admin' || userRole === 'super_admin' || userRole === 'incubation_admin' || userRole === 'incubator_admin' || (!userRole && !requestingStartupId);
     if (!isAdmin && requestingStartupId) {
       if (booking.startupId !== requestingStartupId) {
         return {
@@ -1050,6 +1295,16 @@ async function cancelBooking(arg1, arg2, arg3) {
     // 3. Recompute quote on server using single shared policy
     let quote = cancellation.calculateRefundQuote(booking, currentClock);
     if (!quote.allowed) {
+      const isDirectCleanupCall = (typeof arg1 === 'string' && !arg3);
+      if (quote.isCompleted && !isDirectCleanupCall) {
+        return {
+          ok: false,
+          status: 400,
+          code: 'MEETING_COMPLETED',
+          message: quote.reason || 'Cannot cancel a completed meeting.',
+          quote
+        };
+      }
       if (isAdmin) {
         quote = {
           ...quote,
@@ -1058,6 +1313,7 @@ async function cancelBooking(arg1, arg2, arg3) {
           refundPct: 0,
           refundPaise: 0,
           feePaise: quote.amountPaise,
+          refundRupees: 0,
           refundRupees: 0,
           feeRupees: quote.amountRupees
         };
@@ -1076,6 +1332,25 @@ async function cancelBooking(arg1, arg2, arg3) {
     booking.status = 'Cancelled';
     booking.cancelledAt = new Date().toISOString();
     booking.refundQuote = quote;
+
+    // Cancel any linked external calendar events (Google / Outlook)
+    if (booking.calendarSync && typeof booking.calendarSync === 'object') {
+      Object.keys(booking.calendarSync).forEach(provider => {
+        if (booking.calendarSync[provider] && booking.calendarSync[provider].status === 'synced') {
+          booking.calendarSync[provider].status = 'cancelled';
+          booking.calendarSync[provider].cancelledAt = booking.cancelledAt;
+        }
+      });
+      if (appState && appState.calendarIntegrations && appState.calendarIntegrations.syncedEvents) {
+        ['google', 'outlook'].forEach(p => {
+          const evKey = `${p}:${booking.id}`;
+          if (appState.calendarIntegrations.syncedEvents[evKey]) {
+            appState.calendarIntegrations.syncedEvents[evKey].status = 'cancelled';
+            appState.calendarIntegrations.syncedEvents[evKey].cancelledAt = booking.cancelledAt;
+          }
+        });
+      }
+    }
 
     const database = await connectDB();
 
@@ -1101,9 +1376,16 @@ async function cancelBooking(arg1, arg2, arg3) {
       refundStatus = 'plan_credit_restored';
       const startup = (appState.startups || []).find(s => s.id === booking.startupId);
       if (startup) {
-        startup.usedMeetingHours = Math.max(0, (startup.usedMeetingHours || 0) - (quote.durationHours || 1));
+        const restoreHrs = booking.creditHoursUsed !== undefined ? Number(booking.creditHoursUsed) : (quote.durationHours || 1);
+        startup.usedMeetingHours = Number(Math.max(0, (startup.usedMeetingHours || 0) - restoreHrs).toFixed(2));
       }
     } else {
+      // If booking used partial credits before hitting overage, restore those credit hours too
+      const startup = (appState.startups || []).find(s => s.id === booking.startupId);
+      if (startup && Number(booking.creditHoursUsed) > 0) {
+        startup.usedMeetingHours = Number(Math.max(0, (startup.usedMeetingHours || 0) - Number(booking.creditHoursUsed)).toFixed(2));
+      }
+
       // Paid booking: Razorpay refund or credit note on next invoice
       const isRazorpay = (booking.paymentGateway === 'Razorpay' || booking.razorpayPaymentId || booking.paymentMethod === 'Razorpay');
       if (isRazorpay) {
@@ -1112,7 +1394,6 @@ async function cancelBooking(arg1, arg2, arg3) {
       } else {
         refundId = `CN-${Date.now()}`;
         refundStatus = 'credit_note_issued';
-        const startup = (appState.startups || []).find(s => s.id === booking.startupId);
         if (startup) {
           startup.creditBalance = (startup.creditBalance || 0) + quote.refundRupees;
         }
@@ -1215,6 +1496,237 @@ async function cancelBooking(arg1, arg2, arg3) {
 // Alias for backwards-compatibility
 const cancelMeetingRoomSlotsAtomic = cancelBooking;
 
+// Dynamic Room Status Engine (Incubation Center Timezone: Asia/Kolkata)
+function computeRoomStatus(room, selectedDate, currentClock = null, startupId = null) {
+  const ist = currentClock ? (() => {
+    const d = currentClock instanceof Date ? currentClock : new Date(currentClock);
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Kolkata',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }).formatToParts(d);
+    const map = {};
+    parts.forEach(p => { map[p.type] = p.value; });
+    const h = parseInt(map.hour, 10) % 24;
+    const m = parseInt(map.minute, 10) || 0;
+    const pad = n => (n < 10 ? '0' : '') + n;
+    return {
+      date: `${map.year}-${map.month}-${map.day}`,
+      time: `${pad(h)}:${pad(m)}`,
+      minutes: h * 60 + m
+    };
+  })() : getISTClock();
+
+  const targetDate = selectedDate || ist.date;
+  const isMaintenance = Boolean(room && (room.status === 'Under Maintenance' || room.underMaintenance === true || room.maintenance === true));
+
+  if (isMaintenance) {
+    return {
+      status: 'Under Maintenance',
+      openSlots: 0,
+      bookedSlots: 0,
+      myBookedSlots: 0,
+      otherBookedSlots: 0
+    };
+  }
+
+  const operatingSlots = [8, 9, 10, 15, 16, 17, 18]; // 7 operating 1-hour slots
+  const bookings = ((room && room.bookings) || []).filter(b => b.date === targetDate && b.status !== 'Cancelled');
+  const isPastDay = targetDate < ist.date;
+  const isToday = targetDate === ist.date;
+
+  if (isPastDay) {
+    let myBooked = 0;
+    let otherBooked = 0;
+    operatingSlots.forEach(h => {
+      const sMin = h * 60;
+      const eMin = (h + 1) * 60;
+      const overlapping = bookings.filter(b => toMinutes(b.startTime) < eMin && toMinutes(b.endTime) > sMin);
+      if (overlapping.length > 0) {
+        if (startupId && overlapping.some(b => b.startupId === startupId)) myBooked++;
+        else otherBooked++;
+      }
+    });
+    return {
+      status: 'Closed for Today',
+      openSlots: 0,
+      bookedSlots: myBooked + otherBooked,
+      myBookedSlots: myBooked,
+      otherBookedSlots: otherBooked
+    };
+  }
+
+  if (isToday && ist.minutes >= 19 * 60) {
+    return {
+      status: 'Closed for Today',
+      openSlots: 0,
+      bookedSlots: 0,
+      myBookedSlots: 0,
+      otherBookedSlots: 0
+    };
+  }
+
+  let openSlots = 0;
+  let myBookedSlots = 0;
+  let otherBookedSlots = 0;
+  let hasFutureOpenSlot = false;
+
+  operatingSlots.forEach(h => {
+    const slotStartMin = h * 60;
+    const slotEndMin = (h + 1) * 60;
+    const isSlotPassed = isToday && slotEndMin <= ist.minutes;
+
+    const overlapping = bookings.filter(b => toMinutes(b.startTime) < slotEndMin && toMinutes(b.endTime) > slotStartMin);
+    let coveredMins = 0;
+    for (let m = slotStartMin; m < slotEndMin; m += 15) {
+      const mEnd = m + 15;
+      const isBooked15 = overlapping.some(b => toMinutes(b.startTime) < mEnd && toMinutes(b.endTime) > m);
+      if (isBooked15) coveredMins += 15;
+    }
+
+    const isSlotFullyBooked = coveredMins >= 60;
+    if (overlapping.length > 0) {
+      if (startupId && overlapping.some(b => b.startupId === startupId)) myBookedSlots++;
+      else otherBookedSlots++;
+    }
+
+    if (!isSlotPassed && !isSlotFullyBooked) {
+      openSlots++;
+      for (let m = slotStartMin; m < slotEndMin; m += 15) {
+        const mEnd = m + 15;
+        if (isToday && mEnd <= ist.minutes) continue;
+        const isBooked15 = overlapping.some(b => toMinutes(b.startTime) < mEnd && toMinutes(b.endTime) > m);
+        if (!isBooked15) {
+          hasFutureOpenSlot = true;
+          break;
+        }
+      }
+    }
+  });
+
+  if (isToday) {
+    const inMorningHours = ist.minutes >= 8 * 60 && ist.minutes < 11 * 60;
+    const inAfternoonHours = ist.minutes >= 15 * 60 && ist.minutes < 19 * 60;
+    const inOperatingHours = inMorningHours || inAfternoonHours;
+    const activeBookingNow = bookings.find(b => toMinutes(b.startTime) <= ist.minutes && toMinutes(b.endTime) > ist.minutes);
+
+    if (inOperatingHours && !activeBookingNow) {
+      return {
+        status: 'Available Now',
+        openSlots,
+        bookedSlots: myBookedSlots + otherBookedSlots,
+        myBookedSlots,
+        otherBookedSlots
+      };
+    }
+
+    if (hasFutureOpenSlot) {
+      return {
+        status: 'Available Later Today',
+        openSlots,
+        bookedSlots: myBookedSlots + otherBookedSlots,
+        myBookedSlots,
+        otherBookedSlots
+      };
+    }
+
+    return {
+      status: 'Fully Booked',
+      openSlots: 0,
+      bookedSlots: myBookedSlots + otherBookedSlots,
+      myBookedSlots,
+      otherBookedSlots
+    };
+  }
+
+  // Future Date
+  if (openSlots === 0) {
+    return {
+      status: 'Fully Booked',
+      openSlots: 0,
+      bookedSlots: myBookedSlots + otherBookedSlots,
+      myBookedSlots,
+      otherBookedSlots
+    };
+  }
+
+  return {
+    status: 'Available Now',
+    openSlots,
+    bookedSlots: myBookedSlots + otherBookedSlots,
+    myBookedSlots,
+    otherBookedSlots
+  };
+}
+
+// Consistent Reservation Counts Engine
+async function getReservationCounts({ date = null, startupId = null, currentClock = null } = {}) {
+  const ist = getISTClock();
+  const targetDate = date || ist.date;
+  const appState = await getAppState();
+  let rooms = (appState && appState.meetingRooms) ? appState.meetingRooms : [];
+  if (!rooms.length) {
+    const seed = loadInitialSeedData();
+    rooms = seed.meetingRooms || [];
+  }
+
+  const allConfirmedBookings = [];
+  const dateConfirmedBookings = [];
+
+  rooms.forEach(r => {
+    (r.bookings || []).forEach(b => {
+      if (b.status === 'Cancelled') return;
+      const item = { ...b, roomId: r.id, roomName: r.name };
+      allConfirmedBookings.push(item);
+      if (b.date === targetDate) {
+        dateConfirmedBookings.push(item);
+      }
+    });
+  });
+
+  const myBookingsAllDates = startupId
+    ? allConfirmedBookings.filter(b => b.startupId === startupId)
+    : [];
+  const otherBookingsAllDates = startupId
+    ? allConfirmedBookings.filter(b => b.startupId !== startupId)
+    : allConfirmedBookings;
+
+  const myBookingsForDate = startupId
+    ? dateConfirmedBookings.filter(b => b.startupId === startupId)
+    : [];
+  const otherBookingsForDate = startupId
+    ? dateConfirmedBookings.filter(b => b.startupId !== startupId)
+    : dateConfirmedBookings;
+
+  let availableSlotsForDate = 0;
+  let mySlotsForDate = 0;
+  let otherSlotsForDate = 0;
+
+  rooms.forEach(r => {
+    const st = computeRoomStatus(r, targetDate, currentClock, startupId);
+    availableSlotsForDate += st.openSlots;
+    mySlotsForDate += st.myBookedSlots;
+    otherSlotsForDate += st.otherBookedSlots;
+  });
+
+  return {
+    date: targetDate,
+    totalBookings: allConfirmedBookings.length,
+    myBookings: myBookingsAllDates.length,
+    otherBookings: otherBookingsAllDates.length,
+    dateTotalBookings: dateConfirmedBookings.length,
+    dateMyBookings: myBookingsForDate.length,
+    dateOtherBookings: otherBookingsForDate.length,
+    availableSlots: availableSlotsForDate,
+    mySlots: mySlotsForDate,
+    otherSlots: otherSlotsForDate
+  };
+}
+
 // Get Meeting Rooms Availability & Bookings for Date
 async function getMeetingRoomsAvailability(date) {
   const ist = getISTClock();
@@ -1226,16 +1738,26 @@ async function getMeetingRoomsAvailability(date) {
     rooms = seed.meetingRooms || [];
   }
 
-  const result = rooms.map(r => ({
-    id: r.id,
-    name: r.name,
-    capacity: r.capacity,
-    hourlyRate: r.hourlyRate,
-    amenities: r.amenities,
-    icon: r.icon,
-    badgeColor: r.badgeColor,
-    bookings: (r.bookings || []).filter(b => b.date === targetDate && b.status !== 'Cancelled')
-  }));
+  const result = rooms.map(r => {
+    const statusInfo = computeRoomStatus(r, targetDate);
+    const withImgs = withRoomImages(r);
+    return {
+      id: r.id,
+      name: r.name,
+      capacity: r.capacity,
+      hourlyRate: r.hourlyRate,
+      amenities: r.amenities,
+      icon: r.icon,
+      badgeColor: r.badgeColor,
+      description: withImgs.description || '',
+      images: withImgs.images,
+      status: r.status || 'Active',
+      underMaintenance: Boolean(r.underMaintenance || r.maintenance || r.status === 'Under Maintenance'),
+      dynamicStatus: statusInfo.status,
+      openSlots: statusInfo.openSlots,
+      bookings: (r.bookings || []).filter(b => b.date === targetDate && b.status !== 'Cancelled')
+    };
+  });
 
   return {
     ok: true,
@@ -1245,10 +1767,26 @@ async function getMeetingRoomsAvailability(date) {
   };
 }
 
-// Atomic Time Window Update for Existing Reservation
-async function updateMeetingRoomBookingTimeWindowAtomic({ roomId, bookingId, date, startTime, endTime }) {
+// Atomic Time Window & Full Reschedule Update for Existing Reservation
+async function updateMeetingRoomBookingTimeWindowAtomic(updateReq) {
   await bookingMutex.acquire();
   try {
+    const {
+      roomId,
+      newRoomId,
+      bookingId,
+      date,
+      startTime,
+      endTime,
+      attendees,
+      title,
+      purpose,
+      requestedAmenities,
+      specialRequests,
+      requestingStartupId,
+      userRole
+    } = updateReq || {};
+
     const ist = getISTClock();
     const startMin = toMinutes(startTime);
     const endMin = toMinutes(endTime);
@@ -1271,34 +1809,75 @@ async function updateMeetingRoomBookingTimeWindowAtomic({ roomId, bookingId, dat
       rooms = seed.meetingRooms || [];
     }
 
-    const room = rooms.find(r => r.id === roomId);
-    if (!room) return { ok: false, status: 404, message: 'Room not found.' };
+    const sourceRoom = rooms.find(r => r.id === roomId);
+    if (!sourceRoom) return { ok: false, status: 404, message: 'Room not found.' };
 
-    const booking = (room.bookings || []).find(b => b.id === bookingId);
+    const booking = (sourceRoom.bookings || []).find(b => b.id === bookingId);
     if (!booking) return { ok: false, status: 404, message: 'Booking not found.' };
 
-    // Check conflict against other bookings in this room (excluding current booking)
-    const conflict = (room.bookings || []).find(b => {
+    if (booking.status === 'Cancelled') {
+      return { ok: false, status: 400, code: 'ALREADY_CANCELLED', message: 'Cannot modify a cancelled reservation.' };
+    }
+
+    if (cancellation.isBookingCompleted(booking)) {
+      return { ok: false, status: 400, code: 'MEETING_COMPLETED', message: 'Cannot modify a completed meeting.' };
+    }
+
+    // Permission check: only owning startup or admin can reschedule
+    const isAdmin = userRole === 'admin' || userRole === 'super_admin' || userRole === 'incubator_admin' || (!userRole && !requestingStartupId);
+    if (!isAdmin && requestingStartupId && booking.startupId !== requestingStartupId) {
+      return {
+        ok: false,
+        status: 403,
+        code: 'UNAUTHORIZED',
+        message: 'Unauthorized: You can only modify reservations belonging to your own startup.'
+      };
+    }
+
+    const targetRoomId = newRoomId || roomId;
+    const targetRoom = rooms.find(r => r.id === targetRoomId);
+    if (!targetRoom) return { ok: false, status: 404, message: 'Target meeting room not found.' };
+
+    if (targetRoom.status === 'Under Maintenance' || targetRoom.underMaintenance === true || targetRoom.maintenance === true) {
+      return { ok: false, status: 409, code: 'ROOM_MAINTENANCE', message: `${targetRoom.name} is currently under maintenance and unavailable.` };
+    }
+
+    const nextAttendees = attendees !== undefined ? parseInt(attendees, 10) : (booking.attendees || 4);
+    if (isNaN(nextAttendees) || nextAttendees < 1) {
+      return { ok: false, status: 400, code: 'INVALID_ATTENDEES', message: 'Number of attendees must be at least 1.' };
+    }
+    if (nextAttendees > targetRoom.capacity) {
+      return {
+        ok: false,
+        status: 400,
+        code: 'CAPACITY_EXCEEDED',
+        message: `Attendees (${nextAttendees}) exceed ${targetRoom.name} capacity of ${targetRoom.capacity} pax.`
+      };
+    }
+
+    // Check conflict against other bookings in targetRoom (excluding current booking)
+    const conflict = (targetRoom.bookings || []).find(b => {
       if (b.id === bookingId) return false;
-      return hasBookingConflict({ ...b, roomId }, { roomId, date, startTime, endTime });
+      return hasBookingConflict({ ...b, roomId: targetRoomId }, { roomId: targetRoomId, date, startTime, endTime });
     });
 
     if (conflict) {
-      const alternatives = findBookingAlternatives(rooms, { roomId, date, startTime, endTime, attendees: booking.attendees, startupId: booking.startupId });
+      const alternatives = findBookingAlternatives(rooms, { roomId: targetRoomId, date, startTime, endTime, attendees: nextAttendees, startupId: booking.startupId });
       return {
         ok: false,
         status: 409,
         code: 'SLOT_TAKEN',
-        message: `${room.name} is already booked from ${conflict.startTime} to ${conflict.endTime} by another startup.`,
+        message: `${targetRoom.name} is already booked from ${conflict.startTime} to ${conflict.endTime} by another startup.`,
         alternatives
       };
     }
 
-    // Check multi-room conflict for startup
+    // Check multi-room conflict for startup across all other rooms (excluding current booking)
     for (const r of rooms) {
-      if (r.id === roomId) continue;
+      if (r.id === targetRoomId) continue;
       const otherConflict = (r.bookings || []).find(b => {
-        return hasStartupConcurrentConflict({ ...b, roomId: r.id }, { roomId, startupId: booking.startupId, date, startTime, endTime });
+        if (b.id === bookingId) return false;
+        return hasStartupConcurrentConflict({ ...b, roomId: r.id, id: b.id }, { roomId: targetRoomId, id: bookingId, startupId: booking.startupId, date, startTime, endTime });
       });
       if (otherConflict) {
         return {
@@ -1310,22 +1889,95 @@ async function updateMeetingRoomBookingTimeWindowAtomic({ roomId, bookingId, dat
       }
     }
 
-    // Update booking time window
+    // Update booking fields in-place (preserving booking.id)
+    booking.roomId = targetRoomId;
     booking.date = date;
     booking.startTime = startTime;
     booking.endTime = endTime;
+    booking.duration = Math.max(0.25, (endMin - startMin) / 60);
+    booking.attendees = nextAttendees;
+    if (title !== undefined && String(title).trim()) booking.title = String(title).trim();
+    if (purpose !== undefined && String(purpose).trim()) booking.purpose = String(purpose).trim();
+    if (requestedAmenities !== undefined) {
+      booking.requestedAmenities = Array.isArray(requestedAmenities)
+        ? requestedAmenities
+        : (typeof requestedAmenities === 'string' && requestedAmenities.trim()
+            ? requestedAmenities.split(',').map(s => s.trim()).filter(Boolean)
+            : []);
+    }
+    if (specialRequests !== undefined) {
+      booking.specialRequests = String(specialRequests).trim();
+    }
     booking.updatedAt = new Date().toISOString();
+
+    // Update any linked external calendar events (Google / Outlook)
+    if (booking.calendarSync && typeof booking.calendarSync === 'object') {
+      Object.keys(booking.calendarSync).forEach(provider => {
+        if (booking.calendarSync[provider] && booking.calendarSync[provider].status === 'synced') {
+          booking.calendarSync[provider].date = date;
+          booking.calendarSync[provider].startTime = startTime;
+          booking.calendarSync[provider].endTime = endTime;
+          booking.calendarSync[provider].roomId = targetRoomId;
+          booking.calendarSync[provider].roomName = targetRoom.name;
+          booking.calendarSync[provider].updatedAt = booking.updatedAt;
+        }
+      });
+      if (appState && appState.calendarIntegrations && appState.calendarIntegrations.syncedEvents) {
+        ['google', 'outlook'].forEach(p => {
+          const evKey = `${p}:${booking.id}`;
+          if (appState.calendarIntegrations.syncedEvents[evKey]) {
+            appState.calendarIntegrations.syncedEvents[evKey].date = date;
+            appState.calendarIntegrations.syncedEvents[evKey].startTime = startTime;
+            appState.calendarIntegrations.syncedEvents[evKey].endTime = endTime;
+            appState.calendarIntegrations.syncedEvents[evKey].roomId = targetRoomId;
+            appState.calendarIntegrations.syncedEvents[evKey].roomName = targetRoom.name;
+            appState.calendarIntegrations.syncedEvents[evKey].updatedAt = booking.updatedAt;
+          }
+        });
+      }
+    }
 
     const durationHrs = Math.max(0.25, (endMin - startMin) / 60);
     if (booking.cost > 0) {
-      booking.cost = Math.round(durationHrs * room.hourlyRate);
+      booking.cost = Math.round(durationHrs * targetRoom.hourlyRate);
+    }
+
+    // If room changed, move booking from sourceRoom to targetRoom without creating duplicate
+    if (targetRoomId !== roomId) {
+      sourceRoom.bookings = (sourceRoom.bookings || []).filter(b => b.id !== bookingId);
+      if (!targetRoom.bookings) targetRoom.bookings = [];
+      targetRoom.bookings.push(booking);
     }
 
     const database = await connectDB();
     if (database) {
       try {
+        await initMeetingRoomIndexes();
+        const slotsCol = database.collection('meeting_room_slots');
+        await slotsCol.deleteMany({ bookingId });
+        const slotDocs = [];
+        for (let m = startMin; m < endMin; m += 15) {
+          const h = Math.floor(m / 60);
+          const minPart = m % 60;
+          const slotHour = `${h < 10 ? '0' : ''}${h}:${minPart < 10 ? '0' : ''}${minPart}`;
+          slotDocs.push({
+            roomId: targetRoomId,
+            date,
+            slotHour,
+            bookingId,
+            status: 'Confirmed',
+            startupId: booking.startupId,
+            createdAt: new Date()
+          });
+        }
+        for (const sDoc of slotDocs) {
+          await slotsCol.insertOne(sDoc);
+        }
         const mrCol = database.collection('meeting_rooms');
-        await mrCol.updateOne({ id: roomId }, { $set: { bookings: room.bookings } });
+        await mrCol.updateOne({ id: sourceRoom.id }, { $set: { bookings: sourceRoom.bookings } });
+        if (targetRoomId !== roomId) {
+          await mrCol.updateOne({ id: targetRoom.id }, { $set: { bookings: targetRoom.bookings } });
+        }
       } catch (err) {
         console.warn('⚠️ [MongoDB] update warning:', err.message);
       }
@@ -1333,14 +1985,24 @@ async function updateMeetingRoomBookingTimeWindowAtomic({ roomId, bookingId, dat
 
     if (appState) {
       appState.meetingRooms = rooms;
+      if (!appState.activityLog) appState.activityLog = [];
+      appState.activityLog.unshift({
+        id: `ACT-${Date.now()}`,
+        module: 'Meeting Rooms',
+        action: `${booking.startupName} rescheduled reservation ${booking.id} to ${targetRoom.name} on ${date} (${startTime}-${endTime}).`,
+        timestamp: new Date().toISOString(),
+        icon: '🔄'
+      });
       await saveAppState(appState);
     }
 
     return {
       ok: true,
       status: 200,
+      roomId: targetRoomId,
+      previousRoomId: roomId,
       booking,
-      message: `Time window successfully updated to ${startTime} – ${endTime}!`
+      message: `Reservation ${booking.id} successfully updated (${targetRoom.name}, ${date} ${startTime} – ${endTime})!`
     };
   } finally {
     bookingMutex.release();
@@ -1784,6 +2446,7 @@ async function getDashboardSummary(requestedMonth) {
     collected: {
       value: Math.round(collectedInMonth),
       formatted: formatCurrencyINR(collectedInMonth),
+      monthLabel,
       monthPaymentsCount: monthPayments.length,
       allTimeCollected: Math.round(totalCollectedAllTime),
       allTimeCollectedFormatted: formatCurrencyINR(totalCollectedAllTime),
@@ -1843,6 +2506,213 @@ async function getDashboardSummary(requestedMonth) {
 }
 
 // Atomic Batch Invoice Generation with Unique Startup + Period Duplicate Check
+// Single Source of Truth: Startup Command Center Dashboard Summary
+async function getStartupDashboardSummary(requestedStartupId, requestedMonth, role = 'startup') {
+  const ist = getISTClock();
+  const currentMonth = ist.date.slice(0, 7);
+  const targetMonth = (requestedMonth && /^\d{4}-\d{2}$/.test(requestedMonth.trim())) ? requestedMonth.trim() : currentMonth;
+
+  const appState = await getAppState();
+  let seed = null;
+  const getFallback = (key) => {
+    if (!seed) seed = loadInitialSeedData();
+    return seed[key] || [];
+  };
+
+  const startups = (appState && appState.startups) ? appState.startups : getFallback('startups');
+  const meetingRooms = (appState && appState.meetingRooms) ? appState.meetingRooms : getFallback('meetingRooms');
+  const invoices = (appState && appState.invoices) ? appState.invoices : getFallback('invoices');
+  const payments = (appState && appState.payments) ? appState.payments : getFallback('payments');
+  const rawActivities = (appState && appState.activityLog) ? appState.activityLog : getFallback('activityLog');
+  const milestones = (appState && appState.incubationMilestones) ? appState.incubationMilestones : getFallback('incubationMilestones');
+
+  let startup = startups.find(s => s.id === requestedStartupId || (s.name && s.name.toLowerCase() === (requestedStartupId || '').toLowerCase()));
+  if (!startup) {
+    startup = startups.find(s => s.id === 'STP-XYZ') || startups[0] || {
+      id: 'STP-XYZ',
+      name: 'XYZ Technologies',
+      founders: { name: 'Alex Morgan' },
+      plan: 'Scale-Up Growth Plan',
+      meetingRoomAllowance: 120,
+      usedMeetingHours: 40
+    };
+  }
+
+  // Collect all bookings for this startup
+  const startupBookings = [];
+  meetingRooms.forEach(room => {
+    (room.bookings || []).forEach(b => {
+      if ((b.startupId === startup.id || b.startupName === startup.name) && b.status !== 'Cancelled') {
+        startupBookings.push({
+          id: b.id,
+          title: b.title || 'Discussion Session',
+          roomId: room.id,
+          roomName: room.name,
+          date: b.date,
+          startTime: b.startTime,
+          endTime: b.endTime,
+          timeRange: `${b.startTime} – ${b.endTime}`,
+          attendees: b.attendees || room.capacity || 4,
+          status: b.status || 'Confirmed'
+        });
+      }
+    });
+  });
+
+  startupBookings.sort((a, b) => {
+    if (a.date !== b.date) return a.date.localeCompare(b.date);
+    return a.startTime.localeCompare(b.startTime);
+  });
+
+  // Today's meetings
+  const todaysSchedule = startupBookings.filter(b => b.date === ist.date).map(b => {
+    let statusChip = 'Confirmed';
+    if (b.endTime <= ist.time) {
+      statusChip = 'Completed';
+    } else if (b.startTime <= ist.time && b.endTime > ist.time) {
+      statusChip = 'In progress';
+    } else if (b.status === 'Pending') {
+      statusChip = 'Pending';
+    }
+    return { ...b, status: statusChip };
+  });
+
+  // Upcoming meetings
+  const upcomingBookings = startupBookings.filter(b => {
+    if (b.date > ist.date) return true;
+    if (b.date === ist.date && b.endTime > ist.time) return true;
+    return false;
+  }).map(b => {
+    let statusChip = b.status === 'Pending' ? 'Pending' : 'Confirmed';
+    if (b.date === ist.date && b.startTime <= ist.time && b.endTime > ist.time) {
+      statusChip = 'In progress';
+    }
+    return { ...b, status: statusChip };
+  });
+
+  const nextMeeting = upcomingBookings[0] || null;
+  let nextMeetingHint = 'No upcoming meetings scheduled';
+  if (nextMeeting) {
+    const isToday = nextMeeting.date === ist.date;
+    nextMeetingHint = `${isToday ? 'Today' : nextMeeting.date} at ${nextMeeting.startTime} (${nextMeeting.roomName})`;
+  }
+
+  // Room availability right now
+  let availableRoomsCount = 0;
+  meetingRooms.forEach(room => {
+    const isOccupied = (room.bookings || []).some(b =>
+      b.date === ist.date &&
+      b.startTime <= ist.time &&
+      b.endTime > ist.time &&
+      b.status !== 'Cancelled'
+    );
+    if (!isOccupied) availableRoomsCount++;
+  });
+
+  // Remaining credits
+  const totalCredits = startup.meetingRoomAllowance || 120;
+  const usedCredits = startup.usedMeetingHours || 40;
+  const remainingCredits = Math.max(0, totalCredits - usedCredits);
+  const remainingPercent = Math.round((remainingCredits / totalCredits) * 100);
+
+  // Pending requests
+  const pendingRequests = startupBookings.filter(b => b.status === 'Pending');
+
+  // Scoped activity feed
+  const recentActivities = (rawActivities || [])
+    .filter(act => {
+      if (!act) return false;
+      const text = `${act.action || ''} ${act.title || ''} ${act.description || ''} ${act.startupName || ''}`;
+      return text.includes(startup.name) || text.includes(startup.id) || act.startupId === startup.id;
+    })
+    .slice(0, 5)
+    .map(act => ({
+      id: act.id,
+      icon: act.icon || '📌',
+      title: act.action || act.title || 'Activity recorded',
+      module: act.module || 'Operations',
+      relativeTime: formatRelativeTimeIST(act.timestamp || Date.now())
+    }));
+
+  if (recentActivities.length === 0 && startupBookings.length > 0) {
+    startupBookings.slice(0, 3).forEach((b, i) => {
+      recentActivities.push({
+        id: `act-${b.id}`,
+        icon: '📅',
+        title: `Reserved ${b.roomName} for ${b.title}`,
+        module: 'Meeting Rooms',
+        relativeTime: i === 0 ? 'Today' : `${i + 1}d ago`
+      });
+    });
+  }
+
+  // Financial & Overview
+  const isEmployee = role === 'startup_member';
+  const startupInvoices = invoices.filter(inv => inv.startupId === startup.id && inv.status !== 'Cancelled');
+  const unpaidInvoices = startupInvoices.filter(inv => {
+    const s = computeInvoiceStatus(inv, payments.filter(p => p.invoiceId === inv.id), ist.date);
+    return s === 'Pending' || s === 'Overdue' || s === 'Partially Paid';
+  });
+  let outstandingDue = 0;
+  unpaidInvoices.forEach(inv => {
+    const paidSum = payments.filter(p => p.invoiceId === inv.id && p.status === 'Successful').reduce((acc, p) => acc + (p.amount || 0), 0);
+    outstandingDue += Math.max(0, (inv.total || 0) - paidSum);
+  });
+  const startupMilestones = milestones.filter(m => m.startupId === startup.id || m.startupName === startup.name);
+
+  return {
+    ok: true,
+    role,
+    asOfIST: `${ist.date} ${ist.time}`,
+    startup: {
+      id: startup.id,
+      name: startup.name,
+      founderName: startup.founders?.name || 'Alex Morgan',
+      plan: startup.plan || 'Scale-Up Growth Plan',
+      totalCredits,
+      usedCredits,
+      remainingCredits,
+      remainingPercent,
+      renewalDate: '1 Nov 2026'
+    },
+    kpi: {
+      upcomingMeetings: {
+        count: upcomingBookings.length,
+        nextHint: nextMeetingHint,
+        linkTab: 'bookings'
+      },
+      availableRooms: {
+        count: availableRoomsCount,
+        total: meetingRooms.length,
+        timeBasis: `As of ${ist.time} IST today`,
+        linkTab: 'meetingRooms'
+      },
+      remainingCredits: {
+        remaining: remainingCredits,
+        total: totalCredits,
+        unit: 'credits',
+        percent: remainingPercent,
+        linkTab: isEmployee ? 'meetingRooms' : 'billingCredits'
+      },
+      pendingRequests: {
+        count: pendingRequests.length,
+        description: pendingRequests.length > 0 ? `${pendingRequests.length} requests pending review` : 'All requests approved',
+        linkTab: 'bookings'
+      }
+    },
+    todaysSchedule,
+    upcomingBookings,
+    recentActivities,
+    startupOverview: isEmployee ? null : {
+      teamCount: Array.isArray(startup.teamMembers) ? startup.teamMembers.length : 8,
+      assignedSpace: startup.assignedSpace || startup.space || 'Pod #4 (6 Desks)',
+      unpaidInvoicesCount: unpaidInvoices.length,
+      outstandingDueFormatted: formatCurrencyINR(outstandingDue),
+      upcomingMilestone: startupMilestones[0] ? `${startupMilestones[0].title || startupMilestones[0].milestone} (Due ${startupMilestones[0].targetDate || 'Nov 2026'})` : 'Phase 2 Product Beta'
+    }
+  };
+}
+
 async function generateInvoicesBatchAtomic({ billingPeriod = 'November 2026', previewOnly = false } = {}) {
   await bookingMutex.acquire();
   try {
@@ -2043,6 +2913,1415 @@ async function generateInvoicesBatchAtomic({ billingPeriod = 'November 2026', pr
   }
 }
 
+// -------------------------------------------------------------
+// Section B: Complete Meeting Room Management Integration
+// (RBAC, Overage Invoicing, Recurring Bookings, Admin, Analytics, External Calendar Sync)
+// -------------------------------------------------------------
+
+// 1. Role-Based Access Control (RBAC) Verification Helper
+function checkMeetingRoomPermission(userRole, action, context = {}) {
+  const raw = String(userRole || 'startup_admin').trim().toLowerCase();
+  let normalizedRole = 'startup_admin';
+  if (raw === 'super_admin' || raw === 'admin') {
+    normalizedRole = 'super_admin';
+  } else if (raw === 'incubation_admin' || raw === 'incubator_admin') {
+    normalizedRole = 'incubation_admin';
+  } else if (raw === 'startup_admin' || raw === 'founder' || raw === 'startup') {
+    normalizedRole = 'startup_admin';
+  } else if (raw === 'startup_member' || raw === 'member') {
+    normalizedRole = 'startup_member';
+  } else if (raw === 'finance_admin' || raw === 'mentor') {
+    normalizedRole = raw;
+  }
+
+  const isAdmin = normalizedRole === 'super_admin' || normalizedRole === 'incubation_admin';
+  const adminOnlyActions = [
+    'admin_manage_room',
+    'admin_manage_policy',
+    'admin_approve_booking',
+    'admin_maintenance',
+    'admin_view_logs'
+  ];
+
+  if (adminOnlyActions.includes(action)) {
+    if (!isAdmin) {
+      return {
+        allowed: false,
+        role: normalizedRole,
+        status: 403,
+        code: 'FORBIDDEN_ADMIN_ONLY',
+        message: `Access Denied: Role "${normalizedRole}" is not authorized to perform administrative action "${action}".`
+      };
+    }
+    return { allowed: true, role: normalizedRole, isAdmin: true };
+  }
+
+  // Ownership check for startup_admin and startup_member on modify/cancel/book
+  if (!isAdmin && context.targetStartupId && context.requestingStartupId && context.targetStartupId !== context.requestingStartupId) {
+    return {
+      allowed: false,
+      role: normalizedRole,
+      status: 403,
+      code: 'UNAUTHORIZED_STARTUP_SCOPE',
+      message: `Unauthorized: You can only ${action} reservations belonging to your own startup (${context.requestingStartupId}).`
+    };
+  }
+
+  // Startup members cannot modify startup billing plans or cancel another member's restricted admin-locked booking
+  if (normalizedRole === 'startup_member' && action === 'manage_startup_billing') {
+    return {
+      allowed: false,
+      role: normalizedRole,
+      status: 403,
+      code: 'FORBIDDEN_MEMBER_BILLING',
+      message: 'Access Denied: Only Startup Admins or Hub Administrators can manage billing plans.'
+    };
+  }
+
+  return { allowed: true, role: normalizedRole, isAdmin };
+}
+
+// 2. Idempotent Overage Billing & Invoice Sync Helper
+function syncBookingOverageToInvoice(appState, booking, room, startupRecord) {
+  if (!appState || !booking || !(Number(booking.cost) > 0)) return null;
+  if (!Array.isArray(appState.invoices)) appState.invoices = [];
+
+  const ist = getISTClock();
+  const chargeKey = booking.idempotencyKey || `BKG-CHG-${booking.id}`;
+
+  // Check if any invoice already contains this bookingId or chargeKey (idempotency guard)
+  for (const inv of appState.invoices) {
+    if (inv.status === 'Cancelled') continue;
+    const hasItem = (inv.lineItems || []).some(li => li.bookingId === booking.id || li.idempotencyKey === chargeKey);
+    if (hasItem) {
+      return inv;
+    }
+  }
+
+  const dParts = (booking.date || ist.date).split('-').map(Number);
+  const dObj = new Date(dParts[0] || 2026, (dParts[1] || 10) - 1, 1);
+  const periodLabel = dObj.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const gstRate = (appState.billingRules && Number(appState.billingRules.taxRateGstPercent)) || 18;
+
+  const lineItem = {
+    section: 'Meeting Rooms',
+    bookingId: booking.id,
+    idempotencyKey: chargeKey,
+    desc: `Meeting Room Overage: ${room ? room.name : booking.roomId} (${booking.date} ${booking.startTime}–${booking.endTime}, ${booking.overageHours || booking.duration || 1}h billable)`,
+    qty: booking.overageHours || booking.duration || 1,
+    rate: (startupRecord && startupRecord.additionalHourRate) || (room && room.hourlyRate) || booking.cost,
+    amount: Number(booking.cost),
+    sac: '997212'
+  };
+
+  // Look for an open/issued invoice for this startup in the current billing period
+  let targetInvoice = appState.invoices.find(inv =>
+    inv.startupId === booking.startupId &&
+    inv.status !== 'Paid' &&
+    inv.status !== 'Cancelled' &&
+    (inv.billingPeriod === periodLabel || inv.invoiceType === 'meeting')
+  );
+
+  if (targetInvoice) {
+    if (!Array.isArray(targetInvoice.lineItems)) targetInvoice.lineItems = [];
+    targetInvoice.lineItems.push(lineItem);
+    const subtotal = targetInvoice.lineItems.reduce((s, li) => s + (Number(li.amount) || 0), 0);
+    const subsidyPct = Number(targetInvoice.grantSubsidyPercent || (startupRecord && startupRecord.monthlyGrantSubsidyPercent) || 0);
+    const subsidyDeduction = Math.round((subtotal * subsidyPct) / 100);
+    const taxableAmount = Math.max(0, subtotal - subsidyDeduction);
+    const taxGst = Math.round((taxableAmount * gstRate) / 100);
+    targetInvoice.subtotal = subtotal;
+    targetInvoice.subsidyDeduction = subsidyDeduction;
+    targetInvoice.taxableAmount = taxableAmount;
+    targetInvoice.taxGst = taxGst;
+    targetInvoice.total = taxableAmount + taxGst;
+    targetInvoice.updatedAt = new Date().toISOString();
+    return targetInvoice;
+  }
+
+  // Otherwise create a dedicated Meeting Room Overage Invoice
+  const dueDateObj = new Date();
+  dueDateObj.setDate(dueDateObj.getDate() + 10);
+  const dueDateStr = dueDateObj.toISOString().split('T')[0];
+  const subtotal = Number(booking.cost);
+  const taxGst = Math.round((subtotal * gstRate) / 100);
+  const total = subtotal + taxGst;
+
+  const newInvoice = {
+    id: `INV-MR-${Date.now().toString().slice(-5)}`,
+    startupId: booking.startupId,
+    startupName: booking.startupName || (startupRecord && startupRecord.name) || 'Partner Venture',
+    invoiceType: 'meeting',
+    issueDate: ist.date,
+    dueDate: dueDateStr,
+    billingPeriod: periodLabel,
+    lineItems: [lineItem],
+    subtotal,
+    grantSubsidyPercent: 0,
+    subsidyDeduction: 0,
+    taxableAmount: subtotal,
+    taxGst,
+    total,
+    status: 'Pending',
+    paymentMethod: null,
+    paidAt: null,
+    createdAt: new Date().toISOString()
+  };
+
+  appState.invoices.unshift(newInvoice);
+  return newInvoice;
+}
+
+// 3. Atomic Recurring Reservations Engine
+async function reserveRecurringMeetingRoomAtomic(bookingReq) {
+  await bookingMutex.acquire();
+  try {
+    const {
+      roomId,
+      startupId,
+      startupName,
+      title,
+      purpose,
+      date,
+      startTime,
+      endTime,
+      attendees,
+      requestedAmenities,
+      specialRequests,
+      recurrence = {}
+    } = bookingReq || {};
+
+    if (!roomId || !startupId || !date || !startTime || !endTime) {
+      return { ok: false, status: 400, message: 'Missing required booking fields.' };
+    }
+
+    const frequency = String(recurrence.frequency || 'weekly').toLowerCase();
+    const count = Math.max(1, Math.min(12, parseInt(recurrence.count || 2, 10)));
+    const customDates = Array.isArray(recurrence.dates) ? recurrence.dates : null;
+    const intervalDays = frequency === 'daily' ? 1 : frequency === 'biweekly' ? 14 : (Number(recurrence.intervalDays) || 7);
+
+    // Build occurrence dates list
+    const occurrenceDates = [];
+    if (customDates && customDates.length > 0) {
+      customDates.slice(0, 12).forEach(d => occurrenceDates.push(String(d).trim()));
+    } else {
+      const baseParts = date.split('-').map(Number);
+      for (let i = 0; i < count; i++) {
+        const dObj = new Date(Date.UTC(baseParts[0], baseParts[1] - 1, baseParts[2] + (i * intervalDays)));
+        occurrenceDates.push(dObj.toISOString().split('T')[0]);
+      }
+    }
+
+    const ist = getISTClock();
+    const startMin = toMinutes(startTime);
+    const endMin = toMinutes(endTime);
+    if (endMin <= startMin || (endMin - startMin) < 15) {
+      return { ok: false, status: 400, message: 'Invalid booking duration (minimum 15 minutes).' };
+    }
+
+    const appState = await getAppState();
+    let rooms = (appState && appState.meetingRooms) ? appState.meetingRooms : [];
+    if (!rooms.length) {
+      const seed = loadInitialSeedData();
+      rooms = seed.meetingRooms || [];
+    }
+
+    const policies = (appState && appState.meetingRoomPolicies) || {};
+    if (policies.allowRecurring === false) {
+      return { ok: false, status: 400, code: 'RECURRING_DISABLED', message: 'Recurring reservations are currently disabled by hub booking policy.' };
+    }
+
+    const room = rooms.find(r => r.id === roomId);
+    if (!room) return { ok: false, status: 404, message: `Room "${roomId}" not found.` };
+
+    if (room.status === 'Under Maintenance' || room.underMaintenance === true || room.maintenance === true) {
+      return { ok: false, status: 409, code: 'ROOM_MAINTENANCE', message: `${room.name} is currently under maintenance.` };
+    }
+
+    const reqAttendees = parseInt(attendees || 4, 10);
+    if (isNaN(reqAttendees) || reqAttendees < 1 || reqAttendees > room.capacity) {
+      return {
+        ok: false,
+        status: 400,
+        code: 'CAPACITY_EXCEEDED',
+        message: `Attendees (${reqAttendees}) exceed ${room.name} capacity of ${room.capacity} pax.`
+      };
+    }
+
+    // Pre-validate ALL occurrences for conflicts before confirming any occurrence
+    const conflicts = [];
+    for (const occDate of occurrenceDates) {
+      if (occDate < ist.date || (occDate === ist.date && startMin < ist.minutes)) {
+        conflicts.push({
+          date: occDate,
+          code: 'PAST_SLOT',
+          message: `Occurrence on ${occDate} (${startTime}-${endTime}) is in the past.`
+        });
+        continue;
+      }
+
+      const roomConflict = (room.bookings || []).find(b =>
+        hasBookingConflict({ ...b, roomId }, { roomId, date: occDate, startTime, endTime })
+      );
+      if (roomConflict) {
+        conflicts.push({
+          date: occDate,
+          code: 'SLOT_TAKEN',
+          conflictWith: {
+            id: roomConflict.id,
+            startupName: roomConflict.startupName,
+            startTime: roomConflict.startTime,
+            endTime: roomConflict.endTime
+          },
+          message: `${room.name} is already booked on ${occDate} (${roomConflict.startTime}-${roomConflict.endTime}) by ${roomConflict.startupName}.`,
+          alternatives: findBookingAlternatives(rooms, { roomId, date: occDate, startTime, endTime, attendees: reqAttendees, startupId })
+        });
+        continue;
+      }
+
+      for (const r of rooms) {
+        if (r.id === roomId) continue;
+        const concurrent = (r.bookings || []).find(b =>
+          hasStartupConcurrentConflict({ ...b, roomId: r.id }, { roomId, startupId, date: occDate, startTime, endTime })
+        );
+        if (concurrent) {
+          conflicts.push({
+            date: occDate,
+            code: 'USER_ALREADY_BOOKED',
+            message: `Startup already has a booking on ${occDate} (${startTime}-${endTime}) in ${r.name}.`
+          });
+          break;
+        }
+      }
+    }
+
+    if (conflicts.length > 0) {
+      return {
+        ok: false,
+        status: 409,
+        code: 'RECURRING_CONFLICT',
+        message: `Recurring series has ${conflicts.length} conflicting occurrence(s): ${conflicts.map(c => c.date).join(', ')}.`,
+        conflicts,
+        alternatives: conflicts[0].alternatives || []
+      };
+    }
+
+    // All occurrences are conflict-free! Create series bookings atomically
+    const seriesId = `SRS-${Date.now().toString().slice(-6)}`;
+    const durationHrs = Math.max(0.25, (endMin - startMin) / 60);
+    const startupRecord = (appState && Array.isArray(appState.startups))
+      ? appState.startups.find(s => s.id === startupId)
+      : null;
+
+    const normalizedAmenities = Array.isArray(requestedAmenities)
+      ? requestedAmenities
+      : (typeof requestedAmenities === 'string' && requestedAmenities.trim()
+          ? requestedAmenities.split(',').map(s => s.trim()).filter(Boolean)
+          : []);
+
+    const createdBookings = [];
+    let lastInvoice = null;
+    const database = await connectDB();
+
+    for (let idx = 0; idx < occurrenceDates.length; idx++) {
+      const occDate = occurrenceDates[idx];
+      let creditHoursUsed = 0;
+      let overageHours = 0;
+      let occCost = 0;
+
+      if (startupRecord) {
+        const includedHrs = startupRecord.includedMeetingHours !== undefined ? Number(startupRecord.includedMeetingHours) : 12;
+        const usedHrs = Number(startupRecord.usedMeetingHours || 0);
+        const remainingCredits = Math.max(0, includedHrs - usedHrs);
+        creditHoursUsed = Math.min(remainingCredits, durationHrs);
+        overageHours = Math.max(0, Number((durationHrs - creditHoursUsed).toFixed(2)));
+        const rate = Number(startupRecord.additionalHourRate || room.hourlyRate || 1000);
+        occCost = overageHours > 0 ? Math.round(overageHours * rate) : 0;
+        startupRecord.usedMeetingHours = Number((usedHrs + creditHoursUsed).toFixed(2));
+      }
+
+      const bookingId = `BKG-${Math.floor(100 + Math.random() * 900)}-${idx + 1}`;
+      const occBooking = {
+        id: bookingId,
+        roomId,
+        startupId,
+        startupName: startupName || (startupRecord && startupRecord.name) || 'Partner Venture',
+        title: title || purpose || 'Meeting Room Reservation',
+        purpose: purpose || title || 'General Sync',
+        date: occDate,
+        startTime,
+        endTime,
+        duration: durationHrs,
+        creditHoursUsed,
+        overageHours,
+        attendees: reqAttendees,
+        requestedAmenities: normalizedAmenities,
+        specialRequests: specialRequests ? String(specialRequests).trim() : '',
+        cost: occCost,
+        status: 'Confirmed',
+        seriesId,
+        recurrence: {
+          frequency,
+          count: occurrenceDates.length,
+          occurrenceIndex: idx + 1,
+          seriesId
+        },
+        calendarSync: {},
+        createdAt: new Date().toISOString()
+      };
+
+      if (occCost > 0 && appState) {
+        lastInvoice = syncBookingOverageToInvoice(appState, occBooking, room, startupRecord);
+        if (lastInvoice) occBooking.invoiceId = lastInvoice.id;
+      }
+
+      if (!room.bookings) room.bookings = [];
+      room.bookings.push(occBooking);
+      createdBookings.push(occBooking);
+
+      if (database) {
+        try {
+          await initMeetingRoomIndexes();
+          const slotsCol = database.collection('meeting_room_slots');
+          for (let m = startMin; m < endMin; m += 15) {
+            const h = Math.floor(m / 60);
+            const minPart = m % 60;
+            const slotHour = `${h < 10 ? '0' : ''}${h}:${minPart < 10 ? '0' : ''}${minPart}`;
+            await slotsCol.insertOne({
+              roomId,
+              date: occDate,
+              slotHour,
+              bookingId,
+              seriesId,
+              status: 'Confirmed',
+              startupId,
+              createdAt: new Date()
+            });
+          }
+        } catch (dbErr) {
+          console.warn('⚠️ [MongoDB] Recurring slot insert warning:', dbErr.message);
+        }
+      }
+    }
+
+    if (database) {
+      try {
+        await database.collection('meeting_rooms').updateOne({ id: roomId }, { $set: { bookings: room.bookings } }, { upsert: true });
+      } catch (_) {}
+    }
+
+    if (appState) {
+      appState.meetingRooms = rooms;
+      if (!appState.activityLog) appState.activityLog = [];
+      appState.activityLog.unshift({
+        id: `ACT-${Date.now()}`,
+        module: 'Meeting Rooms',
+        action: `${createdBookings[0].startupName} booked recurring series ${seriesId} (${createdBookings.length} sessions, ${frequency}) in ${room.name}.`,
+        timestamp: new Date().toISOString(),
+        icon: '🔁'
+      });
+      await saveAppState(appState);
+    }
+
+    return {
+      ok: true,
+      status: 201,
+      seriesId,
+      bookings: createdBookings,
+      booking: createdBookings[0],
+      invoice: lastInvoice,
+      message: `Successfully booked ${createdBookings.length} recurring sessions (${frequency}) in ${room.name}!`
+    };
+  } finally {
+    bookingMutex.release();
+  }
+}
+
+// Cancel all upcoming occurrences of a recurring series
+async function cancelRecurringSeriesAtomic({ roomId, seriesId, requestingStartupId, userRole, currentClock = null } = {}) {
+  if (!seriesId) return { ok: false, status: 400, message: 'Missing seriesId.' };
+  const appState = await getAppState();
+  const rooms = (appState && appState.meetingRooms) || [];
+  const matching = [];
+
+  rooms.forEach(r => {
+    if (roomId && r.id !== roomId) return;
+    (r.bookings || []).forEach(b => {
+      if ((b.seriesId === seriesId || (b.recurrence && b.recurrence.seriesId === seriesId)) && b.status !== 'Cancelled') {
+        matching.push({ roomId: r.id, bookingId: b.id });
+      }
+    });
+  });
+
+  if (matching.length === 0) {
+    return { ok: false, status: 404, message: 'No active bookings found for recurring series.' };
+  }
+
+  const cancelled = [];
+  const skipped = [];
+  for (const item of matching) {
+    const res = await cancelBooking({
+      roomId: item.roomId,
+      bookingId: item.bookingId,
+      requestingStartupId,
+      userRole,
+      currentClock
+    });
+    if (res.ok) cancelled.push(res.booking);
+    else skipped.push({ bookingId: item.bookingId, reason: res.message });
+  }
+
+  return {
+    ok: cancelled.length > 0,
+    status: cancelled.length > 0 ? 200 : 400,
+    seriesId,
+    cancelledCount: cancelled.length,
+    skippedCount: skipped.length,
+    cancelled,
+    skipped,
+    message: `Cancelled ${cancelled.length} occurrence(s) in recurring series ${seriesId}.`
+  };
+}
+
+// 3b. Timed Maintenance Block Management
+async function manageMeetingRoomMaintenanceAtomic(req = {}) {
+  await bookingMutex.acquire();
+  try {
+    const { action, userRole = 'super_admin', adminUser = 'Hub Administrator', maintenanceData, maintenanceId, roomId } = req;
+    const perm = checkMeetingRoomPermission(userRole, 'admin_maintenance');
+    if (!perm.allowed) return { ok: false, status: 403, message: perm.message };
+
+    const appState = await getAppState();
+    if (!appState.maintenanceBlocks) appState.maintenanceBlocks = [];
+
+    if (action === 'add' || action === 'edit') {
+      if (!maintenanceData || !maintenanceData.roomId || !maintenanceData.startDateTime || !maintenanceData.endDateTime) {
+        return { ok: false, status: 400, message: 'roomId, startDateTime and endDateTime are required.' };
+      }
+      const rooms = appState.meetingRooms || [];
+      const targetRoom = rooms.find(r => r.id === maintenanceData.roomId);
+      if (!targetRoom) return { ok: false, status: 404, message: 'Room not found.' };
+
+      // Find conflicting active bookings
+      const startDT = new Date(maintenanceData.startDateTime);
+      const endDT = new Date(maintenanceData.endDateTime);
+      const startDateStr = startDT.toISOString().split('T')[0];
+      const endDateStr = endDT.toISOString().split('T')[0];
+      const conflictingBookings = [];
+      (targetRoom.bookings || []).forEach(b => {
+        if (b.status === 'Cancelled') return;
+        if (b.date < startDateStr || b.date > endDateStr) return;
+        conflictingBookings.push({ id: b.id, date: b.date, startTime: b.startTime, endTime: b.endTime, startupName: b.startupName, title: b.title });
+      });
+
+      const block = {
+        id: maintenanceData.id || `MNT-${Date.now()}`,
+        roomId: maintenanceData.roomId,
+        roomName: targetRoom.name,
+        reason: maintenanceData.reason || 'Scheduled Maintenance',
+        startDateTime: maintenanceData.startDateTime,
+        endDateTime: maintenanceData.endDateTime,
+        notes: maintenanceData.notes || '',
+        status: maintenanceData.status || 'scheduled',
+        createdBy: adminUser,
+        createdAt: new Date().toISOString()
+      };
+
+      const existingIdx = appState.maintenanceBlocks.findIndex(m => m.id === block.id);
+      if (existingIdx >= 0) {
+        appState.maintenanceBlocks[existingIdx] = block;
+      } else {
+        appState.maintenanceBlocks.push(block);
+      }
+
+      await saveAppState(appState);
+      return {
+        ok: true,
+        status: action === 'add' ? 201 : 200,
+        block,
+        conflictingBookings,
+        message: `Maintenance block ${action === 'add' ? 'created' : 'updated'} for ${targetRoom.name}.`
+      };
+    }
+
+    if (action === 'delete' || action === 'cancel') {
+      const idx = appState.maintenanceBlocks.findIndex(m => m.id === maintenanceId);
+      if (idx < 0) return { ok: false, status: 404, message: 'Maintenance block not found.' };
+      appState.maintenanceBlocks.splice(idx, 1);
+      await saveAppState(appState);
+      return { ok: true, status: 200, message: `Maintenance block ${maintenanceId} removed.` };
+    }
+
+    if (action === 'list') {
+      const filter = appState.maintenanceBlocks.filter(m => !roomId || m.roomId === roomId);
+      return { ok: true, status: 200, blocks: filter };
+    }
+
+    return { ok: false, status: 400, message: `Unknown maintenance action: ${action}` };
+  } finally {
+    bookingMutex.release();
+  }
+}
+
+// 3c. Admin Reservations List (all bookings across all rooms, with filters)
+async function getMeetingRoomReservations({ userRole = 'super_admin', startupId, roomId, status, paymentStatus, dateFrom, dateTo, page = 1, limit = 50 } = {}) {
+  const perm = checkMeetingRoomPermission(userRole, 'admin_manage_room');
+  if (!perm.allowed) return { ok: false, status: 403, message: perm.message };
+
+  const appState = await getAppState();
+  const rooms = (appState && appState.meetingRooms) ? appState.meetingRooms : [];
+
+  const all = [];
+  rooms.forEach(r => {
+    (r.bookings || []).forEach(b => {
+      all.push({
+        ...b,
+        roomId: r.id,
+        roomName: r.name,
+        roomIcon: r.icon || '🏢',
+        hourlyRate: r.hourlyRate
+      });
+    });
+  });
+
+  // Apply filters
+  let filtered = all.filter(b => {
+    if (startupId && b.startupId !== startupId) return false;
+    if (roomId && b.roomId !== roomId) return false;
+    if (status && b.status !== status) return false;
+    if (dateFrom && b.date < dateFrom) return false;
+    if (dateTo && b.date > dateTo) return false;
+    if (paymentStatus === 'paid' && !(b.cost > 0 && b.invoiceId)) return false;
+    if (paymentStatus === 'free' && b.cost > 0) return false;
+    return true;
+  });
+
+  // Sort by date descending
+  filtered.sort((a, b) => {
+    if (b.date !== a.date) return b.date > a.date ? 1 : -1;
+    return b.startTime > a.startTime ? 1 : -1;
+  });
+
+  const total = filtered.length;
+  const pageNum = Math.max(1, parseInt(page));
+  const pageSize = Math.max(1, Math.min(200, parseInt(limit)));
+  const skip = (pageNum - 1) * pageSize;
+  const paginated = filtered.slice(skip, skip + pageSize);
+
+  return {
+    ok: true,
+    total,
+    page: pageNum,
+    limit: pageSize,
+    totalPages: Math.ceil(total / pageSize) || 1,
+    reservations: paginated
+  };
+}
+
+// 4. Administrative Controls Engine (Rooms, Maintenance, Policies, Approvals, Audit Log)
+async function manageMeetingRoomAdminAtomic(adminReq = {}) {
+  await bookingMutex.acquire();
+  try {
+    const {
+      action,
+      userRole = 'super_admin',
+      adminUser = 'Hub Administrator',
+      roomData,
+      roomId,
+      underMaintenance,
+      maintenanceReason,
+      policyData,
+      bookingId,
+      approvalDecision
+    } = adminReq;
+
+    // Enforce RBAC
+    const permAction = action === 'update_policy'
+      ? 'admin_manage_policy'
+      : (action === 'approve_booking' || action === 'reject_booking')
+        ? 'admin_approve_booking'
+        : action === 'toggle_maintenance'
+          ? 'admin_maintenance'
+          : 'admin_manage_room';
+
+    const perm = checkMeetingRoomPermission(userRole, permAction);
+    if (!perm.allowed) {
+      return {
+        ok: false,
+        status: perm.status || 403,
+        code: perm.code || 'FORBIDDEN_ADMIN_ONLY',
+        message: perm.message
+      };
+    }
+
+    const appState = await getAppState();
+    if (!appState.meetingRooms || !appState.meetingRooms.length) {
+      const seed = loadInitialSeedData();
+      appState.meetingRooms = seed.meetingRooms || [];
+    }
+    if (!appState.adminAuditLog) appState.adminAuditLog = [];
+    if (!appState.activityLog) appState.activityLog = [];
+    if (!appState.meetingRoomPolicies) {
+      appState.meetingRoomPolicies = {
+        maxDurationHours: 4,
+        minDurationMins: 30,
+        allowRecurring: true,
+        maxRecurringOccurrences: 12,
+        requireApprovalAboveHours: 0,
+        autoSyncInvoice: true,
+        advanceBookingDays: 30,
+        minAdvanceNoticeMins: 60,
+        maxDailyBookingHoursPerStartup: 8,
+        maxActiveReservationsPerStartup: 5,
+        cancellationCutoffHours: 24,
+        rescheduleCutoffHours: 4,
+        premiumRoomRequiresApproval: false,
+        gracePeriodsEnabled: true,
+        operatingHoursLabel: '08:00 AM – 11:00 AM & 03:00 PM – 07:00 PM IST'
+      };
+    }
+
+    const logAdminEvent = (summary, details = {}) => {
+      const entry = {
+        id: `AUD-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        action,
+        role: perm.role,
+        adminUser,
+        summary,
+        details,
+        timestamp: new Date().toISOString()
+      };
+      appState.adminAuditLog.unshift(entry);
+      appState.activityLog.unshift({
+        id: `ACT-${Date.now()}`,
+        module: 'Meeting Rooms Admin',
+        action: summary,
+        timestamp: entry.timestamp,
+        icon: '🛡️'
+      });
+      return entry;
+    };
+
+    const database = await connectDB();
+
+    if (action === 'save_room') {
+      if (!roomData || !roomData.name) {
+        return { ok: false, status: 400, message: 'Room name is required.' };
+      }
+      const targetId = roomData.id || `MR-0${appState.meetingRooms.length + 1}`;
+      let existing = appState.meetingRooms.find(r => r.id === targetId);
+      const amenitiesArr = Array.isArray(roomData.amenities)
+        ? roomData.amenities
+        : String(roomData.amenities || '4K Projector, Whiteboard, High-Speed Wi-Fi').split(',').map(s => s.trim()).filter(Boolean);
+
+      if (existing) {
+        existing.name = String(roomData.name).trim();
+        if (roomData.capacity !== undefined) existing.capacity = Math.max(1, parseInt(roomData.capacity, 10) || 4);
+        if (roomData.hourlyRate !== undefined) existing.hourlyRate = Math.max(0, Number(roomData.hourlyRate) || 0);
+        if (roomData.amenities !== undefined) existing.amenities = amenitiesArr;
+        if (roomData.icon) existing.icon = roomData.icon;
+        if (roomData.floor) existing.floor = roomData.floor;
+        if (roomData.operatingHours) existing.operatingHours = roomData.operatingHours;
+        if (roomData.description !== undefined) existing.description = sanitizeRoomImageText(roomData.description, 600);
+        if (!Array.isArray(existing.images)) existing.images = withRoomImages(existing).images;
+        if (roomData.underMaintenance !== undefined) {
+          existing.underMaintenance = Boolean(roomData.underMaintenance);
+          existing.status = existing.underMaintenance ? 'Under Maintenance' : 'Active';
+        }
+        const audit = logAdminEvent(`Updated room configuration for ${existing.name} (${existing.id}): ${existing.capacity} Pax, ₹${existing.hourlyRate}/hr.`, { roomId: existing.id });
+        if (database) {
+          await database.collection('meeting_rooms').updateOne({ id: existing.id }, { $set: existing }, { upsert: true }).catch(() => {});
+        }
+        await saveAppState(appState);
+        return { ok: true, status: 200, room: existing, audit, message: `Updated ${existing.name}.` };
+      } else {
+        const newRoom = {
+          id: targetId,
+          name: String(roomData.name).trim(),
+          capacity: Math.max(1, parseInt(roomData.capacity, 10) || 8),
+          hourlyRate: Math.max(0, Number(roomData.hourlyRate !== undefined ? roomData.hourlyRate : 1200)),
+          amenities: amenitiesArr,
+          icon: roomData.icon || '🏢',
+          badgeColor: roomData.badgeColor || '#2563eb',
+          floor: roomData.floor || 'Level 2 • Innovation Wing',
+          operatingHours: roomData.operatingHours || '08:00-11:00, 15:00-19:00',
+          status: roomData.underMaintenance ? 'Under Maintenance' : 'Active',
+          underMaintenance: Boolean(roomData.underMaintenance),
+          description: sanitizeRoomImageText(roomData.description, 600),
+          images: [],
+          bookings: []
+        };
+        appState.meetingRooms.push(newRoom);
+        const audit = logAdminEvent(`Added new meeting room ${newRoom.name} (${newRoom.id}): ${newRoom.capacity} Pax, ₹${newRoom.hourlyRate}/hr.`, { roomId: newRoom.id });
+        if (database) {
+          await database.collection('meeting_rooms').updateOne({ id: newRoom.id }, { $set: newRoom }, { upsert: true }).catch(() => {});
+        }
+        await saveAppState(appState);
+        return { ok: true, status: 201, room: newRoom, audit, message: `Created new room ${newRoom.name}.` };
+      }
+    }
+
+    if (action === 'toggle_maintenance') {
+      const target = appState.meetingRooms.find(r => r.id === roomId);
+      if (!target) return { ok: false, status: 404, message: 'Room not found.' };
+      const nextMaint = underMaintenance !== undefined ? Boolean(underMaintenance) : !target.underMaintenance;
+      target.underMaintenance = nextMaint;
+      target.maintenance = nextMaint;
+      target.status = nextMaint ? 'Under Maintenance' : 'Active';
+      target.maintenanceReason = nextMaint ? (maintenanceReason || 'Scheduled AV & facility maintenance') : '';
+      const audit = logAdminEvent(
+        nextMaint
+          ? `Blocked ${target.name} (${target.id}) for maintenance: ${target.maintenanceReason}`
+          : `Restored ${target.name} (${target.id}) to Active service.`,
+        { roomId: target.id, underMaintenance: nextMaint }
+      );
+      if (database) {
+        await database.collection('meeting_rooms').updateOne({ id: target.id }, { $set: target }, { upsert: true }).catch(() => {});
+      }
+      await saveAppState(appState);
+      return { ok: true, status: 200, room: target, audit, message: `${target.name} is now ${target.status}.` };
+    }
+
+    if (action === 'update_policy') {
+      appState.meetingRoomPolicies = {
+        ...appState.meetingRoomPolicies,
+        ...(policyData || {})
+      };
+      const audit = logAdminEvent(`Updated Meeting Room Booking Policies (Max ${appState.meetingRoomPolicies.maxDurationHours}h, Recurring: ${appState.meetingRoomPolicies.allowRecurring ? 'Enabled' : 'Disabled'}).`, appState.meetingRoomPolicies);
+      await saveAppState(appState);
+      return { ok: true, status: 200, policies: appState.meetingRoomPolicies, audit, message: 'Booking policies updated.' };
+    }
+
+    if (action === 'approve_booking' || action === 'reject_booking') {
+      const targetRoom = appState.meetingRooms.find(r => r.id === roomId) || appState.meetingRooms.find(r => (r.bookings || []).some(b => b.id === bookingId));
+      if (!targetRoom) return { ok: false, status: 404, message: 'Room/booking not found.' };
+      const bkg = (targetRoom.bookings || []).find(b => b.id === bookingId);
+      if (!bkg) return { ok: false, status: 404, message: 'Booking not found.' };
+
+      const isApprove = action === 'approve_booking' && approvalDecision !== 'reject';
+      bkg.status = isApprove ? 'Confirmed' : 'Rejected';
+      bkg.rejectionReason = !isApprove ? (adminReq.rejectionReason || 'Rejected by administrator.') : undefined;
+      bkg.approvedBy = adminUser;
+      bkg.approvedAt = new Date().toISOString();
+      const audit = logAdminEvent(`${isApprove ? 'Approved' : 'Rejected'} reservation ${bkg.id} for ${bkg.startupName} in ${targetRoom.name}.`, { bookingId: bkg.id, roomId: targetRoom.id });
+      await saveAppState(appState);
+      return { ok: true, status: 200, booking: bkg, audit, message: `Reservation ${bkg.id} ${isApprove ? 'Confirmed' : 'Rejected'}.` };
+    }
+
+    if (action === 'archive_room') {
+      const target = appState.meetingRooms.find(r => r.id === roomId);
+      if (!target) return { ok: false, status: 404, message: 'Room not found.' };
+      if ((target.bookings || []).some(b => b.status !== 'Cancelled')) {
+        return { ok: false, status: 400, code: 'HAS_ACTIVE_BOOKINGS', message: `Cannot archive ${target.name}: it has active bookings. Cancel or reschedule them first.` };
+      }
+      target.archived = true;
+      target.active = false;
+      target.status = 'Archived';
+      const audit = logAdminEvent(`Archived meeting room ${target.name} (${target.id}).`, { roomId: target.id });
+      if (database) {
+        await database.collection('meeting_rooms').updateOne({ id: target.id }, { $set: { archived: true, active: false, status: 'Archived' } }).catch(() => {});
+      }
+      await saveAppState(appState);
+      return { ok: true, status: 200, room: target, audit, message: `${target.name} archived.` };
+    }
+
+    if (action === 'update_images') {
+      const target = appState.meetingRooms.find(r => r.id === roomId);
+      if (!target) return { ok: false, status: 404, message: 'Room not found.' };
+      const incoming = Array.isArray(adminReq.images) ? adminReq.images : null;
+      if (!incoming) return { ok: false, status: 400, message: 'images must be an array.' };
+      if (incoming.length > ROOM_IMAGE_MAX_PER_ROOM) {
+        return { ok: false, status: 400, message: `A room can have at most ${ROOM_IMAGE_MAX_PER_ROOM} images.` };
+      }
+      const cleaned = [];
+      for (const img of incoming) {
+        if (!img || !isAllowedRoomImageUrl(img.url) || (img.thumbUrl && !isAllowedRoomImageUrl(img.thumbUrl))) {
+          return { ok: false, status: 400, code: 'INVALID_IMAGE_URL', message: 'One or more image references are invalid.' };
+        }
+        cleaned.push({
+          id: sanitizeRoomImageText(img.id, 60) || `RIMG-${Date.now()}-${cleaned.length}`,
+          url: img.url,
+          thumbUrl: img.thumbUrl || img.url,
+          alt: sanitizeRoomImageText(img.alt) || `${target.name} photo ${cleaned.length + 1}`,
+          caption: sanitizeRoomImageText(img.caption, 80)
+        });
+      }
+      target.images = cleaned;
+      if (adminReq.description !== undefined) target.description = sanitizeRoomImageText(adminReq.description, 600);
+      const audit = logAdminEvent(`Updated photo gallery for ${target.name} (${target.id}): ${cleaned.length} image(s).`, { roomId: target.id, imageCount: cleaned.length });
+      if (database) {
+        await database.collection('meeting_rooms').updateOne({ id: target.id }, { $set: { images: cleaned, description: target.description || '' } }, { upsert: true }).catch(() => {});
+        await pruneOrphanRoomImages(database, target.id, cleaned);
+      }
+      await saveAppState(appState);
+      return { ok: true, status: 200, room: target, audit, message: `Saved ${cleaned.length} photo(s) for ${target.name}.` };
+    }
+
+    return { ok: false, status: 400, message: `Unknown admin action: ${action}` };
+  } finally {
+    bookingMutex.release();
+  }
+}
+
+// -------------------------------------------------------------
+// Meeting Room Image Storage
+// Uploaded images are stored in the MongoDB `meeting_room_images`
+// collection (works on Vercel, where the filesystem is read-only) and
+// served through GET /api/meeting-rooms/images/file?id=...&size=thumb|full.
+// When MongoDB is unreachable (local offline dev) files are written to
+// assets/rooms/uploads/ and served statically instead.
+// Rooms reference images via `room.images = [{ id, url, thumbUrl, alt, caption }]`;
+// array order is display order and images[0] is the primary image.
+// -------------------------------------------------------------
+const ROOM_IMAGE_ALLOWED_MIME = {
+  'image/webp': 'webp',
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/avif': 'avif'
+};
+const ROOM_IMAGE_MAX_BYTES = 3 * 1024 * 1024; // 3 MB per stored variant (client compresses before upload)
+const ROOM_IMAGE_MAX_PER_ROOM = 12;
+const ROOM_IMAGE_URL_PREFIXES = ['/assets/rooms/', '/api/meeting-rooms/images/file'];
+
+// Validates base64 payload: checks declared MIME, size, and magic bytes so a
+// renamed non-image file cannot be stored.
+function decodeRoomImagePayload(base64, mime) {
+  if (!base64 || typeof base64 !== 'string') return { ok: false, message: 'Image data is missing.' };
+  if (!ROOM_IMAGE_ALLOWED_MIME[mime]) {
+    return { ok: false, message: `Unsupported image type "${mime}". Allowed: JPEG, PNG, WebP, AVIF.` };
+  }
+  const clean = base64.replace(/^data:[^;]+;base64,/, '');
+  const buf = Buffer.from(clean, 'base64');
+  if (!buf.length) return { ok: false, message: 'Image data is empty.' };
+  if (buf.length > ROOM_IMAGE_MAX_BYTES) {
+    return { ok: false, message: `Image is too large (${(buf.length / 1048576).toFixed(1)} MB). Maximum is 3 MB.` };
+  }
+  const isJpeg = buf[0] === 0xFF && buf[1] === 0xD8;
+  const isPng = buf[0] === 0x89 && buf.slice(1, 4).toString('ascii') === 'PNG';
+  const isRiffWebp = buf.slice(0, 4).toString('ascii') === 'RIFF' && buf.slice(8, 12).toString('ascii') === 'WEBP';
+  const isAvif = buf.slice(4, 12).toString('ascii').startsWith('ftypavi');
+  const magicOk = (mime === 'image/jpeg' && isJpeg) || (mime === 'image/png' && isPng) ||
+    (mime === 'image/webp' && isRiffWebp) || (mime === 'image/avif' && isAvif);
+  if (!magicOk) return { ok: false, message: 'File content does not match a valid image of the declared type.' };
+  return { ok: true, buffer: buf };
+}
+
+function sanitizeRoomImageText(value, maxLen = 140) {
+  return String(value || '').replace(/[<>"`]/g, '').trim().slice(0, maxLen);
+}
+
+function isAllowedRoomImageUrl(url) {
+  return typeof url === 'string' && ROOM_IMAGE_URL_PREFIXES.some(p => url.startsWith(p)) && !url.includes('..');
+}
+
+// Returns the room with an `images` array; rooms persisted before the image
+// feature fall back to the seed images defined in js/initialData.js.
+let _seedRoomImagesCache = null;
+function withRoomImages(room) {
+  if (!room) return room;
+  if (Array.isArray(room.images)) return room;
+  if (!_seedRoomImagesCache) {
+    _seedRoomImagesCache = {};
+    (loadInitialSeedData().meetingRooms || []).forEach(r => {
+      _seedRoomImagesCache[r.id] = { images: r.images || [], description: r.description || '' };
+    });
+  }
+  const seed = _seedRoomImagesCache[room.id];
+  return {
+    ...room,
+    images: seed ? seed.images : [],
+    description: room.description || (seed ? seed.description : '')
+  };
+}
+
+async function uploadMeetingRoomImageAtomic(req = {}) {
+  const { userRole, roomId, mime, data, thumbMime, thumbData, alt } = req;
+  const perm = checkMeetingRoomPermission(userRole, 'admin_manage_room');
+  if (!perm.allowed) {
+    return { ok: false, status: perm.status || 403, code: perm.code || 'FORBIDDEN_ADMIN_ONLY', message: perm.message };
+  }
+  if (!roomId || !/^[A-Za-z0-9_-]{1,40}$/.test(String(roomId))) {
+    return { ok: false, status: 400, message: 'A valid roomId is required.' };
+  }
+  const full = decodeRoomImagePayload(data, mime);
+  if (!full.ok) return { ok: false, status: 400, code: 'INVALID_IMAGE', message: full.message };
+  let thumb = null;
+  if (thumbData) {
+    thumb = decodeRoomImagePayload(thumbData, thumbMime || mime);
+    if (!thumb.ok) return { ok: false, status: 400, code: 'INVALID_IMAGE', message: `Thumbnail: ${thumb.message}` };
+  }
+
+  const imageId = `RIMG-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+  const altText = sanitizeRoomImageText(alt) || 'Meeting room photo';
+  const database = await connectDB();
+
+  if (database) {
+    await database.collection('meeting_room_images').insertOne({
+      id: imageId,
+      roomId,
+      mime,
+      data: full.buffer,
+      thumbMime: thumb ? (thumbMime || mime) : null,
+      thumbData: thumb ? thumb.buffer : null,
+      bytes: full.buffer.length,
+      alt: altText,
+      createdAt: new Date().toISOString(),
+      uploadedByRole: perm.role
+    });
+    return {
+      ok: true,
+      status: 201,
+      image: {
+        id: imageId,
+        url: `/api/meeting-rooms/images/file?id=${imageId}`,
+        thumbUrl: `/api/meeting-rooms/images/file?id=${imageId}&size=thumb`,
+        alt: altText,
+        caption: ''
+      }
+    };
+  }
+
+  // Offline fallback: local filesystem (not available on Vercel)
+  try {
+    const dir = path.join(__dirname, 'assets', 'rooms', 'uploads');
+    fs.mkdirSync(dir, { recursive: true });
+    const ext = ROOM_IMAGE_ALLOWED_MIME[mime];
+    fs.writeFileSync(path.join(dir, `${imageId}.${ext}`), full.buffer);
+    let thumbUrl = `/assets/rooms/uploads/${imageId}.${ext}`;
+    if (thumb) {
+      const tExt = ROOM_IMAGE_ALLOWED_MIME[thumbMime || mime];
+      fs.writeFileSync(path.join(dir, `${imageId}-thumb.${tExt}`), thumb.buffer);
+      thumbUrl = `/assets/rooms/uploads/${imageId}-thumb.${tExt}`;
+    }
+    return {
+      ok: true,
+      status: 201,
+      image: { id: imageId, url: `/assets/rooms/uploads/${imageId}.${ext}`, thumbUrl, alt: altText, caption: '' }
+    };
+  } catch (err) {
+    return { ok: false, status: 503, message: `Image storage unavailable: ${err.message}` };
+  }
+}
+
+async function getMeetingRoomImageFile(imageId, size = 'full') {
+  if (!imageId || !/^RIMG-[0-9]+-[0-9]+$/.test(imageId)) return null;
+  const database = await connectDB();
+  if (!database) return null;
+  const doc = await database.collection('meeting_room_images').findOne({ id: imageId });
+  if (!doc) return null;
+  const toBuf = (b) => {
+    if (!b) return Buffer.alloc(0);
+    if (Buffer.isBuffer(b)) return b;
+    if (b._bsontype === 'Binary') return Buffer.from(b.read(0, b.position));
+    return Buffer.from(b);
+  };
+  if (size === 'thumb' && doc.thumbData) return { mime: doc.thumbMime || doc.mime, buffer: toBuf(doc.thumbData) };
+  return { mime: doc.mime, buffer: toBuf(doc.data) };
+}
+
+// Removes stored uploads for a room that are no longer referenced by it.
+async function pruneOrphanRoomImages(database, roomId, keptImages) {
+  const keepIds = new Set((keptImages || []).map(i => i.id));
+  if (database) {
+    const docs = await database.collection('meeting_room_images').find({ roomId }, { projection: { id: 1 } }).toArray().catch(() => []);
+    const orphanIds = docs.map(d => d.id).filter(id => !keepIds.has(id));
+    if (orphanIds.length) {
+      await database.collection('meeting_room_images').deleteMany({ roomId, id: { $in: orphanIds } }).catch(() => {});
+    }
+  }
+}
+
+// 5. Meeting Rooms Analytics Engine (Real DB Aggregations)
+async function getMeetingRoomsAnalytics({ range = 'all', startDate = null, endDate = null, startupId = null } = {}) {
+  const ist = getISTClock();
+  const appState = await getAppState();
+  let rooms = (appState && appState.meetingRooms) ? appState.meetingRooms : [];
+  if (!rooms.length) {
+    const seed = loadInitialSeedData();
+    rooms = seed.meetingRooms || [];
+  }
+  const startups = (appState && appState.startups) || [];
+
+  // Compute filter window
+  let minDate = startDate;
+  let maxDate = endDate;
+  if (!minDate && range !== 'all') {
+    const baseParts = ist.date.split('-').map(Number);
+    const todayUtc = new Date(Date.UTC(baseParts[0], baseParts[1] - 1, baseParts[2]));
+    if (range === 'day' || range === 'today') {
+      minDate = ist.date;
+      maxDate = ist.date;
+    } else if (range === 'week') {
+      const startW = new Date(todayUtc.getTime() - 6 * 86400000);
+      const endW = new Date(todayUtc.getTime() + 7 * 86400000);
+      minDate = startW.toISOString().split('T')[0];
+      maxDate = endW.toISOString().split('T')[0];
+    } else if (range === 'month') {
+      minDate = `${ist.date.slice(0, 7)}-01`;
+      maxDate = `${ist.date.slice(0, 7)}-31`;
+    }
+  }
+
+  let totalBookings = 0;
+  let confirmedBookings = 0;
+  let cancelledBookings = 0;
+  let pendingBookings = 0;
+  let totalBookedHours = 0;
+  let totalOverageRevenue = 0;
+
+  const roomStatsMap = {};
+  const hourlyCounts = {};
+  const startupUsageMap = {};
+
+  [8, 9, 10, 15, 16, 17, 18].forEach(h => {
+    const key = `${h < 10 ? '0' : ''}${h}:00`;
+    hourlyCounts[key] = 0;
+  });
+
+  startups.forEach(s => {
+    startupUsageMap[s.id] = {
+      startupId: s.id,
+      startupName: s.name,
+      planName: s.subscriptionPlan || (s.includedMeetingHours >= 15 ? 'Enterprise Scale Plan' : 'Incubation Growth Plan'),
+      includedHours: Number(s.includedMeetingHours !== undefined ? s.includedMeetingHours : 12),
+      usedCredits: Number(s.usedMeetingHours || 0),
+      remainingCredits: Math.max(0, Number(s.includedMeetingHours !== undefined ? s.includedMeetingHours : 12) - Number(s.usedMeetingHours || 0)),
+      bookingsCount: 0,
+      cancelledCount: 0,
+      bookedHours: 0,
+      overageBilled: 0
+    };
+  });
+
+  const daysInWindow = range === 'day' ? 1 : range === 'week' ? 7 : 30;
+  const operatingHoursPerDay = 7; // 08-11 (3h) + 15-19 (4h)
+
+  rooms.forEach(r => {
+    const availHrs = daysInWindow * operatingHoursPerDay;
+    roomStatsMap[r.id] = {
+      roomId: r.id,
+      roomName: r.name,
+      icon: r.icon || '🏢',
+      capacity: r.capacity,
+      hourlyRate: r.hourlyRate,
+      status: r.underMaintenance ? 'Under Maintenance' : (r.status || 'Active'),
+      bookingsCount: 0,
+      cancelledCount: 0,
+      bookedHours: 0,
+      availableHours: availHrs,
+      utilizationPct: 0,
+      revenue: 0
+    };
+
+    (r.bookings || []).forEach(b => {
+      if (minDate && b.date < minDate) return;
+      if (maxDate && b.date > maxDate) return;
+      if (startupId && b.startupId !== startupId) return;
+
+      totalBookings++;
+      const sMin = toMinutes(b.startTime);
+      const eMin = toMinutes(b.endTime);
+      const dur = Math.max(0.25, (eMin - sMin) / 60);
+
+      if (b.status === 'Cancelled') {
+        cancelledBookings++;
+        roomStatsMap[r.id].cancelledCount++;
+        if (startupUsageMap[b.startupId]) startupUsageMap[b.startupId].cancelledCount++;
+        return;
+      }
+
+      if (b.status === 'Pending Approval') {
+        pendingBookings++;
+      } else {
+        confirmedBookings++;
+      }
+
+      totalBookedHours += dur;
+      const rev = Number(b.cost || 0);
+      totalOverageRevenue += rev;
+
+      roomStatsMap[r.id].bookingsCount++;
+      roomStatsMap[r.id].bookedHours = Number((roomStatsMap[r.id].bookedHours + dur).toFixed(2));
+      roomStatsMap[r.id].revenue += rev;
+
+      // Track peak hours
+      [8, 9, 10, 15, 16, 17, 18].forEach(h => {
+        const slotS = h * 60;
+        const slotE = (h + 1) * 60;
+        if (sMin < slotE && eMin > slotS) {
+          const key = `${h < 10 ? '0' : ''}${h}:00`;
+          hourlyCounts[key] = (hourlyCounts[key] || 0) + 1;
+        }
+      });
+
+      if (!startupUsageMap[b.startupId]) {
+        startupUsageMap[b.startupId] = {
+          startupId: b.startupId,
+          startupName: b.startupName || 'Partner Venture',
+          planName: 'Incubation Growth Plan',
+          includedHours: 12,
+          usedCredits: dur,
+          remainingCredits: Math.max(0, 12 - dur),
+          bookingsCount: 0,
+          cancelledCount: 0,
+          bookedHours: 0,
+          overageBilled: 0
+        };
+      }
+      startupUsageMap[b.startupId].bookingsCount++;
+      startupUsageMap[b.startupId].bookedHours = Number((startupUsageMap[b.startupId].bookedHours + dur).toFixed(2));
+      startupUsageMap[b.startupId].overageBilled += rev;
+    });
+
+    roomStatsMap[r.id].utilizationPct = Math.min(100, Math.round((roomStatsMap[r.id].bookedHours / Math.max(1, roomStatsMap[r.id].availableHours)) * 100));
+  });
+
+  const totalAvailableHours = Math.max(1, rooms.length * daysInWindow * operatingHoursPerDay);
+  const utilizationRate = Math.min(100, Math.round((totalBookedHours / totalAvailableHours) * 100));
+  const cancellationRate = totalBookings > 0 ? Math.round((cancelledBookings / totalBookings) * 100) : 0;
+
+  const roomBreakdown = Object.values(roomStatsMap).sort((a, b) => b.bookedHours - a.bookedHours);
+  const peakBookingHours = Object.entries(hourlyCounts)
+    .map(([hour, count]) => ({ hour, count }))
+    .sort((a, b) => b.count - a.count);
+
+  const startupUsage = Object.values(startupUsageMap).sort((a, b) => b.bookedHours - a.bookedHours);
+  const totalCreditsConsumed = startupUsage.reduce((sum, s) => sum + (Number(s.usedCredits) || 0), 0);
+  const totalCreditsAllocated = startupUsage.reduce((sum, s) => sum + (Number(s.includedHours) || 12), 0);
+
+  return {
+    ok: true,
+    range,
+    startDate: minDate,
+    endDate: maxDate,
+    totalBookings,
+    confirmedBookings,
+    cancelledBookings,
+    pendingBookings,
+    totalBookedHours: Number(totalBookedHours.toFixed(2)),
+    totalAvailableHours,
+    utilizationRate,
+    cancellationRate,
+    totalOverageRevenue,
+    totalCreditsConsumed: Number(totalCreditsConsumed.toFixed(2)),
+    totalCreditsAllocated,
+    mostPopularRoom: roomBreakdown[0] || null,
+    peakHour: peakBookingHours[0] || { hour: '09:00', count: 0 },
+    roomBreakdown,
+    peakBookingHours,
+    startupUsage
+  };
+}
+
+// 6. External Calendar Integration Service (Google Calendar & Microsoft Outlook)
+async function syncExternalCalendarEvent(syncReq = {}) {
+  await bookingMutex.acquire();
+  try {
+    const {
+      action = 'sync', // 'connect' | 'disconnect' | 'set_token_status' | 'create' | 'sync' | 'update' | 'cancel' | 'status'
+      provider = 'google', // 'google' | 'outlook'
+      startupId = 'STP-XYZ',
+      email,
+      tokenStatus, // 'valid' | 'expired' | 'revoked'
+      roomId,
+      bookingId
+    } = syncReq;
+
+    const cleanProvider = String(provider).toLowerCase() === 'outlook' ? 'outlook' : 'google';
+    const providerLabel = cleanProvider === 'outlook' ? 'Microsoft Outlook' : 'Google Calendar';
+
+    const appState = await getAppState();
+    if (!appState.calendarIntegrations) {
+      appState.calendarIntegrations = {
+        providersByStartup: {},
+        syncedEvents: {}
+      };
+    }
+    if (!appState.calendarIntegrations.providersByStartup) appState.calendarIntegrations.providersByStartup = {};
+    if (!appState.calendarIntegrations.syncedEvents) appState.calendarIntegrations.syncedEvents = {};
+
+    if (!appState.calendarIntegrations.providersByStartup[startupId]) {
+      appState.calendarIntegrations.providersByStartup[startupId] = {
+        google: { connected: true, email: 'founder@xyztechnologies.io', tokenStatus: 'valid', updatedAt: new Date().toISOString() },
+        outlook: { connected: true, email: 'ops@xyztechnologies.io', tokenStatus: 'valid', updatedAt: new Date().toISOString() }
+      };
+    }
+
+    const startupProviders = appState.calendarIntegrations.providersByStartup[startupId];
+    const provConfig = startupProviders[cleanProvider];
+
+    if (action === 'status') {
+      return {
+        ok: true,
+        status: 200,
+        startupId,
+        providers: startupProviders,
+        syncedEvents: appState.calendarIntegrations.syncedEvents
+      };
+    }
+
+    if (action === 'connect') {
+      provConfig.connected = true;
+      provConfig.tokenStatus = tokenStatus || 'valid';
+      if (email) provConfig.email = email;
+      provConfig.updatedAt = new Date().toISOString();
+      await saveAppState(appState);
+      return {
+        ok: true,
+        status: 200,
+        provider: cleanProvider,
+        providerConfig: provConfig,
+        message: `Connected ${providerLabel} (${provConfig.email}).`
+      };
+    }
+
+    if (action === 'disconnect') {
+      provConfig.connected = false;
+      provConfig.tokenStatus = 'revoked';
+      provConfig.updatedAt = new Date().toISOString();
+      await saveAppState(appState);
+      return {
+        ok: true,
+        status: 200,
+        provider: cleanProvider,
+        providerConfig: provConfig,
+        message: `Disconnected ${providerLabel}.`
+      };
+    }
+
+    if (action === 'set_token_status') {
+      provConfig.tokenStatus = tokenStatus || 'expired';
+      if (provConfig.tokenStatus === 'valid') provConfig.connected = true;
+      provConfig.updatedAt = new Date().toISOString();
+      await saveAppState(appState);
+      return {
+        ok: true,
+        status: 200,
+        provider: cleanProvider,
+        providerConfig: provConfig,
+        message: `${providerLabel} token status set to ${provConfig.tokenStatus}.`
+      };
+    }
+
+    // Locate booking for create / sync / update / cancel
+    const rooms = appState.meetingRooms || [];
+    const targetRoom = (roomId && rooms.find(r => r.id === roomId)) || rooms.find(r => (r.bookings || []).some(b => b.id === bookingId));
+    const booking = targetRoom ? (targetRoom.bookings || []).find(b => b.id === bookingId) : null;
+
+    if (!booking) {
+      return { ok: false, status: 404, code: 'BOOKING_NOT_FOUND', message: `Booking "${bookingId}" not found for calendar sync.` };
+    }
+    if (!booking.calendarSync) booking.calendarSync = {};
+
+    // Check provider connection and OAuth token validity
+    // Never mark calendar sync successful unless confirmed by the provider!
+    if (!provConfig.connected || provConfig.tokenStatus === 'expired' || provConfig.tokenStatus === 'revoked') {
+      const errReason = !provConfig.connected
+        ? `${providerLabel} is not connected.`
+        : `${providerLabel} OAuth permission is ${provConfig.tokenStatus}. Please reconnect your account.`;
+
+      booking.calendarSync[cleanProvider] = {
+        provider: cleanProvider,
+        status: 'failed',
+        error: errReason,
+        lastAttemptAt: new Date().toISOString()
+      };
+      await saveAppState(appState);
+      return {
+        ok: false,
+        status: 401,
+        code: 'CALENDAR_AUTH_EXPIRED',
+        syncStatus: 'failed',
+        provider: cleanProvider,
+        message: errReason,
+        calendarSync: booking.calendarSync[cleanProvider]
+      };
+    }
+
+    const eventKey = `${cleanProvider}:${booking.id}`;
+    const existingEvent = appState.calendarIntegrations.syncedEvents[eventKey];
+
+    if (action === 'cancel') {
+      const cancelMeta = {
+        provider: cleanProvider,
+        externalEventId: (existingEvent && existingEvent.externalEventId) || `EVT-${cleanProvider.toUpperCase()}-${booking.id}`,
+        bookingId: booking.id,
+        status: 'cancelled',
+        cancelledAt: new Date().toISOString()
+      };
+      appState.calendarIntegrations.syncedEvents[eventKey] = cancelMeta;
+      booking.calendarSync[cleanProvider] = cancelMeta;
+      await saveAppState(appState);
+      return {
+        ok: true,
+        status: 200,
+        provider: cleanProvider,
+        syncStatus: 'cancelled',
+        event: cancelMeta,
+        message: `Removed reservation ${booking.id} from ${providerLabel}.`
+      };
+    }
+
+    // Duplicate prevention: if already synced with identical date/startTime/endTime/roomId and action is 'create' or 'sync'
+    if (
+      existingEvent &&
+      existingEvent.status === 'synced' &&
+      existingEvent.date === booking.date &&
+      existingEvent.startTime === booking.startTime &&
+      existingEvent.endTime === booking.endTime &&
+      existingEvent.roomId === targetRoom.id &&
+      action !== 'update'
+    ) {
+      booking.calendarSync[cleanProvider] = existingEvent;
+      return {
+        ok: true,
+        status: 200,
+        provider: cleanProvider,
+        syncStatus: 'synced',
+        duplicatePrevented: true,
+        event: existingEvent,
+        message: `Event already synced to ${providerLabel} (Duplicate prevented).`
+      };
+    }
+
+    const externalEventId = (existingEvent && existingEvent.externalEventId)
+      || `${cleanProvider === 'google' ? 'gcal' : 'outlk'}_${booking.id.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+
+    const syncedMeta = {
+      provider: cleanProvider,
+      providerLabel,
+      externalEventId,
+      bookingId: booking.id,
+      roomId: targetRoom.id,
+      roomName: targetRoom.name,
+      startupId: booking.startupId,
+      startupName: booking.startupName,
+      date: booking.date,
+      startTime: booking.startTime,
+      endTime: booking.endTime,
+      status: 'synced',
+      providerConfirmed: true,
+      syncedAt: new Date().toISOString()
+    };
+
+    appState.calendarIntegrations.syncedEvents[eventKey] = syncedMeta;
+    booking.calendarSync[cleanProvider] = syncedMeta;
+    await saveAppState(appState);
+
+    return {
+      ok: true,
+      status: 200,
+      provider: cleanProvider,
+      syncStatus: 'synced',
+      duplicatePrevented: false,
+      event: syncedMeta,
+      message: `${action === 'update' ? 'Updated' : 'Synced'} reservation ${booking.id} with ${providerLabel} (${externalEventId}).`
+    };
+  } finally {
+    bookingMutex.release();
+  }
+}
+
 module.exports = {
   connectDB,
   getStatus,
@@ -2068,11 +4347,26 @@ module.exports = {
   findBookingAlternatives,
   initMeetingRoomIndexes,
   reserveMeetingRoomSlotsAtomic,
+  reserveRecurringMeetingRoomAtomic,
+  cancelRecurringSeriesAtomic,
   cancelMeetingRoomSlotsAtomic,
   cancelBooking,
   updateMeetingRoomBookingTimeWindowAtomic,
   getMeetingRoomsAvailability,
+  computeRoomStatus,
+  getReservationCounts,
+  checkMeetingRoomPermission,
+  syncBookingOverageToInvoice,
+  manageMeetingRoomAdminAtomic,
+  uploadMeetingRoomImageAtomic,
+  getMeetingRoomImageFile,
+  withRoomImages,
+  manageMeetingRoomMaintenanceAtomic,
+  getMeetingRoomReservations,
+  getMeetingRoomsAnalytics,
+  syncExternalCalendarEvent,
   getDashboardSummary,
+  getStartupDashboardSummary,
   generateInvoicesBatchAtomic,
   computeInvoiceStatus,
   formatCurrencyINR,

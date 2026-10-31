@@ -229,16 +229,16 @@ const OnboardingModule = {
             </thead>
             <tbody>
               ${startups.map(s => {
-                const statusBadgeClass = this.getStatusBadgeClass(s.status);
-                const docs = s.documents || [];
-                const verifiedDocsCount = docs.filter(d => d.status === 'Verified').length;
-                const totalDocsCount = docs.length;
-                const allocatedLabels = (s.allocatedSeats || []).map(id => {
-                  const sp = spaces.find(x => x.id === id);
-                  return sp ? sp.label : id;
-                });
+      const statusBadgeClass = this.getStatusBadgeClass(s.status);
+      const docs = s.documents || [];
+      const verifiedDocsCount = docs.filter(d => d.status === 'Verified').length;
+      const totalDocsCount = docs.length;
+      const allocatedLabels = (s.allocatedSeats || []).map(id => {
+        const sp = spaces.find(x => x.id === id);
+        return sp ? sp.label : id;
+      });
 
-                return `
+      return `
                   <tr style="border-bottom: 1px solid var(--border-subtle); transition: background 0.15s ease;" onmouseover="this.style.background='var(--bg-surface-elevated)'" onmouseout="this.style.background='transparent'">
                     <td style="padding: 12px 16px; white-space: nowrap;">
                       <div style="display: flex; align-items: center; gap: 10px;">
@@ -261,10 +261,10 @@ const OnboardingModule = {
                       <div style="font-size: 10.5px; color: var(--accent-secondary); font-family: var(--font-mono);">${s.progressPercent || 25}% Progress</div>
                     </td>
                     <td style="padding: 12px 16px; white-space: nowrap;">
-                      ${allocatedLabels.length > 0 
-                        ? allocatedLabels.map(l => `<span class="badge badge-info" style="font-family: var(--font-mono); font-size: 10px; margin-right: 3px;">${l}</span>`).join('') 
-                        : `<span style="font-size: 11px; color: var(--text-muted); font-style: italic;">Pending Allocation</span>`
-                      }
+                      ${allocatedLabels.length > 0
+          ? allocatedLabels.map(l => `<span class="badge badge-info" style="font-family: var(--font-mono); font-size: 10px; margin-right: 3px;">${l}</span>`).join('')
+          : `<span style="font-size: 11px; color: var(--text-muted); font-style: italic;">Pending Allocation</span>`
+        }
                     </td>
                     <td style="padding: 12px 16px; white-space: nowrap;">
                       <div style="font-weight: 700; font-size: 12px; color: var(--text-primary);">₹${(s.targetFundingAsk || 2500000).toLocaleString('en-IN')}</div>
@@ -290,7 +290,7 @@ const OnboardingModule = {
                     </td>
                   </tr>
                 `;
-              }).join('')}
+    }).join('')}
             </tbody>
           </table>
         </div>
@@ -436,10 +436,10 @@ const OnboardingModule = {
               Workspace Allocation:
             </div>
             <div style="display: flex; flex-wrap: wrap; gap: 5px;">
-              ${allocatedLabels.length > 0 
-                ? allocatedLabels.map(l => `<span class="badge badge-info" style="font-family: var(--font-mono); font-size: 10.5px;">${l}</span>`).join('') 
-                : `<span style="font-size: 11.5px; color: var(--text-muted); font-style: italic;">None (${s.spacePreference || 'Desk Needed'})</span>`
-              }
+              ${allocatedLabels.length > 0
+        ? allocatedLabels.map(l => `<span class="badge badge-info" style="font-family: var(--font-mono); font-size: 10.5px;">${l}</span>`).join('')
+        : `<span style="font-size: 11.5px; color: var(--text-muted); font-style: italic;">None (${s.spacePreference || 'Desk Needed'})</span>`
+      }
             </div>
           </div>
         </div>
@@ -1315,8 +1315,8 @@ const OnboardingModule = {
     formGroups.forEach(group => {
       // Check if group is marked with red star or has [required] attribute
       const hasRedStar = group.querySelector('.required-star') !== null ||
-                         group.querySelector('span[style*="red"]') !== null ||
-                         Array.from(group.querySelectorAll('label')).some(l => l.textContent.includes('*'));
+        group.querySelector('span[style*="red"]') !== null ||
+        Array.from(group.querySelectorAll('label')).some(l => l.textContent.includes('*'));
       const hasRequiredAttr = group.querySelector('[required]') !== null;
 
       if (!hasRedStar && !hasRequiredAttr) {
@@ -1409,7 +1409,7 @@ const OnboardingModule = {
     if (!isValid && firstInvalidElement) {
       try {
         firstInvalidElement.focus({ preventScroll: true });
-      } catch (err) {}
+      } catch (err) { }
 
       firstInvalidElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
@@ -1455,7 +1455,7 @@ const OnboardingModule = {
       const display = document.getElementById('pitch-deck-filename-display');
       const hidden = document.getElementById('reg-pitch-deck-name');
       if (display) {
-        display.innerHTML = `📄 <strong style="color: var(--accent-primary);">${file.name}</strong> <span style="font-size: 11px; color: var(--status-success); font-weight: 600;">(${(file.size/1024/1024).toFixed(1)} MB - Attached)</span>`;
+        display.innerHTML = `📄 <strong style="color: var(--accent-primary);">${file.name}</strong> <span style="font-size: 11px; color: var(--status-success); font-weight: 600;">(${(file.size / 1024 / 1024).toFixed(1)} MB - Attached)</span>`;
       }
       if (hidden) {
         hidden.value = file.name;
@@ -1535,8 +1535,8 @@ const OnboardingModule = {
     const data = Object.fromEntries(fd.entries());
     const selectedBusinessModels = fd.getAll('businessModel');
 
-    const category = (data.category === 'Others' && data.otherCategory && data.otherCategory.trim()) 
-      ? `${data.otherCategory.trim()} (Custom/Others)` 
+    const category = (data.category === 'Others' && data.otherCategory && data.otherCategory.trim())
+      ? `${data.otherCategory.trim()} (Custom/Others)`
       : (data.category || 'Technology & Innovation');
 
     const bModelStr = selectedBusinessModels.length > 0 ? selectedBusinessModels.join(', ') : (data.businessModel || 'N/A');
@@ -1950,14 +1950,14 @@ const OnboardingModule = {
                 </button>
               </div>
               <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                ${allocatedSpaces.length > 0 
-                  ? allocatedSpaces.map(sp => `
+                ${allocatedSpaces.length > 0
+        ? allocatedSpaces.map(sp => `
                       <span class="badge badge-info" style="font-size: 12px; padding: 4px 10px;">
                         ${sp.label} • ₹${sp.monthlyRate.toLocaleString('en-IN')}/mo
                       </span>
                     `).join('')
-                  : `<span style="font-size: 12px; color: var(--text-muted); font-style: italic;">No workspace allocated yet (Status: ${s.status}).</span>`
-                }
+        : `<span style="font-size: 12px; color: var(--text-muted); font-style: italic;">No workspace allocated yet (Status: ${s.status}).</span>`
+      }
               </div>
               ${billingCalc ? `
                 <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; font-size: 12px;">
@@ -1981,9 +1981,9 @@ const OnboardingModule = {
               </div>
 
               ${(() => {
-                const paySummary = window.store.getPaymentSummaryForStartup(s.id);
-                const sPayments = (paySummary.payments || []).slice(0, 3);
-                return `
+        const paySummary = window.store.getPaymentSummaryForStartup(s.id);
+        const sPayments = (paySummary.payments || []).slice(0, 3);
+        return `
                   <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; font-size: 11px;">
                     <div style="background: var(--bg-surface); padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-subtle);">
                       <div style="color: var(--text-muted); font-size: 10px;">Lifetime Paid</div>
@@ -2031,7 +2031,7 @@ const OnboardingModule = {
                     </div>
                   `}
                 `;
-              })()}
+      })()}
             </div>
 
             <!-- Assigned Mentor -->
@@ -2061,3 +2061,4 @@ const OnboardingModule = {
     if (el) el.remove();
   }
 };
+

@@ -43,7 +43,7 @@ const ReportsModule = {
             <div class="card-title">
               <span>📊 Monthly Revenue Trend (Last 5 Months)</span>
             </div>
-            <span class="badge badge-success">₹${(stats.mrr/100000).toFixed(2)}L Current MRR</span>
+            <span class="badge badge-success">₹${(stats.mrr / 100000).toFixed(2)}L Current MRR</span>
           </div>
           <div>
             ${this.renderRevenueSvgChart()}
@@ -99,9 +99,9 @@ const ReportsModule = {
           </div>
           <div style="display: flex; flex-direction: column; gap: 12px; padding: 10px 0;">
             ${rooms.map(r => {
-              const bCount = (r.bookings || []).filter(b => b.status !== 'Cancelled').length;
-              const fillPct = Math.min(100, bCount * 25);
-              return `
+      const bCount = (r.bookings || []).filter(b => b.status !== 'Cancelled').length;
+      const fillPct = Math.min(100, bCount * 25);
+      return `
                 <div>
                   <div style="display: flex; justify-content: space-between; font-size: 12.5px; margin-bottom: 5px;">
                     <strong>${r.icon} ${r.name} (${r.capacity} Pax)</strong>
@@ -112,9 +112,9 @@ const ReportsModule = {
                   </div>
                 </div>
               `;
-            }).join('')}
+    }).join('')}
             <button class="btn btn-sm btn-outline" style="margin-top: 14px; font-size: 11.5px; width: 100%; font-weight: 700;" onclick="App.switchTab('meetingRooms'); MeetingRoomsModule.switchTab('myBookings');">
-              📋 Open My Meeting Room Bookings Feed Report ➔
+              📋 Open My Meeting Room Bookings &amp; Fee Report ➔
             </button>
           </div>
         </div>
@@ -145,28 +145,28 @@ const ReportsModule = {
           <line x1="30" y1="150" x2="480" y2="150" stroke="rgba(255,255,255,0.15)" />
 
           ${months.map((m, idx) => {
-            const x = 70 + idx * 90;
-            const hRent = (m.h1 / maxVal) * chartHeight;
-            const hAddon = (m.h2 / maxVal) * chartHeight;
-            const hMeet = (m.h3 / maxVal) * chartHeight;
+      const x = 70 + idx * 90;
+      const hRent = (m.h1 / maxVal) * chartHeight;
+      const hAddon = (m.h2 / maxVal) * chartHeight;
+      const hMeet = (m.h3 / maxVal) * chartHeight;
 
-            const yRent = 150 - hRent;
-            const yAddon = yRent - hAddon;
-            const yMeet = yAddon - hMeet;
+      const yRent = 150 - hRent;
+      const yAddon = yRent - hAddon;
+      const yMeet = yAddon - hMeet;
 
-            return `
+      return `
               <g>
                 <!-- Stacked bar -->
                 <rect x="${x - 18}" y="${yRent}" width="36" height="${hRent}" fill="#6366f1" rx="2" />
                 <rect x="${x - 18}" y="${yAddon}" width="36" height="${hAddon}" fill="#10b981" rx="2" />
                 <rect x="${x - 18}" y="${yMeet}" width="36" height="${hMeet}" fill="#f59e0b" rx="2" />
                 <!-- Total label -->
-                <text x="${x}" y="${yMeet - 6}" font-size="11" fill="var(--text-primary)" font-weight="700" text-anchor="middle">₹${(m.total/100).toFixed(1)}L</text>
+                <text x="${x}" y="${yMeet - 6}" font-size="11" fill="var(--text-primary)" font-weight="700" text-anchor="middle">₹${(m.total / 100).toFixed(1)}L</text>
                 <!-- Month label -->
                 <text x="${x}" y="165" font-size="12" fill="var(--text-secondary)" text-anchor="middle">${m.name}</text>
               </g>
             `;
-          }).join('')}
+    }).join('')}
         </svg>
       </div>
     `;
@@ -199,7 +199,7 @@ const ReportsModule = {
             stroke-dasharray="60 365" stroke-dashoffset="-270" stroke-linecap="round" />
 
           <text x="80" y="76" font-size="22" font-weight="900" fill="var(--text-primary)" text-anchor="middle" font-family="var(--font-mono)">
-            ${Math.round((spaces.filter(s=>s.status==='occupied').length / spaces.length)*100)}%
+            ${Math.round((spaces.filter(s => s.status === 'occupied').length / spaces.length) * 100)}%
           </text>
           <text x="80" y="94" font-size="11" fill="var(--text-muted)" text-anchor="middle">OCCUPIED</text>
         </svg>
@@ -247,7 +247,7 @@ const ReportsModule = {
       const startups = window.store.getStartups();
       let csv = 'ID,Name,Sector,Cohort,Stage,Status,Founder,Email,TeamSize,AllocatedSeats,SubsidyPct,ReadinessScore\n';
       startups.forEach(s => {
-        csv += `"${s.id}","${s.name}","${s.sector}","${s.cohort}","${s.stage}","${s.status}","${s.founders.name}","${s.founders.email}",${s.teamSize},"${(s.allocatedSeats||[]).join(';')}",${s.monthlyGrantSubsidyPercent},${s.metrics.readinessScore}\n`;
+        csv += `"${s.id}","${s.name}","${s.sector}","${s.cohort}","${s.stage}","${s.status}","${s.founders.name}","${s.founders.email}",${s.teamSize},"${(s.allocatedSeats || []).join(';')}",${s.monthlyGrantSubsidyPercent},${s.metrics.readinessScore}\n`;
       });
       this.downloadBlob(csv, 'nexus_incubated_startups_directory.csv');
       App.showToast('📥 Exported Startups Directory to CSV!', 'success');
@@ -267,7 +267,7 @@ const ReportsModule = {
           const sParts = b.startTime.split(':').map(Number);
           const eParts = b.endTime.split(':').map(Number);
           const dur = Math.max(0.5, ((eParts[0] * 60 + (eParts[1] || 0)) - (sParts[0] * 60 + (sParts[1] || 0))) / 60);
-          csv += `"${b.id}","${r.id}","${r.name}",${r.capacity||10},"${(b.title||'').replace(/"/g, '""')}","${b.date}","${b.startTime}","${b.endTime}",${dur.toFixed(1)},${b.attendees},"${b.status||'Confirmed'}","${b.cost === 0 ? 'Plan Credit' : '₹' + b.cost}","${b.startupId}","${b.startupName}"\n`;
+          csv += `"${b.id}","${r.id}","${r.name}",${r.capacity || 10},"${(b.title || '').replace(/"/g, '""')}","${b.date}","${b.startTime}","${b.endTime}",${dur.toFixed(1)},${b.attendees},"${b.status || 'Confirmed'}","${b.cost === 0 ? 'Plan Credit' : '₹' + b.cost}","${b.startupId}","${b.startupName}"\n`;
         });
       });
       this.downloadBlob(csv, 'nexus_meeting_rooms_master_bookings_report.csv');

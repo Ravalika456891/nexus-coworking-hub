@@ -3,18 +3,11 @@
  * Shared between Server (Node.js) and Browser (NEXUS HUB UI)
  *
  * Policy:
- * 1. Cancelling is allowed only when at least 1 hour (>= 60 mins) remains before meeting start.
- * 2. Refund % by whole hours left:
- *    - < 1h  : Disallowed (0%)
- *    - 1h    : 20%  (60 - 119 mins)
- *    - 2h    : 30%  (120 - 179 mins)
- *    - 3h    : 40%  (180 - 239 mins)
- *    - 4h    : 50%  (240 - 299 mins)
- *    - 5h    : 60%  (300 - 359 mins)
- *    - 6h    : 70%  (360 - 419 mins)
- *    - >= 7h : 80%  (>= 420 mins)
- * 3. Amounts are integer paise; refund = Math.floor(amountPaise * pct / 100).
- * 4. All time computations use Asia/Kolkata IST (+05:30) and the server clock.
+ * 1. Cancelling is allowed anytime.
+ * 2. Refund is 100% full amount (zero cancellation fee).
+ * 3. Plan-covered bookings restore 100% of duration credit hours.
+ * 4. Paid bookings receive 100% full refund in paise (refundPaise = amountPaise, feePaise = 0).
+ * 5. All time computations use Asia/Kolkata IST (+05:30) and the server clock.
  */
 
 (function (root, factory) {
@@ -43,6 +36,33 @@
   }
 
   /**
+   * Parse booking end date and time into UTC timestamp representing IST (+05:30)
+   * @param {string} dateStr 'YYYY-MM-DD'
+   * @param {string} endTimeStr 'HH:mm'
+   * @returns {number} epoch timestamp in ms
+   */
+  function parseBookingEndIST(dateStr, endTimeStr) {
+    return parseBookingStartIST(dateStr, endTimeStr);
+  }
+
+  /**
+   * Determine whether a booking has already completed based on IST (+05:30)
+   * @param {Object} booking
+   * @param {Date|number|string} [currentClock] Optional clock override
+   * @returns {boolean}
+   */
+  function isBookingCompleted(booking, currentClock) {
+    if (!booking) return false;
+    if (booking.status === 'Completed') return true;
+    if (booking.status === 'Cancelled') return false;
+    if (!booking.date || !booking.endTime) return false;
+    const endMs = parseBookingEndIST(booking.date, booking.endTime);
+    if (!endMs) return false;
+    const nowMs = currentClock ? new Date(currentClock).getTime() : Date.now();
+    return nowMs >= endMs;
+  }
+
+  /**
    * Compute minutes remaining before meeting start based on IST (+05:30)
    * @param {string} dateStr 'YYYY-MM-DD'
    * @param {string} timeStr 'HH:mm'
@@ -58,33 +78,13 @@
 
   /**
    * Get refund percentage based on whole hours left
-   * Tier table:
-   *   < 1h  -> 0 (not allowed)
-   *   1h    -> 20%
-   *   2h    -> 30%
-   *   3h    -> 40%
-   *   4h    -> 50%
-   *   5h    -> 60%
-   *   6h    -> 70%
-   *   >= 7h -> 80%
+   * Policy: 100% full amount refund anytime
    * @param {number} minsBeforeStart
    * @returns {{ allowed: boolean, refundPct: number, wholeHours: number }}
    */
   function getRefundTier(minsBeforeStart) {
-    if (minsBeforeStart < 60) {
-      return { allowed: false, refundPct: 0, wholeHours: Math.max(0, Math.floor(minsBeforeStart / 60)) };
-    }
-    const wholeHours = Math.floor(minsBeforeStart / 60);
-    let refundPct = 80;
-    if (wholeHours === 1) refundPct = 20;
-    else if (wholeHours === 2) refundPct = 30;
-    else if (wholeHours === 3) refundPct = 40;
-    else if (wholeHours === 4) refundPct = 50;
-    else if (wholeHours === 5) refundPct = 60;
-    else if (wholeHours === 6) refundPct = 70;
-    else refundPct = 80; // 7h or more
-
-    return { allowed: true, refundPct, wholeHours };
+    const wholeHours = Math.max(0, Math.floor(minsBeforeStart / 60));
+    return { allowed: true, refundPct: 100, wholeHours };
   }
 
   /**
@@ -122,6 +122,24 @@
     }
 
     const minsBeforeStart = computeMinsBeforeStart(booking.date, booking.startTime, currentClock);
+
+    if (isBookingCompleted(booking, currentClock)) {
+      return {
+        allowed: false,
+        isCompleted: true,
+        reason: 'Cannot cancel a completed meeting.',
+        minsBeforeStart,
+        wholeHours: 0,
+        refundPct: 0,
+        amountPaise: 0,
+        refundPaise: 0,
+        feePaise: 0,
+        amountRupees: 0,
+        refundRupees: 0,
+        feeRupees: 0
+      };
+    }
+
     const tier = getRefundTier(minsBeforeStart);
 
     // Calculate booking duration in hours for plan credit restoration
@@ -129,25 +147,25 @@
     const eH = parseFloat((booking.endTime || '00:00').split(':')[0]) + parseFloat((booking.endTime || '00:00').split(':')[1] || '0') / 60;
     const durationHours = Math.max(0.25, Math.round((eH - sH) * 100) / 100);
 
-    // Amounts in integer paise
+    // Amounts in integer paise: 100% full refund (0 fee)
     const costRupees = Number(booking.cost) || 0;
     const amountPaise = booking.amountPaise !== undefined ? Number(booking.amountPaise) : Math.round(costRupees * 100);
-    const refundPaise = tier.allowed ? Math.floor((amountPaise * tier.refundPct) / 100) : 0;
-    const feePaise = amountPaise - refundPaise;
+    const refundPaise = amountPaise;
+    const feePaise = 0;
     const isPlanCovered = amountPaise === 0;
 
     return {
-      allowed: tier.allowed,
-      reason: tier.allowed ? null : 'Cancelling is allowed only when at least 1 hour remains before the meeting starts.',
+      allowed: true,
+      reason: null,
       minsBeforeStart,
       wholeHours: tier.wholeHours,
-      refundPct: tier.refundPct,
+      refundPct: 100,
       amountPaise,
       refundPaise,
       feePaise,
       amountRupees: amountPaise / 100,
       refundRupees: refundPaise / 100,
-      feeRupees: feePaise / 100,
+      feeRupees: 0,
       isPlanCovered,
       durationHours,
       paymentMethod: booking.paymentMethod || (isPlanCovered ? 'Plan Credit' : 'Razorpay'),
@@ -181,7 +199,7 @@
     if (!booking) return '<td style="text-align: center;">-</td>';
 
     const isMine = myStartup && (booking.startupId === myStartup.id || (booking.startupName && booking.startupName.toLowerCase() === myStartup.name.toLowerCase()));
-    const isAdmin = currentRole === 'admin' || (typeof window !== 'undefined' && window.__currentRole === 'admin');
+    const isAdmin = currentRole === 'admin' || currentRole === 'super_admin' || (typeof currentRole === 'string' && currentRole.includes('admin')) || (typeof window !== 'undefined' && (window.__currentRole === 'admin' || (window.store && window.store.currentRole && window.store.currentRole.includes('admin'))));
 
     // Only booking owner or admin can cancel
     if (!isMine && !isAdmin) {
@@ -202,26 +220,25 @@
       `;
     }
 
-    const quote = calculateRefundQuote(booking, currentClock);
-
-    if (!quote.allowed) {
-      const remainingLabel = quote.minsBeforeStart > 0 ? `${quote.minsBeforeStart}m left` : 'Started / Past';
+    if (isBookingCompleted(booking, currentClock)) {
       return `
-        <td style="white-space: nowrap; text-align: center;" title="Cancellation closed: less than 1 hour remains before meeting start">
-          <div style="display: inline-flex; flex-direction: column; align-items: center; gap: 2px;">
-            <button class="btn btn-outline btn-sm" disabled style="font-size: 10.5px; padding: 3px 8px; opacity: 0.5; cursor: not-allowed; border-color: #cbd5e1; color: #94a3b8; border-radius: 6px;">
-              🔒 Closed (&lt;1h)
-            </button>
-            <span style="font-size: 9.5px; color: var(--text-muted);">${remainingLabel}</span>
-          </div>
+        <td style="white-space: nowrap; text-align: center;">
+          <button class="btn btn-outline btn-sm" disabled
+                  style="font-size: 11px; padding: 4px 10px; color: #64748b; border-color: rgba(100, 116, 139, 0.3); font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; border-radius: 6px; background: rgba(100, 116, 139, 0.08); opacity: 0.65; cursor: not-allowed;"
+                  title="Completed meetings cannot be cancelled">
+            <span>✓</span>
+            <span>Completed</span>
+          </button>
         </td>
       `;
     }
 
-    // Allowed: show refund pill & cancellation trigger
+    const quote = calculateRefundQuote(booking, currentClock);
+
+    // Allowed anytime before completion: show 100% full refund pill & cancellation trigger
     const refundTag = quote.isPlanCovered
-      ? `${quote.durationHours}h credit`
-      : `${quote.refundPct}% refund (${formatPaiseToINR(quote.refundPaise)})`;
+      ? `${quote.durationHours}h credit restored`
+      : `100% full refund (${formatPaiseToINR(quote.refundPaise)})`;
 
     return `
       <td style="white-space: nowrap; text-align: center;">
@@ -230,7 +247,7 @@
                 onclick="MeetingRoomsModule.openCancellationModal('${booking.roomId}', '${booking.id}')"
                 title="Cancel reservation • ${refundTag}">
           <span>❌</span>
-          <span>Cancel (${quote.refundPct}%)</span>
+          <span>Cancel</span>
         </button>
       </td>
     `;
@@ -238,6 +255,8 @@
 
   return {
     parseBookingStartIST,
+    parseBookingEndIST,
+    isBookingCompleted,
     computeMinsBeforeStart,
     getRefundTier,
     calculateRefundQuote,

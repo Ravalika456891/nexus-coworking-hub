@@ -49,48 +49,32 @@ async function runTests() {
 
   await cleanAllTestDates();
 
-  // --- Test 1: Tier Boundaries & Integer Paise Math ---
-  test('Test 1: Refund tier boundaries (1h, 1h59, 2h, 7h) and integer paise math', () => {
-    // 1h boundary (60 min) -> 20%
+  // --- Test 1: Anytime 100% Full Refund & Integer Paise Math ---
+  test('Test 1: Anytime 100% refund policy across all windows and integer paise math', () => {
+    // 1h boundary (60 min) -> 100%
     const tier1h = cancellation.getRefundTier(60);
     assert.strictEqual(tier1h.allowed, true, '60m must be allowed');
-    assert.strictEqual(tier1h.wholeHours, 1, '60m is 1 whole hour');
-    assert.strictEqual(tier1h.refundPct, 20, '1 whole hour must yield 20% refund');
+    assert.strictEqual(tier1h.refundPct, 100, 'Must yield 100% full refund');
 
-    // 1h 59m boundary (119 min) -> 20%
+    // 1h 59m boundary (119 min) -> 100%
     const tier1h59 = cancellation.getRefundTier(119);
     assert.strictEqual(tier1h59.allowed, true, '119m must be allowed');
-    assert.strictEqual(tier1h59.wholeHours, 1, '119m is 1 whole hour');
-    assert.strictEqual(tier1h59.refundPct, 20, '119m must still yield 20% refund');
+    assert.strictEqual(tier1h59.refundPct, 100, '119m must yield 100% full refund');
 
-    // 2h boundary (120 min) -> 30%
+    // 2h boundary (120 min) -> 100%
     const tier2h = cancellation.getRefundTier(120);
     assert.strictEqual(tier2h.allowed, true, '120m must be allowed');
-    assert.strictEqual(tier2h.wholeHours, 2, '120m is 2 whole hours');
-    assert.strictEqual(tier2h.refundPct, 30, '2 whole hours must yield 30% refund');
+    assert.strictEqual(tier2h.refundPct, 100, '2 whole hours must yield 100% refund');
 
-    // 3h boundary (180 min) -> 40%
-    assert.strictEqual(cancellation.getRefundTier(180).refundPct, 40, '3h must yield 40%');
+    // 3h, 4h, 5h, 6h, 7h boundaries -> 100%
+    assert.strictEqual(cancellation.getRefundTier(180).refundPct, 100, '3h must yield 100%');
+    assert.strictEqual(cancellation.getRefundTier(240).refundPct, 100, '4h must yield 100%');
+    assert.strictEqual(cancellation.getRefundTier(300).refundPct, 100, '5h must yield 100%');
+    assert.strictEqual(cancellation.getRefundTier(360).refundPct, 100, '6h must yield 100%');
+    assert.strictEqual(cancellation.getRefundTier(420).refundPct, 100, '7h must yield 100%');
+    assert.strictEqual(cancellation.getRefundTier(720).refundPct, 100, '12h must yield 100%');
 
-    // 4h boundary (240 min) -> 50%
-    assert.strictEqual(cancellation.getRefundTier(240).refundPct, 50, '4h must yield 50%');
-
-    // 5h boundary (300 min) -> 60%
-    assert.strictEqual(cancellation.getRefundTier(300).refundPct, 60, '5h must yield 60%');
-
-    // 6h boundary (360 min) -> 70%
-    assert.strictEqual(cancellation.getRefundTier(360).refundPct, 70, '6h must yield 70%');
-
-    // 7h boundary (420 min) -> 80%
-    const tier7h = cancellation.getRefundTier(420);
-    assert.strictEqual(tier7h.allowed, true, '420m must be allowed');
-    assert.strictEqual(tier7h.wholeHours, 7, '420m is 7 whole hours');
-    assert.strictEqual(tier7h.refundPct, 80, '7 whole hours must yield 80% refund');
-
-    // >7h (720 min / 12h) -> 80%
-    assert.strictEqual(cancellation.getRefundTier(720).refundPct, 80, '12h must yield 80%');
-
-    // Integer paise calculations on ₹1,500.00 (150,000 paise)
+    // Integer paise calculations on ₹1,500.00 (150,000 paise) -> 100% refund
     const testBookingPaid = {
       id: 'BKG-T1',
       date: '2026-11-20',
@@ -100,39 +84,37 @@ async function runTests() {
       amountPaise: 150000
     };
 
-    // At 120m (2h, 30% tier):
-    // start time is 2026-11-20T10:00:00+05:30
-    // clock at 2026-11-20T08:00:00+05:30 (exactly 120m before)
     const clock2h = new Date('2026-11-20T08:00:00+05:30');
     const quote2h = cancellation.calculateRefundQuote(testBookingPaid, clock2h);
     assert.strictEqual(quote2h.allowed, true);
-    assert.strictEqual(quote2h.wholeHours, 2);
-    assert.strictEqual(quote2h.refundPct, 30);
+    assert.strictEqual(quote2h.refundPct, 100);
     assert.strictEqual(quote2h.amountPaise, 150000);
-    assert.strictEqual(quote2h.refundPaise, 45000, '30% of 150000 paise is 45000 paise (₹450)');
-    assert.strictEqual(quote2h.feePaise, 105000, 'Fee kept is 105000 paise (₹1050)');
-    assert.strictEqual(quote2h.refundRupees, 450);
-    assert.strictEqual(cancellation.formatPaiseToINR(quote2h.refundPaise), '₹450.00');
+    assert.strictEqual(quote2h.refundPaise, 150000, '100% of 150000 paise is 150000 paise (₹1500)');
+    assert.strictEqual(quote2h.feePaise, 0, 'Fee kept is 0 paise (₹0)');
+    assert.strictEqual(quote2h.refundRupees, 1500);
+    assert.strictEqual(cancellation.formatPaiseToINR(quote2h.refundPaise), '₹1,500.00');
 
-    // Floor check with non-round division: ₹999.00 (99,900 paise) at 20%
+    // Non-round amount check: ₹999.00 (99,900 paise) at 100%
     const testOdd = { date: '2026-11-20', startTime: '10:00', cost: 999 };
     const clock1h = new Date('2026-11-20T09:00:00+05:30');
     const quoteOdd = cancellation.calculateRefundQuote(testOdd, clock1h);
-    assert.strictEqual(quoteOdd.refundPaise, Math.floor(99900 * 20 / 100));
+    assert.strictEqual(quoteOdd.refundPaise, 99900);
+    assert.strictEqual(quoteOdd.feePaise, 0);
   });
 
-  // --- Test 2: Closed Under 1 Hour (< 60 minutes) ---
-  await testAsync('Test 2: Cancellation is closed under 1 hour (< 60m disallowed)', async () => {
+  // --- Test 2: Anytime Cancellation (Allowed even under 1 hour with 100% full refund) ---
+  await testAsync('Test 2: Anytime cancellation allowed under 1 hour (< 60m) with 100% full refund', async () => {
     // Policy helper check
     const tier59 = cancellation.getRefundTier(59);
-    assert.strictEqual(tier59.allowed, false, '59m must NOT be allowed');
-    assert.strictEqual(tier59.refundPct, 0, 'Refund percent is 0 when disallowed');
+    assert.strictEqual(tier59.allowed, true, '59m must be allowed');
+    assert.strictEqual(tier59.refundPct, 100, '59m must yield 100% refund');
 
     const tier0 = cancellation.getRefundTier(0);
-    assert.strictEqual(tier0.allowed, false, '0m must NOT be allowed');
+    assert.strictEqual(tier0.allowed, true, '0m must be allowed');
+    assert.strictEqual(tier0.refundPct, 100, '0m must yield 100% refund');
 
-    const tierPast = cancellation.getRefundTier(-30);
-    assert.strictEqual(tierPast.allowed, false, 'Past start time must NOT be allowed');
+    // Ensure clean state for test date
+    await cleanAllTestDates();
 
     // Server-side cancelBooking verification with mock clock 40 minutes before start
     const roomId = 'MR-01';
@@ -164,12 +146,20 @@ async function runTests() {
       currentClock: clock40m
     });
 
-    assert.strictEqual(cancelRes.ok, false, 'Server must reject cancellation under 1 hour');
-    assert.strictEqual(cancelRes.status, 400, 'HTTP status must be 400 Bad Request');
-    assert.strictEqual(cancelRes.code, 'CANCELLATION_DISALLOWED', 'Code must be CANCELLATION_DISALLOWED');
+    assert.strictEqual(cancelRes.ok, true, 'Server must allow cancellation under 1 hour');
+    assert.strictEqual(cancelRes.status, 200, 'HTTP status must be 200 OK');
+    assert.strictEqual(cancelRes.quote.refundPct, 100, 'Refund percent must be 100%');
+    assert.strictEqual(cancelRes.quote.refundRupees, 1000, 'Full ₹1000 refunded');
 
-    // Clean up test booking via admin override
-    await db.cancelBooking({ roomId, bookingId: testBookingId, userRole: 'admin', currentClock: clock40m });
+    // Clean up test booking
+    const stateClean = await db.getAppState();
+    const rClean = stateClean.meetingRooms.find(r => r.id === roomId);
+    if (rClean) {
+      rClean.bookings = (rClean.bookings || []).filter(b => b.id !== testBookingId);
+    }
+    stateClean.cancellations = (stateClean.cancellations || []).filter(c => c.bookingId !== testBookingId);
+    stateClean.payments = (stateClean.payments || []).filter(p => p.bookingId !== testBookingId);
+    await db.saveAppState(stateClean);
   });
 
   // --- Test 3: Double-Click / Repeat Cancel Protection (Confirmed -> Cancelled only once) ---
@@ -193,7 +183,7 @@ async function runTests() {
     assert.strictEqual(bookRes.ok, true);
     const testBookingId = bookRes.booking.id;
 
-    // Future clock 5 hours before (05:00 IST -> 5h tier = 60%)
+    // Future clock 5 hours before (05:00 IST -> 100% refund)
     const clock5h = new Date('2026-11-22T05:00:00+05:30');
 
     // First cancellation call
@@ -207,8 +197,8 @@ async function runTests() {
 
     assert.strictEqual(firstRes.ok, true, 'First cancellation must succeed');
     assert.strictEqual(firstRes.status, 200);
-    assert.strictEqual(firstRes.quote.refundPct, 60, '5 hours left must be 60% refund');
-    assert.strictEqual(firstRes.quote.refundRupees, 900, '60% of ₹1500 is ₹900');
+    assert.strictEqual(firstRes.quote.refundPct, 100, 'Must be 100% refund');
+    assert.strictEqual(firstRes.quote.refundRupees, 1500, '100% of ₹1500 is ₹1500');
     assert.strictEqual(firstRes.cancellation.bookingId, testBookingId);
 
     // Second call immediately with same bookingId (simulating rapid double-click)
@@ -378,9 +368,8 @@ async function runTests() {
     assert.strictEqual(bookRes.ok, true);
     const bookingId = bookRes.booking.id;
 
-    // Clock set to 5 hours before start:
-    // 5 whole hours left -> 60% refund tier
-    // Refund = floor(1500 * 60 / 100) = ₹900.00
+    // Clock set to 5 hours before start: 100% full refund
+    // Refund = 100% of ₹1500 = ₹1500.00
     const clock5h = new Date('2026-10-30T12:00:00+05:30');
     const cancelRes = await db.cancelBooking({
       roomId,
@@ -391,20 +380,21 @@ async function runTests() {
     });
 
     assert.strictEqual(cancelRes.ok, true);
-    assert.strictEqual(cancelRes.quote.refundRupees, 900);
+    assert.strictEqual(cancelRes.quote.refundRupees, 1500);
+    assert.strictEqual(cancelRes.quote.refundPct, 100);
     assert.ok(cancelRes.refundId, 'Refund ID must be generated and returned');
 
     // Check payments ledger
     const appState = await db.getAppState();
     const refundPayment = (appState.payments || []).find(p => p.bookingId === bookingId && p.type === 'Refund');
     assert.ok(refundPayment, 'Refund entry must appear in payments ledger');
-    assert.strictEqual(refundPayment.amount, -900, 'Refund amount in ledger must be negative (-900)');
+    assert.strictEqual(refundPayment.amount, -1500, 'Refund amount in ledger must be negative (-1500)');
     assert.strictEqual(refundPayment.status, 'Successful');
     assert.strictEqual(refundPayment.transactionRef, cancelRes.refundId);
 
     // Check dashboard summary reflects deduction
     const summaryAfter = await db.getDashboardSummary('2026-10');
-    assert.strictEqual(summaryAfter.collected.value, collectedBefore - 900, 'Dashboard collected total must subtract refund (-₹900)');
+    assert.strictEqual(summaryAfter.collected.value, collectedBefore - 1500, 'Dashboard collected total must subtract refund (-₹1500)');
 
     // Clean up test booking & ledger
     const cleanState = await db.getAppState();
@@ -412,6 +402,58 @@ async function runTests() {
     rClean.bookings = (rClean.bookings || []).filter(b => b.id !== bookingId);
     cleanState.cancellations = (cleanState.cancellations || []).filter(c => c.bookingId !== bookingId);
     cleanState.payments = (cleanState.payments || []).filter(p => p.bookingId !== bookingId);
+    await db.saveAppState(cleanState);
+  });
+
+  // --- Test 7: Completed Meeting Cancellation Validation (Disabled in UI & Rejected in Backend) ---
+  await testAsync('Test 7: Completed meetings cannot be cancelled (disabled in UI & rejected with 400 MEETING_COMPLETED)', async () => {
+    const roomId = 'MR-01';
+    const date = '2026-11-25';
+    const startTime = '09:00';
+    const endTime = '10:00';
+
+    const bookRes = await db.reserveMeetingRoomSlotsAtomic({
+      roomId,
+      date,
+      startTime,
+      endTime,
+      startupId: 'STP-01',
+      startupName: 'NeuroPulse AI',
+      attendees: 4,
+      cost: 1500
+    });
+    assert.strictEqual(bookRes.ok, true);
+    const booking = bookRes.booking;
+
+    // Clock set AFTER the meeting end time (e.g., 10:05 IST on 2026-11-25)
+    const clockAfterEnd = new Date('2026-11-25T10:05:00+05:30');
+    assert.strictEqual(cancellation.isBookingCompleted(booking, clockAfterEnd), true, 'Booking must be marked completed after endTime');
+
+    const quoteAfterEnd = cancellation.calculateRefundQuote(booking, clockAfterEnd);
+    assert.strictEqual(quoteAfterEnd.allowed, false, 'Refund quote must disallow cancelling completed meeting');
+    assert.strictEqual(quoteAfterEnd.isCompleted, true);
+
+    // UI cell helper must render a disabled Completed button
+    const cellHtml = cancellation.cancellationCell(booking, { id: 'STP-01', name: 'NeuroPulse AI' }, 'founder', clockAfterEnd);
+    assert.ok(cellHtml.includes('disabled'), 'Completed meeting cell must render a disabled button');
+    assert.ok(cellHtml.includes('Completed'), 'Completed meeting cell must indicate Completed status');
+
+    // Backend cancelBooking must reject with 400 MEETING_COMPLETED and NOT release or cancel the booking
+    const cancelRes = await db.cancelBooking({
+      roomId,
+      bookingId: booking.id,
+      requestingStartupId: 'STP-01',
+      userRole: 'founder',
+      currentClock: clockAfterEnd
+    });
+    assert.strictEqual(cancelRes.ok, false, 'Backend must reject cancelling a completed meeting');
+    assert.strictEqual(cancelRes.status, 400);
+    assert.strictEqual(cancelRes.code, 'MEETING_COMPLETED');
+
+    // Clean up test booking
+    const cleanState = await db.getAppState();
+    const rClean = cleanState.meetingRooms.find(r => r.id === roomId);
+    rClean.bookings = (rClean.bookings || []).filter(b => b.id !== booking.id);
     await db.saveAppState(cleanState);
   });
 

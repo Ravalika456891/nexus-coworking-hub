@@ -910,24 +910,24 @@
    Ultra-luxurious, modern boardroom management card with continuous ribbon
    ========================================================================== */
 .exec-room-card {
-  background: var(--bg-surface, #ffffff);
-  border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.08));
-  border-radius: 18px;
+  background: #ffffff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 20px;
   padding: 22px 24px;
-  box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
   display: flex;
   flex-direction: column;
   gap: 16px;
   position: relative;
   transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-  color: var(--text-primary, #1d1d1f);
+  color: #111827;
   overflow: hidden;
 }
 
 .exec-room-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.09), 0 2px 6px rgba(0, 0, 0, 0.03);
-  border-color: var(--border-medium, rgba(0, 0, 0, 0.14));
+  box-shadow: 0 8px 28px rgba(0,0,0,0.09), 0 2px 6px rgba(0,0,0,0.05);
+  border-color: #d1d5db;
 }
 
 [data-theme="dark"] .exec-room-card,
@@ -937,12 +937,35 @@
   color: #ffffff;
 }
 
+/* Colored top accent bar for light card */
+.exec-room-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #6366f1, #8b5cf6, #a78bfa);
+  border-radius: 20px 20px 0 0;
+  pointer-events: none;
+  z-index: 1;
+}
+[data-theme="dark"] .exec-room-card::before,
+[data-theme="navy"] .exec-room-card::before {
+  background: linear-gradient(90deg, #4ade80, #22c55e);
+}
+
 /* Room Header: Title, Specs, Status Pill & Digital Clock */
 .exec-header-row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 14px;
+  gap: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+[data-theme="dark"] .exec-header-row,
+[data-theme="navy"] .exec-header-row {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
 }
 
 .exec-title-group {
@@ -950,11 +973,27 @@
   align-items: center;
   gap: 12px;
   min-width: 0;
+  flex: 1;
+}
+
+.exec-title-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.exec-title-top-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
 .exec-status-indicator {
   width: 4.5px;
-  height: 38px;
+  height: 40px;
   border-radius: 4px;
   flex-shrink: 0;
   transition: all 0.3s ease;
@@ -978,22 +1017,30 @@
 }
 
 .exec-room-title {
-  font-size: 21px;
+  font-size: 18px;
   font-weight: 800;
-  color: var(--text-primary, #1d1d1f);
+  color: #111827;
   margin: 0;
   letter-spacing: -0.015em;
+  line-height: 1.25;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0;
+  flex-shrink: 1;
+}
+
+[data-theme="dark"] .exec-room-title,
+[data-theme="navy"] .exec-room-title {
+  color: #f1f5f9;
 }
 
 .exec-meta-row {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 4px;
   flex-wrap: wrap;
+  min-width: 0;
 }
 
 .exec-pill-badge {
@@ -1001,9 +1048,31 @@
   font-weight: 700;
   padding: 2px 8px;
   border-radius: 6px;
-  background: rgba(0, 0, 0, 0.04);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  color: var(--text-secondary, #515154);
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+[data-theme="dark"] .exec-pill-badge,
+[data-theme="navy"] .exec-pill-badge {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+}
+
+.exec-rate-badge {
+  background: #ede9fe;
+  color: #4f46e5;
+  border: 1px solid rgba(99, 102, 241, 0.28);
+  font-weight: 800;
+}
+
+[data-theme="dark"] .exec-rate-badge,
+[data-theme="navy"] .exec-rate-badge {
+  background: rgba(99, 102, 241, 0.2);
+  border-color: rgba(99, 102, 241, 0.4);
+  color: #a5b4fc;
 }
 
 .exec-status-pill {
@@ -1014,58 +1083,100 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 .exec-status-pill.available {
-  background: rgba(34, 197, 94, 0.12);
+  background: #dcfce7;
   color: #15803d;
-  border: 1px solid rgba(34, 197, 94, 0.3);
+  border: 1px solid #bbf7d0;
 }
 .exec-status-pill.mine {
-  background: rgba(59, 130, 246, 0.12);
+  background: #dbeafe;
   color: #1d4ed8;
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  border: 1px solid #bfdbfe;
 }
 .exec-status-pill.occupied {
-  background: rgba(239, 68, 68, 0.12);
+  background: #fee2e2;
   color: #b91c1c;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  border: 1px solid #fecaca;
 }
 .exec-status-pill.break,
 .exec-status-pill.closed {
-  background: rgba(100, 116, 139, 0.1);
-  color: #475569;
-  border: 1px solid rgba(100, 116, 139, 0.22);
+  background: #f3f4f6;
+  color: #6b7280;
+  border: 1px solid #e5e7eb;
+}
+
+[data-theme="dark"] .exec-status-pill.available,
+[data-theme="navy"] .exec-status-pill.available {
+  background: rgba(34, 197, 94, 0.18);
+  color: #4ade80;
+  border-color: rgba(34, 197, 94, 0.4);
+}
+[data-theme="dark"] .exec-status-pill.mine,
+[data-theme="navy"] .exec-status-pill.mine {
+  background: rgba(59, 130, 246, 0.18);
+  color: #93c5fd;
+  border-color: rgba(59, 130, 246, 0.4);
+}
+[data-theme="dark"] .exec-status-pill.occupied,
+[data-theme="navy"] .exec-status-pill.occupied {
+  background: rgba(239, 68, 68, 0.18);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.4);
 }
 
 .exec-brand-clock {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   flex-shrink: 0;
+  margin-left: auto;
 }
 
 .exec-digital-clock {
-  font-size: 19px;
+  font-size: 18px;
   font-weight: 700;
-  color: var(--text-primary, #1d1d1f);
-  font-family: var(--font-sans);
+  color: #111827;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.05em;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 4px 10px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .exec-digital-clock,
+[data-theme="navy"] .exec-digital-clock {
+  color: #f1f5f9;
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: none;
 }
 
 .exec-brand-badge {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--text-muted, #86868b);
-  background: rgba(0, 0, 0, 0.04);
-  padding: 4px 8px;
-  border-radius: 6px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: #9ca3af;
+  background: #f9fafb;
+  padding: 5px 9px;
+  border-radius: 7px;
+  border: 1px solid #e5e7eb;
+}
+
+[data-theme="dark"] .exec-brand-badge,
+[data-theme="navy"] .exec-brand-badge {
+  color: #64748b;
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
 /* Hero Status Headline & Schedule Note */
@@ -1539,8 +1650,8 @@
 }
 
 .clear-session-block {
-  background: var(--bg-primary, #f8fafc);
-  border: 1px solid var(--border-subtle, #e2e8f0);
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
   border-radius: 12px;
   padding: 12px 14px;
 }
@@ -1558,17 +1669,17 @@
   gap: 6px;
   font-size: 12px;
   font-weight: 800;
-  color: var(--text-primary, #0f172a);
+  color: #374151;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
 .clear-session-hours {
   font-size: 11px;
-  color: var(--text-secondary, #64748b);
-  font-weight: 600;
-  background: var(--bg-surface, #ffffff);
-  border: 1px solid var(--border-subtle, #e2e8f0);
+  color: #4f46e5;
+  font-weight: 700;
+  background: #ede9fe;
+  border: 1px solid #c4b5fd;
   padding: 2px 8px;
   border-radius: 4px;
   font-family: var(--font-mono);
@@ -1585,23 +1696,23 @@
   flex-direction: column;
   justify-content: center;
   padding: 9px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--border-subtle, #e2e8f0);
-  background: var(--bg-surface, #ffffff);
+  border-radius: 10px;
+  border: 1.5px solid #e5e7eb;
+  background: #ffffff;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: none;
-  min-height: 52px;
+  min-height: 56px;
   box-sizing: border-box;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 
 .clear-slot-card .slot-time {
   font-size: 12.5px;
   font-weight: 700;
-  color: var(--text-primary, #0f172a);
-  font-family: var(--font-sans);
-  letter-spacing: -0.01em;
+  color: #111827;
+  font-family: var(--font-mono, monospace);
+  letter-spacing: 0.01em;
 }
 
 .clear-slot-card .slot-status {
@@ -1616,26 +1727,26 @@
 
 /* Available Slot */
 .clear-slot-card.available {
-  border-color: rgba(34, 197, 94, 0.35);
-  background: rgba(34, 197, 94, 0.04);
+  border-color: #86efac;
+  background: #f0fdf4;
 }
 
 .clear-slot-card.available:hover {
   border-color: #22c55e;
-  background: rgba(34, 197, 94, 0.12);
+  background: #dcfce7;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.18);
+  box-shadow: 0 4px 12px rgba(34,197,94,0.18);
 }
 
 .clear-slot-card.available .slot-status {
-  color: #16a34a;
+  color: #15803d;
 }
 
 /* Selected Slot */
 .clear-slot-card.selected {
-  background: #059669 !important;
-  border-color: #047857 !important;
-  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35) !important;
+  background: #16a34a !important;
+  border-color: #15803d !important;
+  box-shadow: 0 4px 14px rgba(22,163,74,0.35) !important;
   transform: translateY(-2px);
 }
 
@@ -1645,20 +1756,21 @@
 }
 
 .clear-slot-card.selected .slot-status {
-  color: #ecfdf5 !important;
+  color: #bbf7d0 !important;
   font-weight: 800;
 }
 
 /* Booked by user (Mine) */
 .clear-slot-card.mine {
-  background: rgba(59, 130, 246, 0.08);
-  border-color: rgba(59, 130, 246, 0.35);
+  background: #eff6ff;
+  border-color: #93c5fd;
 }
 
 .clear-slot-card.mine:hover {
-  background: rgba(59, 130, 246, 0.16);
+  background: #dbeafe;
   border-color: #3b82f6;
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59,130,246,0.15);
 }
 
 .clear-slot-card.mine .slot-time {
@@ -1671,29 +1783,29 @@
 
 /* Booked by other - Grey + Lock Icon, Disabled / Non-selectable */
 .clear-slot-card.booked {
-  background: #f1f5f9 !important;
-  border: 1.5px solid #cbd5e1 !important;
+  background: #f9fafb !important;
+  border: 1.5px solid #e5e7eb !important;
   box-shadow: none !important;
   cursor: not-allowed !important;
-  opacity: 0.85;
+  opacity: 0.75;
   transition: all 0.18s ease;
 }
 
 .clear-slot-card.booked:hover {
-  background: #e2e8f0 !important;
-  border-color: #94a3b8 !important;
+  background: #f3f4f6 !important;
+  border-color: #d1d5db !important;
   transform: none !important;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.06) !important;
+  box-shadow: none !important;
 }
 
 .clear-slot-card.booked .slot-time {
-  color: #475569 !important;
-  font-weight: 700;
+  color: #9ca3af !important;
+  font-weight: 600;
 }
 
 .clear-slot-card.booked .slot-status {
-  color: #64748b !important;
-  font-weight: 700;
+  color: #9ca3af !important;
+  font-weight: 600;
   display: flex;
   align-items: center;
   gap: 4px;

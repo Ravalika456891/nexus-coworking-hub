@@ -149,6 +149,48 @@ const App = {
     // Update Lifecycle Pill in sidebar
     this.updateSidebarLifecyclePill(tabId);
 
+    // ── Route alias support for Refactored Sidebar ──
+    if (tabId === 'bookings' || tabId === 'myReservations') {
+      this.currentTab = 'meetingRooms';
+      this.switchTab('meetingRooms');
+      if (window.MeetingRoomsModule) {
+        window.MeetingRoomsModule.switchTab('myBookings');
+      }
+      return;
+    }
+    if (tabId === 'calendar') {
+      this.currentTab = 'meetingRooms';
+      this.switchTab('meetingRooms');
+      if (window.MeetingRoomsModule) {
+        window.MeetingRoomsModule.switchTab('calendar');
+      }
+      return;
+    }
+    if (tabId === 'billingCredits') {
+      this.currentTab = 'meetingRooms';
+      this.switchTab('meetingRooms');
+      if (window.MeetingRoomsModule) {
+        window.MeetingRoomsModule.switchTab('creditsBilling');
+      }
+      return;
+    }
+    if (tabId === 'roomAnalytics') {
+      this.currentTab = 'meetingRooms';
+      this.switchTab('meetingRooms');
+      if (window.MeetingRoomsModule) {
+        window.MeetingRoomsModule.switchTab('analytics');
+      }
+      return;
+    }
+    if (tabId === 'adminRooms') {
+      this.currentTab = 'meetingRooms';
+      this.switchTab('meetingRooms');
+      if (window.MeetingRoomsModule) {
+        window.MeetingRoomsModule.switchTab('admin');
+      }
+      return;
+    }
+
     // ── RBAC Permission Guard ──
     if (!window.store.isTabAllowed(tabId)) {
       if (activeView) {
@@ -440,27 +482,33 @@ const App = {
       if (opt) opt.classList.toggle('active', role === rk);
     });
 
-    // Update Sidebar Navigation items (dim / tag restricted tabs)
+    // Requirement 5: Hide unauthorized administrative navigation, remove locks
+    const isSuper = role === 'super_admin';
+    const isIncubator = role === 'incubator_admin';
+    const isAdmin = isSuper || isIncubator;
     document.querySelectorAll('.nav-item').forEach(item => {
       const tabId = item.getAttribute('data-tab');
       if (tabId) {
         const allowed = window.store.isTabAllowed(tabId);
-        item.classList.toggle('nav-item-restricted', !allowed);
-        
-        let badgeEl = item.querySelector('.nav-item-restricted-badge');
-        if (!allowed) {
-          if (!badgeEl) {
-            badgeEl = document.createElement('span');
-            badgeEl.className = 'nav-item-restricted-badge';
-            badgeEl.innerText = '🔒';
-            badgeEl.title = 'Restricted under current role';
-            item.appendChild(badgeEl);
-          }
-        } else if (badgeEl) {
-          badgeEl.remove();
+        const adminTabs = ['database', 'onboarding', 'reports', 'milestones', 'incubation', 'adminRooms'];
+        const isEmployee = role === 'startup_member';
+        if (tabId === 'adminRooms') {
+          item.style.display = isAdmin ? 'flex' : 'none';
+        } else if (tabId === 'billingCredits' && isEmployee) {
+          item.style.display = 'none';
+        } else if (tabId === 'roomAnalytics' && isEmployee) {
+          item.style.display = 'none';
+        } else if (adminTabs.includes(tabId) && !isAdmin) {
+          item.style.display = 'none';
+        } else {
+          item.style.display = 'flex';
         }
+        const badgeEl = item.querySelector('.nav-item-restricted-badge');
+        if (badgeEl) badgeEl.remove();
+        item.classList.remove('nav-item-restricted');
       }
     });
+
 
     // Update Dynamic Persona Banner (Clear & Spacious Single Row)
     const banner = document.getElementById('dynamic-persona-banner');

@@ -57,12 +57,23 @@ const BillingModule = {
 
     const paidInvoices = activeInvoices.filter(i => i.status === 'Paid');
 
+    // Resolve each rent row against its exact linked invoice (fallback: same startup)
+    const findRowInvoice = (r) => (r.invoiceId && allInvoices.find(i => i.id === r.invoiceId))
+      || allInvoices.find(i => i.startupId === r.startupId);
+    const rentStatusOf = (r) => this.calculateRentRecordStatus(r, findRowInvoice(r));
+    const rentFilterCounts = { paid: 0, pending: 0, overdue: 0 };
+    allRentRecords.forEach(r => {
+      const s = rentStatusOf(r);
+      if (s.isPaid) rentFilterCounts.paid++;
+      else if (s.isPending) rentFilterCounts.pending++;
+      else if (s.isOverdue) rentFilterCounts.overdue++;
+    });
+
     // Filter Rent Table records
     let rentRecords = [...allRentRecords];
     if (this.activeRentStatusFilter !== 'all') {
       rentRecords = rentRecords.filter(r => {
-        const inv = allInvoices.find(i => i.id === r.invoiceId || i.startupId === r.startupId);
-        const resolved = this.calculateRentRecordStatus(r, inv);
+        const resolved = rentStatusOf(r);
         if (this.activeRentStatusFilter === 'paid') return resolved.isPaid;
         if (this.activeRentStatusFilter === 'pending') return resolved.isPending;
         if (this.activeRentStatusFilter === 'overdue') return resolved.isOverdue;
@@ -246,13 +257,13 @@ const BillingModule = {
               All (${allRentRecords.length})
             </button>
             <button class="btn btn-sm ${this.activeRentStatusFilter === 'paid' ? 'btn-primary' : 'btn-secondary'}" onclick="BillingModule.setRentFilter('paid')">
-              Paid (${paidInvoices.length})
+              Paid (${rentFilterCounts.paid})
             </button>
             <button class="btn btn-sm ${this.activeRentStatusFilter === 'pending' ? 'btn-primary' : 'btn-secondary'}" onclick="BillingModule.setRentFilter('pending')">
-              Pending (${pendingInvoices.length})
+              Pending (${rentFilterCounts.pending})
             </button>
             <button class="btn btn-sm ${this.activeRentStatusFilter === 'overdue' ? 'btn-primary' : 'btn-secondary'}" onclick="BillingModule.setRentFilter('overdue')">
-              Overdue (${overdueInvoices.length})
+              Overdue (${rentFilterCounts.overdue})
             </button>
           </div>
         </div>
@@ -270,7 +281,19 @@ const BillingModule = {
               </tr>
             </thead>
             <tbody>
-              ${rentRecords.map(r => this.renderRentRow(r)).join('')}
+              ${rentRecords.length > 0 ? rentRecords.map(r => this.renderRentRow(r)).join('') : `
+                <tr>
+                  <td colspan="6" style="text-align: center; padding: 32px 20px; color: var(--text-muted);">
+                    <div style="font-size: 24px; margin-bottom: 6px;">🗂️</div>
+                    <div style="font-weight: 700; font-size: 13.5px; color: var(--text-primary);">
+                      No ${this.activeRentStatusFilter === 'all' ? '' : this.activeRentStatusFilter + ' '}rent records found.
+                    </div>
+                    ${this.activeRentStatusFilter !== 'all' ? `
+                      <button class="btn btn-sm btn-secondary" style="margin-top: 10px;" onclick="BillingModule.setRentFilter('all')">Show All</button>
+                    ` : ''}
+                  </td>
+                </tr>
+              `}
             </tbody>
           </table>
         </div>
@@ -1109,8 +1132,7 @@ const BillingModule = {
     const allInvoices = window.store.getAccessibleInvoices();
     const cleanName = (r.startupName || '').replace(/Startup\s+[A-Z]\s*\((.*?)\)/i, '$1').trim().toLowerCase();
     
-    const matchedInvoice = allInvoices.find(inv => {
-      if (inv.id && r.invoiceId && inv.id === r.invoiceId) return true;
+    const matchedInvoice = (r.invoiceId && allInvoices.find(inv => inv.id === r.invoiceId)) || allInvoices.find(inv => {
       if (inv.startupId && inv.startupId === r.startupId) return true;
       if (cleanName && inv.startupName && inv.startupName.toLowerCase().includes(cleanName)) return true;
       return false;

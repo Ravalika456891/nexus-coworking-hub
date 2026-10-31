@@ -432,7 +432,7 @@ class NexusStore {
       },
       startup: {
         id: 'startup',
-        name: 'Startup',
+        name: 'Startup Founder',
         title: 'Founder & Venture Lead',
         icon: '🚀',
         badgeClass: 'badge-info',
@@ -449,6 +449,24 @@ class NexusStore {
           'Incubation Progress (8-Stage Journey & Milestones)'
         ],
         user: { name: 'Alex Morgan', email: 'alex@xyztechnologies.io', startupId: 'STP-XYZ', startupName: 'XYZ Technologies', roleTitle: 'Founder & CEO (XYZ Technologies)', avatar: '⚡' }
+      },
+      startup_member: {
+        id: 'startup_member',
+        name: 'Startup Member',
+        title: 'Team Member / Venture Employee',
+        icon: '👤',
+        badgeClass: 'badge-subtle',
+        accentColor: '#3b82f6',
+        description: 'Employee portal: Explore meeting rooms, check availability, book sessions, and view own reservations without access to company billing.',
+        scopeSummary: 'Meeting Rooms, My Bookings, Workspace, Contact',
+        allowedTabs: ['dashboard', 'workspace', 'meetingRooms', 'contact'],
+        features: [
+          'Meeting Rooms (Explore & Live Availability)',
+          'Reservations (Book & Modify Own Reservations)',
+          'Credits (View Remaining Allowance)',
+          'Workspace (Team Desks & Campus Map)'
+        ],
+        user: { name: 'Ravi Kumar', email: 'ravi@xyztechnologies.io', startupId: 'STP-XYZ', startupName: 'XYZ Technologies', roleTitle: 'Senior AI Engineer', avatar: '💻' }
       },
       mentor: {
         id: 'mentor',
@@ -475,7 +493,8 @@ class NexusStore {
   normalizeRole(role) {
     if (!role) return 'super_admin';
     if (role === 'admin') return 'super_admin';
-    if (role === 'founder') return 'startup';
+    if (role === 'founder' || role === 'startup_admin') return 'startup';
+    if (role === 'employee' || role === 'member' || role === 'team_member') return 'startup_member';
     if (this.getRoles()[role]) return role;
     return 'super_admin';
   }
@@ -674,10 +693,19 @@ class NexusStore {
       startup: [
         'view_my_profile', 'update_my_profile',
         'view_my_workspace',
-        'book_meeting_room', 'view_my_bookings',
+        'book_meeting_room', 'view_my_bookings', 'modify_my_bookings', 'cancel_my_bookings',
         'view_my_invoices',
         'pay_invoice', 'download_my_receipts',
-        'view_my_incubation', 'view_my_milestones'
+        'view_my_incubation', 'view_my_milestones',
+        'room.view', 'reservation.create', 'reservation.view_own', 'reservation.view_startup',
+        'reservation.modify_own', 'reservation.cancel_own', 'billing.view_startup', 'analytics.view_startup'
+      ],
+      // Startup Employee / Member: Explore rooms, view availability, book sessions, modify own
+      startup_member: [
+        'view_my_profile',
+        'view_my_workspace',
+        'book_meeting_room', 'view_my_bookings', 'modify_my_bookings', 'cancel_my_bookings',
+        'room.view', 'reservation.create', 'reservation.view_own', 'reservation.modify_own', 'reservation.cancel_own'
       ],
       // Mentor: Assigned Startups, Milestones, Sessions, Progress, Feedback
       mentor: [
@@ -1328,7 +1356,11 @@ class NexusStore {
     if (existing.date !== newB.date) return false;
     if (existing.status === 'Cancelled') return false;
     if (existing.id && newB.id && existing.id === newB.id) return false;
-    return (existing.startTime < newB.endTime && existing.endTime > newB.startTime);
+    const toMin = (t) => {
+      const parts = (t || '').split(':').map(Number);
+      return (parts[0] || 0) * 60 + (parts[1] || 0);
+    };
+    return (toMin(existing.startTime) < toMin(newB.endTime) && toMin(existing.endTime) > toMin(newB.startTime));
   }
 
   // Same startup concurrent booking conflict check:
@@ -1340,7 +1372,11 @@ class NexusStore {
     if (existing.date !== newB.date) return false;
     if (existing.status === 'Cancelled') return false;
     if (existing.id && newB.id && existing.id === newB.id) return false;
-    return (existing.startTime < newB.endTime && existing.endTime > newB.startTime);
+    const toMin = (t) => {
+      const parts = (t || '').split(':').map(Number);
+      return (parts[0] || 0) * 60 + (parts[1] || 0);
+    };
+    return (toMin(existing.startTime) < toMin(newB.endTime) && toMin(existing.endTime) > toMin(newB.startTime));
   }
 
   // Smart Alternatives Generator (Up to 3 smart options)
@@ -1474,12 +1510,16 @@ class NexusStore {
       if (res.ok) {
         const data = await res.json();
         if (data.ok && Array.isArray(data.rooms)) {
-          // Merge bookings for date
+          // Merge bookings for date while preserving cancelled history and room maintenance status
           data.rooms.forEach(r => {
             const localRoom = (this.state.meetingRooms || []).find(lr => lr.id === r.id);
             if (localRoom) {
-              const otherDateBookings = (localRoom.bookings || []).filter(b => b.date !== data.date);
-              localRoom.bookings = [...otherDateBookings, ...(r.bookings || [])];
+              if (r.status) localRoom.status = r.status;
+              if (r.underMaintenance !== undefined) localRoom.underMaintenance = r.underMaintenance;
+              const otherOrCancelledBookings = (localRoom.bookings || []).filter(
+                b => b.date !== data.date || (b.status === 'Cancelled' && !(r.bookings || []).some(rb => rb.id === b.id))
+              );
+              localRoom.bookings = [...otherOrCancelledBookings, ...(r.bookings || [])];
             }
           });
           this.save();
@@ -1492,10 +1532,32 @@ class NexusStore {
     return null;
   }
 
-  async bookMeetingRoom({ roomId, startupId, startupName, title, date, startTime, endTime, attendees }) {
+  async bookMeetingRoom({ roomId, startupId, startupName, title, purpose, date, startTime, endTime, attendees, requestedAmenities, specialRequests, recurrence = null, idempotencyKey = null }) {
     const room = this.getMeetingRoomById(roomId);
     const startup = this.getStartupById(startupId);
     if (!room || !startup) return { success: false, message: 'Room or Startup not found' };
+
+    const reqAttendees = parseInt(attendees || 4, 10);
+    if (isNaN(reqAttendees) || reqAttendees < 1) {
+      return { success: false, code: 'INVALID_ATTENDEES', message: 'Number of attendees must be at least 1.' };
+    }
+    if (reqAttendees > room.capacity) {
+      return {
+        success: false,
+        code: 'CAPACITY_EXCEEDED',
+        message: `Attendees (${reqAttendees}) exceed ${room.name} capacity of ${room.capacity} pax.`
+      };
+    }
+
+    if (room.status === 'Under Maintenance' || room.underMaintenance === true || room.maintenance === true) {
+      const alternatives = this.findBookingAlternatives({ roomId, date, startTime, endTime, attendees: reqAttendees, startupId });
+      return {
+        success: false,
+        code: 'ROOM_MAINTENANCE',
+        message: `${room.name} is currently under maintenance and unavailable for booking.`,
+        alternatives
+      };
+    }
 
     // Flexible User-Customized Time Window Check: Minimum 15 mins, end > start
     const toMinutes = (t) => {
@@ -1535,7 +1597,7 @@ class NexusStore {
     });
 
     if (existingConflict) {
-      const alternatives = this.findBookingAlternatives({ roomId, date, startTime, endTime, attendees, startupId });
+      const alternatives = this.findBookingAlternatives({ roomId, date, startTime, endTime, attendees: reqAttendees, startupId });
       return { 
         success: false, 
         code: 'SLOT_TAKEN',
@@ -1547,7 +1609,7 @@ class NexusStore {
 
     const startHour = parseFloat(startTime.split(':')[0]) + parseFloat(startTime.split(':')[1]) / 60;
     const endHour = parseFloat(endTime.split(':')[0]) + parseFloat(endTime.split(':')[1]) / 60;
-    const duration = Math.max(0.5, endHour - startHour);
+    const duration = Math.max(0.25, endHour - startHour);
 
     let cost = 0;
     const remainingCredits = Math.max(0, (startup.includedMeetingHours || 12) - (startup.usedMeetingHours || 0));
@@ -1558,21 +1620,36 @@ class NexusStore {
       cost = Math.round(overageHours * room.hourlyRate);
     }
 
+    const normalizedAmenities = Array.isArray(requestedAmenities)
+      ? requestedAmenities
+      : (typeof requestedAmenities === 'string' && requestedAmenities.trim()
+          ? requestedAmenities.split(',').map(s => s.trim()).filter(Boolean)
+          : []);
+
     const bookingPayload = {
       roomId,
       startupId: startup.id,
       startupName: startupName || startup.name,
-      title: title || 'Strategic Planning Session',
+      title: title || purpose || 'Meeting Room Reservation',
+      purpose: purpose || title || 'General Sync',
       date,
       startTime,
       endTime,
-      attendees: Number(attendees) || 4,
+      attendees: reqAttendees,
+      requestedAmenities: normalizedAmenities,
+      specialRequests: specialRequests ? String(specialRequests).trim() : '',
+      recurrence,
+      idempotencyKey,
+      userRole: this.currentRole || 'founder',
       cost
     };
 
+    const isRecurringReq = Boolean(recurrence && recurrence.frequency && recurrence.frequency !== 'none' && Number(recurrence.count || 1) > 1);
+
     // Attempt Server-Side Atomic Reservation
     try {
-      const apiRes = await fetch('/api/meeting-rooms/book', {
+      const endpoint = isRecurringReq ? '/api/meeting-rooms/book-recurring' : '/api/meeting-rooms/book';
+      const apiRes = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(bookingPayload)
@@ -1580,63 +1657,133 @@ class NexusStore {
 
       if (!apiRes.ok) {
         const errorData = await apiRes.json().catch(() => ({}));
-        const alternatives = errorData.alternatives || this.findBookingAlternatives({ roomId, date, startTime, endTime, attendees, startupId });
+        const alternatives = errorData.alternatives || this.findBookingAlternatives({ roomId, date, startTime, endTime, attendees: reqAttendees, startupId });
         return {
           success: false,
           code: errorData.code || 'SLOT_TAKEN',
           message: errorData.message || 'This slot was just booked by another startup. Pick another time below.',
           alternatives,
+          conflicts: errorData.conflicts || null,
           conflictWith: errorData.conflictWith || null
         };
       }
 
       const serverData = await apiRes.json();
-      if (serverData && serverData.booking) {
-        // Sync credit deductions
-        if (remainingCredits >= duration) {
-          startup.usedMeetingHours = (startup.usedMeetingHours || 0) + duration;
-        } else {
-          startup.usedMeetingHours = startup.includedMeetingHours;
+      if (serverData && (serverData.booking || serverData.bookings)) {
+        const createdList = Array.isArray(serverData.bookings) && serverData.bookings.length > 0
+          ? serverData.bookings
+          : [serverData.booking];
+
+        if (!serverData.idempotentReplay) {
+          const totalDuration = duration * createdList.length;
+          if (remainingCredits >= totalDuration) {
+            startup.usedMeetingHours = Number(((startup.usedMeetingHours || 0) + totalDuration).toFixed(2));
+          } else {
+            startup.usedMeetingHours = startup.includedMeetingHours || 12;
+          }
         }
 
         if (!room.bookings) room.bookings = [];
-        room.bookings.push(serverData.booking);
+        createdList.forEach(b => {
+          if (!room.bookings.some(existing => existing.id === b.id)) {
+            room.bookings.push(b);
+          }
+        });
+
+        if (serverData.invoice && this.state.invoices) {
+          const invIdx = this.state.invoices.findIndex(i => i.id === serverData.invoice.id);
+          if (invIdx !== -1) this.state.invoices[invIdx] = serverData.invoice;
+          else this.state.invoices.unshift(serverData.invoice);
+        }
+
         this.addActivity('Meeting Rooms', `${startup.name} booked ${room.name} on ${date} (${startTime}-${endTime}).`, '📅');
         this.save();
-        return { success: true, booking: serverData.booking, message: `Successfully booked ${room.name}!` };
+        return {
+          success: true,
+          booking: serverData.booking || createdList[0],
+          bookings: createdList,
+          seriesId: serverData.seriesId || null,
+          invoice: serverData.invoice || null,
+          message: serverData.message || `Successfully booked ${room.name}!`
+        };
       }
     } catch (netErr) {
       // Offline fallback: persist locally
       console.warn('Meeting room booking server offline, persisting locally:', netErr.message);
     }
 
-    // Local fallback creation
-    if (remainingCredits >= duration) {
-      startup.usedMeetingHours = (startup.usedMeetingHours || 0) + duration;
-    } else {
-      startup.usedMeetingHours = startup.includedMeetingHours;
+    // Local fallback creation (supports single or recurring)
+    const occDates = [date];
+    if (isRecurringReq) {
+      const freq = String(recurrence.frequency || 'weekly').toLowerCase();
+      const cnt = Math.max(1, Math.min(12, parseInt(recurrence.count || 2, 10)));
+      const stepDays = freq === 'daily' ? 1 : freq === 'biweekly' ? 14 : 7;
+      const dParts = date.split('-').map(Number);
+      for (let i = 1; i < cnt; i++) {
+        const dObj = new Date(Date.UTC(dParts[0], dParts[1] - 1, dParts[2] + (i * stepDays)));
+        occDates.push(dObj.toISOString().split('T')[0]);
+      }
     }
 
-    const bookingId = `BKG-${Math.floor(100 + Math.random() * 900)}`;
-    const newBooking = {
-      id: bookingId,
-      startupId: startup.id,
-      startupName: startup.name,
-      title: title || 'Strategic Planning Session',
-      date,
-      startTime,
-      endTime,
-      attendees: Number(attendees) || 4,
-      cost,
-      status: 'Confirmed'
-    };
+    // Validate all occurrences locally
+    for (const occDate of occDates) {
+      const conf = (room.bookings || []).find(b => this.hasBookingConflict({ ...b, roomId }, { roomId, date: occDate, startTime, endTime }));
+      if (conf) {
+        return {
+          success: false,
+          code: isRecurringReq ? 'RECURRING_CONFLICT' : 'SLOT_TAKEN',
+          message: `${room.name} is already booked on ${occDate} (${conf.startTime}-${conf.endTime}).`
+        };
+      }
+    }
 
-    if (!room.bookings) room.bookings = [];
-    room.bookings.push(newBooking);
+    const seriesId = isRecurringReq ? `SRS-${Date.now().toString().slice(-6)}` : null;
+    const createdLocal = [];
+    for (let idx = 0; idx < occDates.length; idx++) {
+      const occDate = occDates[idx];
+      const rem = Math.max(0, (startup.includedMeetingHours || 12) - (startup.usedMeetingHours || 0));
+      const credUsed = Math.min(rem, duration);
+      const ovgHrs = Math.max(0, Number((duration - credUsed).toFixed(2)));
+      const occCost = ovgHrs > 0 ? Math.round(ovgHrs * room.hourlyRate) : 0;
+      startup.usedMeetingHours = Number(((startup.usedMeetingHours || 0) + credUsed).toFixed(2));
+
+      const bookingId = `BKG-${Math.floor(100 + Math.random() * 900)}${isRecurringReq ? `-${idx + 1}` : ''}`;
+      const newBooking = {
+        id: bookingId,
+        roomId,
+        startupId: startup.id,
+        startupName: startup.name,
+        title: title || purpose || 'Meeting Room Reservation',
+        purpose: purpose || title || 'General Sync',
+        date: occDate,
+        startTime,
+        endTime,
+        duration,
+        creditHoursUsed: credUsed,
+        overageHours: ovgHrs,
+        attendees: reqAttendees,
+        requestedAmenities: normalizedAmenities,
+        specialRequests: specialRequests ? String(specialRequests).trim() : '',
+        cost: occCost,
+        status: 'Confirmed',
+        seriesId,
+        recurrence: isRecurringReq ? { frequency: recurrence.frequency, count: occDates.length, occurrenceIndex: idx + 1, seriesId } : null,
+        calendarSync: {}
+      };
+      if (!room.bookings) room.bookings = [];
+      room.bookings.push(newBooking);
+      createdLocal.push(newBooking);
+    }
 
     this.addActivity('Meeting Rooms', `${startup.name} booked ${room.name} on ${date} (${startTime}-${endTime}).`, '📅');
     this.save();
-    return { success: true, booking: newBooking, message: `Successfully booked ${room.name}!` };
+    return {
+      success: true,
+      booking: createdLocal[0],
+      bookings: createdLocal,
+      seriesId,
+      message: isRecurringReq ? `Successfully booked ${createdLocal.length} recurring sessions in ${room.name}!` : `Successfully booked ${room.name}!`
+    };
   }
 
   async cancelBooking(roomId, bookingId, options = {}) {
@@ -1645,6 +1792,18 @@ class NexusStore {
 
     const booking = (room.bookings || []).find(b => b.id === bookingId);
     if (!booking) return { success: false, message: 'Booking not found' };
+
+    if (booking.status === 'Cancelled') {
+      return { success: false, code: 'ALREADY_CANCELLED', message: 'This booking has already been cancelled.' };
+    }
+
+    if (typeof CancellationPolicy !== 'undefined' && CancellationPolicy.isBookingCompleted && CancellationPolicy.isBookingCompleted(booking, options.currentClock)) {
+      return {
+        success: false,
+        code: 'MEETING_COMPLETED',
+        message: 'Cannot cancel a completed meeting.'
+      };
+    }
 
     const currentStartup = (this.getStartups() || []).find(s => s.id === booking.startupId) || (this.getStartups && this.getStartups()[0]);
     const requestingStartupId = options.requestingStartupId || (currentStartup ? currentStartup.id : booking.startupId);
@@ -1734,12 +1893,44 @@ class NexusStore {
     };
   }
 
-  async updateBookingTimeWindow(roomId, bookingId, { date, startTime, endTime }) {
-    const room = this.getMeetingRoomById(roomId);
-    if (!room) return { success: false, message: 'Room not found' };
+  async updateBookingTimeWindow(roomId, bookingId, { newRoomId, date, startTime, endTime, attendees, title, purpose, requestedAmenities, specialRequests, requestingStartupId, userRole }) {
+    const sourceRoom = this.getMeetingRoomById(roomId);
+    if (!sourceRoom) return { success: false, message: 'Room not found' };
 
-    const booking = (room.bookings || []).find(b => b.id === bookingId);
+    const booking = (sourceRoom.bookings || []).find(b => b.id === bookingId);
     if (!booking) return { success: false, message: 'Booking not found' };
+
+    if (booking.status === 'Cancelled') {
+      return { success: false, code: 'ALREADY_CANCELLED', message: 'Cannot modify a cancelled reservation.' };
+    }
+
+    if (typeof CancellationPolicy !== 'undefined' && CancellationPolicy.isBookingCompleted && CancellationPolicy.isBookingCompleted(booking)) {
+      return { success: false, code: 'MEETING_COMPLETED', message: 'Cannot modify a completed meeting.' };
+    }
+
+    const targetRoomId = newRoomId || roomId;
+    const targetRoom = this.getMeetingRoomById(targetRoomId);
+    if (!targetRoom) return { success: false, message: 'Target meeting room not found' };
+
+    if (targetRoom.status === 'Under Maintenance' || targetRoom.underMaintenance === true || targetRoom.maintenance === true) {
+      return {
+        success: false,
+        code: 'ROOM_MAINTENANCE',
+        message: `${targetRoom.name} is currently under maintenance and unavailable.`
+      };
+    }
+
+    const nextAttendees = attendees !== undefined ? parseInt(attendees, 10) : (booking.attendees || 4);
+    if (isNaN(nextAttendees) || nextAttendees < 1) {
+      return { success: false, code: 'INVALID_ATTENDEES', message: 'Number of attendees must be at least 1.' };
+    }
+    if (nextAttendees > targetRoom.capacity) {
+      return {
+        success: false,
+        code: 'CAPACITY_EXCEEDED',
+        message: `Attendees (${nextAttendees}) exceed ${targetRoom.name} capacity of ${targetRoom.capacity} pax.`
+      };
+    }
 
     const toMinutes = (t) => {
       const parts = (t || '').split(':').map(Number);
@@ -1755,28 +1946,29 @@ class NexusStore {
       return { success: false, message: 'Minimum booking duration is 15 minutes.' };
     }
 
-    // Check conflict against other bookings in this room (excluding self)
-    const conflict = (room.bookings || []).find(b => {
+    // Check conflict against other bookings in targetRoom (excluding self)
+    const conflict = (targetRoom.bookings || []).find(b => {
       if (b.id === bookingId) return false;
-      return this.hasBookingConflict({ ...b, roomId }, { roomId, date, startTime, endTime });
+      return this.hasBookingConflict({ ...b, roomId: targetRoomId }, { roomId: targetRoomId, date, startTime, endTime });
     });
 
     if (conflict) {
-      const alternatives = this.findBookingAlternatives({ roomId, date, startTime, endTime, attendees: booking.attendees, startupId: booking.startupId });
+      const alternatives = this.findBookingAlternatives({ roomId: targetRoomId, date, startTime, endTime, attendees: nextAttendees, startupId: booking.startupId });
       return {
         success: false,
         code: 'SLOT_TAKEN',
-        message: `${room.name} is already booked from ${conflict.startTime} to ${conflict.endTime} by another startup.`,
+        message: `${targetRoom.name} is already booked from ${conflict.startTime} to ${conflict.endTime} by another startup.`,
         alternatives
       };
     }
 
-    // Multi-room conflict for startup
+    // Multi-room conflict for startup (excluding self)
     const allRooms = this.getMeetingRooms();
     for (const r of allRooms) {
-      if (r.id === roomId) continue;
+      if (r.id === targetRoomId) continue;
       const otherConflict = (r.bookings || []).find(b => {
-        return this.hasStartupConcurrentConflict({ ...b, roomId: r.id }, { roomId, startupId: booking.startupId, date, startTime, endTime });
+        if (b.id === bookingId) return false;
+        return this.hasStartupConcurrentConflict({ ...b, roomId: r.id, id: b.id }, { roomId: targetRoomId, id: bookingId, startupId: booking.startupId, date, startTime, endTime });
       });
       if (otherConflict) {
         return {
@@ -1791,16 +1983,54 @@ class NexusStore {
       const res = await fetch('/api/meeting-rooms/update-time', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roomId, bookingId, date, startTime, endTime })
+        body: JSON.stringify({
+          roomId,
+          newRoomId: targetRoomId,
+          bookingId,
+          date,
+          startTime,
+          endTime,
+          attendees: nextAttendees,
+          title,
+          purpose,
+          requestedAmenities,
+          specialRequests,
+          requestingStartupId,
+          userRole: userRole || this.currentRole || 'founder'
+        })
       });
-      if (res.ok) {
-        const data = await res.json();
-        booking.date = date;
-        booking.startTime = startTime;
-        booking.endTime = endTime;
-        this.save();
-        return { success: true, booking, message: `Time window updated to ${startTime} – ${endTime}!` };
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        return {
+          success: false,
+          code: errData.code || 'UPDATE_FAILED',
+          message: errData.message || 'Could not update reservation.',
+          alternatives: errData.alternatives || []
+        };
       }
+      const data = await res.json().catch(() => ({}));
+      booking.date = date;
+      booking.startTime = startTime;
+      booking.endTime = endTime;
+      booking.attendees = nextAttendees;
+      if (title !== undefined && String(title).trim()) booking.title = String(title).trim();
+      if (purpose !== undefined && String(purpose).trim()) booking.purpose = String(purpose).trim();
+      if (requestedAmenities !== undefined) {
+        booking.requestedAmenities = Array.isArray(requestedAmenities) ? requestedAmenities : [];
+      }
+      if (specialRequests !== undefined) {
+        booking.specialRequests = String(specialRequests).trim();
+      }
+      if (data.booking && data.booking.cost !== undefined) {
+        booking.cost = data.booking.cost;
+      }
+      if (targetRoomId !== roomId) {
+        sourceRoom.bookings = (sourceRoom.bookings || []).filter(b => b.id !== bookingId);
+        if (!targetRoom.bookings) targetRoom.bookings = [];
+        targetRoom.bookings.push(booking);
+      }
+      this.save();
+      return { success: true, roomId: targetRoomId, booking, message: data.message || `Reservation ${booking.id} updated (${targetRoom.name}, ${date} ${startTime} – ${endTime})!` };
     } catch (e) {
       console.warn('Server offline on update-time:', e.message);
     }
@@ -1808,8 +2038,307 @@ class NexusStore {
     booking.date = date;
     booking.startTime = startTime;
     booking.endTime = endTime;
+    booking.attendees = nextAttendees;
+    if (title !== undefined && String(title).trim()) booking.title = String(title).trim();
+    if (purpose !== undefined && String(purpose).trim()) booking.purpose = String(purpose).trim();
+    if (requestedAmenities !== undefined) {
+      booking.requestedAmenities = Array.isArray(requestedAmenities) ? requestedAmenities : [];
+    }
+    if (specialRequests !== undefined) {
+      booking.specialRequests = String(specialRequests).trim();
+    }
+    if (targetRoomId !== roomId) {
+      sourceRoom.bookings = (sourceRoom.bookings || []).filter(b => b.id !== bookingId);
+      if (!targetRoom.bookings) targetRoom.bookings = [];
+      targetRoom.bookings.push(booking);
+    }
     this.save();
-    return { success: true, booking, message: `Time window updated to ${startTime} – ${endTime}!` };
+    return { success: true, roomId: targetRoomId, booking, message: `Reservation ${booking.id} updated (${targetRoom.name}, ${date} ${startTime} – ${endTime})!` };
+  }
+
+  async rescheduleBooking(roomId, bookingId, updates) {
+    return this.updateBookingTimeWindow(roomId, bookingId, updates);
+  }
+
+  async cancelRecurringSeries(seriesId, roomId = null, options = {}) {
+    const requestingStartupId = options.requestingStartupId || this.activeFounderId || 'STP-XYZ';
+    const userRole = options.userRole || this.currentRole || 'founder';
+    try {
+      const res = await fetch('/api/meeting-rooms/cancel-series', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ seriesId, roomId, requestingStartupId, userRole })
+      });
+      const data = await res.json().catch(() => null);
+      if (data && data.ok) {
+        (this.getMeetingRooms() || []).forEach(r => {
+          (r.bookings || []).forEach(b => {
+            if ((b.seriesId === seriesId || (b.recurrence && b.recurrence.seriesId === seriesId)) && b.status !== 'Cancelled') {
+              b.status = 'Cancelled';
+              b.cancelledAt = new Date().toISOString();
+            }
+          });
+        });
+        this.save();
+        return { success: true, ...data };
+      }
+      if (data && !data.ok) {
+        return { success: false, message: data.message || 'Could not cancel recurring series.' };
+      }
+    } catch (_) {}
+
+    let count = 0;
+    (this.getMeetingRooms() || []).forEach(r => {
+      if (roomId && r.id !== roomId) return;
+      (r.bookings || []).forEach(b => {
+        if ((b.seriesId === seriesId || (b.recurrence && b.recurrence.seriesId === seriesId)) && b.status !== 'Cancelled') {
+          b.status = 'Cancelled';
+          b.cancelledAt = new Date().toISOString();
+          count++;
+        }
+      });
+    });
+    this.save();
+    return { success: count > 0, cancelledCount: count, message: `Cancelled ${count} occurrence(s) in series ${seriesId}.` };
+  }
+
+  getMeetingRoomPolicies() {
+    if (!this.state.meetingRoomPolicies) {
+      this.state.meetingRoomPolicies = {
+        maxDurationHours: 4,
+        minDurationMins: 30,
+        allowRecurring: true,
+        maxRecurringOccurrences: 12,
+        requireApprovalAboveHours: 0,
+        autoSyncInvoice: true,
+        operatingHoursLabel: '08:00 AM – 11:00 AM & 03:00 PM – 07:00 PM IST'
+      };
+    }
+    return this.state.meetingRoomPolicies;
+  }
+
+  getAdminAuditLog() {
+    if (!this.state.adminAuditLog) this.state.adminAuditLog = [];
+    return this.state.adminAuditLog;
+  }
+
+  async manageMeetingRoomAdmin(payload = {}) {
+    const userRole = payload.userRole || this.currentRole || 'super_admin';
+    try {
+      const res = await fetch('/api/meeting-rooms/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...payload, userRole })
+      });
+      const data = await res.json().catch(() => null);
+      if (data && data.ok) {
+        if (data.room) {
+          const rooms = this.getMeetingRooms();
+          const idx = rooms.findIndex(r => r.id === data.room.id);
+          if (idx !== -1) rooms[idx] = { ...rooms[idx], ...data.room, bookings: data.room.bookings || rooms[idx].bookings || [] };
+          else rooms.push(data.room);
+        }
+        if (data.policies) {
+          this.state.meetingRoomPolicies = data.policies;
+        }
+        if (data.audit) {
+          if (!this.state.adminAuditLog) this.state.adminAuditLog = [];
+          this.state.adminAuditLog.unshift(data.audit);
+        }
+        this.save();
+        return { success: true, ...data };
+      }
+      if (data && !data.ok) {
+        return { success: false, status: res.status, code: data.code, message: data.message };
+      }
+    } catch (_) {}
+
+    // Offline local fallback with RBAC check
+    const rawRole = String(userRole || 'founder').toLowerCase();
+    const isAdmin = rawRole === 'admin' || rawRole === 'super_admin' || rawRole === 'incubation_admin' || rawRole === 'incubator_admin';
+    if (!isAdmin) {
+      return { success: false, status: 403, code: 'FORBIDDEN_ADMIN_ONLY', message: 'Access Denied: Only Hub Administrators can perform this action.' };
+    }
+
+    const rooms = this.getMeetingRooms();
+    if (payload.action === 'save_room' && payload.roomData) {
+      const rd = payload.roomData;
+      const targetId = rd.id || `MR-0${rooms.length + 1}`;
+      let existing = rooms.find(r => r.id === targetId);
+      const amenitiesArr = Array.isArray(rd.amenities) ? rd.amenities : String(rd.amenities || '4K Projector, Whiteboard').split(',').map(s => s.trim()).filter(Boolean);
+      if (existing) {
+        existing.name = rd.name || existing.name;
+        if (rd.capacity !== undefined) existing.capacity = Number(rd.capacity) || existing.capacity;
+        if (rd.hourlyRate !== undefined) existing.hourlyRate = Number(rd.hourlyRate) || 0;
+        existing.amenities = amenitiesArr;
+        if (rd.icon) existing.icon = rd.icon;
+        if (rd.operatingHours) existing.operatingHours = rd.operatingHours;
+      } else {
+        existing = {
+          id: targetId,
+          name: rd.name,
+          capacity: Number(rd.capacity) || 8,
+          hourlyRate: Number(rd.hourlyRate) || 1200,
+          amenities: amenitiesArr,
+          icon: rd.icon || '🏢',
+          operatingHours: rd.operatingHours || '08:00-11:00, 15:00-19:00',
+          status: 'Active',
+          underMaintenance: false,
+          bookings: []
+        };
+        rooms.push(existing);
+      }
+      this.save();
+      return { success: true, room: existing, message: `Saved room ${existing.name}.` };
+    }
+
+    if (payload.action === 'toggle_maintenance') {
+      const r = rooms.find(rm => rm.id === payload.roomId);
+      if (!r) return { success: false, message: 'Room not found' };
+      const nextM = payload.underMaintenance !== undefined ? Boolean(payload.underMaintenance) : !r.underMaintenance;
+      r.underMaintenance = nextM;
+      r.maintenance = nextM;
+      r.status = nextM ? 'Under Maintenance' : 'Active';
+      r.maintenanceReason = nextM ? (payload.maintenanceReason || 'Scheduled facility maintenance') : '';
+      this.save();
+      return { success: true, room: r, message: `${r.name} status updated to ${r.status}.` };
+    }
+
+    if (payload.action === 'update_policy') {
+      this.state.meetingRoomPolicies = { ...this.getMeetingRoomPolicies(), ...(payload.policyData || {}) };
+      this.save();
+      return { success: true, policies: this.state.meetingRoomPolicies, message: 'Booking policies updated.' };
+    }
+
+    if (payload.action === 'approve_booking' || payload.action === 'reject_booking') {
+      const r = rooms.find(rm => rm.id === payload.roomId) || rooms.find(rm => (rm.bookings || []).some(b => b.id === payload.bookingId));
+      const b = r ? (r.bookings || []).find(bk => bk.id === payload.bookingId) : null;
+      if (!b) return { success: false, message: 'Booking not found' };
+      b.status = payload.action === 'approve_booking' ? 'Confirmed' : 'Cancelled';
+      this.save();
+      return { success: true, booking: b, message: `Reservation ${b.id} ${b.status}.` };
+    }
+
+    if (payload.action === 'update_images') {
+      const r = rooms.find(rm => rm.id === payload.roomId);
+      if (!r) return { success: false, message: 'Room not found' };
+      r.images = Array.isArray(payload.images) ? payload.images.slice(0, 12) : [];
+      if (payload.description !== undefined) r.description = String(payload.description || '').slice(0, 600);
+      this.save();
+      return { success: true, room: r, message: `Saved ${r.images.length} photo(s) for ${r.name}.` };
+    }
+
+    return { success: false, message: 'Unknown admin action' };
+  }
+
+  // Uploads one meeting-room image (already resized/compressed client-side).
+  // payload: { roomId, mime, data (base64), thumbMime, thumbData, alt }
+  async uploadMeetingRoomImage(payload = {}) {
+    const userRole = payload.userRole || this.currentRole || 'super_admin';
+    try {
+      const res = await fetch('/api/meeting-rooms/images/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-user-role': userRole },
+        body: JSON.stringify({ ...payload, userRole })
+      });
+      const data = await res.json().catch(() => null);
+      if (data && data.ok) return { success: true, image: data.image };
+      return { success: false, status: res.status, message: (data && (data.message || data.error)) || `Upload failed (HTTP ${res.status}).` };
+    } catch (err) {
+      return { success: false, message: 'Upload failed: the server is unreachable. Please check your connection and try again.' };
+    }
+  }
+
+  async syncExternalCalendar(payload = {}) {
+    try {
+      const res = await fetch('/api/meeting-rooms/calendar-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json().catch(() => null);
+      if (data) {
+        if (!this.state.calendarIntegrations) {
+          this.state.calendarIntegrations = { providersByStartup: {}, syncedEvents: {} };
+        }
+        if (data.event && payload.bookingId) {
+          const rooms = this.getMeetingRooms();
+          rooms.forEach(r => {
+            const b = (r.bookings || []).find(bk => bk.id === payload.bookingId);
+            if (b) {
+              if (!b.calendarSync) b.calendarSync = {};
+              b.calendarSync[data.provider || payload.provider || 'google'] = data.event;
+            }
+          });
+        }
+        this.save();
+        return { success: Boolean(data.ok), ...data };
+      }
+    } catch (_) {}
+
+    // Local fallback
+    const cleanProvider = String(payload.provider || 'google').toLowerCase() === 'outlook' ? 'outlook' : 'google';
+    const startupId = payload.startupId || 'STP-XYZ';
+    if (!this.state.calendarIntegrations) {
+      this.state.calendarIntegrations = { providersByStartup: {}, syncedEvents: {} };
+    }
+    if (!this.state.calendarIntegrations.providersByStartup[startupId]) {
+      this.state.calendarIntegrations.providersByStartup[startupId] = {
+        google: { connected: true, email: 'founder@xyztechnologies.io', tokenStatus: 'valid' },
+        outlook: { connected: true, email: 'ops@xyztechnologies.io', tokenStatus: 'valid' }
+      };
+    }
+    const prov = this.state.calendarIntegrations.providersByStartup[startupId][cleanProvider];
+    if (payload.action === 'connect') {
+      prov.connected = true;
+      prov.tokenStatus = 'valid';
+      this.save();
+      return { success: true, ok: true, provider: cleanProvider, providerConfig: prov, message: `Connected ${cleanProvider}.` };
+    }
+    if (payload.action === 'disconnect') {
+      prov.connected = false;
+      prov.tokenStatus = 'revoked';
+      this.save();
+      return { success: true, ok: true, provider: cleanProvider, providerConfig: prov, message: `Disconnected ${cleanProvider}.` };
+    }
+    if (payload.action === 'set_token_status') {
+      prov.tokenStatus = payload.tokenStatus || 'expired';
+      this.save();
+      return { success: true, ok: true, provider: cleanProvider, providerConfig: prov };
+    }
+    if (!prov.connected || prov.tokenStatus !== 'valid') {
+      return {
+        success: false,
+        ok: false,
+        status: 401,
+        code: 'CALENDAR_AUTH_EXPIRED',
+        syncStatus: 'failed',
+        message: `${cleanProvider} permission is ${prov.tokenStatus}. Please reconnect.`
+      };
+    }
+    const ev = {
+      provider: cleanProvider,
+      externalEventId: `${cleanProvider}_${payload.bookingId}`,
+      bookingId: payload.bookingId,
+      status: payload.action === 'cancel' ? 'cancelled' : 'synced',
+      providerConfirmed: true,
+      syncedAt: new Date().toISOString()
+    };
+    this.save();
+    return { success: true, ok: true, provider: cleanProvider, syncStatus: ev.status, event: ev, message: `Synced with ${cleanProvider}.` };
+  }
+
+  getCalendarProviderConfig(startupId = 'STP-XYZ') {
+    if (!this.state.calendarIntegrations) {
+      this.state.calendarIntegrations = { providersByStartup: {}, syncedEvents: {} };
+    }
+    if (!this.state.calendarIntegrations.providersByStartup[startupId]) {
+      this.state.calendarIntegrations.providersByStartup[startupId] = {
+        google: { connected: true, email: 'founder@xyztechnologies.io', tokenStatus: 'valid' },
+        outlook: { connected: true, email: 'ops@xyztechnologies.io', tokenStatus: 'valid' }
+      };
+    }
+    return this.state.calendarIntegrations.providersByStartup[startupId];
   }
 
   // --- Rent & Billing Calculation Engine ---
@@ -2436,9 +2965,13 @@ class NexusStore {
       this.state.rentRecords = JSON.parse(JSON.stringify(window.INITIAL_DATA.rentRecords || []));
     }
     const invoices = this.getInvoices();
-    return this.state.rentRecords.map(r => {
-      const inv = invoices.find(i => i.id === r.invoiceId || i.startupId === r.startupId);
+    const linkedInvoiceIds = new Set();
+    const records = this.state.rentRecords.map(r => {
+      // Prefer the exact linked invoice; fall back to the startup's invoice only when no link exists
+      const inv = (r.invoiceId && invoices.find(i => i.id === r.invoiceId))
+        || (!r.invoiceId && invoices.find(i => i.startupId === r.startupId && !linkedInvoiceIds.has(i.id)));
       if (inv) {
+        linkedInvoiceIds.add(inv.id);
         return {
           ...r,
           status: inv.status,
@@ -2449,6 +2982,57 @@ class NexusStore {
       }
       return r;
     });
+
+    // Every real invoice without a rent record still appears in the register (derived, not stored)
+    invoices
+      .filter(inv => !linkedInvoiceIds.has(inv.id))
+      .forEach(inv => records.push(this.buildRentRecordFromInvoice(inv)));
+
+    return records;
+  }
+
+  buildRentRecordFromInvoice(inv) {
+    const startup = this.getStartupById(inv.startupId) || {};
+    const spaces = this.state.spaces || [];
+    const seatLabels = (startup.allocatedSeats || []).map(id => {
+      const sp = spaces.find(s => s.id === id);
+      return sp ? sp.label : id;
+    });
+    const firstItem = (inv.lineItems || [])[0];
+    const workspace = seatLabels.length
+      ? seatLabels.join(', ')
+      : (firstItem && firstItem.desc ? firstItem.desc.split(' - ')[0] : 'Workspace License');
+    const amountPaid = Number(inv.amountPaid) || 0;
+    const total = Number(inv.total) || 0;
+    const subtotal = Number(inv.subtotal) || 0;
+    const addOns = (inv.lineItems || [])
+      .filter(li => li.sac && li.sac !== '997212')
+      .reduce((s, li) => s + (Number(li.amount) || 0), 0);
+
+    return {
+      id: `RNT-${inv.id}`,
+      startupId: inv.startupId,
+      startupName: inv.startupName,
+      logoEmoji: startup.logoEmoji || '🚀',
+      category: startup.category || 'Incubated Startup',
+      workspace,
+      workspaceType: inv.billingPeriod ? `Billing period: ${inv.billingPeriod}` : 'Dedicated Space',
+      rent: total,
+      baseRent: subtotal - addOns,
+      addOns,
+      subsidyDeduction: Number(inv.subsidyDeduction) || 0,
+      taxGst: Number(inv.taxGst) || 0,
+      amount: total,
+      amountPaid,
+      paidAmount: amountPaid,
+      balanceDue: inv.balanceDue !== undefined ? inv.balanceDue : Math.max(0, total - amountPaid),
+      dueDate: inv.dueDate,
+      status: inv.status,
+      invoiceId: inv.id,
+      receiptNo: inv.receiptNo || null,
+      paidAt: inv.paidAt ? String(inv.paidAt).split('T')[0] : null,
+      derivedFromInvoice: true
+    };
   }
 
   getRentRecordById(id) {
@@ -2970,10 +3554,13 @@ class NexusStore {
   // --- Single Source of Truth Summary API Fetcher ---
   async fetchDashboardSummary(month = null) {
     try {
-      const url = `/api/dashboard/summary${month ? `?month=${encodeURIComponent(month)}` : ''}`;
+      const role = this.currentRole || 'incubator_admin';
+      const startupId = this.activeFounderId || 'STP-XYZ';
+      const url = `/api/dashboard/summary?role=${encodeURIComponent(role)}&startupId=${encodeURIComponent(startupId)}${month ? `&month=${encodeURIComponent(month)}` : ''}`;
       const res = await fetch(url, {
         headers: {
-          'x-user-role': this.currentRole || 'incubator_admin'
+          'x-user-role': role,
+          'x-startup-id': startupId
         }
       });
       if (res.ok) {
@@ -3076,6 +3663,95 @@ class NexusStore {
       totalCollected: Math.round(totalCollected),
       totalRoomBookingsCount
     };
+  }
+
+  // --- Maintenance Blocks API ---
+  async manageMaintenance(payload = {}) {
+    const userRole = payload.userRole || this.currentRole || 'super_admin';
+    try {
+      const res = await fetch('/api/meeting-rooms/maintenance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-user-role': userRole },
+        body: JSON.stringify({ ...payload, userRole })
+      });
+      const data = await res.json().catch(() => null);
+      if (data) {
+        if (!this.state.maintenanceBlocks) this.state.maintenanceBlocks = [];
+        if (data.block && (payload.action === 'add')) {
+          this.state.maintenanceBlocks.push(data.block);
+        } else if (data.block && payload.action === 'edit') {
+          const idx = this.state.maintenanceBlocks.findIndex(m => m.id === data.block.id);
+          if (idx >= 0) this.state.maintenanceBlocks[idx] = data.block;
+        } else if (payload.action === 'delete' || payload.action === 'cancel') {
+          this.state.maintenanceBlocks = this.state.maintenanceBlocks.filter(m => m.id !== payload.maintenanceId);
+        }
+        this.save();
+        return { success: Boolean(data.ok), ...data };
+      }
+    } catch (_) {}
+    // Local offline fallback
+    if (!this.state.maintenanceBlocks) this.state.maintenanceBlocks = [];
+    if (payload.action === 'add' && payload.maintenanceData) {
+      const block = { id: `MNT-${Date.now()}`, ...payload.maintenanceData, createdAt: new Date().toISOString() };
+      this.state.maintenanceBlocks.push(block);
+      this.save();
+      return { success: true, ok: true, block, conflictingBookings: [], message: 'Maintenance block created (offline).' };
+    }
+    if (payload.action === 'delete') {
+      this.state.maintenanceBlocks = this.state.maintenanceBlocks.filter(m => m.id !== payload.maintenanceId);
+      this.save();
+      return { success: true, ok: true };
+    }
+    if (payload.action === 'list') {
+      return { success: true, ok: true, blocks: this.state.maintenanceBlocks };
+    }
+    return { success: false, message: 'Unknown maintenance action' };
+  }
+
+  getMaintenanceBlocks() {
+    return (this.state && this.state.maintenanceBlocks) ? this.state.maintenanceBlocks : [];
+  }
+
+  // --- Admin Reservations List ---
+  async getAdminReservations(params = {}) {
+    const userRole = params.userRole || this.currentRole || 'super_admin';
+    try {
+      const qp = new URLSearchParams({ userRole, ...params });
+      const res = await fetch(`/api/meeting-rooms/reservations?${qp.toString()}`, {
+        headers: { 'x-user-role': userRole }
+      });
+      const data = await res.json().catch(() => null);
+      if (data && data.ok) return data;
+    } catch (_) {}
+    // Local offline fallback
+    const rooms = this.getMeetingRooms();
+    const all = [];
+    rooms.forEach(r => {
+      (r.bookings || []).forEach(b => {
+        if (params.status && b.status !== params.status) return;
+        if (params.startupId && b.startupId !== params.startupId) return;
+        if (params.roomId && r.id !== params.roomId) return;
+        if (params.dateFrom && b.date < params.dateFrom) return;
+        if (params.dateTo && b.date > params.dateTo) return;
+        all.push({ ...b, roomId: r.id, roomName: r.name, roomIcon: r.icon || '🏢' });
+      });
+    });
+    all.sort((a, b) => b.date > a.date ? 1 : -1);
+    return { ok: true, total: all.length, page: 1, limit: 50, totalPages: 1, reservations: all.slice(0, 50) };
+  }
+
+  // --- Analytics from server ---
+  async fetchMeetingRoomAnalytics({ range = 'all', startDate = '', endDate = '', startupId = '' } = {}) {
+    try {
+      const qp = new URLSearchParams({ range });
+      if (startDate) qp.set('startDate', startDate);
+      if (endDate) qp.set('endDate', endDate);
+      if (startupId) qp.set('startupId', startupId);
+      const res = await fetch(`/api/meeting-rooms/analytics?${qp.toString()}`);
+      const data = await res.json().catch(() => null);
+      if (data && data.ok) return data;
+    } catch (_) {}
+    return null;
   }
 }
 
