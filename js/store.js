@@ -1391,114 +1391,149 @@ class NexusStore {
       return (parts[0] || 0) * 60 + (parts[1] || 0);
     };
 
+    const reqStartMin = toMinutes(req.startTime);
+    const reqEndMin = toMinutes(req.endTime);
+    const reqDur = Math.max(30, (reqEndMin - reqStartMin) || 60);
+
     const targetRoom = allRooms.find(r => r.id === req.roomId) || allRooms[0];
     const otherRooms = allRooms.filter(r => r.id !== targetRoom.id);
 
+    const M = window.MeetingRoomsModule;
+    const ist = (M && M.getISTNow) ? M.getISTNow() : null;
     const now = new Date();
     const pad = n => (n < 10 ? '0' : '') + n;
-    const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-    const liveTimeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    const todayStr = ist ? ist.dateStr : `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    const liveTimeMin = ist ? ist.totalMinutes : (now.getHours() * 60 + now.getMinutes());
     const reqDate = req.date || todayStr;
     const isToday = (reqDate === todayStr);
-
-    const standardSlots = [
-      { start: '08:00', end: '09:00' },
-      { start: '09:00', end: '10:00' },
-      { start: '10:00', end: '11:00' },
-      { start: '15:00', end: '16:00' },
-      { start: '16:00', end: '17:00' },
-      { start: '17:00', end: '18:00' },
-      { start: '18:00', end: '19:00' }
-    ];
-
-    // 1. Next free slot in the same room on the same day
-    const targetBookings = (targetRoom.bookings || []).filter(b => b.date === reqDate && b.status !== 'Cancelled');
-    for (const s of standardSlots) {
-      if (alternatives.length >= 1) break;
-      if (s.start === req.startTime) continue;
-      if (isToday && s.start <= liveTimeStr) continue;
-
-      const conflicts = targetBookings.some(b => s.start < b.endTime && s.end > b.startTime);
-      if (!conflicts) {
-        alternatives.push({
-          type: 'same_room_next_slot',
-          roomId: targetRoom.id,
-          roomName: targetRoom.name,
-          date: reqDate,
-          startTime: s.start,
-          endTime: s.end,
-          label: `Next free slot in ${targetRoom.name} (${s.start} - ${s.end})`,
-          capacity: targetRoom.capacity,
-          hourlyRate: targetRoom.hourlyRate
-        });
-      }
-    }
-
-    // 2. Free slot at the same time in other room (if capacity fits attendees)
     const reqAttendees = parseInt(req.attendees || 4, 10);
-    for (const other of otherRooms) {
-      if (alternatives.length >= 2) break;
-      if (other.capacity >= reqAttendees) {
-        const otherBookings = (other.bookings || []).filter(b => b.date === reqDate && b.status !== 'Cancelled');
-        const conflicts = otherBookings.some(b => req.startTime < b.endTime && req.endTime > b.startTime);
-        if (!conflicts) {
+
+    const formatTime = (min) => `${pad(Math.floor(min / 60))}:${pad(min % 60)}`;
+
+    // Candidate time windows to scan (30-min steps from 08:00 to 19:00):
+    const candidateStarts = [];
+    for (let m = 8 * 60; m <= 11 * 60 - reqDur; m += 30) candidateStarts.push(m);
+    for (let m = 15 * 60; m <= 19 * 60 - reqDur; m += 30) candidateStarts.push(m);
+
+    // 1. Same room later today (strictly in future)
+    if (isToday) {
+      const targetBookings = (targetRoom.bookings || []).filter(b => b.date === reqDate && b.status !== 'Cancelled');
+      for (const startM of candidateStarts) {
+        if (alternatives.length >= 1) break;
+        if (startM <= liveTimeMin) continue; // Must be strictly in future
+        const endM = startM + reqDur;
+        const sStr = formatTime(startM);
+        const eStr = formatTime(endM);
+        if (sStr === req.startTime) continue;
+        const hasConflict = targetBookings.some(b => sStr < b.endTime && eStr > b.startTime);
+        if (!hasConflict) {
           alternatives.push({
-            type: 'other_room_same_time',
-            roomId: other.id,
-            roomName: other.name,
+            type: 'same_room_next_slot',
+            roomId: targetRoom.id,
+            roomName: targetRoom.name,
             date: reqDate,
-            startTime: req.startTime,
-            endTime: req.endTime,
-            label: `${other.name} (${other.capacity} pax) at ${req.startTime} - ${req.endTime}`,
-            capacity: other.capacity,
-            hourlyRate: other.hourlyRate
+            startTime: sStr,
+            endTime: eStr,
+            label: `Next free slot in ${targetRoom.name} (${sStr} - ${eStr})`,
+            capacity: targetRoom.capacity,
+            hourlyRate: targetRoom.hourlyRate
           });
         }
       }
     }
 
-    // 3. Same slot on next day
-    if (alternatives.length < 3) {
-      const dParts = reqDate.split('-').map(Number);
-      const nextD = new Date(Date.UTC(dParts[0], dParts[1] - 1, dParts[2] + 1));
-      const nextDateStr = nextD.toISOString().split('T')[0];
-      const nextDayBookings = (targetRoom.bookings || []).filter(b => b.date === nextDateStr && b.status !== 'Cancelled');
-      const conflictsNextDay = nextDayBookings.some(b => req.startTime < b.endTime && req.endTime > b.startTime);
+    // 2. Other rooms today (strictly in future)
+    if (isToday) {
+      for (const other of otherRooms) {
+        if (alternatives.length >= 2) break;
+        if (other.capacity < reqAttendees) continue;
+        const otherBookings = (other.bookings || []).filter(b => b.date === reqDate && b.status !== 'Cancelled');
+        
+        const startsToTry = (reqStartMin > liveTimeMin) 
+          ? [reqStartMin, ...candidateStarts.filter(m => m > liveTimeMin && m !== reqStartMin)]
+          : candidateStarts.filter(m => m > liveTimeMin);
 
-      if (!conflictsNextDay) {
+        for (const startM of startsToTry) {
+          const endM = startM + reqDur;
+          const sStr = formatTime(startM);
+          const eStr = formatTime(endM);
+          const hasConflict = otherBookings.some(b => sStr < b.endTime && eStr > b.startTime);
+          if (!hasConflict) {
+            alternatives.push({
+              type: 'other_room_same_time',
+              roomId: other.id,
+              roomName: other.name,
+              date: reqDate,
+              startTime: sStr,
+              endTime: eStr,
+              label: `${other.name} (${other.capacity} pax) at ${sStr} - ${eStr}`,
+              capacity: other.capacity,
+              hourlyRate: other.hourlyRate
+            });
+            break;
+          }
+        }
+      }
+    }
+
+    // 3. Next day options (Tomorrow) in target room or other rooms
+    const dParts = reqDate.split('-').map(Number);
+    const nextD = new Date(Date.UTC(dParts[0], dParts[1] - 1, dParts[2] + 1));
+    const nextDateStr = nextD.toISOString().split('T')[0];
+    const targetNextBookings = (targetRoom.bookings || []).filter(b => b.date === nextDateStr && b.status !== 'Cancelled');
+
+    const tomorrowStarts = [
+      reqStartMin >= 8 * 60 && reqStartMin + reqDur <= 19 * 60 ? reqStartMin : 10 * 60,
+      10 * 60, 11 * 60, 15 * 60, 16 * 60, 17 * 60
+    ];
+
+    for (const startM of tomorrowStarts) {
+      if (alternatives.length >= 3) break;
+      const endM = startM + reqDur;
+      const sStr = formatTime(startM);
+      const eStr = formatTime(endM);
+      const hasConflict = targetNextBookings.some(b => sStr < b.endTime && eStr > b.startTime);
+      if (!hasConflict && !alternatives.some(a => a.roomId === targetRoom.id && a.date === nextDateStr && a.startTime === sStr)) {
         alternatives.push({
           type: 'same_room_next_day',
           roomId: targetRoom.id,
           roomName: targetRoom.name,
           date: nextDateStr,
-          startTime: req.startTime,
-          endTime: req.endTime,
-          label: `Tomorrow (${nextDateStr}) at ${req.startTime} - ${req.endTime} in ${targetRoom.name}`,
+          startTime: sStr,
+          endTime: eStr,
+          label: `Tomorrow (${nextDateStr}) at ${sStr} - ${eStr} in ${targetRoom.name}`,
           capacity: targetRoom.capacity,
           hourlyRate: targetRoom.hourlyRate
         });
       }
     }
 
-    // Fallback: fill up to 3 with any open slot
+    // If still fewer than 3, scan other rooms tomorrow
     if (alternatives.length < 3) {
-      for (const s of standardSlots) {
+      for (const other of otherRooms) {
         if (alternatives.length >= 3) break;
-        if (alternatives.some(a => a.roomId === targetRoom.id && a.date === reqDate && a.startTime === s.start)) continue;
-        if (isToday && s.start <= liveTimeStr) continue;
-        const conflicts = targetBookings.some(b => s.start < b.endTime && s.end > b.startTime);
-        if (!conflicts) {
-          alternatives.push({
-            type: 'same_room_additional_slot',
-            roomId: targetRoom.id,
-            roomName: targetRoom.name,
-            date: reqDate,
-            startTime: s.start,
-            endTime: s.end,
-            label: `${targetRoom.name} at ${s.start} - ${s.end}`,
-            capacity: targetRoom.capacity,
-            hourlyRate: targetRoom.hourlyRate
-          });
+        if (other.capacity < reqAttendees) continue;
+        const otherNextBookings = (other.bookings || []).filter(b => b.date === nextDateStr && b.status !== 'Cancelled');
+        for (const startM of tomorrowStarts) {
+          if (alternatives.length >= 3) break;
+          const endM = startM + reqDur;
+          const sStr = formatTime(startM);
+          const eStr = formatTime(endM);
+          const hasConflict = otherNextBookings.some(b => sStr < b.endTime && eStr > b.startTime);
+          if (!hasConflict && !alternatives.some(a => a.roomId === other.id && a.date === nextDateStr && a.startTime === sStr)) {
+            alternatives.push({
+              type: 'other_room_next_day',
+              roomId: other.id,
+              roomName: other.name,
+              date: nextDateStr,
+              startTime: sStr,
+              endTime: eStr,
+              label: `Tomorrow in ${other.name} (${sStr} - ${eStr})`,
+              capacity: other.capacity,
+              hourlyRate: other.hourlyRate
+            });
+            break;
+          }
         }
       }
     }

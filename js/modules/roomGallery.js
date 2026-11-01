@@ -324,7 +324,7 @@ window.RoomGallery = {
       const endM = end % 60;
       const endStr = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
       const booked = bookings.some(b => toMin(b.startTime) < end && toMin(b.endTime) > start);
-      const past = dateStr < today || (dateStr === today && start < nowMin);
+      const past = dateStr < today || (dateStr === today && start <= nowMin);
       let state = 'open';
       if (maint) state = 'closed';
       else if (past) state = 'past';
@@ -542,11 +542,22 @@ window.RoomGallery = {
     const M = window.MeetingRoomsModule;
     if (!M) return;
 
-    if (!this.selectedSlot) {
-      if (typeof App !== 'undefined' && App.showToast) {
-        App.showToast('Please select an available time slot first.', 'warning');
+    const dateStr = this.activeDate || (M && M.selectedDate);
+    const slots = this.getSlotsForDate(room, dateStr);
+
+    if (!this.selectedSlot || !slots.some(s => s.start === this.selectedSlot && s.state === 'open')) {
+      const firstOpen = slots.find(s => s.state === 'open');
+      if (firstOpen) {
+        this.selectedSlot = firstOpen.start;
+        if (typeof App !== 'undefined' && App.showToast) {
+          App.showToast(`Selected slot was unavailable. Automatically switched to ${this.fmt12(firstOpen.start)}.`, 'info');
+        }
+      } else {
+        if (typeof App !== 'undefined' && App.showToast) {
+          App.showToast('All slots for this room on this date are unavailable. Please pick another date or room.', 'warning');
+        }
+        return;
       }
-      return;
     }
 
     const slot = this.selectedSlot;

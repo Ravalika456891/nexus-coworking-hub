@@ -4005,11 +4005,11 @@ const MeetingRoomsModule = {
 
     let nextSlot = allSlots.find(slot => {
       const sHour = parseInt(slot.split(':')[0], 10);
-      const endHour = sHour + 1;
-      const endSlotStr = `${endHour < 10 ? '0' : ''}${endHour}:00`;
-      if (isToday && endSlotStr <= liveTimeStr) return false;
       const sMin = sHour * 60;
+      const endHour = sHour + 1;
       const eMin = endHour * 60;
+      // Strictly prevent past or current started slots for today
+      if (isToday && (sMin <= ist.totalMinutes || slot <= liveTimeStr)) return false;
       const isBooked = bookings.some(b => {
         const [bsh, bsm] = (b.startTime || '00:00').split(':').map(Number);
         const [beh, bem] = (b.endTime || '00:00').split(':').map(Number);
@@ -4036,7 +4036,7 @@ const MeetingRoomsModule = {
       });
       if (nextSlot) {
         this.selectedDate = tomorrowStr;
-        App.showToast(`Switched to tomorrow for ${room.name} as today's slots are completed.`, 'info');
+        App.showToast(`Today's slots have passed. Switched to tomorrow (${tomorrowStr}) for ${room.name}.`, 'info');
       }
     }
 
@@ -4069,8 +4069,56 @@ const MeetingRoomsModule = {
       return;
     }
 
-    const startSlot = win.startTime;
-    const endSlotStr = win.endTime;
+    const ist = this.getISTNow ? this.getISTNow() : { dateStr: new Date().toISOString().split('T')[0], totalMinutes: new Date().getHours() * 60 + new Date().getMinutes(), liveTimeStr: '12:00' };
+    const isToday = (this.selectedDate === ist.dateStr);
+
+    let startSlot = win.startTime;
+    let endSlotStr = win.endTime;
+
+    // Check if the initial startSlot is in the past or booked; if so, auto-advance to next genuinely available slot
+    const [initSh, initSm] = (startSlot || '00:00').split(':').map(Number);
+    const initStartMin = (initSh || 0) * 60 + (initSm || 0);
+    const isStartPast = isToday && (initStartMin <= ist.totalMinutes);
+    const roomBookings = (room.bookings || []).filter(b => b.date === this.selectedDate && b.status !== 'Cancelled' && b.status !== 'Rejected');
+    const isStartBooked = roomBookings.some(b => {
+      const [bsh, bsm] = (b.startTime || '00:00').split(':').map(Number);
+      const [beh, bem] = (b.endTime || '00:00').split(':').map(Number);
+      return (bsh * 60 + (bsm || 0)) <= initStartMin && (beh * 60 + (bem || 0)) > initStartMin;
+    });
+
+    if (isStartPast || isStartBooked) {
+      const candidateStarts = [];
+      for (let h = 8; h <= 20; h++) {
+        for (let m = 0; m < 60; m += 30) {
+          candidateStarts.push(h * 60 + m);
+        }
+      }
+      const durMins = win.durationMins || 60;
+      const validStartMin = candidateStarts.find(sMin => {
+        if (isToday && sMin <= ist.totalMinutes) return false;
+        const eMin = sMin + durMins;
+        return !roomBookings.some(b => {
+          const [bsh, bsm] = (b.startTime || '00:00').split(':').map(Number);
+          const [beh, bem] = (b.endTime || '00:00').split(':').map(Number);
+          return (bsh * 60 + (bsm || 0)) < eMin && (beh * 60 + (bem || 0)) > sMin;
+        });
+      });
+
+      if (validStartMin !== undefined) {
+        const pad = n => (n < 10 ? '0' : '') + n;
+        const newStart = `${pad(Math.floor(validStartMin / 60))}:${pad(validStartMin % 60)}`;
+        const validEndMin = validStartMin + durMins;
+        const newEnd = `${pad(Math.floor(validEndMin / 60))}:${pad(validEndMin % 60)}`;
+        startSlot = newStart;
+        endSlotStr = newEnd;
+        if (!this.selectedSlotsByRoom) this.selectedSlotsByRoom = {};
+        this.selectedSlotsByRoom[roomId] = [newStart];
+        if (typeof App !== 'undefined' && App.showToast) {
+          App.showToast(`Prior slot was unavailable. Automatically moved to the next open slot (${newStart}).`, 'info');
+        }
+      }
+    }
+
     const count = win.durationHours;
     const durText = win.durationMins === 30 ? '30 min' : `${count} hr${count > 1 ? 's' : ''}`;
 
@@ -4081,7 +4129,7 @@ const MeetingRoomsModule = {
       return `${displayH < 10 ? '0' : ''}${displayH}:${m < 10 ? '0' : ''}${m} ${period}`;
     };
 
-    const generate12hTimeOptions = (selectedVal) => {
+    const generate12hTimeOptions = (selectedVal, isStartTime = true) => {
       const times = [];
       for (let h = 8; h <= 21; h++) {
         for (let m = 0; m < 60; m += 30) {
@@ -4090,18 +4138,51 @@ const MeetingRoomsModule = {
           const ampm = h >= 12 ? 'PM' : 'AM';
           const dispH = ((h + 11) % 12) + 1;
           const label12 = `${String(dispH).padStart(2, '0')}:${String(m).padStart(2, '0')} ${ampm}`;
-          times.push({ val: val24, label: label12 });
+          const slotMin = h * 60 + m;
+
+          let status = 'available';
+          let statusText = '';
+          if (isToday && (isStartTime ? slotMin <= ist.totalMinutes : slotMin <= ist.totalMinutes + 15)) {
+            status = 'past';
+            statusText = ' (Unavailable / Past)';
+          } else if (isStartTime && roomBookings.some(b => {
+            const [bsh, bsm] = (b.startTime || '00:00').split(':').map(Number);
+            const [beh, bem] = (b.endTime || '00:00').split(':').map(Number);
+            return slotMin >= (bsh * 60 + (bsm || 0)) && slotMin < (beh * 60 + (bem || 0));
+          })) {
+            status = 'booked';
+            statusText = ' (Unavailable / Booked)';
+          }
+
+          times.push({ val: val24, label: label12, status, statusText });
         }
       }
+
       if (selectedVal && !times.some(t => t.val === selectedVal)) {
         const [sh, sm] = selectedVal.split(':').map(Number);
         const ampm = sh >= 12 ? 'PM' : 'AM';
         const dispH = ((sh + 11) % 12) + 1;
         const label12 = `${String(dispH).padStart(2, '0')}:${String(sm || 0).padStart(2, '0')} ${ampm}`;
-        times.push({ val: selectedVal, label: label12 });
+        const slotMin = sh * 60 + (sm || 0);
+        let status = 'available';
+        let statusText = '';
+        if (isToday && slotMin <= ist.totalMinutes) {
+          status = 'past';
+          statusText = ' (Unavailable / Past)';
+        }
+        times.push({ val: selectedVal, label: label12, status, statusText });
         times.sort((a, b) => a.val.localeCompare(b.val));
       }
-      return times.map(t => `<option value="${t.val}" ${t.val === selectedVal ? 'selected' : ''}>${t.label}</option>`).join('');
+
+      return times.map(t => {
+        const isSelected = t.val === selectedVal;
+        const isDisabled = t.status === 'past' || t.status === 'booked';
+        const color = t.status === 'past' ? '#9ca3af' : t.status === 'booked' ? '#ef4444' : '#111827';
+        const bg = t.status === 'past' ? '#f3f4f6' : t.status === 'booked' ? '#fee2e2' : '#ffffff';
+        return `<option value="${t.val}" ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''} style="color: ${color}; background: ${bg}; font-weight: ${isDisabled ? '500' : '700'};">
+          ${t.label}${t.statusText}
+        </option>`;
+      }).join('');
     };
 
     const myStartup = this.getMyStartup();
@@ -4179,13 +4260,13 @@ const MeetingRoomsModule = {
                     <div>
                       <label style="font-size: 10.5px; font-weight: 700; color: var(--text-secondary); margin-bottom: 3px; display: block;">Start Time (12-Hour AM/PM)</label>
                       <select id="confirm-start-time" class="form-control" onchange="MeetingRoomsModule.updateConfirmModalTiming('${room.id}')" style="font-size: 12.5px; font-weight: 700; padding: 7px 10px; border-radius: 8px; background: #ffffff; border: 1.5px solid var(--border-medium); cursor: pointer;" required>
-                        ${generate12hTimeOptions(startSlot)}
+                        ${generate12hTimeOptions(startSlot, true)}
                       </select>
                     </div>
                     <div>
                       <label style="font-size: 10.5px; font-weight: 700; color: var(--text-secondary); margin-bottom: 3px; display: block;">End Time (12-Hour AM/PM)</label>
                       <select id="confirm-end-time" class="form-control" onchange="MeetingRoomsModule.updateConfirmModalTiming('${room.id}')" style="font-size: 12.5px; font-weight: 700; padding: 7px 10px; border-radius: 8px; background: #ffffff; border: 1.5px solid var(--border-medium); cursor: pointer;" required>
-                        ${generate12hTimeOptions(endSlotStr)}
+                        ${generate12hTimeOptions(endSlotStr, false)}
                       </select>
                     </div>
                   </div>
@@ -4223,6 +4304,9 @@ const MeetingRoomsModule = {
                 </label>
                 <input type="text" id="confirm-special-requests" class="form-control" placeholder="e.g., HDMI adapter needed, whiteboard markers, water bottles..." style="font-size: 12px; padding: 7px 10px; border-radius: 8px;">
               </div>
+
+              <!-- Inline Proactive Slot Availability Warning -->
+              <div id="confirm-slot-warning" style="display: none; background: #fef2f2; border: 1.5px solid #ef4444; color: #b91c1c; padding: 10px 14px; border-radius: 10px; font-size: 12px; font-weight: 700; align-items: center; gap: 8px;"></div>
 
               <!-- Feature 5: Pre-Finalization Confirmation Summary -->
               <div id="confirm-pricing-breakdown" style="background: linear-gradient(135deg, rgba(37, 99, 235, 0.06) 0%, rgba(16, 185, 129, 0.06) 100%); border: 1.5px solid rgba(37, 99, 235, 0.25); border-radius: 10px; padding: 10px 14px; font-size: 11.5px; display: flex; flex-direction: column; gap: 4px;">
@@ -4332,6 +4416,9 @@ const MeetingRoomsModule = {
     const durationLabel = document.getElementById('confirm-duration-label');
     const costBadge = document.getElementById('confirm-cost-badge');
     const payableEl = document.getElementById('confirm-payable-amount');
+    const warningEl = document.getElementById('confirm-slot-warning');
+    const form = document.getElementById('form-confirm-booking');
+    const submitBtn = document.getElementById('btn-confirm-booking-submit') || (form ? form.querySelector('button[type="submit"]') : null);
     if (!startInput || !endInput) return;
 
     const startVal = startInput.value;
@@ -4342,6 +4429,56 @@ const MeetingRoomsModule = {
     const [eh, em] = endVal.split(':').map(Number);
     const sMin = sh * 60 + (sm || 0);
     const eMin = eh * 60 + (em || 0);
+
+    const room = window.store.getMeetingRoomById(roomId);
+    const ist = (this.getISTNow ? this.getISTNow() : null) || { dateStr: new Date().toISOString().split('T')[0], totalMinutes: new Date().getHours() * 60 + new Date().getMinutes(), liveTimeStr: '12:00' };
+    const isToday = (this.selectedDate === ist.dateStr);
+
+    let isSlotUnavailable = false;
+    let unavailableReason = '';
+
+    if (eMin <= sMin) {
+      isSlotUnavailable = true;
+      unavailableReason = 'End time must be later than start time.';
+    } else if (isToday && sMin <= ist.totalMinutes) {
+      isSlotUnavailable = true;
+      unavailableReason = `This time slot has already passed. Current IST time is ${ist.liveTimeStr}. Please pick an open future time period.`;
+    } else if (room) {
+      const roomBookings = (room.bookings || []).filter(b => b.date === this.selectedDate && b.status !== 'Cancelled' && b.status !== 'Rejected');
+      const conflict = roomBookings.find(b => {
+        const [bsh, bsm] = (b.startTime || '00:00').split(':').map(Number);
+        const [beh, bem] = (b.endTime || '00:00').split(':').map(Number);
+        return sMin < (beh * 60 + (bem || 0)) && eMin > (bsh * 60 + (bsm || 0));
+      });
+      if (conflict) {
+        isSlotUnavailable = true;
+        unavailableReason = `This time slot is already reserved (${conflict.startTime} - ${conflict.endTime}). Please pick another time period.`;
+      }
+    }
+
+    if (warningEl) {
+      if (isSlotUnavailable) {
+        warningEl.style.display = 'flex';
+        warningEl.innerHTML = `<span style="font-size: 16px; flex-shrink: 0;">⚠️</span><div><strong>Time Slot Unavailable:</strong> ${unavailableReason}</div>`;
+      } else {
+        warningEl.style.display = 'none';
+      }
+    }
+
+    if (submitBtn) {
+      if (isSlotUnavailable) {
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = '0.5';
+        submitBtn.style.cursor = 'not-allowed';
+        submitBtn.title = unavailableReason;
+      } else {
+        submitBtn.disabled = false;
+        submitBtn.style.opacity = '1';
+        submitBtn.style.cursor = 'pointer';
+        submitBtn.title = 'Confirm your reservation';
+      }
+    }
+
     if (eMin <= sMin) {
       if (durationLabel) {
         durationLabel.textContent = 'Invalid time range';
@@ -4352,7 +4489,6 @@ const MeetingRoomsModule = {
 
     const durMinutes = eMin - sMin;
     const durHours = durMinutes / 60;
-    const room = window.store.getMeetingRoomById(roomId);
     const myStartup = this.getMyStartup();
     const remainingCredits = Math.max(0, (myStartup.includedMeetingHours || 12) - (myStartup.usedMeetingHours || 0));
     const isCovered = remainingCredits >= durHours;
@@ -4366,8 +4502,8 @@ const MeetingRoomsModule = {
       if (hPart > 0 && mPart > 0) text = `${hPart} hr ${mPart} min`;
       else if (hPart > 0) text = `${hPart} hr${hPart > 1 ? 's' : ''}`;
       else text = `${mPart} min`;
-      durationLabel.textContent = text;
-      durationLabel.style.color = '#16a34a';
+      durationLabel.textContent = isSlotUnavailable ? `${text} (Unavailable)` : text;
+      durationLabel.style.color = isSlotUnavailable ? '#ef4444' : '#16a34a';
     }
 
     if (costBadge) {

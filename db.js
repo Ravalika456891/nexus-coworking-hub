@@ -656,8 +656,9 @@ async function initMeetingRoomIndexes() {
 // Smart Alternatives Generator (Up to 3 smart options)
 function findBookingAlternatives(allRooms, req) {
   const alternatives = [];
-  const startMin = toMinutes(req.startTime);
-  const endMin = toMinutes(req.endTime);
+  const reqStartMin = toMinutes(req.startTime);
+  const reqEndMin = toMinutes(req.endTime);
+  const reqDur = Math.max(30, (reqEndMin - reqStartMin) || 60);
 
   const targetRoom = allRooms.find(r => r.id === req.roomId) || allRooms[0];
   const otherRooms = allRooms.filter(r => r.id !== targetRoom.id);
@@ -665,106 +666,135 @@ function findBookingAlternatives(allRooms, req) {
   const ist = getISTClock();
   const reqDate = req.date || ist.date;
   const isToday = (reqDate === ist.date);
-
-  // Standard slot candidates:
-  const standardSlots = [
-    { start: '08:00', end: '09:00' },
-    { start: '09:00', end: '10:00' },
-    { start: '10:00', end: '11:00' },
-    { start: '15:00', end: '16:00' },
-    { start: '16:00', end: '17:00' },
-    { start: '17:00', end: '18:00' },
-    { start: '18:00', end: '19:00' }
-  ];
-
-  // 1. Next free slot in the same room on the same day
-  const targetBookings = (targetRoom.bookings || []).filter(b => b.date === reqDate && b.status !== 'Cancelled');
-  for (const s of standardSlots) {
-    if (alternatives.length >= 1) break;
-    if (s.start === req.startTime) continue;
-    if (isToday && toMinutes(s.start) <= ist.minutes) continue;
-
-    const conflicts = targetBookings.some(b => s.start < b.endTime && s.end > b.startTime);
-    if (!conflicts) {
-      alternatives.push({
-        type: 'same_room_next_slot',
-        roomId: targetRoom.id,
-        roomName: targetRoom.name,
-        date: reqDate,
-        startTime: s.start,
-        endTime: s.end,
-        label: `Next free slot in ${targetRoom.name} (${s.start} - ${s.end})`,
-        capacity: targetRoom.capacity,
-        hourlyRate: targetRoom.hourlyRate
-      });
-    }
-  }
-
-  // 2. Free slot at the same time in other room (if capacity fits attendees)
   const reqAttendees = parseInt(req.attendees || 4, 10);
-  for (const other of otherRooms) {
-    if (alternatives.length >= 2) break;
-    if (other.capacity >= reqAttendees) {
-      const otherBookings = (other.bookings || []).filter(b => b.date === reqDate && b.status !== 'Cancelled');
-      const conflicts = otherBookings.some(b => req.startTime < b.endTime && req.endTime > b.startTime);
-      if (!conflicts) {
+
+  const pad = n => (n < 10 ? '0' : '') + n;
+  const formatTime = (min) => `${pad(Math.floor(min / 60))}:${pad(min % 60)}`;
+
+  // Candidate time windows to scan (30-min steps within operating hours 08:00 - 19:00):
+  const candidateStarts = [];
+  for (let m = 8 * 60; m <= 11 * 60 - reqDur; m += 30) candidateStarts.push(m);
+  for (let m = 15 * 60; m <= 19 * 60 - reqDur; m += 30) candidateStarts.push(m);
+
+  // 1. Same room later today (strictly in future)
+  if (isToday) {
+    const targetBookings = (targetRoom.bookings || []).filter(b => b.date === reqDate && b.status !== 'Cancelled');
+    for (const startM of candidateStarts) {
+      if (alternatives.length >= 1) break;
+      if (startM <= ist.minutes) continue; // Must be strictly in future
+      const endM = startM + reqDur;
+      const sStr = formatTime(startM);
+      const eStr = formatTime(endM);
+      if (sStr === req.startTime) continue;
+      const hasConflict = targetBookings.some(b => sStr < b.endTime && eStr > b.startTime);
+      if (!hasConflict) {
         alternatives.push({
-          type: 'other_room_same_time',
-          roomId: other.id,
-          roomName: other.name,
+          type: 'same_room_next_slot',
+          roomId: targetRoom.id,
+          roomName: targetRoom.name,
           date: reqDate,
-          startTime: req.startTime,
-          endTime: req.endTime,
-          label: `${other.name} (${other.capacity} pax) at ${req.startTime} - ${req.endTime}`,
-          capacity: other.capacity,
-          hourlyRate: other.hourlyRate
+          startTime: sStr,
+          endTime: eStr,
+          label: `Next free slot in ${targetRoom.name} (${sStr} - ${eStr})`,
+          capacity: targetRoom.capacity,
+          hourlyRate: targetRoom.hourlyRate
         });
       }
     }
   }
 
-  // 3. Same slot on the next day
-  if (alternatives.length < 3) {
-    const dParts = reqDate.split('-').map(Number);
-    const nextD = new Date(Date.UTC(dParts[0], dParts[1] - 1, dParts[2] + 1));
-    const nextDateStr = nextD.toISOString().split('T')[0];
-    const nextDayBookings = (targetRoom.bookings || []).filter(b => b.date === nextDateStr && b.status !== 'Cancelled');
-    const conflictsNextDay = nextDayBookings.some(b => req.startTime < b.endTime && req.endTime > b.startTime);
+  // 2. Other rooms today (strictly in future)
+  if (isToday) {
+    for (const other of otherRooms) {
+      if (alternatives.length >= 2) break;
+      if (other.capacity < reqAttendees) continue;
+      const otherBookings = (other.bookings || []).filter(b => b.date === reqDate && b.status !== 'Cancelled');
+      
+      const startsToTry = (reqStartMin > ist.minutes) 
+        ? [reqStartMin, ...candidateStarts.filter(m => m > ist.minutes && m !== reqStartMin)]
+        : candidateStarts.filter(m => m > ist.minutes);
 
-    if (!conflictsNextDay) {
+      for (const startM of startsToTry) {
+        const endM = startM + reqDur;
+        const sStr = formatTime(startM);
+        const eStr = formatTime(endM);
+        const hasConflict = otherBookings.some(b => sStr < b.endTime && eStr > b.startTime);
+        if (!hasConflict) {
+          alternatives.push({
+            type: 'other_room_same_time',
+            roomId: other.id,
+            roomName: other.name,
+            date: reqDate,
+            startTime: sStr,
+            endTime: eStr,
+            label: `${other.name} (${other.capacity} pax) at ${sStr} - ${eStr}`,
+            capacity: other.capacity,
+            hourlyRate: other.hourlyRate
+          });
+          break;
+        }
+      }
+    }
+  }
+
+  // 3. Next day options (Tomorrow) in target room or other rooms
+  const dParts = reqDate.split('-').map(Number);
+  const nextD = new Date(Date.UTC(dParts[0], dParts[1] - 1, dParts[2] + 1));
+  const nextDateStr = nextD.toISOString().split('T')[0];
+  const targetNextBookings = (targetRoom.bookings || []).filter(b => b.date === nextDateStr && b.status !== 'Cancelled');
+
+  const tomorrowStarts = [
+    reqStartMin >= 8 * 60 && reqStartMin + reqDur <= 19 * 60 ? reqStartMin : 10 * 60,
+    10 * 60, 11 * 60, 15 * 60, 16 * 60, 17 * 60
+  ];
+
+  for (const startM of tomorrowStarts) {
+    if (alternatives.length >= 3) break;
+    const endM = startM + reqDur;
+    const sStr = formatTime(startM);
+    const eStr = formatTime(endM);
+    const hasConflict = targetNextBookings.some(b => sStr < b.endTime && eStr > b.startTime);
+    if (!hasConflict && !alternatives.some(a => a.roomId === targetRoom.id && a.date === nextDateStr && a.startTime === sStr)) {
       alternatives.push({
         type: 'same_room_next_day',
         roomId: targetRoom.id,
         roomName: targetRoom.name,
         date: nextDateStr,
-        startTime: req.startTime,
-        endTime: req.endTime,
-        label: `Tomorrow (${nextDateStr}) at ${req.startTime} - ${req.endTime} in ${targetRoom.name}`,
+        startTime: sStr,
+        endTime: eStr,
+        label: `Tomorrow (${nextDateStr}) at ${sStr} - ${eStr} in ${targetRoom.name}`,
         capacity: targetRoom.capacity,
         hourlyRate: targetRoom.hourlyRate
       });
     }
   }
 
-  // Fallback: fill up to 3 with any available slot on same or next day
+  // If still fewer than 3, scan other rooms tomorrow
   if (alternatives.length < 3) {
-    for (const s of standardSlots) {
+    for (const other of otherRooms) {
       if (alternatives.length >= 3) break;
-      if (alternatives.some(a => a.roomId === targetRoom.id && a.date === reqDate && a.startTime === s.start)) continue;
-      if (isToday && toMinutes(s.start) <= ist.minutes) continue;
-      const conflicts = targetBookings.some(b => s.start < b.endTime && s.end > b.startTime);
-      if (!conflicts) {
-        alternatives.push({
-          type: 'same_room_additional_slot',
-          roomId: targetRoom.id,
-          roomName: targetRoom.name,
-          date: reqDate,
-          startTime: s.start,
-          endTime: s.end,
-          label: `${targetRoom.name} at ${s.start} - ${s.end}`,
-          capacity: targetRoom.capacity,
-          hourlyRate: targetRoom.hourlyRate
-        });
+      if (other.capacity < reqAttendees) continue;
+      const otherNextBookings = (other.bookings || []).filter(b => b.date === nextDateStr && b.status !== 'Cancelled');
+      for (const startM of tomorrowStarts) {
+        if (alternatives.length >= 3) break;
+        const endM = startM + reqDur;
+        const sStr = formatTime(startM);
+        const eStr = formatTime(endM);
+        const hasConflict = otherNextBookings.some(b => sStr < b.endTime && eStr > b.startTime);
+        if (!hasConflict && !alternatives.some(a => a.roomId === other.id && a.date === nextDateStr && a.startTime === sStr)) {
+          alternatives.push({
+            type: 'other_room_next_day',
+            roomId: other.id,
+            roomName: other.name,
+            date: nextDateStr,
+            startTime: sStr,
+            endTime: eStr,
+            label: `Tomorrow in ${other.name} (${sStr} - ${eStr})`,
+            capacity: other.capacity,
+            hourlyRate: other.hourlyRate
+          });
+          break;
+        }
       }
     }
   }
@@ -807,14 +837,6 @@ async function reserveMeetingRoomSlotsAtomic(bookingReq) {
       return { ok: false, status: 400, message: 'Minimum booking duration is 15 minutes.' };
     }
 
-    // 2. Past Date / Slot Rejection (Using IST Server Clock):
-    if (date < ist.date) {
-      return { ok: false, status: 400, message: `Cannot book past dates. Current IST date is ${ist.date}.` };
-    }
-    if (date === ist.date && startMin < ist.minutes) {
-      return { ok: false, status: 400, message: `Cannot book past time slots. Current IST time is ${ist.time}.` };
-    }
-
     // Load current rooms state
     const appState = await getAppState();
     let rooms = (appState && appState.meetingRooms) ? appState.meetingRooms : [];
@@ -832,6 +854,28 @@ async function reserveMeetingRoomSlotsAtomic(bookingReq) {
     const reqAttendees = parseInt(attendees || 4, 10);
     if (isNaN(reqAttendees) || reqAttendees < 1) {
       return { ok: false, status: 400, code: 'INVALID_ATTENDEES', message: 'Number of attendees must be at least 1.' };
+    }
+
+    // 2. Past Date / Slot Rejection (Using IST Server Clock) with guaranteed alternatives:
+    if (date < ist.date) {
+      const alternatives = findBookingAlternatives(rooms, { roomId, date, startTime, endTime, attendees: reqAttendees, startupId });
+      return {
+        ok: false,
+        status: 400,
+        code: 'SLOT_PAST',
+        message: `Cannot book past dates. Current IST date is ${ist.date}. Please pick an open future date or time below.`,
+        alternatives
+      };
+    }
+    if (date === ist.date && startMin <= ist.minutes) {
+      const alternatives = findBookingAlternatives(rooms, { roomId, date, startTime, endTime, attendees: reqAttendees, startupId });
+      return {
+        ok: false,
+        status: 400,
+        code: 'SLOT_PAST',
+        message: `Cannot book past time slots. Current IST time is ${ist.time}. Please pick an open future time period below.`,
+        alternatives
+      };
     }
     if (reqAttendees > room.capacity) {
       return {
