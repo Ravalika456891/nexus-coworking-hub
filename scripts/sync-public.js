@@ -34,6 +34,7 @@ copyDir(path.join(root, 'assets'), path.join(pub, 'assets'));
 copyFile(path.join(root, 'app.html'), path.join(pub, 'app.html'));
 copyFile(path.join(root, 'meeting-rooms.html'), path.join(pub, 'meeting-rooms.html'));
 copyFile(path.join(root, 'meeting-rooms.html'), path.join(pub, 'index.html'));
+copyFile(path.join(root, 'index.html'), path.join(pub, 'landing.html'));
 copyFile(path.join(root, 'cancellation.js'), path.join(pub, 'cancellation.js'));
 
 // Remove conflicting directory folders if they exist to prevent cleanUrls loops

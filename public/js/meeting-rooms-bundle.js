@@ -1,3 +1,8 @@
+var useState = (typeof React !== 'undefined' && React.useState) ? React.useState : function(v) { return [v, function() {}]; };
+var useMemo = (typeof React !== 'undefined' && React.useMemo) ? React.useMemo : function(fn) { return fn(); };
+var useEffect = (typeof React !== 'undefined' && React.useEffect) ? React.useEffect : function() {};
+var useCallback = (typeof React !== 'undefined' && React.useCallback) ? React.useCallback : function(fn) { return fn; };
+var useRef = (typeof React !== 'undefined' && React.useRef) ? React.useRef : function(v) { return { current: v }; };
 function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
 function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
 function _objectSpread(r) { for (var t = 1; t < arguments.length; t++) { var o = null != arguments[t] ? arguments[t] : {}; t % 2 ? ownKeys(Object(o), !0).forEach(function (t) { _defineProperty(r, t, o[t]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(r, Object.getOwnPropertyDescriptors(o)) : ownKeys(Object(o)).forEach(function (e) { Object.defineProperty(r, e, Object.getOwnPropertyDescriptor(o, e)); }); } return r; }
@@ -4392,5 +4397,15 @@ function MeetingRoomsApp() {
     className: "fixed bottom-6 right-6 bg-[#111827] text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg border border-gray-700 z-50 flex items-center gap-2 animate-bounce"
   }, /*#__PURE__*/React.createElement("span", null, "\u26A1"), /*#__PURE__*/React.createElement("span", null, toastMessage)));
 }
-ReactDOM.render(/*#__PURE__*/React.createElement(MeetingRoomsApp, null), document.getElementById('root'));
+if (typeof ReactDOM !== 'undefined') {
+  var rootEl = document.getElementById('root');
+  if (rootEl) {
+    if (ReactDOM.createRoot) {
+      if (!window._nexusRoot) window._nexusRoot = ReactDOM.createRoot(rootEl);
+      window._nexusRoot.render(React.createElement(MeetingRoomsApp, null));
+    } else if (ReactDOM.render) {
+      ReactDOM.render(React.createElement(MeetingRoomsApp, null), rootEl);
+    }
+  }
+}
 window._nexusHubMounted = true;

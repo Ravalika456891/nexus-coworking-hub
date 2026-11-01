@@ -281,52 +281,255 @@ window.RoomGallery = {
     if (lastFocus && document.contains(lastFocus)) lastFocus.focus();
   },
 
-  // ---------- Room Details panel ----------
+  // ---------- Room Details panel & Custom Time Selection ----------
+  activeRoomId: null,
+  activeDate: null,
+  selectedSlot: null,
+  selectedDurationMins: 60,
+
   getSlotsForDate(room, dateStr) {
     const M = window.MeetingRoomsModule;
-    const slots = ['08:00', '09:00', '10:00', '15:00', '16:00', '17:00', '18:00'];
+    // 30-minute intervals within Hub operating hours (08:00 - 11:00 & 15:00 - 19:00 IST)
+    const slots = [
+      '08:00', '08:30', '09:00', '09:30', '10:00', '10:30',
+      '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30'
+    ];
     const ist = M && M.getISTNow ? M.getISTNow() : null;
-    const today = ist ? ist.todayStr : '';
-    const nowMin = ist ? ist.totalMinutes : 0;
+    const now = new Date();
+    const today = ist ? ist.todayStr : `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+    const nowMin = ist ? ist.totalMinutes : (now.getHours() * 60 + now.getMinutes());
+    
     const toMin = (t) => {
       const [h, m] = String(t || '00:00').split(':').map(Number);
       return (h || 0) * 60 + (m || 0);
     };
+
     const bookings = (room.bookings || []).filter(b => b.date === dateStr && b.status !== 'Cancelled' && b.status !== 'Rejected');
     const maint = M && M.isRoomUnderMaintenance ? M.isRoomUnderMaintenance(room) : false;
+
     return slots.map(s => {
       const start = toMin(s);
-      const end = start + 60;
-      const endStr = `${String(Math.floor(end / 60)).padStart(2, '0')}:00`;
+      const end = start + 30;
+      const endH = Math.floor(end / 60);
+      const endM = end % 60;
+      const endStr = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
       const booked = bookings.some(b => toMin(b.startTime) < end && toMin(b.endTime) > start);
-      const past = dateStr < today || (dateStr === today && end <= nowMin);
-      return { start: s, end: endStr, state: maint ? 'closed' : past ? 'past' : booked ? 'booked' : 'open' };
+      const past = dateStr < today || (dateStr === today && start < nowMin);
+      let state = 'open';
+      if (maint) state = 'closed';
+      else if (past) state = 'past';
+      else if (booked) state = 'booked';
+      return { start: s, end: endStr, state };
     });
   },
 
   fmt12(t) {
     const [h, m] = String(t).split(':').map(Number);
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    return `${((h + 11) % 12) + 1}:${String(m || 0).padStart(2, '0')} ${ampm}`;
+    const ampm = (h || 0) >= 12 ? 'PM' : 'AM';
+    const displayH = ((h + 11) % 12) + 1;
+    return `${displayH}:${String(m || 0).padStart(2, '0')} ${ampm}`;
+  },
+
+  renderBookingSection(room, dateStr) {
+    const M = window.MeetingRoomsModule;
+    const slots = this.getSlotsForDate(room, dateStr);
+    const openCount = slots.filter(s => s.state === 'open').length;
+    
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+    const nextDayObj = new Date(now.getTime() + 86400000);
+    const nextDayStr = `${nextDayObj.getFullYear()}-${String(nextDayObj.getMonth()+1).padStart(2,'0')}-${String(nextDayObj.getDate()).padStart(2,'0')}`;
+    
+    const isToday = dateStr === todayStr;
+    const isNextDay = dateStr === nextDayStr;
+    const dateLabel = dateStr ? new Date(`${dateStr}T00:00:00`).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' }) : 'Today';
+
+    const myStartup = M && M.getMyStartup ? M.getMyStartup() : null;
+    const remainingCredits = myStartup ? Math.max(0, (myStartup.includedMeetingHours || 12) - (myStartup.usedMeetingHours || 0)) : 0;
+    
+    if (!this.selectedSlot || !slots.some(s => s.start === this.selectedSlot && s.state === 'open')) {
+      const firstOpen = slots.find(s => s.state === 'open');
+      this.selectedSlot = firstOpen ? firstOpen.start : null;
+    }
+
+    const durationHours = (this.selectedDurationMins || 60) / 60;
+    const durationLabel = this.selectedDurationMins === 30 ? '30 mins' : `${durationHours} hr${durationHours > 1 ? 's' : ''}`;
+    
+    let endTime12 = '';
+    if (this.selectedSlot) {
+      const [sh, sm] = this.selectedSlot.split(':').map(Number);
+      const totalMin = sh * 60 + sm + this.selectedDurationMins;
+      const eh = Math.floor(totalMin / 60);
+      const em = totalMin % 60;
+      endTime12 = this.fmt12(`${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`);
+    }
+
+    const totalRoomPrice = Math.round((room.hourlyRate || 0) * durationHours);
+    const isCovered = remainingCredits >= durationHours;
+    const creditsUsed = isCovered ? durationHours : remainingCredits;
+    const billableAmount = isCovered ? 0 : Math.round(Math.max(0, durationHours - remainingCredits) * (room.hourlyRate || 0));
+
+    return `
+      <section class="rg-section">
+        <h4>1. Select Meeting Date</h4>
+        <div class="rg-date-bar">
+          <div class="rg-date-input-wrap">
+            <input type="date" class="rg-date-input" value="${dateStr}" min="${todayStr}"
+              onchange="RoomGallery.changeDate(this.value)">
+          </div>
+          <button type="button" class="rg-quick-pill ${isToday ? 'active' : ''}" onclick="RoomGallery.changeDate('${todayStr}')">Today</button>
+          <button type="button" class="rg-quick-pill ${isNextDay ? 'active' : ''}" onclick="RoomGallery.changeDate('${nextDayStr}')">Next Day</button>
+        </div>
+      </section>
+
+      <section class="rg-section">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <h4 style="margin: 0;">2. Booking Duration</h4>
+          <span style="font-size: 11px; color: #4F3FE0; font-weight: 700;">30-min intervals supported</span>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          ${[
+            { mins: 30, label: '30m' },
+            { mins: 60, label: '1 hr' },
+            { mins: 90, label: '1.5 hrs' },
+            { mins: 120, label: '2 hrs' },
+            { mins: 180, label: '3 hrs' }
+          ].map(d => `
+            <button type="button" class="rg-quick-pill ${this.selectedDurationMins === d.mins ? 'active' : ''}"
+              onclick="RoomGallery.selectDuration(${d.mins})" style="flex: 1; min-width: 60px; text-align: center;">
+              ${d.label}
+            </button>
+          `).join('')}
+        </div>
+      </section>
+
+      <section class="rg-section">
+        <h4>
+          <span>3. Live Available Time Slots</span>
+          <span class="rg-muted" style="font-size: 11px; font-weight: 600;">${this.esc(dateLabel)} • ${openCount} open</span>
+        </h4>
+        <div class="rg-slots">
+          ${slots.map(s => {
+            const isSelected = this.selectedSlot === s.start;
+            const cls = isSelected ? 'rg-slot selected' : `rg-slot ${s.state}`;
+            const disabled = s.state !== 'open';
+            const label = isSelected ? 'Selected' : s.state === 'open' ? 'Available' : s.state === 'booked' ? 'Booked' : s.state === 'closed' ? 'Closed' : 'Past';
+            return `
+              <button type="button" class="${cls}" ${disabled ? 'disabled' : ''}
+                onclick="RoomGallery.selectSlot('${s.start}')"
+                title="${isSelected ? 'Selected slot' : s.state === 'open' ? 'Click to select this slot' : label}">
+                ${this.fmt12(s.start)}
+                <small>${label}</small>
+              </button>
+            `;
+          }).join('')}
+        </div>
+      </section>
+
+      <!-- 4. Dynamic Price & Credits Summary Box -->
+      <div class="rg-summary-card">
+        <div class="rg-summary-row">
+          <span>Selected Reservation:</span>
+          <strong>${this.selectedSlot ? `${this.fmt12(this.selectedSlot)} – ${endTime12} (${durationLabel})` : 'Select a time slot above'}</strong>
+        </div>
+        <div class="rg-summary-row">
+          <span>Room Rate:</span>
+          <strong>₹${Number(room.hourlyRate || 0).toLocaleString('en-IN')} / hour</strong>
+        </div>
+        <div class="rg-summary-row">
+          <span>Startup Plan Credits:</span>
+          <span style="color: #4F3FE0; font-weight: 700;">${remainingCredits} hrs free available</span>
+        </div>
+        <div class="rg-summary-divider"></div>
+        <div class="rg-summary-total">
+          <span>Estimated Total:</span>
+          ${isCovered ? `
+            <span class="rg-summary-covered">Covered by Plan (₹0)</span>
+          ` : `
+            <span style="color: #4F3FE0; font-size: 15px;">₹${billableAmount.toLocaleString('en-IN')}</span>
+          `}
+        </div>
+        <div style="font-size: 10.5px; color: #8A90A2; text-align: right; margin-top: -2px;">
+          ${isCovered ? `⚡ ${creditsUsed} hr credit will be deducted upon confirmation` : `⚡ Partial credit used (${creditsUsed} hr). Balance billed at checkout.`}
+        </div>
+      </div>
+    `;
+  },
+
+  selectSlot(slotTime) {
+    this.selectedSlot = slotTime;
+    this.refreshBookingMount();
+  },
+
+  selectDuration(mins) {
+    this.selectedDurationMins = Number(mins);
+    this.refreshBookingMount();
+  },
+
+  changeDate(newDate) {
+    if (!newDate) return;
+    this.activeDate = newDate;
+    const M = window.MeetingRoomsModule;
+    if (M) M.selectedDate = newDate;
+    this.selectedSlot = null;
+    this.refreshBookingMount();
+  },
+
+  refreshBookingMount() {
+    const container = document.getElementById('rg-interactive-booking-mount');
+    if (!container || !this.activeRoomId) return;
+    const room = this.getRoom(this.activeRoomId);
+    if (!room) return;
+    container.innerHTML = this.renderBookingSection(room, this.activeDate);
+  },
+
+  proceedToBooking(roomId) {
+    const room = this.getRoom(roomId);
+    if (!room) return;
+    const M = window.MeetingRoomsModule;
+    if (!M) return;
+
+    if (!this.selectedSlot) {
+      if (typeof App !== 'undefined' && App.showToast) {
+        App.showToast('Please select an available time slot first.', 'warning');
+      }
+      return;
+    }
+
+    const slot = this.selectedSlot;
+    const duration = this.selectedDurationMins || 60;
+    this.closeDetails();
+
+    M.selectedSlotsByRoom = { [roomId]: [slot] };
+    M.selectedDurationByRoom = { [roomId]: duration };
+    if (this.activeDate) M.selectedDate = this.activeDate;
+    
+    if (M.render) M.render();
+    if (M.openConfirmBookingModal) {
+      M.openConfirmBookingModal(roomId);
+    }
   },
 
   openDetails(roomId) {
     const room = this.getRoom(roomId);
     if (!room) return;
     const M = window.MeetingRoomsModule;
+    this.activeRoomId = roomId;
+
     const images = this.getImages(room);
     const primary = images[0];
-    const dateStr = (M && M.selectedDate) || '';
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+    const dateStr = (M && M.selectedDate) || this.activeDate || todayStr;
+    this.activeDate = dateStr;
+
     const status = M && M.computeRoomStatus ? M.computeRoomStatus(room, dateStr) : { status: 'Available', statusType: 'available' };
     const isMaint = M && M.isRoomUnderMaintenance ? M.isRoomUnderMaintenance(room) : false;
-    const slots = this.getSlotsForDate(room, dateStr);
-    const openCount = slots.filter(s => s.state === 'open').length;
     const policies = (window.store && window.store.getMeetingRoomPolicies) ? window.store.getMeetingRoomPolicies() : {};
     const myStartup = M && M.getMyStartup ? M.getMyStartup() : null;
     const credits = myStartup ? Math.max(0, (myStartup.includedMeetingHours || 0) - (myStartup.usedMeetingHours || 0)) : 0;
     const description = this.getDescription(room);
     const id = this.esc(room.id);
-    const dateLabel = dateStr ? new Date(`${dateStr}T00:00:00`).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' }) : 'Today';
     const extraThumbs = Math.max(0, images.length - 5);
 
     const policyItems = [
@@ -344,7 +547,7 @@ window.RoomGallery = {
           <div class="rg-details-head">
             <div style="min-width:0;">
               <h3 id="rg-details-title" class="rg-details-title" title="${this.esc(room.name)}">${this.esc(room.name)}</h3>
-              <div class="rg-details-sub">${id}${room.floor ? ` • ${this.esc(room.floor)}` : ''}</div>
+              <div class="rg-details-sub">${id}${room.floor ? ` • ${this.esc(room.floor)}` : ''} • Max ${room.capacity} Pax</div>
             </div>
             <button type="button" class="rg-close-btn" onclick="RoomGallery.closeDetails()" aria-label="Close room details">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 6l12 12M18 6L6 18"/></svg>
@@ -372,23 +575,16 @@ window.RoomGallery = {
             </div>
             ${credits > 0 ? `<div class="rg-credit-note">✓ Your plan includes ${credits} free meeting hour${credits === 1 ? '' : 's'} – eligible bookings are billed against credits first.</div>` : ''}
 
+            <!-- Interactive Booking & Availability Section -->
+            <div id="rg-interactive-booking-mount">
+              ${this.renderBookingSection(room, dateStr)}
+            </div>
+
             ${description ? `<section class="rg-section"><h4>About this room</h4><p class="rg-desc">${this.esc(description)}</p></section>` : ''}
 
             <section class="rg-section">
-              <h4>Amenities</h4>
+              <h4>Room Amenities</h4>
               <div class="rg-chips">${(room.amenities || []).map(a => `<span class="rg-chip">${this.esc(a)}</span>`).join('') || '<span class="rg-muted">Standard AV &amp; Wi-Fi</span>'}</div>
-            </section>
-
-            <section class="rg-section">
-              <h4>Available time slots <span class="rg-muted">• ${this.esc(dateLabel)} • ${openCount} open</span></h4>
-              <div class="rg-slots">
-                ${slots.map(s => `
-                  <button type="button" class="rg-slot ${s.state}" ${s.state === 'open' ? `onclick="RoomGallery.bookSlot('${id}', '${s.start}')"` : 'disabled'}
-                    title="${s.state === 'open' ? 'Book this slot' : s.state === 'booked' ? 'Already booked' : s.state === 'closed' ? 'Under maintenance' : 'Time has passed'}">
-                    ${this.fmt12(s.start)}
-                    <small>${s.state === 'open' ? 'Open' : s.state === 'booked' ? 'Booked' : s.state === 'closed' ? 'Closed' : 'Past'}</small>
-                  </button>`).join('')}
-              </div>
             </section>
 
             <section class="rg-section">
@@ -398,10 +594,10 @@ window.RoomGallery = {
           </div>
 
           <div class="rg-details-foot">
-            <button type="button" class="btn btn-outline btn-sm" onclick="RoomGallery.closeDetails(); MeetingRoomsModule.setSchedulerViewMode('compare')">⚖️ Compare Rooms</button>
-            <button type="button" class="btn btn-primary btn-sm rg-book-btn" ${isMaint ? 'disabled' : ''}
-              onclick="RoomGallery.closeDetails(); MeetingRoomsModule.bookNextAvailable('${id}')">
-              ${isMaint ? '🔧 Under Maintenance' : '⚡ Book Now'}
+            <button type="button" class="btn btn-outline" onclick="RoomGallery.closeDetails(); if(window.MeetingRoomsModule) MeetingRoomsModule.setSchedulerViewMode('compare')">⚖️ Compare Rooms</button>
+            <button type="button" class="btn btn-primary rg-book-btn" ${isMaint ? 'disabled' : ''}
+              onclick="RoomGallery.proceedToBooking('${id}')">
+              ${isMaint ? '🔧 Under Maintenance' : '⚡ Confirm & Book Now'}
             </button>
           </div>
         </aside>
@@ -422,16 +618,13 @@ window.RoomGallery = {
     if (el) el.remove();
     if (this._onDetailsKey) document.removeEventListener('keydown', this._onDetailsKey);
     this._onDetailsKey = null;
+    this.activeRoomId = null;
     if (!document.getElementById('rg-lightbox')) document.body.classList.remove('rg-no-scroll');
   },
 
   bookSlot(roomId, slot) {
-    const M = window.MeetingRoomsModule;
-    if (!M) return;
-    this.closeDetails();
-    M.selectedSlotsByRoom = { [roomId]: [slot] };
-    M.render();
-    M.openConfirmBookingModal(roomId);
+    this.selectedSlot = slot;
+    this.proceedToBooking(roomId);
   },
 
   // ---------- Admin photo manager ----------

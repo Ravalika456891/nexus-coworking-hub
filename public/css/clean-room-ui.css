@@ -769,3 +769,716 @@
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.02);
 }
 
+/* ==========================================================================
+   ROOM DETAILS SLIDE-OUT DRAWER & INTERACTIVE BOOKING PANEL (NEXUS BRANDING)
+   ========================================================================== */
+
+body.rg-no-scroll {
+  overflow: hidden !important;
+}
+
+/* 1. Backdrop Overlay */
+.rg-details-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 99999 !important;
+  background: rgba(15, 23, 42, 0.65) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  align-items: stretch !important;
+  animation: rgFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes rgFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes rgSlideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes rgSlideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+/* 2. Slide-out Drawer Panel */
+.rg-details-panel {
+  width: 100% !important;
+  max-width: 540px !important;
+  height: 100vh !important;
+  background: #ffffff !important;
+  color: #111827 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-shadow: -12px 0 48px rgba(0, 0, 0, 0.22) !important;
+  animation: rgSlideIn 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden !important;
+  position: relative !important;
+  border-left: 1px solid #ECEEF4 !important;
+}
+
+@media (max-width: 640px) {
+  .rg-details-overlay {
+    align-items: flex-end !important;
+  }
+  .rg-details-panel {
+    max-width: 100% !important;
+    height: 92vh !important;
+    border-radius: 24px 24px 0 0 !important;
+    animation: rgSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    border-left: none !important;
+    border-top: 1px solid #ECEEF4 !important;
+  }
+}
+
+/* 3. Drawer Header */
+.rg-details-head {
+  padding: 16px 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  border-bottom: 1px solid #ECEEF4 !important;
+  background: #FFFFFF !important;
+  flex-shrink: 0 !important;
+  gap: 12px !important;
+}
+
+.rg-details-title {
+  font-size: 17px !important;
+  font-weight: 800 !important;
+  color: #111827 !important;
+  margin: 0 !important;
+  line-height: 1.25 !important;
+  letter-spacing: -0.01em !important;
+}
+
+.rg-details-sub {
+  font-size: 11.5px !important;
+  color: #8A90A2 !important;
+  font-weight: 600 !important;
+  margin-top: 3px !important;
+}
+
+.rg-close-btn {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 50% !important;
+  border: 1px solid #ECEEF4 !important;
+  background: #F8FAFC !important;
+  color: #475569 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: all 0.18s ease !important;
+  flex-shrink: 0 !important;
+  padding: 0 !important;
+}
+
+.rg-close-btn:hover {
+  background: #F1F5F9 !important;
+  color: #0F172A !important;
+  transform: rotate(90deg);
+}
+
+/* 4. Drawer Body Scroll Area */
+.rg-details-body {
+  flex: 1 !important;
+  overflow-y: auto !important;
+  padding: 20px 24px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 18px !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+/* 5. Hero Photo & Thumbnails */
+.rg-hero {
+  width: 100% !important;
+  height: 220px !important;
+  border-radius: 14px !important;
+  overflow: hidden !important;
+  position: relative !important;
+  border: 1px solid #ECEEF4 !important;
+  padding: 0 !important;
+  background: #0F172A !important;
+  cursor: pointer !important;
+  display: block !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06) !important;
+}
+
+.rg-hero:disabled {
+  cursor: default !important;
+}
+
+.rg-frame {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.rg-hero img,
+.rg-frame img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+  transition: transform 0.35s ease !important;
+}
+
+.rg-hero:hover img {
+  transform: scale(1.03);
+}
+
+.rg-thumb-count {
+  position: absolute !important;
+  bottom: 12px !important;
+  right: 12px !important;
+  background: rgba(15, 23, 42, 0.78) !important;
+  backdrop-filter: blur(6px) !important;
+  color: #ffffff !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  padding: 5px 12px !important;
+  border-radius: 999px !important;
+  pointer-events: none !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+}
+
+.rg-details-thumbs {
+  display: flex !important;
+  gap: 8px !important;
+  overflow-x: auto !important;
+  padding-bottom: 2px !important;
+}
+
+.rg-details-thumb {
+  width: 68px !important;
+  height: 48px !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  border: 1.5px solid #ECEEF4 !important;
+  padding: 0 !important;
+  background: #F1F5F9 !important;
+  cursor: pointer !important;
+  position: relative !important;
+  flex-shrink: 0 !important;
+  transition: all 0.18s ease !important;
+}
+
+.rg-details-thumb:hover {
+  border-color: #4F3FE0 !important;
+  transform: translateY(-1px);
+}
+
+.rg-details-thumb img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+.rg-more {
+  position: absolute !important;
+  inset: 0 !important;
+  background: rgba(15, 23, 42, 0.72) !important;
+  color: #ffffff !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* 6. Quick Facts Card */
+.rg-facts {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 10px !important;
+  background: #F8FAFC !important;
+  border: 1px solid #ECEEF4 !important;
+  border-radius: 12px !important;
+  padding: 12px 14px !important;
+}
+
+.rg-fact {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+}
+
+.rg-fact-label {
+  font-size: 10.5px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  color: #8A90A2 !important;
+}
+
+.rg-fact-value {
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  color: #111827 !important;
+}
+
+.rg-fact-value.rg-status.available {
+  color: #15803D !important;
+}
+
+.rg-fact-value.rg-status.booked {
+  color: #B45309 !important;
+}
+
+.rg-fact-value.rg-status.maintenance {
+  color: #DC2626 !important;
+}
+
+/* 7. Startup Credit Note */
+.rg-credit-note {
+  background: #F4F2FF !important;
+  border: 1px solid #E4DEFF !important;
+  border-radius: 10px !important;
+  padding: 10px 14px !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  color: #4F3FE0 !important;
+  line-height: 1.4 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+/* 8. Sections & Typography */
+.rg-section {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+}
+
+.rg-section h4 {
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  color: #111827 !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+.rg-desc {
+  font-size: 12.5px !important;
+  line-height: 1.55 !important;
+  color: #4B5563 !important;
+  margin: 0 !important;
+}
+
+.rg-chips {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+}
+
+.rg-chip {
+  background: #FFFFFF !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 8px !important;
+  padding: 4px 10px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #334155 !important;
+}
+
+.rg-muted {
+  font-weight: 500 !important;
+  color: #8A90A2 !important;
+}
+
+/* 9. Interactive Date & Quick Actions */
+.rg-date-bar {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+}
+
+.rg-date-input-wrap {
+  flex: 1 !important;
+  min-width: 140px !important;
+  position: relative !important;
+}
+
+.rg-date-input {
+  width: 100% !important;
+  padding: 8px 12px !important;
+  border: 1.5px solid #ECEEF4 !important;
+  border-radius: 10px !important;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  color: #111827 !important;
+  background: #FFFFFF !important;
+  outline: none !important;
+  transition: all 0.18s ease !important;
+  font-family: inherit !important;
+}
+
+.rg-date-input:focus {
+  border-color: #4F3FE0 !important;
+  box-shadow: 0 0 0 3px rgba(79, 63, 224, 0.12) !important;
+}
+
+.rg-quick-pill {
+  padding: 8px 14px !important;
+  border-radius: 10px !important;
+  border: 1.5px solid #ECEEF4 !important;
+  background: #F8FAFC !important;
+  color: #374151 !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.18s ease !important;
+}
+
+.rg-quick-pill:hover {
+  background: #FFFFFF !important;
+  border-color: #4F3FE0 !important;
+  color: #4F3FE0 !important;
+}
+
+.rg-quick-pill.active {
+  background: #4F3FE0 !important;
+  border-color: #4F3FE0 !important;
+  color: #FFFFFF !important;
+}
+
+/* 10. Interactive 12-Hour AM/PM Time Slots Grid */
+.rg-slots {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 8px !important;
+}
+
+@media (max-width: 480px) {
+  .rg-slots {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+
+.rg-slot {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 8px 4px !important;
+  border-radius: 10px !important;
+  font-size: 11.5px !important;
+  font-weight: 800 !important;
+  line-height: 1.2 !important;
+  cursor: pointer !important;
+  transition: all 0.16s ease !important;
+  border: 1.5px solid #ECEEF4 !important;
+  background: #FFFFFF !important;
+  color: #111827 !important;
+}
+
+/* Available slot (Green neutral) */
+.rg-slot.open {
+  border-color: #BBF7D0 !important;
+  background: #F0FDF4 !important;
+  color: #166534 !important;
+}
+
+.rg-slot.open:hover {
+  background: #DCFCE7 !important;
+  border-color: #4ADE80 !important;
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 10px rgba(22, 101, 52, 0.12) !important;
+}
+
+.rg-slot.open small {
+  font-size: 9.5px !important;
+  font-weight: 700 !important;
+  color: #15803D !important;
+  margin-top: 2px !important;
+}
+
+/* Selected slot (Purple NEXUS theme) */
+.rg-slot.selected {
+  background: #4F3FE0 !important;
+  border-color: #4335C9 !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 14px rgba(79, 63, 224, 0.4) !important;
+  transform: scale(1.02);
+}
+
+.rg-slot.selected small {
+  font-size: 9.5px !important;
+  font-weight: 800 !important;
+  color: #E0E7FF !important;
+  margin-top: 2px !important;
+}
+
+/* Booked / Unavailable slot (Gray) */
+.rg-slot.booked {
+  background: #F1F5F9 !important;
+  border-color: #E2E8F0 !important;
+  color: #94A3B8 !important;
+  cursor: not-allowed !important;
+  opacity: 0.8 !important;
+}
+
+.rg-slot.booked small {
+  font-size: 9px !important;
+  color: #94A3B8 !important;
+  margin-top: 2px !important;
+}
+
+/* Past / Completed slot (Muted & Disabled) */
+.rg-slot.past {
+  background: #F8FAFC !important;
+  border-color: #E2E8F0 !important;
+  color: #CBD5E1 !important;
+  cursor: not-allowed !important;
+  opacity: 0.65 !important;
+  text-decoration: line-through !important;
+}
+
+.rg-slot.past small {
+  font-size: 9px !important;
+  color: #CBD5E1 !important;
+  text-decoration: none !important;
+  margin-top: 2px !important;
+}
+
+/* Closed / Maintenance slot */
+.rg-slot.closed {
+  background: #FEF2F2 !important;
+  border-color: #FECACA !important;
+  color: #DC2626 !important;
+  cursor: not-allowed !important;
+}
+
+/* 11. Dynamic Booking & Credit Summary Box */
+.rg-summary-card {
+  background: #F8FAFC !important;
+  border: 1.5px solid #ECEEF4 !important;
+  border-radius: 12px !important;
+  padding: 14px 16px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+}
+
+.rg-summary-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  font-size: 12px !important;
+  color: #4B5563 !important;
+}
+
+.rg-summary-row strong {
+  color: #111827 !important;
+  font-weight: 700 !important;
+}
+
+.rg-summary-divider {
+  height: 1px !important;
+  background: #ECEEF4 !important;
+  margin: 2px 0 !important;
+}
+
+.rg-summary-total {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  font-size: 13.5px !important;
+  font-weight: 800 !important;
+  color: #111827 !important;
+}
+
+.rg-summary-covered {
+  color: #15803D !important;
+  font-weight: 800 !important;
+}
+
+/* 12. Policies List */
+.rg-policies {
+  margin: 0 !important;
+  padding-left: 18px !important;
+  font-size: 11.5px !important;
+  line-height: 1.6 !important;
+  color: #64748B !important;
+}
+
+.rg-policies li {
+  margin-bottom: 3px !important;
+}
+
+/* 13. Sticky Drawer Footer */
+.rg-details-foot {
+  padding: 16px 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  border-top: 1px solid #ECEEF4 !important;
+  background: #FFFFFF !important;
+  flex-shrink: 0 !important;
+}
+
+.rg-details-foot .btn {
+  border-radius: 12px !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  padding: 11px 18px !important;
+  cursor: pointer !important;
+  transition: all 0.18s ease !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+}
+
+.rg-details-foot .btn-outline {
+  background: #FFFFFF !important;
+  border: 1.5px solid #ECEEF4 !important;
+  color: #374151 !important;
+}
+
+.rg-details-foot .btn-outline:hover {
+  background: #F8FAFC !important;
+  border-color: #CBD5E1 !important;
+}
+
+.rg-details-foot .rg-book-btn {
+  flex: 1 !important;
+  background: #4F3FE0 !important;
+  border: 1.5px solid #4335C9 !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 14px rgba(79, 63, 224, 0.35) !important;
+}
+
+.rg-details-foot .rg-book-btn:hover:not(:disabled) {
+  background: #4335C9 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(79, 63, 224, 0.45) !important;
+}
+
+.rg-details-foot .rg-book-btn:disabled {
+  background: #E2E8F0 !important;
+  border-color: #CBD5E1 !important;
+  color: #94A3B8 !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+}
+
+/* 14. Full-screen Lightbox Modal */
+.rg-lightbox {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 100000 !important;
+  background: rgba(10, 15, 30, 0.94) !important;
+  backdrop-filter: blur(12px) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  animation: rgFadeIn 0.2s ease !important;
+}
+
+.rg-lb-top {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 16px 24px !important;
+  color: #FFFFFF !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.rg-lb-title {
+  font-size: 15px !important;
+  font-weight: 800 !important;
+}
+
+.rg-lb-counter {
+  font-size: 12px !important;
+  color: #94A3B8 !important;
+}
+
+.rg-lb-stage {
+  flex: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
+  padding: 20px !important;
+}
+
+.rg-lb-imgwrap img {
+  max-width: 90vw !important;
+  max-height: 75vh !important;
+  object-fit: contain !important;
+  border-radius: 12px !important;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5) !important;
+}
+
+.rg-lb-nav {
+  position: absolute !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 48px !important;
+  height: 48px !important;
+  border-radius: 50% !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  color: #FFFFFF !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.rg-lb-nav:hover {
+  background: rgba(255, 255, 255, 0.3) !important;
+  transform: translateY(-50%) scale(1.08) !important;
+}
+
+.rg-lb-prev { left: 24px !important; }
+.rg-lb-next { right: 24px !important; }
+
+.rg-lb-strip {
+  display: flex !important;
+  gap: 10px !important;
+  justify-content: center !important;
+  padding: 14px 20px !important;
+  background: rgba(0, 0, 0, 0.4) !important;
+  overflow-x: auto !important;
+}
+
+.rg-lb-strip-item {
+  width: 60px !important;
+  height: 42px !important;
+  border-radius: 6px !important;
+  overflow: hidden !important;
+  border: 2px solid transparent !important;
+  cursor: pointer !important;
+  opacity: 0.6 !important;
+  transition: all 0.18s ease !important;
+}
+
+.rg-lb-strip-item.active {
+  border-color: #4F3FE0 !important;
+  opacity: 1 !important;
+  transform: scale(1.05) !important;
+}
+
+.rg-lb-strip-item img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+
