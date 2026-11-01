@@ -361,15 +361,20 @@ body::before {
 }
 
 .nav-item.active {
-  color: #fff !important;
-  background: var(--accent-primary) !important;
-  box-shadow: 0 2px 8px var(--accent-primary-glow);
-  font-weight: 600;
+  color: #4F3FE0 !important;
+  background: #EEEBFF !important;
+  box-shadow: none !important;
+  font-weight: 700;
+  border-radius: 10px;
 }
 
 .nav-item.active .nav-item-text {
-  color: #fff !important;
-  font-weight: 600;
+  color: #4F3FE0 !important;
+  font-weight: 700;
+}
+
+.nav-item.active .nav-item-icon {
+  color: #4F3FE0 !important;
 }
 
 .nav-item-icon {
