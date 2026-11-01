@@ -3925,6 +3925,29 @@ const MeetingRoomsModule = {
       return `${displayH < 10 ? '0' : ''}${displayH}:${m < 10 ? '0' : ''}${m} ${period}`;
     };
 
+    const generate12hTimeOptions = (selectedVal) => {
+      const times = [];
+      for (let h = 8; h <= 21; h++) {
+        for (let m = 0; m < 60; m += 30) {
+          if (h === 21 && m > 0) break;
+          const val24 = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+          const ampm = h >= 12 ? 'PM' : 'AM';
+          const dispH = ((h + 11) % 12) + 1;
+          const label12 = `${String(dispH).padStart(2, '0')}:${String(m).padStart(2, '0')} ${ampm}`;
+          times.push({ val: val24, label: label12 });
+        }
+      }
+      if (selectedVal && !times.some(t => t.val === selectedVal)) {
+        const [sh, sm] = selectedVal.split(':').map(Number);
+        const ampm = sh >= 12 ? 'PM' : 'AM';
+        const dispH = ((sh + 11) % 12) + 1;
+        const label12 = `${String(dispH).padStart(2, '0')}:${String(sm || 0).padStart(2, '0')} ${ampm}`;
+        times.push({ val: selectedVal, label: label12 });
+        times.sort((a, b) => a.val.localeCompare(b.val));
+      }
+      return times.map(t => `<option value="${t.val}" ${t.val === selectedVal ? 'selected' : ''}>${t.label}</option>`).join('');
+    };
+
     const remainingCredits = Math.max(0, (myStartup.includedMeetingHours || 12) - (myStartup.usedMeetingHours || 0));
     const isCovered = remainingCredits >= win.durationHours;
     const totalCost = Math.round(room.hourlyRate * win.durationHours);
@@ -4066,6 +4089,29 @@ const MeetingRoomsModule = {
       return `${displayH < 10 ? '0' : ''}${displayH}:${m < 10 ? '0' : ''}${m} ${period}`;
     };
 
+    const generate12hTimeOptions = (selectedVal) => {
+      const times = [];
+      for (let h = 8; h <= 21; h++) {
+        for (let m = 0; m < 60; m += 30) {
+          if (h === 21 && m > 0) break;
+          const val24 = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+          const ampm = h >= 12 ? 'PM' : 'AM';
+          const dispH = ((h + 11) % 12) + 1;
+          const label12 = `${String(dispH).padStart(2, '0')}:${String(m).padStart(2, '0')} ${ampm}`;
+          times.push({ val: val24, label: label12 });
+        }
+      }
+      if (selectedVal && !times.some(t => t.val === selectedVal)) {
+        const [sh, sm] = selectedVal.split(':').map(Number);
+        const ampm = sh >= 12 ? 'PM' : 'AM';
+        const dispH = ((sh + 11) % 12) + 1;
+        const label12 = `${String(dispH).padStart(2, '0')}:${String(sm || 0).padStart(2, '0')} ${ampm}`;
+        times.push({ val: selectedVal, label: label12 });
+        times.sort((a, b) => a.val.localeCompare(b.val));
+      }
+      return times.map(t => `<option value="${t.val}" ${t.val === selectedVal ? 'selected' : ''}>${t.label}</option>`).join('');
+    };
+
     const myStartup = this.getMyStartup();
     const remainingCredits = Math.max(0, (myStartup.includedMeetingHours || 12) - (myStartup.usedMeetingHours || 0));
     const isCovered = remainingCredits >= count;
@@ -4139,12 +4185,16 @@ const MeetingRoomsModule = {
 
                   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     <div>
-                      <label style="font-size: 10.5px; font-weight: 700; color: var(--text-secondary); margin-bottom: 3px; display: block;">Start Time</label>
-                      <input type="time" id="confirm-start-time" class="form-control" value="${startSlot}" onchange="MeetingRoomsModule.updateConfirmModalTiming('${room.id}')" style="font-size: 12.5px; font-weight: 700; font-family: var(--font-mono); padding: 5px 8px; border-radius: 6px;" required>
+                      <label style="font-size: 10.5px; font-weight: 700; color: var(--text-secondary); margin-bottom: 3px; display: block;">Start Time (12-Hour AM/PM)</label>
+                      <select id="confirm-start-time" class="form-control" onchange="MeetingRoomsModule.updateConfirmModalTiming('${room.id}')" style="font-size: 12.5px; font-weight: 700; padding: 7px 10px; border-radius: 8px; background: #ffffff; border: 1.5px solid var(--border-medium); cursor: pointer;" required>
+                        ${generate12hTimeOptions(startSlot)}
+                      </select>
                     </div>
                     <div>
-                      <label style="font-size: 10.5px; font-weight: 700; color: var(--text-secondary); margin-bottom: 3px; display: block;">End Time</label>
-                      <input type="time" id="confirm-end-time" class="form-control" value="${endSlotStr}" onchange="MeetingRoomsModule.updateConfirmModalTiming('${room.id}')" style="font-size: 12.5px; font-weight: 700; font-family: var(--font-mono); padding: 5px 8px; border-radius: 6px;" required>
+                      <label style="font-size: 10.5px; font-weight: 700; color: var(--text-secondary); margin-bottom: 3px; display: block;">End Time (12-Hour AM/PM)</label>
+                      <select id="confirm-end-time" class="form-control" onchange="MeetingRoomsModule.updateConfirmModalTiming('${room.id}')" style="font-size: 12.5px; font-weight: 700; padding: 7px 10px; border-radius: 8px; background: #ffffff; border: 1.5px solid var(--border-medium); cursor: pointer;" required>
+                        ${generate12hTimeOptions(endSlotStr)}
+                      </select>
                     </div>
                   </div>
                 </div>
@@ -4267,7 +4317,20 @@ const MeetingRoomsModule = {
     const endH = Math.floor(endTotal / 60);
     const endM = endTotal % 60;
     const pad = n => (n < 10 ? '0' : '') + n;
-    endInput.value = `${pad(endH)}:${pad(endM)}`;
+    const endVal = `${pad(endH)}:${pad(endM)}`;
+
+    if (endInput.tagName === 'SELECT') {
+      const exists = Array.from(endInput.options).some(opt => opt.value === endVal);
+      if (!exists) {
+        const ampm = endH >= 12 ? 'PM' : 'AM';
+        const dispH = ((endH + 11) % 12) + 1;
+        const opt = document.createElement('option');
+        opt.value = endVal;
+        opt.textContent = `${String(dispH).padStart(2, '0')}:${pad(endM)} ${ampm}`;
+        endInput.appendChild(opt);
+      }
+    }
+    endInput.value = endVal;
     this.updateConfirmModalTiming(roomId);
   },
 
@@ -4523,6 +4586,29 @@ const MeetingRoomsModule = {
       const period = h >= 12 ? 'PM' : 'AM';
       const displayH = h % 12 || 12;
       return `${displayH < 10 ? '0' : ''}${displayH}:${m < 10 ? '0' : ''}${m} ${period}`;
+    };
+
+    const generate12hTimeOptions = (selectedVal) => {
+      const times = [];
+      for (let h = 8; h <= 21; h++) {
+        for (let m = 0; m < 60; m += 30) {
+          if (h === 21 && m > 0) break;
+          const val24 = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+          const ampm = h >= 12 ? 'PM' : 'AM';
+          const dispH = ((h + 11) % 12) + 1;
+          const label12 = `${String(dispH).padStart(2, '0')}:${String(m).padStart(2, '0')} ${ampm}`;
+          times.push({ val: val24, label: label12 });
+        }
+      }
+      if (selectedVal && !times.some(t => t.val === selectedVal)) {
+        const [sh, sm] = selectedVal.split(':').map(Number);
+        const ampm = sh >= 12 ? 'PM' : 'AM';
+        const dispH = ((sh + 11) % 12) + 1;
+        const label12 = `${String(dispH).padStart(2, '0')}:${String(sm || 0).padStart(2, '0')} ${ampm}`;
+        times.push({ val: selectedVal, label: label12 });
+        times.sort((a, b) => a.val.localeCompare(b.val));
+      }
+      return times.map(t => `<option value="${t.val}" ${t.val === selectedVal ? 'selected' : ''}>${t.label}</option>`).join('');
     };
 
     const dParts = booking.date.split('-').map(Number);
