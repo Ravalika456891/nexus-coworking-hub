@@ -135,3 +135,4 @@ const replacement = `  switchTab(tabId) {
 code = code.substring(0, startIndex) + replacement + code.substring(endIndex);
 fs.writeFileSync('js/main.js', code, 'utf8');
 console.log('✅ js/main.js switchTab updated successfully!');
+
