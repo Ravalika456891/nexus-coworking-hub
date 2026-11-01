@@ -2110,6 +2110,8 @@ class NexusStore {
       this.state.meetingRoomPolicies = {
         maxDurationHours: 4,
         minDurationMins: 30,
+        cancellationCutoffHours: 1,
+        rescheduleCutoffHours: 1,
         allowRecurring: true,
         maxRecurringOccurrences: 12,
         requireApprovalAboveHours: 0,

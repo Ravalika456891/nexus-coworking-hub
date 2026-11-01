@@ -54,9 +54,19 @@ window.RoomGallery = {
 
   getImages(room) {
     if (!room) return [];
-    if (Array.isArray(room.images)) return room.images.filter(i => i && i.url);
+    if (Array.isArray(room.images) && room.images.length > 0) {
+      const valid = room.images.filter(i => i && (i.url || typeof i === 'string'));
+      if (valid.length > 0) return valid.map(i => typeof i === 'string' ? { url: i, thumbUrl: i } : i);
+    }
     const seed = this.getSeedRoom(room.id);
-    return seed && Array.isArray(seed.images) ? seed.images : [];
+    if (seed && Array.isArray(seed.images) && seed.images.length > 0) {
+      return seed.images;
+    }
+    const single = room.image || room.fallbackImage || (seed && seed.image);
+    if (single) {
+      return [{ url: single, thumbUrl: single, alt: room.name }];
+    }
+    return [{ url: this.FALLBACK_IMAGE, thumbUrl: this.FALLBACK_IMAGE, alt: room.name || 'Room photo' }];
   },
 
   getDescription(room) {
@@ -452,6 +462,10 @@ window.RoomGallery = {
         <div style="font-size: 10.5px; color: #8A90A2; text-align: right; margin-top: -2px;">
           ${isCovered ? `⚡ ${creditsUsed} hr credit will be deducted upon confirmation` : `⚡ Partial credit used (${creditsUsed} hr). Balance billed at checkout.`}
         </div>
+        <div style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700; color: #15803D; background: #DCFCE7; padding: 7px 12px; border-radius: 8px; border: 1px solid #BBF7D0; margin-top: 4px;">
+          <span>🛡️</span>
+          <span>Free cancellation until 1 hour before start</span>
+        </div>
       </div>
     `;
   },
@@ -459,11 +473,13 @@ window.RoomGallery = {
   selectSlot(slotTime) {
     this.selectedSlot = slotTime;
     this.refreshBookingMount();
+    this.updateFooterSummary();
   },
 
   selectDuration(mins) {
     this.selectedDurationMins = Number(mins);
     this.refreshBookingMount();
+    this.updateFooterSummary();
   },
 
   changeDate(newDate) {
@@ -471,8 +487,8 @@ window.RoomGallery = {
     this.activeDate = newDate;
     const M = window.MeetingRoomsModule;
     if (M) M.selectedDate = newDate;
-    this.selectedSlot = null;
     this.refreshBookingMount();
+    this.updateFooterSummary();
   },
 
   refreshBookingMount() {
@@ -481,6 +497,43 @@ window.RoomGallery = {
     const room = this.getRoom(this.activeRoomId);
     if (!room) return;
     container.innerHTML = this.renderBookingSection(room, this.activeDate);
+  },
+
+  updateFooterSummary() {
+    const metaEl = document.getElementById('rg-foot-meta');
+    if (!metaEl || !this.activeRoomId) return;
+    const room = this.getRoom(this.activeRoomId);
+    if (!room) return;
+    const M = window.MeetingRoomsModule;
+    const myStartup = M && M.getMyStartup ? M.getMyStartup() : null;
+    const remainingCredits = myStartup ? Math.max(0, (myStartup.includedMeetingHours || 12) - (myStartup.usedMeetingHours || 0)) : 0;
+    const durationHours = (this.selectedDurationMins || 60) / 60;
+    const durationLabel = this.selectedDurationMins === 30 ? '30m' : `${durationHours}h`;
+
+    let endTime12 = '';
+    if (this.selectedSlot) {
+      const [sh, sm] = this.selectedSlot.split(':').map(Number);
+      const totalMin = sh * 60 + sm + this.selectedDurationMins;
+      const eh = Math.floor(totalMin / 60);
+      const em = totalMin % 60;
+      endTime12 = this.fmt12(`${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`);
+    }
+
+    const isCovered = remainingCredits >= durationHours;
+    const billableAmount = isCovered ? 0 : Math.round(Math.max(0, durationHours - remainingCredits) * (room.hourlyRate || 0));
+
+    metaEl.innerHTML = `
+      <div style="min-width: 0; line-height: 1.3;">
+        <div style="font-size: 13px; font-weight: 800; color: #111827;">
+          ${this.selectedSlot ? `${this.fmt12(this.selectedSlot)} – ${endTime12} (${durationLabel})` : 'Select a time slot'}
+        </div>
+        <div style="font-size: 11px; font-weight: 700; color: #15803D; display: flex; align-items: center; gap: 4px; margin-top: 1px;">
+          <span>${isCovered ? 'Covered by Plan (₹0)' : `₹${billableAmount.toLocaleString('en-IN')}`}</span>
+          <span>•</span>
+          <span>🛡️ Free cancel 1h before</span>
+        </div>
+      </div>
+    `;
   },
 
   proceedToBooking(roomId) {
@@ -535,7 +588,7 @@ window.RoomGallery = {
     const policyItems = [
       policies.minDurationMins ? `Bookings from ${policies.minDurationMins} min up to ${policies.maxDurationHours || 4} h per reservation` : `Up to ${policies.maxDurationHours || 4} h per reservation`,
       `Book up to ${policies.advanceBookingDays || 30} days ahead${policies.minAdvanceNoticeMins ? `, at least ${policies.minAdvanceNoticeMins} min in advance` : ''}`,
-      `Free cancellation until ${policies.cancellationCutoffHours != null ? policies.cancellationCutoffHours : 24} h before start; reschedule until ${policies.rescheduleCutoffHours != null ? policies.rescheduleCutoffHours : 4} h before`,
+      `Free cancellation until 1 hour before start; reschedule until 1 hour before`,
       policies.allowRecurring !== false ? `Recurring bookings allowed (up to ${policies.maxRecurringOccurrences || 12} occurrences)` : 'Recurring bookings are disabled',
       `Operating hours: ${policies.operatingHoursLabel || '08:00 AM – 11:00 AM & 03:00 PM – 07:00 PM IST'}`
     ];
@@ -594,11 +647,14 @@ window.RoomGallery = {
           </div>
 
           <div class="rg-details-foot">
-            <button type="button" class="btn btn-outline" onclick="RoomGallery.closeDetails(); if(window.MeetingRoomsModule) MeetingRoomsModule.setSchedulerViewMode('compare')">⚖️ Compare Rooms</button>
-            <button type="button" class="btn btn-primary rg-book-btn" ${isMaint ? 'disabled' : ''}
-              onclick="RoomGallery.proceedToBooking('${id}')">
-              ${isMaint ? '🔧 Under Maintenance' : '⚡ Confirm & Book Now'}
-            </button>
+            <div class="rg-foot-meta" id="rg-foot-meta"></div>
+            <div class="rg-foot-actions">
+              <button type="button" class="btn btn-outline" onclick="RoomGallery.closeDetails(); if(window.MeetingRoomsModule) MeetingRoomsModule.setSchedulerViewMode('compare')">⚖️ Compare</button>
+              <button type="button" class="btn btn-primary rg-book-btn" id="rg-foot-book-btn" ${isMaint ? 'disabled' : ''}
+                onclick="RoomGallery.proceedToBooking('${id}')">
+                ${isMaint ? '🔧 Under Maintenance' : '⚡ Confirm & Book Now'}
+              </button>
+            </div>
           </div>
         </aside>
       </div>
@@ -606,6 +662,7 @@ window.RoomGallery = {
     this.closeDetails();
     const mount = document.getElementById('modal-mount') || document.body;
     mount.insertAdjacentHTML('beforeend', html);
+    this.updateFooterSummary();
     document.body.classList.add('rg-no-scroll');
     this._onDetailsKey = (e) => { if (e.key === 'Escape' && !this.lightbox) this.closeDetails(); };
     document.addEventListener('keydown', this._onDetailsKey);

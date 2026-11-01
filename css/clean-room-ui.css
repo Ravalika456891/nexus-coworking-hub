@@ -1139,10 +1139,17 @@ body.rg-no-scroll {
   font-size: 12px !important;
   font-weight: 700 !important;
   cursor: pointer !important;
-  transition: all 0.18s ease !important;
+  transition: all 0.16s ease !important;
+  outline: none !important;
 }
 
-.rg-quick-pill:hover {
+.rg-quick-pill:focus,
+.rg-quick-pill:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.rg-quick-pill:not(.active):hover {
   background: #FFFFFF !important;
   border-color: #4F3FE0 !important;
   color: #4F3FE0 !important;
@@ -1152,6 +1159,7 @@ body.rg-no-scroll {
   background: #4F3FE0 !important;
   border-color: #4F3FE0 !important;
   color: #FFFFFF !important;
+  box-shadow: 0 3px 10px rgba(79, 63, 224, 0.35) !important;
 }
 
 /* 10. Interactive 12-Hour AM/PM Time Slots Grid */
@@ -1320,14 +1328,31 @@ body.rg-no-scroll {
 
 /* 13. Sticky Drawer Footer */
 .rg-details-foot {
-  padding: 16px 24px !important;
+  padding: 14px 22px !important;
   display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  gap: 12px !important;
+  flex-direction: column !important;
+  gap: 10px !important;
   border-top: 1px solid #ECEEF4 !important;
   background: #FFFFFF !important;
   flex-shrink: 0 !important;
+}
+
+.rg-foot-meta {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  padding: 8px 12px !important;
+  background: #F8FAFC !important;
+  border: 1px solid #ECEEF4 !important;
+  border-radius: 10px !important;
+}
+
+.rg-foot-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  width: 100% !important;
 }
 
 .rg-details-foot .btn {

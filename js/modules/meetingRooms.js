@@ -2184,6 +2184,8 @@ const MeetingRoomsModule = {
     const policies = (window.store && window.store.getMeetingRoomPolicies) ? window.store.getMeetingRoomPolicies() : {
       maxDurationHours: 4,
       minDurationMins: 30,
+      cancellationCutoffHours: 1,
+      rescheduleCutoffHours: 1,
       allowRecurring: true,
       maxRecurringOccurrences: 12,
       requireApprovalAboveHours: 0,
@@ -2315,11 +2317,11 @@ const MeetingRoomsModule = {
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
               <div>
                 <label class="form-label" style="font-size: 11px; font-weight: 700;">Cancellation Cutoff (Hours before)</label>
-                <input type="number" name="cancellationCutoffHours" class="form-control" value="${policies.cancellationCutoffHours || 24}" min="0" max="72" style="font-size: 12px;">
+                <input type="number" name="cancellationCutoffHours" class="form-control" value="${policies.cancellationCutoffHours != null ? policies.cancellationCutoffHours : 1}" min="0" max="72" style="font-size: 12px;">
               </div>
               <div>
                 <label class="form-label" style="font-size: 11px; font-weight: 700;">Reschedule Cutoff (Hours before)</label>
-                <input type="number" name="rescheduleCutoffHours" class="form-control" value="${policies.rescheduleCutoffHours || 4}" min="0" max="48" style="font-size: 12px;">
+                <input type="number" name="rescheduleCutoffHours" class="form-control" value="${policies.rescheduleCutoffHours != null ? policies.rescheduleCutoffHours : 1}" min="0" max="48" style="font-size: 12px;">
               </div>
             </div>
             <button type="submit" class="btn btn-primary btn-sm" style="font-weight: 800; border-radius: 8px; padding: 7px 18px;">
@@ -2526,8 +2528,8 @@ const MeetingRoomsModule = {
       minAdvanceNoticeMins: Number(raw.minAdvanceNoticeMins) || 60,
       maxActiveReservationsPerStartup: Number(raw.maxActiveReservationsPerStartup) || 5,
       maxDailyBookingHoursPerStartup: Number(raw.maxDailyBookingHoursPerStartup) || 8,
-      cancellationCutoffHours: Number(raw.cancellationCutoffHours) || 24,
-      rescheduleCutoffHours: Number(raw.rescheduleCutoffHours) || 4
+      cancellationCutoffHours: raw.cancellationCutoffHours != null ? Number(raw.cancellationCutoffHours) : 1,
+      rescheduleCutoffHours: raw.rescheduleCutoffHours != null ? Number(raw.rescheduleCutoffHours) : 1
     };
     const res = await window.store.manageMeetingRoomAdmin({ action: 'update_policy', policyData });
     if (res && res.success) {
@@ -3879,30 +3881,20 @@ const MeetingRoomsModule = {
     }
 
     const startSlot = slots[0];
-    const lastSlot = slots[slots.length - 1];
     const prefMins = (this.selectedDurationByRoom && this.selectedDurationByRoom[roomId]) || (slots.length * 60);
-    if (slots.length === 1 && prefMins === 30) {
-      const [sh, sm] = startSlot.split(':').map(Number);
-      const totalEnd = sh * 60 + (sm || 0) + 30;
-      const pad = n => (n < 10 ? '0' : '') + n;
-      const endSlotStr = `${pad(Math.floor(totalEnd / 60))}:${pad(totalEnd % 60)}`;
-      return {
-        startTime: startSlot,
-        endTime: endSlotStr,
-        durationHours: 0.5,
-        durationMins: 30,
-        slotCount: 1
-      };
-    }
+    const [sh, sm] = startSlot.split(':').map(Number);
+    const totalEnd = sh * 60 + (sm || 0) + prefMins;
+    const pad = n => (n < 10 ? '0' : '') + n;
+    const endH = Math.floor(totalEnd / 60);
+    const endM = totalEnd % 60;
+    const endSlotStr = `${pad(endH)}:${pad(endM)}`;
+    const durHours = prefMins / 60;
 
-    const endH = parseInt(lastSlot.split(':')[0], 10) + 1;
-    const endSlotStr = `${endH < 10 ? '0' : ''}${endH}:00`;
-    const durHours = this.calculateBookingDuration(startSlot, endSlotStr);
     return {
       startTime: startSlot,
       endTime: endSlotStr,
       durationHours: durHours,
-      durationMins: Math.round(durHours * 60),
+      durationMins: prefMins,
       slotCount: slots.length
     };
   },
