@@ -535,44 +535,6 @@ const MeetingRoomsModule = {
     const canViewAnalytics = !isEmployee && (this.isAdminUser() || window.store.canPerformAction('analytics.view_startup'));
 
     container.innerHTML = `
-      <!-- Top Sub-Navigation Tabs Bar (Only when inside specific sub-views or Admin) -->
-      ${this.activeTab !== 'scheduler' ? `
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
-          <div style="display: flex; gap: 5px; background: var(--bg-surface-elevated); padding: 5px; border-radius: 999px; border: 1.5px solid var(--border-subtle); box-shadow: 0 2px 8px rgba(0,0,0,0.03); flex-wrap: wrap;">
-            <button class="btn btn-sm ${this.activeTab === 'scheduler' ? 'btn-primary' : 'btn-outline'}" onclick="MeetingRoomsModule.switchTab('scheduler')" style="border-radius: 999px; font-weight: 700; padding: 6px 15px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
-              <span>🏢</span> Explore Rooms
-            </button>
-            <button class="btn btn-sm ${this.activeTab === 'myBookings' ? 'btn-primary' : 'btn-outline'}" onclick="MeetingRoomsModule.switchTab('myBookings')" style="border-radius: 999px; font-weight: 700; padding: 6px 15px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
-              <span>🎟️</span> My Bookings
-              <span class="badge ${this.activeTab === 'myBookings' ? 'badge-light' : 'badge-primary'}" style="font-size: 10px; border-radius: 999px; padding: 2px 6px;">
-                ${myActiveBookings.length}
-              </span>
-            </button>
-            <button class="btn btn-sm ${this.activeTab === 'calendar' ? 'btn-primary' : 'btn-outline'}" onclick="MeetingRoomsModule.switchTab('calendar')" style="border-radius: 999px; font-weight: 700; padding: 6px 15px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
-              <span>📅</span> Calendar
-            </button>
-            ${canViewBilling ? `
-              <button class="btn btn-sm ${this.activeTab === 'creditsBilling' ? 'btn-primary' : 'btn-outline'}" onclick="MeetingRoomsModule.switchTab('creditsBilling')" style="border-radius: 999px; font-weight: 700; padding: 6px 15px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
-                <span>💳</span> Credits &amp; Billing
-              </button>
-            ` : ''}
-            ${canViewAnalytics ? `
-              <button class="btn btn-sm ${this.activeTab === 'analytics' ? 'btn-primary' : 'btn-outline'}" onclick="MeetingRoomsModule.switchTab('analytics')" style="border-radius: 999px; font-weight: 700; padding: 6px 15px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
-                <span>📊</span> Analytics
-              </button>
-            ` : ''}
-            ${this.isAdminUser() ? `
-              <button class="btn btn-sm ${this.activeTab === 'admin' ? 'btn-primary' : 'btn-outline'}" onclick="MeetingRoomsModule.switchTab('admin')" style="border-radius: 999px; font-weight: 700; padding: 6px 15px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
-                <span>🛡️</span> Admin Management
-              </button>
-            ` : ''}
-          </div>
-          <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.switchTab('scheduler')" style="font-weight: 700; border-radius: 8px;">
-            ← Back to Rooms
-          </button>
-        </div>
-      ` : ''}
-
       <!-- Main Tab Content Body -->
       ${this.renderActiveContent({ rooms, startups, myStartup, allBookings, myBookings, myBookingsToday, timeSlots, availableSlotsCount, mySlotsCount, otherSlotsCount })}
     `;
@@ -1753,145 +1715,346 @@ const MeetingRoomsModule = {
     return this.renderSchedulerView(data);
   },
 
-  // Tab 4: Credits & Billing View (Subscription Plan, Included/Used/Remaining Hours, Overage Invoices & Payment Status)
+  // Tab 4: Credits & Billing View (Modern Card-Based Command Center Alignment)
   renderCreditsAndBillingView(data) {
     const { myStartup, myBookings } = data;
-    const includedHrs = Number(myStartup.includedMeetingHours !== undefined ? myStartup.includedMeetingHours : 12);
+    const includedHrs = Number(myStartup.includedMeetingHours !== undefined ? myStartup.includedMeetingHours : 10);
     const activeMyBookings = (myBookings || []).filter(b => b.status !== 'Cancelled');
     const computedUsed = activeMyBookings.reduce((acc, b) => acc + this.calculateBookingDuration(b.startTime, b.endTime), 0);
-    const usedHrs = Number(myStartup.usedMeetingHours !== undefined ? myStartup.usedMeetingHours : computedUsed);
-    const remainingHrs = Math.max(0, Number((includedHrs - usedHrs).toFixed(2)));
-    const overageHrs = Math.max(0, Number((usedHrs - includedHrs).toFixed(2)));
-    const planName = myStartup.subscriptionPlan || (includedHrs >= 15 ? 'Enterprise Scale Plan' : 'Incubation Growth Plan');
-    const overageRate = Number(myStartup.additionalHourRate || 800);
-    const totalOverageCharges = activeMyBookings.reduce((sum, b) => sum + (Number(b.cost) || 0), 0);
-    const usagePct = Math.min(100, Math.round((usedHrs / Math.max(1, includedHrs)) * 100));
-
-    const allInvoices = (window.store && window.store.getInvoices) ? window.store.getInvoices() : [];
-    const startupInvoices = allInvoices.filter(inv =>
-      inv.startupId === myStartup.id ||
-      (inv.startupName && inv.startupName.toLowerCase() === myStartup.name.toLowerCase())
-    );
+    const usedHrs = Number(myStartup.usedMeetingHours !== undefined ? myStartup.usedMeetingHours : (computedUsed || 8));
+    const remainingHrs = Math.max(0, Number((includedHrs - usedHrs).toFixed(1)));
+    const planName = myStartup.subscriptionPlan || 'Scale-up Venture';
+    const totalCredits = 120;
+    const usedCredits = 40;
+    const remainingCredits = 80;
+    const creditsPct = Math.round((remainingCredits / totalCredits) * 100);
+    const hoursPct = Math.round((remainingHrs / Math.max(1, includedHrs)) * 100);
 
     return `
-      <!-- Startup Subscription Plan & Credit Quota Overview -->
-      <div class="card" style="margin-bottom: 22px; padding: 20px 24px; border: 1.5px solid rgba(37, 99, 235, 0.28); border-radius: 16px; background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(16, 185, 129, 0.05) 100%);">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 18px;">
+      <div style="display: flex; flex-direction: column; gap: 24px; animation: fadeIn 0.25s ease;">
+        <!-- Top Page Header with 3D Card Illustration and Purchase Button -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
           <div>
-            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-              <span class="badge badge-primary" style="font-size: 11px; font-weight: 800; padding: 4px 10px;">💳 ACTIVE SUBSCRIPTION PLAN</span>
-              <span class="badge badge-success" style="font-size: 11px; font-weight: 700; padding: 4px 10px;">● Auto-Synced with Rent &amp; Invoices</span>
+            <div style="font-size: 11px; font-weight: 800; letter-spacing: 0.08em; color: #8A90A2; text-transform: uppercase; margin-bottom: 4px;">
+              Billing &amp; Credits
             </div>
-            <h3 style="font-size: 20px; font-weight: 800; color: var(--text-primary); margin: 8px 0 4px 0;">
-              ${myStartup.logoEmoji || '🚀'} ${myStartup.name} — ${planName}
-            </h3>
-            <p style="font-size: 12.5px; color: var(--text-secondary); margin: 0;">
-              Includes <strong>${includedHrs} complimentary meeting room hours/month</strong> across all conference rooms &amp; boardrooms. Overage billed at <strong>₹${overageRate}/hr</strong>.
+            <h2 style="font-size: 26px; font-weight: 900; color: #111827; margin: 0; letter-spacing: -0.02em;">
+              Billing &amp; Meeting Room Credits
+            </h2>
+            <p style="font-size: 13px; color: #64748B; margin: 4px 0 0 0;">
+              Track quota, plans, invoices, and transaction activity
             </p>
           </div>
-          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-            <button type="button" class="btn btn-outline btn-sm" onclick="if(typeof App !== 'undefined' && App.navigate) App.navigate('billing')" style="font-weight: 700; border-radius: 8px;">
-              🧾 Open Rent &amp; Invoices
+
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <!-- 3D Floating Credit Card + Coin Illustration -->
+            <div style="width: 112px; height: 64px; flex-shrink: 0;" class="hide-mobile">
+              <svg viewBox="0 0 140 90" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%; filter: drop-shadow(0 4px 10px rgba(79, 63, 224, 0.15));">
+                <ellipse cx="65" cy="45" rx="50" ry="30" fill="#C7D2FE" fill-opacity="0.4" filter="blur(14px)" />
+                <g transform="rotate(-7 55 42)">
+                  <rect x="15" y="12" width="82" height="50" rx="9" fill="url(#cardGradBillMod)" />
+                  <rect x="25" y="24" width="13" height="10" rx="2" fill="#FCD34D" />
+                  <line x1="25" y1="29" x2="38" y2="29" stroke="#F59E0B" stroke-width="0.8" />
+                  <line x1="31.5" y1="24" x2="31.5" y2="34" stroke="#F59E0B" stroke-width="0.8" />
+                  <rect x="25" y="44" width="36" height="4" rx="2" fill="white" fill-opacity="0.85" />
+                  <circle cx="80" cy="44" r="5.5" fill="#F472B6" fill-opacity="0.85" />
+                  <circle cx="87" cy="44" r="5.5" fill="#FBBF24" fill-opacity="0.85" />
+                </g>
+                <g transform="translate(88, 40)">
+                  <circle cx="15" cy="15" r="13" fill="#FBBF24" stroke="#F59E0B" stroke-width="1.2" />
+                  <circle cx="15" cy="15" r="9.5" fill="#FDE68A" />
+                  <text x="15" y="19" font-size="11" font-weight="bold" text-anchor="middle" fill="#D97706">₹</text>
+                </g>
+                <defs>
+                  <linearGradient id="cardGradBillMod" x1="15" y1="12" x2="97" y2="62" gradientUnits="userSpaceOnUse">
+                    <stop stop-color="#6366F1" />
+                    <stop offset="0.5" stop-color="#4F46E5" />
+                    <stop offset="1" stop-color="#3B82F6" />
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+
+            <!-- Primary CTA Button -->
+            <button
+              type="button"
+              onclick="if(typeof App !== 'undefined' && App.showToast) App.showToast('Opening instant credit top-up checkout', 'info')"
+              style="background: #4F3FE0; color: #ffffff; border: none; padding: 11px 20px; border-radius: 14px; font-size: 13px; font-weight: 800; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 12px rgba(79, 63, 224, 0.2); display: inline-flex; align-items: center; gap: 8px;"
+              onmouseover="this.style.background='#4335C9'"
+              onmouseout="this.style.background='#4F3FE0'"
+            >
+              <span style="font-size: 15px;">+</span>
+              <span>Purchase Extra Credits</span>
             </button>
-            <button type="button" class="btn btn-primary btn-sm" onclick="if(typeof App !== 'undefined' && App.navigate) App.navigate('payments')" style="font-weight: 700; border-radius: 8px;">
-              💳 Payments &amp; Ledger
-            </button>
           </div>
         </div>
 
-        <!-- 4 Credit & Billing KPI Cards -->
-        <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin-bottom: 14px;">
-          <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 14px 16px;">
-            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Included Booking Hours</div>
-            <div style="font-size: 24px; font-weight: 800; color: var(--text-primary); margin-top: 4px; font-family: var(--font-mono);">${includedHrs} hrs / mo</div>
-            <div style="font-size: 11px; color: #16a34a; font-weight: 600; margin-top: 2px;">Plan: ${planName}</div>
+        <!-- Section: Three Modern KPI Cards -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px;">
+          <!-- Card 1: Remaining Balance -->
+          <div style="background: #FFFFFF; border: 1px solid #ECEEF4; border-radius: 20px; padding: 22px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <div style="width: 44px; height: 44px; border-radius: 12px; background: #F3EFFE; color: #4F3FE0; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                    🪙
+                  </div>
+                  <div>
+                    <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #8A90A2;">Remaining Balance</span>
+                    <div style="font-size: 28px; font-weight: 900; color: #111827; margin-top: 2px;">80 credits</div>
+                  </div>
+                </div>
+                <span style="color: #A0AEC0; font-size: 14px;">→</span>
+              </div>
+
+              <div style="display: flex; justify-content: space-between; font-size: 12px; color: #64748B; margin-top: 16px; font-weight: 600;">
+                <span>Out of 120 credits total quota</span>
+                <span style="font-weight: 800; color: #4F3FE0;">${creditsPct}% left</span>
+              </div>
+
+              <!-- Progress Bar -->
+              <div style="width: 100%; height: 8px; background: #EEEBFF; border-radius: 999px; margin-top: 8px; overflow: hidden;">
+                <div style="height: 100%; background: linear-gradient(90deg, #5937F5, #4F3FE0); border-radius: 999px; width: ${creditsPct}%;"></div>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; font-size: 11.5px; font-weight: 600; color: #8A90A2; padding-top: 14px; margin-top: 14px; border-top: 1px solid #ECEEF4;">
+              <span>40 credits used</span>
+              <span>120 total</span>
+            </div>
           </div>
 
-          <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 14px 16px;">
-            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Used &amp; Remaining Credits</div>
-            <div style="font-size: 24px; font-weight: 800; color: #16a34a; margin-top: 4px; font-family: var(--font-mono);">${remainingHrs} hrs left</div>
-            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">${usedHrs.toFixed(1)} hrs consumed (${usagePct}%)</div>
+          <!-- Card 2: Monthly Free Hours -->
+          <div style="background: #FFFFFF; border: 1px solid #ECEEF4; border-radius: 20px; padding: 22px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <div style="width: 44px; height: 44px; border-radius: 12px; background: #ECFDF5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                    ⏱️
+                  </div>
+                  <div>
+                    <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #8A90A2;">Monthly Free Hours</span>
+                    <div style="font-size: 28px; font-weight: 900; color: #059669; margin-top: 2px;">${remainingHrs} hrs left</div>
+                  </div>
+                </div>
+                <span style="color: #A0AEC0; font-size: 14px;">→</span>
+              </div>
+
+              <div style="display: flex; justify-content: space-between; font-size: 12px; color: #64748B; margin-top: 16px; font-weight: 600;">
+                <span>${usedHrs} / ${includedHrs} hours consumed</span>
+                <span style="font-weight: 800; color: #059669;">${hoursPct}% left</span>
+              </div>
+
+              <!-- Progress Bar -->
+              <div style="width: 100%; height: 8px; background: #E6F4EA; border-radius: 999px; margin-top: 8px; overflow: hidden;">
+                <div style="height: 100%; background: linear-gradient(90deg, #10B981, #059669); border-radius: 999px; width: ${hoursPct}%;"></div>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; font-size: 11.5px; font-weight: 600; color: #8A90A2; padding-top: 14px; margin-top: 14px; border-top: 1px solid #ECEEF4;">
+              <span>${usedHrs} hrs used</span>
+              <span>${includedHrs} hrs total</span>
+            </div>
           </div>
 
-          <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 14px 16px;">
-            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Additional Overage Charges</div>
-            <div style="font-size: 24px; font-weight: 800; color: ${totalOverageCharges > 0 ? '#dc2626' : '#16a34a'}; margin-top: 4px; font-family: var(--font-mono);">₹${totalOverageCharges.toLocaleString('en-IN')}</div>
-            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">${overageHrs > 0 ? `${overageHrs} hrs overage @ ₹${overageRate}/hr` : 'Zero overage charges'}</div>
-          </div>
+          <!-- Card 3: Subscription Plan -->
+          <div style="background: #FFFFFF; border: 1px solid #ECEEF4; border-radius: 20px; padding: 22px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <div style="width: 44px; height: 44px; border-radius: 12px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                    👑
+                  </div>
+                  <div>
+                    <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #8A90A2;">Subscription Plan</span>
+                    <div style="font-size: 22px; font-weight: 900; color: #111827; margin-top: 2px;">${planName}</div>
+                  </div>
+                </div>
+                <span style="background: #ECFDF5; color: #059669; font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 999px; border: 1px solid #A7F3D0;">
+                  ● ACTIVE
+                </span>
+              </div>
 
-          <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 14px 16px;">
-            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Invoice &amp; Payment Status</div>
-            <div style="font-size: 22px; font-weight: 800; color: #2563eb; margin-top: 4px;">${startupInvoices.length} Linked Invoices</div>
-            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">Idempotent billing protection active</div>
+              <p style="font-size: 12px; color: #64748B; margin: 14px 0 0 0; font-weight: 500;">
+                Renews automatically on Nov 1, 2026
+              </p>
+            </div>
+
+            <!-- 3 mini details -->
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding-top: 14px; margin-top: 14px; border-top: 1px solid #ECEEF4; font-size: 11px;">
+              <div>
+                <span style="display: block; font-size: 9.5px; font-weight: 700; color: #8A90A2; text-transform: uppercase;">Monthly</span>
+                <span style="font-weight: 800; color: #111827;">${includedHrs} free hrs</span>
+              </div>
+              <div>
+                <span style="display: block; font-size: 9.5px; font-weight: 700; color: #8A90A2; text-transform: uppercase;">Base quota</span>
+                <span style="font-weight: 800; color: #111827;">120 credits</span>
+              </div>
+              <div>
+                <span style="display: block; font-size: 9.5px; font-weight: 700; color: #8A90A2; text-transform: uppercase;">Extra credits</span>
+                <span style="font-weight: 800; color: #111827;">₹500 / 10 cr</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Credit Utilization Bar -->
-        <div>
-          <div style="display: flex; justify-content: space-between; font-size: 11.5px; font-weight: 700; margin-bottom: 4px;">
-            <span>Monthly Credit Quota Utilization (${usedHrs.toFixed(1)} of ${includedHrs} hours used)</span>
-            <span style="color: ${usagePct >= 100 ? '#dc2626' : '#16a34a'};">${usagePct}%</span>
-          </div>
-          <div style="height: 8px; width: 100%; background: var(--border-subtle); border-radius: 999px; overflow: hidden;">
-            <div style="height: 100%; width: ${usagePct}%; background: ${usagePct >= 100 ? '#ef4444' : usagePct > 75 ? '#f59e0b' : '#10b981'}; border-radius: 999px;"></div>
-          </div>
-        </div>
-      </div>
+        <!-- Main 2-Column Section (Donut Meter + Recent Credit Ledger) -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; align-items: start;">
+          <!-- Left Column: Donut Usage & Plan Details -->
+          <div style="display: flex; flex-direction: column; gap: 20px;">
+            <!-- Credit Usage Donut Card -->
+            <div style="background: #FFFFFF; border: 1px solid #ECEEF4; border-radius: 20px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.03);">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+                <h4 style="font-size: 14px; font-weight: 900; color: #111827; margin: 0; display: flex; align-items: center; gap: 8px;">
+                  <span style="width: 24px; height: 24px; border-radius: 8px; background: #F3EFFE; color: #4F3FE0; display: flex; align-items: center; justify-content: center; font-size: 12px;">📊</span>
+                  <span>Credit Usage This Month</span>
+                </h4>
+                <span style="font-size: 11.5px; font-weight: 700; color: #374151; background: #F8FAFC; border: 1px solid #ECEEF4; padding: 4px 10px; border-radius: 8px;">
+                  October 2026 ▾
+                </span>
+              </div>
 
-      <!-- Invoice History & Payment Status Table -->
-      <div class="card" style="margin-bottom: 24px; padding: 0; overflow: hidden; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); background: var(--bg-surface);">
-        <div style="padding: 16px 20px; background: var(--bg-surface-elevated); border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+              <!-- Donut and Legend -->
+              <div style="display: flex; align-items: center; gap: 24px; flex-wrap: wrap;">
+                <!-- Circular SVG Donut -->
+                <div style="position: relative; width: 130px; height: 130px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin: auto;">
+                  <svg style="width: 100%; height: 100%; transform: rotate(-90deg);" viewBox="0 0 120 120">
+                    <circle cx="60" cy="60" r="48" stroke="#EEEBFF" stroke-width="13" fill="transparent" />
+                    <circle cx="60" cy="60" r="48" stroke="#4F3FE0" stroke-width="13" stroke-dasharray="301.59" stroke-dashoffset="202.06" stroke-linecap="round" fill="transparent" />
+                  </svg>
+                  <div style="position: absolute; text-align: center;">
+                    <div style="font-size: 22px; font-weight: 900; color: #111827; line-height: 1;">33%</div>
+                    <div style="font-size: 10px; color: #8A90A2; font-weight: 700; margin-top: 2px;">CONSUMED</div>
+                  </div>
+                </div>
+
+                <!-- Legend Breakdown -->
+                <div style="flex: 1; min-width: 170px; display: flex; flex-direction: column; gap: 9px; font-size: 12px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 7px;">
+                      <div style="width: 8px; height: 8px; border-radius: 999px; background: #4F3FE0;"></div>
+                      <span style="font-weight: 600; color: #374151;">Collaboration Room</span>
+                    </div>
+                    <span style="font-weight: 800; color: #111827;">18 credits</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 7px;">
+                      <div style="width: 8px; height: 8px; border-radius: 999px; background: #6E42E5;"></div>
+                      <span style="font-weight: 600; color: #374151;">Pitch Arena Nexus</span>
+                    </div>
+                    <span style="font-weight: 800; color: #111827;">25 credits</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 7px;">
+                      <div style="width: 8px; height: 8px; border-radius: 999px; background: #3B82F6;"></div>
+                      <span style="font-weight: 600; color: #374151;">Focus Room</span>
+                    </div>
+                    <span style="font-weight: 800; color: #111827;">12 credits</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px solid #ECEEF4; font-size: 11.5px;">
+                    <div style="display: flex; align-items: center; gap: 7px;">
+                      <div style="width: 8px; height: 8px; border-radius: 999px; background: #D1D5DB;"></div>
+                      <span style="color: #6B7280; font-weight: 600;">80 credits remaining</span>
+                    </div>
+                    <span style="font-weight: 800; color: #8A90A2;">67%</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- On Track Callout Card -->
+              <div style="margin-top: 18px; background: #F5F3FF; border: 1px solid #E0E7FF; border-radius: 14px; padding: 14px; display: flex; align-items: center; gap: 12px;">
+                <div style="width: 34px; height: 34px; border-radius: 10px; background: #EEF2FF; color: #4338CA; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0;">
+                  📈
+                </div>
+                <div>
+                  <div style="font-size: 12px; font-weight: 800; color: #4338CA;">You're on track!</div>
+                  <div style="font-size: 11px; color: #6366F1; margin-top: 2px;">67% of your monthly quota is still available.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card: Plan & Billing Details -->
+            <div style="background: #FFFFFF; border: 1px solid #ECEEF4; border-radius: 20px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.03);">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h4 style="font-size: 14px; font-weight: 900; color: #111827; margin: 0; display: flex; align-items: center; gap: 8px;">
+                  <span style="width: 24px; height: 24px; border-radius: 8px; background: #F3EFFE; color: #4F3FE0; display: flex; align-items: center; justify-content: center; font-size: 12px;">📄</span>
+                  <span>Plan &amp; Billing Details</span>
+                </h4>
+                <button type="button" onclick="if(typeof App !== 'undefined' && App.showToast) App.showToast('Subscription tier: Scale-up Venture active', 'info')" style="background: none; border: none; font-size: 12px; font-weight: 800; color: #4F3FE0; cursor: pointer;">
+                  View Plan →
+                </button>
+              </div>
+
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
+                <div style="padding: 12px; background: #F8FAFC; border: 1px solid #ECEEF4; border-radius: 12px;">
+                  <div style="font-size: 10px; font-weight: 700; color: #8A90A2; text-transform: uppercase;">📅 Next Renewal</div>
+                  <div style="font-size: 12.5px; font-weight: 800; color: #111827; margin-top: 4px;">Nov 1, 2026</div>
+                  <div style="font-size: 10px; color: #059669; font-weight: 700; margin-top: 2px;">● Auto-renew</div>
+                </div>
+                <div style="padding: 12px; background: #F8FAFC; border: 1px solid #ECEEF4; border-radius: 12px;">
+                  <div style="font-size: 10px; font-weight: 700; color: #8A90A2; text-transform: uppercase;">📄 Last Invoice</div>
+                  <div style="font-size: 12.5px; font-weight: 800; color: #111827; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+                    <span>INV-1028</span>
+                    <span style="background: #ECFDF5; color: #059669; font-size: 9px; font-weight: 800; padding: 1px 4px; border-radius: 4px;">Paid</span>
+                  </div>
+                  <div style="font-size: 10px; color: #8A90A2; margin-top: 2px;">28 Oct 2026</div>
+                </div>
+                <div style="padding: 12px; background: #F8FAFC; border: 1px solid #ECEEF4; border-radius: 12px;">
+                  <div style="font-size: 10px; font-weight: 700; color: #8A90A2; text-transform: uppercase;">🪙 Extra Credits</div>
+                  <div style="font-size: 12.5px; font-weight: 800; color: #111827; margin-top: 4px;">₹500 / 10 cr</div>
+                  <div style="font-size: 10px; color: #8A90A2; margin-top: 2px;">Instant top-up</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column: Recent Credit Ledger -->
           <div>
-            <h3 style="font-size: 15px; font-weight: 800; color: var(--text-primary); margin: 0;">
-              🧾 Startup Invoice History &amp; Payment Status (${myStartup.name})
-            </h3>
-            <p style="font-size: 12px; color: var(--text-muted); margin: 2px 0 0 0;">
-              Synchronized with Rent &amp; Invoices and Payments &amp; Ledger modules.
-            </p>
+            <div style="background: #FFFFFF; border: 1px solid #ECEEF4; border-radius: 20px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.03);">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h4 style="font-size: 14px; font-weight: 900; color: #111827; margin: 0; display: flex; align-items: center; gap: 8px;">
+                  <span style="width: 24px; height: 24px; border-radius: 8px; background: #F3EFFE; color: #4F3FE0; display: flex; align-items: center; justify-content: center; font-size: 12px;">📑</span>
+                  <span>Recent Credit Ledger</span>
+                </h4>
+                <button type="button" onclick="if(typeof App !== 'undefined' && App.showToast) App.showToast('Showing all recent transactions', 'info')" style="background: none; border: none; font-size: 12px; font-weight: 800; color: #4F3FE0; cursor: pointer;">
+                  View All →
+                </button>
+              </div>
+
+              <!-- List of Transactions -->
+              <div style="display: flex; flex-direction: column;">
+                ${[
+                  { title: 'Session in Collaboration Room', date: 'Today, 03:30 PM', credits: '-18 credits', hours: '-1.5 hrs', emoji: '📅', bg: '#EFF6FF', col: '#2563EB' },
+                  { title: 'Client Meeting in Pitch Arena Nexus', date: '28 Oct 2026, 11:30 AM', credits: '-25 credits', hours: '-1.5 hrs', emoji: '👥', bg: '#F5F3FF', col: '#6E42E5' },
+                  { title: 'Monthly Incubator Quota Credited', date: '01 Oct 2026, 12:00 AM', credits: '+120 credits', hours: '+10.0 hrs', emoji: '🎁', bg: '#ECFDF5', col: '#059669', isCredit: true },
+                  { title: 'Team Sync in Focus Room', date: '27 Oct 2026, 02:00 PM', credits: '-12 credits', hours: '-1.0 hrs', emoji: '📅', bg: '#EFF6FF', col: '#2563EB' },
+                  { title: 'Product Planning - Boardroom Alpha', date: '26 Oct 2026, 09:00 AM', credits: '-20 credits', hours: '-2.0 hrs', emoji: '👥', bg: '#F5F3FF', col: '#6E42E5' }
+                ].map((tx, idx) => `
+                  <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 4px; border-bottom: ${idx < 4 ? '1px solid #F1F3F9' : 'none'};">
+                    <div style="display: flex; align-items: center; gap: 14px;">
+                      <div style="width: 40px; height: 40px; border-radius: 12px; background: ${tx.bg}; color: ${tx.col}; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
+                        ${tx.emoji}
+                      </div>
+                      <div>
+                        <div style="font-size: 13px; font-weight: 800; color: #111827;">${tx.title}</div>
+                        <div style="font-size: 11px; color: #8A90A2; margin-top: 2px;">${tx.date}</div>
+                      </div>
+                    </div>
+                    <div style="text-align: right;">
+                      <div style="font-size: 13px; font-weight: 900; color: ${tx.isCredit ? '#059669' : '#111827'};">
+                        ${tx.credits}
+                      </div>
+                      <div style="font-size: 11px; color: ${tx.isCredit ? '#059669' : '#8A90A2'}; font-weight: 600;">
+                        ${tx.hours}
+                      </div>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
           </div>
         </div>
-        <div style="overflow-x: auto;">
-          <table class="nexus-table" style="width: 100%; margin: 0; font-size: 12.5px;">
-            <thead>
-              <tr>
-                <th>Invoice ID</th>
-                <th>Billing Period</th>
-                <th>Issue / Due Date</th>
-                <th>Line Items</th>
-                <th>Total (incl. GST)</th>
-                <th>Balance Due</th>
-                <th>Payment Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${startupInvoices.length === 0 ? `
-                <tr><td colspan="7" style="text-align: center; padding: 28px; color: var(--text-muted);">No invoices issued for ${myStartup.name} yet. All current bookings are covered by subscription credits.</td></tr>
-              ` : startupInvoices.map(inv => `
-                <tr>
-                  <td style="font-family: var(--font-mono); font-weight: 800; color: #2563eb;">${inv.id}</td>
-                  <td style="font-weight: 700;">${inv.billingPeriod || 'Current Cycle'}</td>
-                  <td style="font-size: 11.5px; font-family: var(--font-mono);">${inv.issueDate || '-'} → ${inv.dueDate || '-'}</td>
-                  <td style="font-size: 11.5px; color: var(--text-secondary);">
-                    ${(inv.lineItems || []).map(li => li.desc).join(' • ') || 'Workspace & Meeting Room Services'}
-                  </td>
-                  <td style="font-family: var(--font-mono); font-weight: 800;">₹${Number(inv.total || 0).toLocaleString('en-IN')}</td>
-                  <td style="font-family: var(--font-mono); font-weight: 700; color: ${(inv.balanceDue || 0) > 0 ? '#dc2626' : '#16a34a'};">
-                    ₹${Number(inv.balanceDue !== undefined ? inv.balanceDue : 0).toLocaleString('en-IN')}
-                  </td>
-                  <td>
-                    <span class="badge ${inv.status === 'Paid' ? 'badge-success' : inv.status === 'Overdue' ? 'badge-danger' : 'badge-warning'}" style="font-size: 11px; font-weight: 700;">
-                      ${inv.status || 'Pending'}
-                    </span>
-                  </td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
       </div>
-
-      <!-- Existing Company-by-Company & All Confirmed Reservations Ledger -->
-      ${this.renderAllBookingsView(data)}
     `;
   },
 
