@@ -1463,9 +1463,9 @@ function MeetingRoomsApp() {
   return /*#__PURE__*/React.createElement("div", {
     className: "flex min-h-screen bg-[#F6F7FB] text-[#374151] antialiased"
   }, /*#__PURE__*/React.createElement("aside", {
-    className: "w-[235px] flex-shrink-0 bg-white border-r border-[#ECEEF4] flex flex-col justify-between py-5 px-3 min-h-screen sticky top-0 h-screen select-none z-40"
+    className: "w-[235px] flex-shrink-0 bg-white border-r border-[#ECEEF4] flex flex-col justify-start gap-2 py-3.5 px-3 sticky top-0 h-screen overflow-y-auto select-none z-40"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center gap-3 px-3 mb-6 cursor-pointer",
+    className: "flex items-center gap-3 px-2 mb-3 cursor-pointer",
     onClick: function onClick() {
       return navigateTo("Dashboard");
     }
@@ -1515,7 +1515,7 @@ function MeetingRoomsApp() {
       strokeWidth: isActive ? 2 : 1.7
     }), /*#__PURE__*/React.createElement("span", null, item.name));
   }), /*#__PURE__*/React.createElement("div", {
-    className: "h-[1px] bg-[#ECEEF4] my-3 mx-2"
+    className: "h-[1px] bg-[#ECEEF4] my-2 mx-2"
   }), [{
     name: "Workspace & Desks",
     icon: "building"
@@ -1542,7 +1542,7 @@ function MeetingRoomsApp() {
       strokeWidth: isActive ? 2 : 1.7
     }), /*#__PURE__*/React.createElement("span", null, item.name));
   }))), /*#__PURE__*/React.createElement("div", {
-    className: "bg-[#F4F2FF] border border-[#E3DEFF] rounded-2xl p-4 mt-4"
+    className: "bg-[#F4F2FF] border border-[#E3DEFF] rounded-2xl p-4 mt-2 mb-2 flex-shrink-0"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-1.5 text-[#4F3FE0] text-xs font-bold uppercase tracking-wider"
   }, /*#__PURE__*/React.createElement(Icon, {

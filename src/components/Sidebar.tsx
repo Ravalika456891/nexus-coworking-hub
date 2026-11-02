@@ -41,10 +41,10 @@ export default function Sidebar({ activeNav, setActiveNav, onUpgradeClick }: Sid
   ];
 
   return (
-    <aside className="w-[235px] flex-shrink-0 bg-white border-r border-[#ECEEF4] flex flex-col justify-between py-5 px-3 min-h-screen sticky top-0 h-screen select-none">
+    <aside className="w-[235px] flex-shrink-0 bg-white border-r border-[#ECEEF4] flex flex-col justify-start py-3.5 px-3 sticky top-0 h-screen overflow-y-auto select-none gap-2">
       <div>
         {/* Logo */}
-        <div className="flex items-center gap-3 px-3 mb-6">
+        <div className="flex items-center gap-3 px-2 mb-3">
           <div className="w-10 h-10 rounded-xl bg-[#111827] flex items-center justify-center text-yellow-400 shadow-sm flex-shrink-0">
             <Zap className="w-5 h-5 text-yellow-400 fill-yellow-400" />
           </div>
@@ -55,7 +55,7 @@ export default function Sidebar({ activeNav, setActiveNav, onUpgradeClick }: Sid
         </div>
 
         {/* Primary Nav */}
-        <nav className="space-y-1">
+        <nav className="space-y-0.5">
           {primaryNav.map((item) => {
             const isActive =
               activeNav === item.name ||
@@ -81,7 +81,7 @@ export default function Sidebar({ activeNav, setActiveNav, onUpgradeClick }: Sid
           })}
 
           {/* Divider */}
-          <div className="h-[1px] bg-[#ECEEF4] my-3 mx-2" />
+          <div className="h-[1px] bg-[#ECEEF4] my-2 mx-2" />
 
           {/* Secondary Nav */}
           {secondaryNav.map((item) => {
@@ -109,7 +109,7 @@ export default function Sidebar({ activeNav, setActiveNav, onUpgradeClick }: Sid
       </div>
 
       {/* Bottom Startup Plan Card */}
-      <div className="bg-[#F4F2FF] border border-[#E3DEFF] rounded-2xl p-4 mt-4">
+      <div className="bg-[#F4F2FF] border border-[#E3DEFF] rounded-2xl p-4 mt-2 mb-2 flex-shrink-0">
         <div className="flex items-center gap-1.5 text-[#4F3FE0] text-xs font-bold uppercase tracking-wider">
           <Crown className="w-3.5 h-3.5 text-[#4F3FE0]" />
           <span>Startup Plan</span>
