@@ -14,6 +14,7 @@ const MeetingRoomsModule = {
   selectedCustomWindowByRoom: {}, // { [roomId]: { startTime, endTime } }
   schedulerViewMode: 'cards', // 'cards' | 'day' | 'week' | 'month' | 'compare'
   calendarModalViewMode: 'month', // 'day' | 'week' | 'month'
+  filterCategory: 'all', // 'all' | 'meeting' | 'conference' | 'training' | 'pitch' | 'boardroom' | 'event'
   filterRoom: 'all', // 'all' | roomId
   filterCapacity: 'all', // 'all' | '4' | '8' | '16'
   filterAmenity: 'all',  // 'all' | 'projector' | 'video' | 'audio' | 'whiteboard'
@@ -232,6 +233,12 @@ const MeetingRoomsModule = {
     this.render();
   },
 
+  setFilterCategory(cat) {
+    this.filterCategory = cat || 'all';
+    this.filterRoom = 'all';
+    this.render();
+  },
+
   setFilterCapacity(cap) {
     this.filterCapacity = cap;
     this.render();
@@ -267,6 +274,7 @@ const MeetingRoomsModule = {
   },
 
   resetFilters() {
+    this.filterCategory = 'all';
     this.filterRoom = 'all';
     this.filterCapacity = 'all';
     this.filterAmenity = 'all';
@@ -281,6 +289,33 @@ const MeetingRoomsModule = {
     return (sourceRooms || []).filter(room => {
       if (this.filterRoom && this.filterRoom !== 'all' && room.id !== this.filterRoom) {
         return false;
+      }
+      if (this.filterCategory && this.filterCategory !== 'all') {
+        const cat = this.filterCategory.toLowerCase();
+        const rName = (room.name || '').toLowerCase();
+        const rDesc = (room.description || '').toLowerCase();
+        const rId = (room.id || '').toLowerCase();
+        const allText = `${rName} ${rDesc} ${rId}`;
+
+        if (cat === 'meeting') {
+          const matches = allText.includes('meeting') || allText.includes('pod') || allText.includes('focus') || allText.includes('brainstorm') || rId === 'mr-03' || rId === 'mr-04';
+          if (!matches) return false;
+        } else if (cat === 'conference') {
+          const matches = allText.includes('conference') || allText.includes('boardroom') || allText.includes('alpha') || allText.includes('arena') || rId === 'mr-01' || rId === 'mr-02';
+          if (!matches) return false;
+        } else if (cat === 'training') {
+          const matches = allText.includes('training') || allText.includes('classroom') || allText.includes('workshop') || rId === 'mr-05';
+          if (!matches) return false;
+        } else if (cat === 'pitch') {
+          const matches = allText.includes('pitch') || allText.includes('arena') || allText.includes('demo') || allText.includes('presentation') || rId === 'mr-02';
+          if (!matches) return false;
+        } else if (cat === 'boardroom') {
+          const matches = allText.includes('boardroom') || allText.includes('executive') || allText.includes('board') || rId === 'mr-01';
+          if (!matches) return false;
+        } else if (cat === 'event') {
+          const matches = allText.includes('event') || allText.includes('amphitheater') || allText.includes('studio') || allText.includes('hall') || rId === 'mr-06' || rId.includes('amphi') || rId.includes('admin');
+          if (!matches) return false;
+        }
       }
       if (this.filterCapacity !== 'all') {
         const minCap = parseInt(this.filterCapacity, 10);
@@ -672,13 +707,13 @@ const MeetingRoomsModule = {
 
             <!-- Row 2: Category Chips & More Filters -->
             <div class="hub-categories-row">
-              <button type="button" class="hub-cat-chip ${this.filterRoom === 'all' ? 'active' : ''}" onclick="MeetingRoomsModule.setFilterRoom('all')">All Rooms</button>
-              <button type="button" class="hub-cat-chip" onclick="MeetingRoomsModule.setFilterRoom('MR-01')">Meeting Room</button>
-              <button type="button" class="hub-cat-chip" onclick="MeetingRoomsModule.setFilterRoom('MR-02')">Conference Room</button>
-              <button type="button" class="hub-cat-chip" onclick="MeetingRoomsModule.setFilterRoom('MR-05')">Training Room</button>
-              <button type="button" class="hub-cat-chip" onclick="MeetingRoomsModule.setFilterRoom('MR-02')">Pitch Room</button>
-              <button type="button" class="hub-cat-chip" onclick="MeetingRoomsModule.setFilterRoom('MR-01')">Boardroom</button>
-              <button type="button" class="hub-cat-chip" onclick="MeetingRoomsModule.setFilterRoom('MR-06')">Event Space</button>
+              <button type="button" class="hub-cat-chip ${(!this.filterCategory || this.filterCategory === 'all') ? 'active' : ''}" onclick="MeetingRoomsModule.setFilterCategory('all')">All Rooms</button>
+              <button type="button" class="hub-cat-chip ${this.filterCategory === 'meeting' ? 'active' : ''}" onclick="MeetingRoomsModule.setFilterCategory('meeting')">Meeting Room</button>
+              <button type="button" class="hub-cat-chip ${this.filterCategory === 'conference' ? 'active' : ''}" onclick="MeetingRoomsModule.setFilterCategory('conference')">Conference Room</button>
+              <button type="button" class="hub-cat-chip ${this.filterCategory === 'training' ? 'active' : ''}" onclick="MeetingRoomsModule.setFilterCategory('training')">Training Room</button>
+              <button type="button" class="hub-cat-chip ${this.filterCategory === 'pitch' ? 'active' : ''}" onclick="MeetingRoomsModule.setFilterCategory('pitch')">Pitch Room</button>
+              <button type="button" class="hub-cat-chip ${this.filterCategory === 'boardroom' ? 'active' : ''}" onclick="MeetingRoomsModule.setFilterCategory('boardroom')">Boardroom</button>
+              <button type="button" class="hub-cat-chip ${this.filterCategory === 'event' ? 'active' : ''}" onclick="MeetingRoomsModule.setFilterCategory('event')">Event Space</button>
 
               <button type="button" class="hub-btn-more-filters" onclick="MeetingRoomsModule.toggleMoreFiltersPanel()">
                 <span>⚙</span> <span>More Filters</span>
