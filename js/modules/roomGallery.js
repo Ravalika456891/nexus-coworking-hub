@@ -356,28 +356,43 @@ window.RoomGallery = {
 
     return candidateSlots.map(s => {
       const start = toMin(s);
-      const end = start + durMins;
-      const endH = Math.floor(end / 60);
-      const endM = end % 60;
-      const pad = n => (n < 10 ? '0' : '') + n;
-      const endStr = `${pad(endH)}:${pad(endM)}`;
 
-      // Check operating hours:
-      // Morning: 08:00 (480) - 11:00 (660)
-      // Afternoon: 15:00 (900) - 19:00 (1140)
-      const fitsMorning = (start >= 480 && end <= 660);
-      const fitsAfternoon = (start >= 900 && end <= 1140);
-      const inOperatingHours = fitsMorning || fitsAfternoon;
+      // Session closing time: Morning closes at 11:00 (660 min), Evening closes at 19:00 (1140 min)
+      const sessionClose = (start < 660) ? 660 : 1140;
+      const sessionRemainingMins = Math.max(0, sessionClose - start);
 
-      const booked = bookings.some(b => toMin(b.startTime) < end && toMin(b.endTime) > start);
+      // Check if slot start is in the past
       const past = (dateStr < today) || (dateStr === today && start <= nowMin);
 
-      let state = 'open';
-      if (maint || !inOperatingHours) state = 'closed';
-      else if (past) state = 'past';
-      else if (booked) state = 'booked';
+      // Check if this slot itself is directly overlapping an existing booking (first 30 mins)
+      const isBooked = bookings.some(b => toMin(b.startTime) < (start + 30) && toMin(b.endTime) > start);
 
-      return { start: s, end: endStr, state };
+      // Max continuous minutes available starting from this slot before a booking or session close
+      let maxAvailableMins = sessionRemainingMins;
+      const upcomingBooking = bookings
+        .filter(b => toMin(b.startTime) >= start && toMin(b.startTime) < sessionClose)
+        .sort((a, b) => toMin(a.startTime) - toMin(b.startTime))[0];
+      if (upcomingBooking) {
+        maxAvailableMins = Math.min(maxAvailableMins, toMin(upcomingBooking.startTime) - start);
+      }
+
+      let state = 'open';
+      if (maint) {
+        state = 'closed';
+      } else if (past) {
+        state = 'past';
+      } else if (isBooked) {
+        state = 'booked';
+      } else if (maxAvailableMins < 30) {
+        state = 'closed';
+      }
+
+      return {
+        start: s,
+        maxAvailableMins,
+        fitsRequestedDuration: maxAvailableMins >= durMins,
+        state
+      };
     });
   },
 
@@ -477,12 +492,11 @@ window.RoomGallery = {
           ${slots.map(s => {
             const isSelected = this.selectedSlot === s.start;
             const cls = isSelected ? 'rg-slot selected' : `rg-slot ${s.state}`;
-            const disabled = s.state !== 'open';
             const label = isSelected ? 'Selected' : s.state === 'open' ? 'Available' : s.state === 'booked' ? 'Booked' : s.state === 'closed' ? 'Closed' : 'Past';
             return `
-              <button type="button" class="${cls}" ${disabled ? 'disabled' : ''}
+              <button type="button" class="${cls}"
                 onclick="RoomGallery.selectSlot('${s.start}')"
-                title="${isSelected ? 'Selected slot' : s.state === 'open' ? 'Click to select this slot' : label}">
+                title="${isSelected ? 'Selected slot' : s.state === 'open' ? `Click to select ${this.fmt12(s.start)}` : label}">
                 ${this.fmt12(s.start)}
                 <small>${label}</small>
               </button>
@@ -526,12 +540,76 @@ window.RoomGallery = {
   },
 
   selectSlot(slotTime) {
+    const room = this.getRoom(this.activeRoomId);
+    if (!room) return;
+    const slots = this.getSlotsForDate(room, this.activeDate, this.selectedDurationMins || 60);
+    const targetSlot = slots.find(s => s.start === slotTime);
+
+    if (!targetSlot) return;
+
+    if (targetSlot.state === 'past') {
+      if (typeof App !== 'undefined' && App.showToast) {
+        App.showToast(`⚠️ ${this.fmt12(slotTime)} has already passed today. Please pick an open future time.`, 'info');
+      }
+      return;
+    }
+
+    if (targetSlot.state === 'booked') {
+      if (typeof App !== 'undefined' && App.showToast) {
+        App.showToast(`⚠️ ${this.fmt12(slotTime)} is already booked by another startup. Please pick an available slot.`, 'info');
+      }
+      return;
+    }
+
+    if (targetSlot.state === 'closed') {
+      if (typeof App !== 'undefined' && App.showToast) {
+        App.showToast(`⚠️ ${this.fmt12(slotTime)} is outside operating hours or under maintenance.`, 'warning');
+      }
+      return;
+    }
+
+    // It's open! Check if the current selectedDurationMins fits
+    const curDur = this.selectedDurationMins || 60;
+    if (targetSlot.maxAvailableMins < curDur) {
+      // Automatically adjust duration to fit the available time!
+      const adjustedDur = targetSlot.maxAvailableMins;
+      this.selectedDurationMins = adjustedDur;
+      const durLabel = adjustedDur >= 60 ? `${adjustedDur / 60} hr${adjustedDur > 60 ? 's' : ''}` : `${adjustedDur} mins`;
+      if (typeof App !== 'undefined' && App.showToast) {
+        App.showToast(`Selected ${this.fmt12(slotTime)}. Duration adjusted to ${durLabel} to fit session hours.`, 'info');
+      }
+    }
+
     this.selectedSlot = slotTime;
     this.refreshBookingMount();
   },
 
   selectDuration(mins) {
     this.selectedDurationMins = Number(mins);
+    const room = this.getRoom(this.activeRoomId);
+    if (!room) return;
+
+    const slots = this.getSlotsForDate(room, this.activeDate, this.selectedDurationMins);
+    
+    // Check if the currently selected slot can fit this new duration
+    const current = slots.find(s => s.start === this.selectedSlot);
+    if (!current || current.state !== 'open' || current.maxAvailableMins < this.selectedDurationMins) {
+      // Find the first open slot that can fit this full duration
+      const suitableSlot = slots.find(s => s.state === 'open' && s.maxAvailableMins >= this.selectedDurationMins);
+      if (suitableSlot) {
+        this.selectedSlot = suitableSlot.start;
+        const durLabel = mins === 30 ? '30 mins' : `${mins / 60} hr${mins > 60 ? 's' : ''}`;
+        if (typeof App !== 'undefined' && App.showToast) {
+          App.showToast(`Set duration to ${durLabel}. Moved slot to ${this.fmt12(suitableSlot.start)} to fit session hours.`, 'info');
+        }
+      } else {
+        const firstOpen = slots.find(s => s.state === 'open');
+        if (firstOpen) {
+          this.selectedSlot = firstOpen.start;
+        }
+      }
+    }
+
     this.refreshBookingMount();
   },
 
