@@ -407,6 +407,7 @@ class NexusStore {
       if (roomsRes && Array.isArray(roomsRes.records) && roomsRes.records.length > 0) {
         if (this.syncRoomsWithDatabase(roomsRes.records)) hasChange = true;
       }
+      this.syncBuildingAndFloors();
       await this.fetchMeetingRoomsAvailability();
 
       // 5. Invoices & Billing
@@ -504,22 +505,44 @@ class NexusStore {
     if (!this.state.meetingRooms) this.state.meetingRooms = [];
     let hasChange = false;
 
+    const seedRooms = (window.INITIAL_DATA && window.INITIAL_DATA.meetingRooms) ? window.INITIAL_DATA.meetingRooms : [];
+    const seedMap = new Map(seedRooms.map(r => [r.id, r]));
+
     dbRooms.forEach(dbItem => {
       const id = dbItem.id || dbItem._id;
-      if (!id) return;
+      if (!id || !seedMap.has(id)) return; // Ignore any non-canonical or duplicate room
+      const seed = seedMap.get(id);
       const idx = this.state.meetingRooms.findIndex(r => r.id === id);
       if (idx !== -1) {
         const local = this.state.meetingRooms[idx];
-        const merged = { ...local, ...dbItem, bookings: local.bookings || dbItem.bookings || [] };
+        const merged = {
+          ...local,
+          ...dbItem,
+          floor: seed.floor,
+          floorCode: seed.floorCode,
+          floorId: seed.floorId,
+          roomNumber: seed.roomNumber,
+          capacity: seed.capacity,
+          bookings: local.bookings || dbItem.bookings || []
+        };
         if (JSON.stringify(local) !== JSON.stringify(merged)) {
           this.state.meetingRooms[idx] = merged;
           hasChange = true;
         }
       } else {
-        this.state.meetingRooms.push(dbItem);
+        this.state.meetingRooms.push({
+          ...dbItem,
+          floor: seed.floor,
+          floorCode: seed.floorCode,
+          floorId: seed.floorId,
+          roomNumber: seed.roomNumber,
+          capacity: seed.capacity
+        });
         hasChange = true;
       }
     });
+
+    this.syncBuildingAndFloors();
     return hasChange;
   }
 
