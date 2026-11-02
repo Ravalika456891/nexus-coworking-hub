@@ -1565,7 +1565,8 @@ const MeetingRoomsModule = {
                         </div>
                       </div>
                     </div>
-                  `).join('')}
+                    `;
+                  }).join('')}
                 </div>
               `}
             </div>
