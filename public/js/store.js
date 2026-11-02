@@ -47,6 +47,10 @@ class NexusStore {
     if (!this.state.building && window.INITIAL_DATA && window.INITIAL_DATA.building) {
       this.state.building = JSON.parse(JSON.stringify(window.INITIAL_DATA.building));
     }
+    if (this.state.building) {
+      this.state.building.totalFloors = 7;
+      this.state.building.totalMeetingRooms = 10;
+    }
     if (!this.state.floors || this.state.floors.length === 0) {
       if (window.INITIAL_DATA && window.INITIAL_DATA.floors) {
         this.state.floors = JSON.parse(JSON.stringify(window.INITIAL_DATA.floors));
@@ -55,22 +59,47 @@ class NexusStore {
 
     if (!this.state.meetingRooms) this.state.meetingRooms = [];
 
-    // Ensure all 10 seed rooms exist and have floors assigned
-    if (window.INITIAL_DATA && window.INITIAL_DATA.meetingRooms) {
-      window.INITIAL_DATA.meetingRooms.forEach(seedRoom => {
-        const existing = this.state.meetingRooms.find(r => r.id === seedRoom.id);
-        if (!existing) {
-          this.state.meetingRooms.push(JSON.parse(JSON.stringify(seedRoom)));
-        } else {
-          // Non-destructively ensure floor and roomNumber are updated
-          if (!existing.floor || !existing.roomNumber) {
-            existing.floor = seedRoom.floor;
-            existing.floorCode = seedRoom.floorCode;
-            existing.floorId = seedRoom.floorId;
-            existing.roomNumber = seedRoom.roomNumber;
-          }
+    // Canonical list of exact 10 meeting rooms
+    const seedRooms = (window.INITIAL_DATA && window.INITIAL_DATA.meetingRooms) ? window.INITIAL_DATA.meetingRooms : [];
+    const seedIds = new Set(seedRooms.map(r => r.id));
+
+    // Keep only the 10 canonical meeting rooms (prevent 12 or extra duplicate rooms)
+    if (this.state.meetingRooms.length > 0) {
+      this.state.meetingRooms = this.state.meetingRooms.filter(r => seedIds.has(r.id));
+    }
+
+    // Ensure all 10 seed rooms exist and have exact floor, roomNumber, and capacity specifications
+    seedRooms.forEach(seedRoom => {
+      let existing = this.state.meetingRooms.find(r => r.id === seedRoom.id);
+      if (!existing) {
+        existing = JSON.parse(JSON.stringify(seedRoom));
+        this.state.meetingRooms.push(existing);
+      } else {
+        // Enforce exact floor and room configuration
+        existing.floor = seedRoom.floor;
+        existing.floorCode = seedRoom.floorCode;
+        existing.floorId = seedRoom.floorId;
+        existing.roomNumber = seedRoom.roomNumber;
+        existing.capacity = seedRoom.capacity;
+        if (seedRoom.description && (!existing.description || existing.description.includes('Seats '))) {
+          existing.description = seedRoom.description;
         }
-      });
+      }
+
+      // Check existing bookings for capacity conflicts without deleting them
+      if (Array.isArray(existing.bookings)) {
+        existing.bookings.forEach(b => {
+          if (b.attendees > existing.capacity) {
+            b.capacityWarning = `Requested attendees (${b.attendees}) exceed updated room capacity of ${existing.capacity} people.`;
+            b.capacityConflict = true;
+          }
+        });
+      }
+    });
+
+    // Enforce exactly 10 rooms
+    if (this.state.meetingRooms.length > 10) {
+      this.state.meetingRooms = this.state.meetingRooms.slice(0, 10);
     }
   }
 

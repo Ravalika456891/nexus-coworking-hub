@@ -1083,14 +1083,14 @@ window.INITIAL_DATA = {
       floorCode: "1F",
       floorId: "FL-01",
       roomNumber: "1F-R01",
-      capacity: 16,
+      capacity: 4,
       hourlyRate: 1500,
       amenities: ["4K Dual Display", "Cisco Webex Kit", "Smart Glass", "Executive Leather", "Polycom Audio"],
       icon: "🏢",
       badgeColor: "#6366f1",
-      description: "Executive boardroom for investor meetings, board reviews and leadership offsites. Seats 16 around a solid oak table with dual 4K displays, Webex video conferencing and switchable smart-glass privacy walls.",
+      description: "Executive boardroom for investor meetings, board reviews and leadership offsites. Seats 4 around a solid oak table with dual 4K displays, Webex video conferencing and switchable smart-glass privacy walls.",
       images: [
-        { id: "MR-01-IMG-1", url: "/assets/rooms/mr-01-main.jpg", thumbUrl: "/assets/rooms/thumbs/mr-01-main.jpg", width: 1376, alt: "Boardroom Alpha – main room view with 16-seat oak conference table", caption: "Main room view" },
+        { id: "MR-01-IMG-1", url: "/assets/rooms/mr-01-main.jpg", thumbUrl: "/assets/rooms/thumbs/mr-01-main.jpg", width: 1376, alt: "Boardroom Alpha – main room view with 4-seat oak conference table", caption: "Main room view" },
         { id: "MR-01-IMG-2", url: "/assets/rooms/mr-01-table.jpg", thumbUrl: "/assets/rooms/thumbs/mr-01-table.jpg", width: 1376, alt: "Boardroom Alpha – conference table and executive leather seating", caption: "Conference table & seating" },
         { id: "MR-01-IMG-3", url: "/assets/rooms/mr-01-av.jpg", thumbUrl: "/assets/rooms/thumbs/mr-01-av.jpg", width: 1376, alt: "Boardroom Alpha – dual 4K displays with video conferencing camera and soundbar", caption: "Presentation equipment" }
       ],
@@ -1103,7 +1103,7 @@ window.INITIAL_DATA = {
           date: "2026-10-25",
           startTime: "09:00",
           endTime: "11:00",
-          attendees: 10,
+          attendees: 4,
           cost: 0,
           status: "Confirmed"
         },
@@ -1115,11 +1115,104 @@ window.INITIAL_DATA = {
           date: "2026-10-25",
           startTime: "15:00",
           endTime: "17:00",
-          attendees: 14,
+          attendees: 4,
           cost: 0,
           status: "Confirmed"
         }
       ]
+    },
+    {
+      id: "MR-03",
+      name: "Brainstorm Pod Beta",
+      floor: "1F",
+      floorCode: "1F",
+      floorId: "FL-01",
+      roomNumber: "1F-R02",
+      capacity: 6,
+      hourlyRate: 800,
+      amenities: ["Floor-to-Ceiling Whiteboard", "Apple TV AirPlay", "Magnetic Sticky Wall", "Ergonomic Chairs"],
+      icon: "💡",
+      badgeColor: "#10b981",
+      description: "Creative workshop room for design sprints and team brainstorming. Floor-to-ceiling whiteboard, magnetic sticky-note wall, AirPlay screen and ergonomic seating for 6.",
+      images: [
+        { id: "MR-03-IMG-1", url: "/assets/rooms/mr-03-main.jpg", thumbUrl: "/assets/rooms/thumbs/mr-03-main.jpg", width: 1376, alt: "Brainstorm Pod Beta – main room view with collaborative table and whiteboard wall", caption: "Main room view" },
+        { id: "MR-03-IMG-2", url: "/assets/rooms/mr-03-whiteboard.jpg", thumbUrl: "/assets/rooms/thumbs/mr-03-whiteboard.jpg", width: 1376, alt: "Brainstorm Pod Beta – floor-to-ceiling whiteboard and sticky-note collaboration wall", caption: "Whiteboard & collaboration area" },
+        { id: "MR-03-IMG-3", url: "/assets/rooms/mr-03-table.jpg", thumbUrl: "/assets/rooms/thumbs/mr-03-table.jpg", width: 1376, alt: "Brainstorm Pod Beta – collaborative table with ergonomic mesh chairs", caption: "Table & seating" }
+      ],
+      bookings: []
+    },
+    {
+      id: "MR-04",
+      name: "Focus Room Quantum",
+      floor: "2F",
+      floorCode: "2F",
+      floorId: "FL-02",
+      roomNumber: "2F-R01",
+      capacity: 6,
+      hourlyRate: 500,
+      amenities: ["High-Def Webcam", "Noise Dampening", "Dual 27-inch Monitors", "Fast Mesh Wi-Fi 7"],
+      icon: "🎧",
+      badgeColor: "#06b6d4",
+      description: "Quiet, acoustically treated room for focused collaboration, interviews and video calls. Dual 27-inch monitors, HD webcam and Wi-Fi 7 for up to 6 people.",
+      images: [
+        { id: "MR-04-IMG-1", url: "/assets/rooms/mr-04-main.jpg", thumbUrl: "/assets/rooms/thumbs/mr-04-main.jpg", width: 1376, alt: "Focus Room Quantum – compact video call room with acoustic felt wall", caption: "Main room view" },
+        { id: "MR-04-IMG-2", url: "/assets/rooms/mr-04-desk.jpg", thumbUrl: "/assets/rooms/thumbs/mr-04-desk.jpg", width: 1376, alt: "Focus Room Quantum – desk with dual 27-inch monitors and HD webcam", caption: "Desk & video call setup" }
+      ],
+      bookings: []
+    },
+    {
+      id: "MR-05",
+      name: "Training Room",
+      floor: "3F",
+      floorCode: "3F",
+      floorId: "FL-03",
+      roomNumber: "3F-R01",
+      capacity: 4,
+      hourlyRate: 2200,
+      amenities: ["Interactive Projector", "Flexible Modular Desks", "Wireless Presentation", "High-Speed Wi-Fi"],
+      icon: "🎓",
+      badgeColor: "#3b82f6",
+      description: "Dedicated training and workshop pod ideal for technical mentoring, developer pair programming, and sprint planning. Features seating for 4.",
+      images: [
+        { id: "MR-05-IMG-1", url: "/assets/rooms/mr-05-main.jpg", thumbUrl: "/assets/rooms/thumbs/mr-05-main.jpg", width: 1200, alt: "Training Room – modular classroom layout", caption: "Classroom setup" }
+      ],
+      bookings: []
+    },
+    {
+      id: "MR-07",
+      name: "Synergy Lab",
+      floor: "3F",
+      floorCode: "3F",
+      floorId: "FL-03",
+      roomNumber: "3F-R02",
+      capacity: 8,
+      hourlyRate: 1400,
+      amenities: ["Interactive Smartboard", "Dual 4K Displays", "Fast Mesh Wi-Fi 7", "Video Conferencing Bar"],
+      icon: "🔬",
+      badgeColor: "#0ea5e9",
+      description: "Collaborative research and engineering design lab with interactive smartboard, fast Wi-Fi 7, and video conferencing bar for 8 people.",
+      images: [
+        { id: "MR-07-IMG-1", url: "/assets/rooms/mr-03-table.jpg", thumbUrl: "/assets/rooms/thumbs/mr-03-table.jpg", width: 1376, alt: "Synergy Lab – collaborative work area", caption: "Lab workspace" }
+      ],
+      bookings: []
+    },
+    {
+      id: "MR-06",
+      name: "Creative Studio",
+      floor: "4F",
+      floorCode: "4F",
+      floorId: "FL-04",
+      roomNumber: "4F-R01",
+      capacity: 6,
+      hourlyRate: 1200,
+      amenities: ["Podcast Audio Kit", "Softbox Lighting", "Modular Seating", "4K Video Cam"],
+      icon: "🎨",
+      badgeColor: "#ec4899",
+      description: "Multi-functional creative studio space tailored for podcast recording, design sprints, content creation, and creative team syncs for 6 people.",
+      images: [
+        { id: "MR-06-IMG-1", url: "/assets/rooms/mr-06-main.jpg", thumbUrl: "/assets/rooms/thumbs/mr-06-main.jpg", width: 1200, alt: "Creative Studio – vibrant collaborative lounge", caption: "Studio space" }
+      ],
+      bookings: []
     },
     {
       id: "MR-02",
@@ -1128,12 +1221,12 @@ window.INITIAL_DATA = {
       floorCode: "6F",
       floorId: "FL-06",
       roomNumber: "6F-R01",
-      capacity: 35,
+      capacity: 4,
       hourlyRate: 3000,
       amenities: ["Laser Projector & Stage", "Wireless Lapel Mics", "Livestream Console", "Acoustic Baffles"],
       icon: "🎤",
       badgeColor: "#8b5cf6",
-      description: "Presentation hall for demo days, pitch rehearsals and community events. Raised stage with laser projector, wireless lapel mics, livestream console and acoustic ceiling baffles for 35 guests.",
+      description: "Pitch rehearsal and demo room with raised stage, laser projector, wireless lapel mics, livestream console and acoustic baffles for 4 guests.",
       images: [
         { id: "MR-02-IMG-1", url: "/assets/rooms/mr-02-main.jpg", thumbUrl: "/assets/rooms/thumbs/mr-02-main.jpg", width: 1376, alt: "Pitch Arena Nexus – view from the audience toward the stage and projection screen", caption: "Main room view" },
         { id: "MR-02-IMG-2", url: "/assets/rooms/mr-02-stage.jpg", thumbUrl: "/assets/rooms/thumbs/mr-02-stage.jpg", width: 1376, alt: "Pitch Arena Nexus – stage with lectern, wireless microphone and projection screen", caption: "Stage & presentation equipment" },
@@ -1148,104 +1241,11 @@ window.INITIAL_DATA = {
           date: "2026-10-25",
           startTime: "16:00",
           endTime: "18:00",
-          attendees: 22,
+          attendees: 4,
           cost: 0,
           status: "Confirmed"
         }
       ]
-    },
-    {
-      id: "MR-03",
-      name: "Brainstorm Pod Beta",
-      floor: "1F",
-      floorCode: "1F",
-      floorId: "FL-01",
-      roomNumber: "1F-R02",
-      capacity: 8,
-      hourlyRate: 800,
-      amenities: ["Floor-to-Ceiling Whiteboard", "Apple TV AirPlay", "Magnetic Sticky Wall", "Ergonomic Chairs"],
-      icon: "💡",
-      badgeColor: "#10b981",
-      description: "Creative workshop room for design sprints and team brainstorming. Floor-to-ceiling whiteboard, magnetic sticky-note wall, AirPlay screen and ergonomic seating for 8.",
-      images: [
-        { id: "MR-03-IMG-1", url: "/assets/rooms/mr-03-main.jpg", thumbUrl: "/assets/rooms/thumbs/mr-03-main.jpg", width: 1376, alt: "Brainstorm Pod Beta – main room view with oval table and whiteboard wall", caption: "Main room view" },
-        { id: "MR-03-IMG-2", url: "/assets/rooms/mr-03-whiteboard.jpg", thumbUrl: "/assets/rooms/thumbs/mr-03-whiteboard.jpg", width: 1376, alt: "Brainstorm Pod Beta – floor-to-ceiling whiteboard and sticky-note collaboration wall", caption: "Whiteboard & collaboration area" },
-        { id: "MR-03-IMG-3", url: "/assets/rooms/mr-03-table.jpg", thumbUrl: "/assets/rooms/thumbs/mr-03-table.jpg", width: 1376, alt: "Brainstorm Pod Beta – collaborative table with ergonomic mesh chairs", caption: "Table & seating" }
-      ],
-      bookings: []
-    },
-    {
-      id: "MR-04",
-      name: "Focus Room Quantum",
-      floor: "2F",
-      floorCode: "2F",
-      floorId: "FL-02",
-      roomNumber: "2F-R01",
-      capacity: 4,
-      hourlyRate: 500,
-      amenities: ["High-Def Webcam", "Noise Dampening", "Dual 27-inch Monitors", "Fast Mesh Wi-Fi 7"],
-      icon: "🎧",
-      badgeColor: "#06b6d4",
-      description: "Quiet, acoustically treated room for focused work, interviews and video calls. Dual 27-inch monitors, HD webcam and Wi-Fi 7 for up to 4 people.",
-      images: [
-        { id: "MR-04-IMG-1", url: "/assets/rooms/mr-04-main.jpg", thumbUrl: "/assets/rooms/thumbs/mr-04-main.jpg", width: 1376, alt: "Focus Room Quantum – compact video call room with acoustic felt wall", caption: "Main room view" },
-        { id: "MR-04-IMG-2", url: "/assets/rooms/mr-04-desk.jpg", thumbUrl: "/assets/rooms/thumbs/mr-04-desk.jpg", width: 1376, alt: "Focus Room Quantum – desk with dual 27-inch monitors and HD webcam", caption: "Desk & video call setup" }
-      ],
-      bookings: []
-    },
-    {
-      id: "MR-05",
-      name: "Training Room",
-      floor: "3F",
-      floorCode: "3F",
-      floorId: "FL-03",
-      roomNumber: "3F-R01",
-      capacity: 20,
-      hourlyRate: 2200,
-      amenities: ["Interactive Projector", "Flexible Modular Desks", "Wireless Presentation", "High-Speed Wi-Fi"],
-      icon: "🎓",
-      badgeColor: "#3b82f6",
-      description: "Spacious training hall ideal for technical onboarding, developer bootcamps, and cohort workshops. Features modular seating for 20.",
-      images: [
-        { id: "MR-05-IMG-1", url: "/assets/rooms/mr-05-main.jpg", thumbUrl: "/assets/rooms/thumbs/mr-05-main.jpg", width: 1200, alt: "Training Room – modular classroom layout", caption: "Classroom setup" }
-      ],
-      bookings: []
-    },
-    {
-      id: "MR-07",
-      name: "Synergy Lab",
-      floor: "3F",
-      floorCode: "3F",
-      floorId: "FL-03",
-      roomNumber: "3F-R02",
-      capacity: 12,
-      hourlyRate: 1400,
-      amenities: ["Interactive Smartboard", "Dual 4K Displays", "Fast Mesh Wi-Fi 7", "Video Conferencing Bar"],
-      icon: "🔬",
-      badgeColor: "#0ea5e9",
-      description: "Collaborative research and engineering design lab with interactive smartboard, fast Wi-Fi 7, and video conferencing bar for 12 engineers.",
-      images: [
-        { id: "MR-07-IMG-1", url: "/assets/rooms/mr-03-table.jpg", thumbUrl: "/assets/rooms/thumbs/mr-03-table.jpg", width: 1376, alt: "Synergy Lab – collaborative work area", caption: "Lab workspace" }
-      ],
-      bookings: []
-    },
-    {
-      id: "MR-06",
-      name: "Creative Studio",
-      floor: "4F",
-      floorCode: "4F",
-      floorId: "FL-04",
-      roomNumber: "4F-R01",
-      capacity: 8,
-      hourlyRate: 1200,
-      amenities: ["Podcast Audio Kit", "Softbox Lighting", "Modular Seating", "4K Video Cam"],
-      icon: "🎨",
-      badgeColor: "#ec4899",
-      description: "Multi-functional studio space tailored for podcast recording, design sprints, content creation, and creative team syncs.",
-      images: [
-        { id: "MR-06-IMG-1", url: "/assets/rooms/mr-06-main.jpg", thumbUrl: "/assets/rooms/thumbs/mr-06-main.jpg", width: 1200, alt: "Creative Studio – vibrant collaborative lounge", caption: "Studio space" }
-      ],
-      bookings: []
     },
     {
       id: "MR-08",
@@ -1254,12 +1254,12 @@ window.INITIAL_DATA = {
       floorCode: "6F",
       floorId: "FL-06",
       roomNumber: "6F-R02",
-      capacity: 14,
+      capacity: 6,
       hourlyRate: 1800,
       amenities: ["4K Video Conferencing", "Smart Touchscreen", "Executive Seating", "Acoustic Walls"],
       icon: "📊",
       badgeColor: "#6366f1",
-      description: "Executive strategy and partnership negotiation suite with 4K video conferencing, smart touchscreen display, and acoustic isolation for 14 leaders.",
+      description: "Executive strategy and partnership negotiation suite with 4K video conferencing, smart touchscreen display, and acoustic isolation for 6 leaders.",
       images: [
         { id: "MR-08-IMG-1", url: "/assets/rooms/mr-01-table.jpg", thumbUrl: "/assets/rooms/thumbs/mr-01-table.jpg", width: 1376, alt: "Strategy Suite – executive table and seating", caption: "Suite table" }
       ],
@@ -1272,12 +1272,12 @@ window.INITIAL_DATA = {
       floorCode: "7F",
       floorId: "FL-07",
       roomNumber: "7F-R01",
-      capacity: 50,
+      capacity: 4,
       hourlyRate: 4000,
       amenities: ["Dolby Atmos Sound", "4K Projection Screen", "Wireless Podium", "Acoustic Wall Paneling", "Stage Lighting"],
       icon: "🎭",
       badgeColor: "#8b5cf6",
-      description: "Grand amphitheater and presentation hall engineered for demo days, product launches, keynote presentations, and all-hands town halls. Features tiered acoustic seating for 50 with Dolby Atmos and multi-camera live streaming.",
+      description: "Innovation executive room engineered for demo rehearsals, keynote presentations, and leadership reviews. Features seating for 4 with Dolby Atmos and live streaming.",
       images: [
         { id: "MR-AMPHI-IMG-1", url: "/assets/rooms/mr-amphitheater.jpg", thumbUrl: "/assets/rooms/thumbs/mr-amphitheater.jpg", width: 1600, alt: "Innovation Amphitheater – main stage and tiered gallery", caption: "Main auditorium view" },
         { id: "MR-AMPHI-IMG-2", url: "/assets/rooms/mr-02-stage.jpg", thumbUrl: "/assets/rooms/thumbs/mr-02-stage.jpg", width: 1376, alt: "Innovation Amphitheater – keynote stage and presentation podium", caption: "Stage & podium" }
@@ -1291,12 +1291,12 @@ window.INITIAL_DATA = {
       floorCode: "7F",
       floorId: "FL-07",
       roomNumber: "7F-R02",
-      capacity: 18,
+      capacity: 8,
       hourlyRate: 2500,
       amenities: ["Panoramic Skyline View", "Cisco Webex Kit", "4K Dual Display", "Executive Leather", "Polycom Audio"],
       icon: "🌆",
       badgeColor: "#8b5cf6",
-      description: "Top-floor penthouse boardroom with panoramic city skyline views, Cisco Webex collaboration suite, and executive leather seating for 18.",
+      description: "Top-floor penthouse boardroom with panoramic city skyline views, Cisco Webex collaboration suite, and executive leather seating for 8.",
       images: [
         { id: "MR-09-IMG-1", url: "/assets/rooms/mr-01-main.jpg", thumbUrl: "/assets/rooms/thumbs/mr-01-main.jpg", width: 1376, alt: "Sky Lounge Boardroom – panoramic skyline view and conference table", caption: "Sky Lounge view" }
       ],

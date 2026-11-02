@@ -631,7 +631,7 @@ const MeetingRoomsModule = {
               ← Back to Room Cards
             </button>
             <span style="font-size: 13px; font-weight: 800; color: #1e1b4b;">${formattedDateLabel}</span>
-            <!-- Compact Calendar Floor Filter -->
+            <!-- Compact Calendar Floor & People Filter -->
             <div style="display: inline-flex; align-items: center; gap: 5px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 3px 8px;">
               <span style="font-size: 11px; font-weight: 800; color: #475569;">🏢 Floor:</span>
               <select onchange="MeetingRoomsModule.setFilterFloor(this.value)" style="border: none; background: transparent; font-size: 11.5px; font-weight: 700; color: #4338ca; cursor: pointer; outline: none;">
@@ -643,6 +643,15 @@ const MeetingRoomsModule = {
                 <option value="5F" ${this.filterFloor === '5F' ? 'selected' : ''}>5F (0 Rooms)</option>
                 <option value="6F" ${this.filterFloor === '6F' ? 'selected' : ''}>6F (2 Rooms)</option>
                 <option value="7F" ${this.filterFloor === '7F' ? 'selected' : ''}>7F (2 Rooms)</option>
+              </select>
+            </div>
+            <div style="display: inline-flex; align-items: center; gap: 5px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 3px 8px;">
+              <span style="font-size: 11px; font-weight: 800; color: #475569;">👥 People:</span>
+              <select onchange="MeetingRoomsModule.setFilterCapacity(this.value)" style="border: none; background: transparent; font-size: 11.5px; font-weight: 700; color: #4338ca; cursor: pointer; outline: none;">
+                <option value="all" ${(!this.filterCapacity || this.filterCapacity === 'all') ? 'selected' : ''}>All</option>
+                <option value="4" ${this.filterCapacity === '4' ? 'selected' : ''}>4+ People</option>
+                <option value="6" ${this.filterCapacity === '6' ? 'selected' : ''}>6+ People</option>
+                <option value="8" ${this.filterCapacity === '8' ? 'selected' : ''}>8+ People</option>
               </select>
             </div>
           </div>
@@ -658,7 +667,7 @@ const MeetingRoomsModule = {
         ${this.filterFloor === '5F' ? `
           <div class="hub-empty-floor-card">
             <div style="font-size: 38px; margin-bottom: 8px;">🏢</div>
-            <h4 style="font-size: 17px; font-weight: 800; color: #1e1b4b; margin: 0 0 6px 0;">No meeting rooms on 5F</h4>
+            <h4 style="font-size: 17px; font-weight: 800; color: #1e1b4b; margin: 0 0 6px 0;">No meeting rooms on this floor (5F)</h4>
             <p style="font-size: 13.5px; color: #64748b; max-width: 440px; margin: 0 auto 16px auto; line-height: 1.5;">This floor currently has no meeting rooms. Please select another floor to explore available spaces.</p>
             <button type="button" class="btn btn-primary" onclick="MeetingRoomsModule.setFilterFloor('all')" style="border-radius: 10px; font-weight: 700; padding: 8px 18px;">
               View All Floors
@@ -732,10 +741,10 @@ const MeetingRoomsModule = {
               <div class="hub-input-select" title="Filter by people / capacity">
                 <span>👥</span>
                 <select onchange="MeetingRoomsModule.setFilterCapacity(this.value)">
-                  <option value="all" ${this.filterCapacity === 'all' ? 'selected' : ''}>4 people</option>
-                  <option value="4" ${this.filterCapacity === '4' ? 'selected' : ''}>4+ people</option>
-                  <option value="8" ${this.filterCapacity === '8' ? 'selected' : ''}>8+ people</option>
-                  <option value="16" ${this.filterCapacity === '16' ? 'selected' : ''}>16+ people</option>
+                  <option value="all" ${(!this.filterCapacity || this.filterCapacity === 'all') ? 'selected' : ''}>All Capacities</option>
+                  <option value="4" ${this.filterCapacity === '4' ? 'selected' : ''}>4+ People</option>
+                  <option value="6" ${this.filterCapacity === '6' ? 'selected' : ''}>6+ People</option>
+                  <option value="8" ${this.filterCapacity === '8' ? 'selected' : ''}>8+ People</option>
                 </select>
                 <span>▾</span>
               </div>
@@ -823,26 +832,37 @@ const MeetingRoomsModule = {
             </div>
           </div>
 
-          <!-- Floor Segmented Bar -->
+          <!-- Floor & People Compact Filter Bar -->
           <div class="hub-floor-bar">
-            <span class="hub-floor-label">
-              <span>🏢</span> Building Floor:
-            </span>
-            <div class="hub-floor-segmented">
-              <button type="button" class="hub-floor-pill ${(!this.filterFloor || this.filterFloor === 'all') ? 'active' : ''}" onclick="MeetingRoomsModule.setFilterFloor('all')">All Floors</button>
-              ${['1F', '2F', '3F', '4F', '5F', '6F', '7F'].map(fl => `
-                <button type="button" class="hub-floor-pill ${this.filterFloor === fl ? 'active' : ''}" onclick="MeetingRoomsModule.setFilterFloor('${fl}')">${fl}</button>
-              `).join('')}
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <span class="hub-floor-label">
+                <span>🏢</span> Floor:
+              </span>
+              <div class="hub-floor-segmented">
+                <button type="button" class="hub-floor-pill ${(!this.filterFloor || this.filterFloor === 'all') ? 'active' : ''}" onclick="MeetingRoomsModule.setFilterFloor('all')">All Floors</button>
+                ${['1F', '2F', '3F', '4F', '5F', '6F', '7F'].map(fl => `
+                  <button type="button" class="hub-floor-pill ${this.filterFloor === fl ? 'active' : ''}" onclick="MeetingRoomsModule.setFilterFloor('${fl}')">${fl}</button>
+                `).join('')}
+              </div>
             </div>
-            ${this.filterFloor && this.filterFloor !== 'all' ? `
-              <span style="font-size: 11px; color: #64748b; font-weight: 700; margin-left: auto;">
-                Showing ${filteredRooms.length} room${filteredRooms.length === 1 ? '' : 's'} on ${this.filterFloor}
+
+            <div style="width: 1px; height: 20px; background: #e2e8f0; margin: 0 4px;" class="hide-mobile"></div>
+
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <span class="hub-floor-label">
+                <span>👥</span> People:
               </span>
-            ` : `
-              <span style="font-size: 11px; color: #64748b; font-weight: 700; margin-left: auto;">
-                10 Rooms across 7 Floors
-              </span>
-            `}
+              <div class="hub-floor-segmented">
+                <button type="button" class="hub-floor-pill ${(!this.filterCapacity || this.filterCapacity === 'all') ? 'active' : ''}" onclick="MeetingRoomsModule.setFilterCapacity('all')">All</button>
+                <button type="button" class="hub-floor-pill ${this.filterCapacity === '4' ? 'active' : ''}" onclick="MeetingRoomsModule.setFilterCapacity('4')">4+</button>
+                <button type="button" class="hub-floor-pill ${this.filterCapacity === '6' ? 'active' : ''}" onclick="MeetingRoomsModule.setFilterCapacity('6')">6+</button>
+                <button type="button" class="hub-floor-pill ${this.filterCapacity === '8' ? 'active' : ''}" onclick="MeetingRoomsModule.setFilterCapacity('8')">8+</button>
+              </div>
+            </div>
+
+            <div style="margin-left: auto; font-size: 11.5px; color: #64748b; font-weight: 700;">
+              ${this.filterFloor === '5F' ? '0 Rooms on 5F' : `Showing ${filteredRooms.length} of 10 Rooms`}
+            </div>
           </div>
 
           <!-- 3. AVAILABLE ROOMS HEADER & VIEW TOGGLES -->
@@ -871,7 +891,7 @@ const MeetingRoomsModule = {
             ${this.filterFloor === '5F' ? `
               <div class="hub-empty-floor-card">
                 <div style="font-size: 38px; margin-bottom: 8px;">🏢</div>
-                <h4 style="font-size: 17px; font-weight: 800; color: #1e1b4b; margin: 0 0 6px 0;">No meeting rooms on 5F</h4>
+                <h4 style="font-size: 17px; font-weight: 800; color: #1e1b4b; margin: 0 0 6px 0;">No meeting rooms on this floor (5F)</h4>
                 <p style="font-size: 13.5px; color: #64748b; max-width: 440px; margin: 0 auto 16px auto; line-height: 1.5;">This floor currently has no meeting rooms. Please select another floor to explore available spaces.</p>
                 <button type="button" class="btn btn-primary" onclick="MeetingRoomsModule.setFilterFloor('all')" style="border-radius: 10px; font-weight: 700; padding: 8px 18px;">
                   View All Floors
