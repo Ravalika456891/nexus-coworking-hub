@@ -777,18 +777,20 @@ body.rg-no-scroll {
   overflow: hidden !important;
 }
 
-/* 1. Backdrop Overlay */
+/* 1. Backdrop Overlay (Centered in Middle of Page) */
 .rg-details-overlay {
   position: fixed !important;
   inset: 0 !important;
   z-index: 99999 !important;
-  background: rgba(15, 23, 42, 0.65) !important;
+  background: rgba(15, 23, 42, 0.72) !important;
   backdrop-filter: blur(8px) !important;
   -webkit-backdrop-filter: blur(8px) !important;
   display: flex !important;
-  justify-content: flex-end !important;
-  align-items: stretch !important;
-  animation: rgFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  justify-content: center !important;
+  align-items: center !important;
+  padding: 20px !important;
+  animation: rgFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow-y: auto !important;
 }
 
 @keyframes rgFadeIn {
@@ -796,43 +798,46 @@ body.rg-no-scroll {
   to { opacity: 1; }
 }
 
-@keyframes rgSlideIn {
-  from { transform: translateX(100%); }
-  to { transform: translateX(0); }
+@keyframes rgScaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
-@keyframes rgSlideUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
-}
-
-/* 2. Slide-out Drawer Panel */
+/* 2. Centered Modal Dialog Panel */
 .rg-details-panel {
   width: 100% !important;
-  max-width: 540px !important;
-  height: 100vh !important;
+  max-width: 620px !important;
+  max-height: min(92vh, 820px) !important;
+  height: auto !important;
   background: #ffffff !important;
   color: #111827 !important;
   display: flex !important;
   flex-direction: column !important;
-  box-shadow: -12px 0 48px rgba(0, 0, 0, 0.22) !important;
-  animation: rgSlideIn 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 25px 65px -12px rgba(15, 23, 42, 0.45), 0 0 0 1px rgba(0, 0, 0, 0.06) !important;
+  animation: rgScaleUp 0.24s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden !important;
   position: relative !important;
-  border-left: 1px solid #ECEEF4 !important;
+  border-radius: 20px !important;
+  border: 1.5px solid #ECEEF4 !important;
+  margin: auto !important;
 }
 
 @media (max-width: 640px) {
   .rg-details-overlay {
-    align-items: flex-end !important;
+    padding: 10px !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
   .rg-details-panel {
     max-width: 100% !important;
-    height: 92vh !important;
-    border-radius: 24px 24px 0 0 !important;
-    animation: rgSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    border-left: none !important;
-    border-top: 1px solid #ECEEF4 !important;
+    max-height: 94vh !important;
+    border-radius: 18px !important;
   }
 }
 
