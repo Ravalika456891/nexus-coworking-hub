@@ -1335,28 +1335,20 @@ body.rg-no-scroll {
 .rg-details-foot {
   padding: 14px 22px !important;
   display: flex !important;
-  flex-direction: column !important;
-  gap: 10px !important;
+  align-items: center !important;
   border-top: 1px solid #ECEEF4 !important;
   background: #FFFFFF !important;
   flex-shrink: 0 !important;
 }
 
 .rg-foot-meta {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  width: 100% !important;
-  padding: 8px 12px !important;
-  background: #F8FAFC !important;
-  border: 1px solid #ECEEF4 !important;
-  border-radius: 10px !important;
+  display: none !important;
 }
 
 .rg-foot-actions {
   display: flex !important;
   align-items: center !important;
-  gap: 10px !important;
+  gap: 12px !important;
   width: 100% !important;
 }
 

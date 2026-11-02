@@ -39,7 +39,30 @@ window.RoomGallery = {
   },
 
   getRoom(roomId) {
-    return this.getRooms().find(r => r.id === roomId) || null;
+    if (!roomId) return null;
+    const rooms = this.getRooms();
+    const seed = (window.INITIAL_DATA && window.INITIAL_DATA.meetingRooms) || [];
+    const all = [...rooms, ...seed];
+
+    let match = all.find(r => r.id === roomId);
+    if (match) return match;
+
+    const lowerId = String(roomId).trim().toLowerCase();
+    match = all.find(r => String(r.id || '').trim().toLowerCase() === lowerId);
+    if (match) return match;
+
+    const norm = id => String(id || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '').replace(/0*(\d+)$/, '$1');
+    const targetNorm = norm(roomId);
+    match = all.find(r => norm(r.id) === targetNorm);
+    if (match) return match;
+
+    match = all.find(r => 
+      (r.code && String(r.code).toLowerCase() === lowerId) ||
+      (r.name && String(r.name).toLowerCase() === lowerId)
+    );
+    if (match) return match;
+
+    return null;
   },
 
   getSeedRoom(roomId) {
@@ -309,14 +332,16 @@ window.RoomGallery = {
   selectedSlot: null,
   selectedDurationMins: 60,
 
-  getSlotsForDate(room, dateStr) {
+  getSlotsForDate(room, dateStr, durationMins = null) {
     const M = window.MeetingRoomsModule;
+    const durMins = durationMins || this.selectedDurationMins || 60;
+    
     // 30-minute intervals within Hub operating hours (08:00 - 11:00 & 15:00 - 19:00 IST)
-    const slots = [
+    const candidateSlots = [
       '08:00', '08:30', '09:00', '09:30', '10:00', '10:30',
       '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30'
     ];
-    const ist = M && M.getISTNow ? M.getISTNow() : null;
+    const ist = (M && M.getISTNow) ? M.getISTNow() : null;
     const now = new Date();
     const today = ist ? ist.todayStr : `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
     const nowMin = ist ? ist.totalMinutes : (now.getHours() * 60 + now.getMinutes());
@@ -329,18 +354,29 @@ window.RoomGallery = {
     const bookings = (room.bookings || []).filter(b => b.date === dateStr && b.status !== 'Cancelled' && b.status !== 'Rejected');
     const maint = M && M.isRoomUnderMaintenance ? M.isRoomUnderMaintenance(room) : false;
 
-    return slots.map(s => {
+    return candidateSlots.map(s => {
       const start = toMin(s);
-      const end = start + 30;
+      const end = start + durMins;
       const endH = Math.floor(end / 60);
       const endM = end % 60;
-      const endStr = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
+      const pad = n => (n < 10 ? '0' : '') + n;
+      const endStr = `${pad(endH)}:${pad(endM)}`;
+
+      // Check operating hours:
+      // Morning: 08:00 (480) - 11:00 (660)
+      // Afternoon: 15:00 (900) - 19:00 (1140)
+      const fitsMorning = (start >= 480 && end <= 660);
+      const fitsAfternoon = (start >= 900 && end <= 1140);
+      const inOperatingHours = fitsMorning || fitsAfternoon;
+
       const booked = bookings.some(b => toMin(b.startTime) < end && toMin(b.endTime) > start);
-      const past = dateStr < today || (dateStr === today && start <= nowMin);
+      const past = (dateStr < today) || (dateStr === today && start <= nowMin);
+
       let state = 'open';
-      if (maint) state = 'closed';
+      if (maint || !inOperatingHours) state = 'closed';
       else if (past) state = 'past';
       else if (booked) state = 'booked';
+
       return { start: s, end: endStr, state };
     });
   },
@@ -354,21 +390,27 @@ window.RoomGallery = {
 
   renderBookingSection(room, dateStr) {
     const M = window.MeetingRoomsModule;
-    const slots = this.getSlotsForDate(room, dateStr);
-    const openCount = slots.filter(s => s.state === 'open').length;
-    
+    const ist = (M && M.getISTNow) ? M.getISTNow() : null;
     const now = new Date();
-    const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-    const nextDayObj = new Date(now.getTime() + 86400000);
-    const nextDayStr = `${nextDayObj.getFullYear()}-${String(nextDayObj.getMonth()+1).padStart(2,'0')}-${String(nextDayObj.getDate()).padStart(2,'0')}`;
-    
-    const isToday = dateStr === todayStr;
-    const isNextDay = dateStr === nextDayStr;
-    const dateLabel = dateStr ? new Date(`${dateStr}T00:00:00`).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' }) : 'Today';
+    const todayStr = ist ? ist.todayStr : `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+    const nextDayStr = ist ? ist.tomorrowStr : (() => {
+      const tom = new Date(now.getTime() + 86400000);
+      return `${tom.getFullYear()}-${String(tom.getMonth()+1).padStart(2,'0')}-${String(tom.getDate()).padStart(2,'0')}`;
+    })();
 
-    const myStartup = M && M.getMyStartup ? M.getMyStartup() : null;
+    const effectiveDate = dateStr || todayStr;
+    const isToday = effectiveDate === todayStr;
+    const isNextDay = effectiveDate === nextDayStr;
+    const dateParts = effectiveDate.split('-').map(Number);
+    const dateObj = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+    const dateLabel = dateObj.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+
+    const slots = this.getSlotsForDate(room, effectiveDate, this.selectedDurationMins || 60);
+    const openCount = slots.filter(s => s.state === 'open').length;
+
+    const myStartup = (M && M.getMyStartup) ? M.getMyStartup() : null;
     const remainingCredits = myStartup ? Math.max(0, (myStartup.includedMeetingHours || 12) - (myStartup.usedMeetingHours || 0)) : 0;
-    
+
     if (!this.selectedSlot || !slots.some(s => s.start === this.selectedSlot && s.state === 'open')) {
       const firstOpen = slots.find(s => s.state === 'open');
       this.selectedSlot = firstOpen ? firstOpen.start : null;
@@ -380,10 +422,11 @@ window.RoomGallery = {
     let endTime12 = '';
     if (this.selectedSlot) {
       const [sh, sm] = this.selectedSlot.split(':').map(Number);
-      const totalMin = sh * 60 + sm + this.selectedDurationMins;
+      const totalMin = sh * 60 + sm + (this.selectedDurationMins || 60);
       const eh = Math.floor(totalMin / 60);
       const em = totalMin % 60;
-      endTime12 = this.fmt12(`${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`);
+      const pad = n => (n < 10 ? '0' : '') + n;
+      endTime12 = this.fmt12(`${pad(eh)}:${pad(em)}`);
     }
 
     const totalRoomPrice = Math.round((room.hourlyRate || 0) * durationHours);
@@ -396,7 +439,7 @@ window.RoomGallery = {
         <h4>1. Select Meeting Date</h4>
         <div class="rg-date-bar">
           <div class="rg-date-input-wrap">
-            <input type="date" class="rg-date-input" value="${dateStr}" min="${todayStr}"
+            <input type="date" class="rg-date-input" value="${effectiveDate}" min="${todayStr}"
               onchange="RoomGallery.changeDate(this.value)">
           </div>
           <button type="button" class="rg-quick-pill ${isToday ? 'active' : ''}" onclick="RoomGallery.changeDate('${todayStr}')">Today</button>
@@ -485,13 +528,11 @@ window.RoomGallery = {
   selectSlot(slotTime) {
     this.selectedSlot = slotTime;
     this.refreshBookingMount();
-    this.updateFooterSummary();
   },
 
   selectDuration(mins) {
     this.selectedDurationMins = Number(mins);
     this.refreshBookingMount();
-    this.updateFooterSummary();
   },
 
   changeDate(newDate) {
@@ -500,7 +541,6 @@ window.RoomGallery = {
     const M = window.MeetingRoomsModule;
     if (M) M.selectedDate = newDate;
     this.refreshBookingMount();
-    this.updateFooterSummary();
   },
 
   refreshBookingMount() {
@@ -512,77 +552,107 @@ window.RoomGallery = {
   },
 
   updateFooterSummary() {
+    // Kept as safe no-op for backward compatibility
     const metaEl = document.getElementById('rg-foot-meta');
-    if (!metaEl || !this.activeRoomId) return;
-    const room = this.getRoom(this.activeRoomId);
-    if (!room) return;
-    const M = window.MeetingRoomsModule;
-    const myStartup = M && M.getMyStartup ? M.getMyStartup() : null;
-    const remainingCredits = myStartup ? Math.max(0, (myStartup.includedMeetingHours || 12) - (myStartup.usedMeetingHours || 0)) : 0;
-    const durationHours = (this.selectedDurationMins || 60) / 60;
-    const durationLabel = this.selectedDurationMins === 30 ? '30m' : `${durationHours}h`;
-
-    let endTime12 = '';
-    if (this.selectedSlot) {
-      const [sh, sm] = this.selectedSlot.split(':').map(Number);
-      const totalMin = sh * 60 + sm + this.selectedDurationMins;
-      const eh = Math.floor(totalMin / 60);
-      const em = totalMin % 60;
-      endTime12 = this.fmt12(`${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`);
-    }
-
-    const isCovered = remainingCredits >= durationHours;
-    const billableAmount = isCovered ? 0 : Math.round(Math.max(0, durationHours - remainingCredits) * (room.hourlyRate || 0));
-
-    metaEl.innerHTML = `
-      <div style="min-width: 0; line-height: 1.3;">
-        <div style="font-size: 13px; font-weight: 800; color: #111827;">
-          ${this.selectedSlot ? `${this.fmt12(this.selectedSlot)} – ${endTime12} (${durationLabel})` : 'Select a time slot'}
-        </div>
-        <div style="font-size: 11px; font-weight: 700; color: #15803D; display: flex; align-items: center; gap: 4px; margin-top: 1px;">
-          <span>${isCovered ? 'Covered by Plan (₹0)' : `₹${billableAmount.toLocaleString('en-IN')}`}</span>
-          <span>•</span>
-          <span>🛡️ Free cancel 1h before</span>
-        </div>
-      </div>
-    `;
+    if (metaEl) metaEl.style.display = 'none';
   },
 
-  proceedToBooking(roomId) {
+  async proceedToBooking(roomId) {
     const room = this.getRoom(roomId);
     if (!room) return;
     const M = window.MeetingRoomsModule;
-    if (!M) return;
+    const myStartup = (M && M.getMyStartup) ? M.getMyStartup() : ((window.store && window.store.getStartups) ? window.store.getStartups()[0] : null);
+    if (!myStartup) {
+      if (typeof App !== 'undefined' && App.showToast) {
+        App.showToast('No active startup profile found. Please select a startup first.', 'warning');
+      }
+      return;
+    }
 
     const dateStr = this.activeDate || (M && M.selectedDate);
-    const slots = this.getSlotsForDate(room, dateStr);
+    const durationMins = this.selectedDurationMins || 60;
+    const slots = this.getSlotsForDate(room, dateStr, durationMins);
 
+    // Validate that the slot is open for the selected duration
     if (!this.selectedSlot || !slots.some(s => s.start === this.selectedSlot && s.state === 'open')) {
       const firstOpen = slots.find(s => s.state === 'open');
       if (firstOpen) {
         this.selectedSlot = firstOpen.start;
         if (typeof App !== 'undefined' && App.showToast) {
-          App.showToast(`Selected slot was unavailable. Automatically switched to ${this.fmt12(firstOpen.start)}.`, 'info');
+          App.showToast(`Selected slot was adjusted to next open time: ${this.fmt12(firstOpen.start)}.`, 'info');
         }
+        this.refreshBookingMount();
       } else {
         if (typeof App !== 'undefined' && App.showToast) {
-          App.showToast('All slots for this room on this date are unavailable. Please pick another date or room.', 'warning');
+          App.showToast('All slots for this room on this date are unavailable for this duration. Please pick another date or shorter duration.', 'warning');
         }
         return;
       }
     }
 
-    const slot = this.selectedSlot;
-    const duration = this.selectedDurationMins || 60;
-    this.closeDetails();
+    const startTime = this.selectedSlot;
+    const [sh, sm] = startTime.split(':').map(Number);
+    const totalEndMin = sh * 60 + sm + durationMins;
+    const eh = Math.floor(totalEndMin / 60);
+    const em = totalEndMin % 60;
+    const pad = n => (n < 10 ? '0' : '') + n;
+    const endTime = `${pad(eh)}:${pad(em)}`;
 
-    M.selectedSlotsByRoom = { [roomId]: [slot] };
-    M.selectedDurationByRoom = { [roomId]: duration };
-    if (this.activeDate) M.selectedDate = this.activeDate;
-    
-    if (M.render) M.render();
-    if (M.openConfirmBookingModal) {
-      M.openConfirmBookingModal(roomId);
+    // Show loading spinner on button
+    const bookBtn = document.getElementById('rg-foot-book-btn');
+    const origHtml = bookBtn ? bookBtn.innerHTML : '';
+    if (bookBtn) {
+      bookBtn.disabled = true;
+      bookBtn.innerHTML = `<span style="display:inline-block;width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:8px;vertical-align:middle;"></span> Reserving Room...`;
+    }
+
+    try {
+      if (window.store && window.store.fetchMeetingRoomsAvailability) {
+        await window.store.fetchMeetingRoomsAvailability(dateStr);
+      }
+
+      const res = await window.store.bookMeetingRoom({
+        roomId: room.id,
+        startupId: myStartup.id,
+        startupName: myStartup.name,
+        title: `Team Session in ${room.name}`,
+        purpose: 'Strategic Discussion & Team Work',
+        date: dateStr,
+        startTime,
+        endTime,
+        attendees: Math.min(room.capacity || 10, 4)
+      });
+
+      if (res && res.success) {
+        if (typeof App !== 'undefined' && App.showToast) {
+          App.showToast(`🎉 Reservation confirmed! Booked ${room.name} (${this.fmt12(startTime)} – ${this.fmt12(endTime)})`, 'success');
+        }
+        if (typeof App !== 'undefined' && App.playSuccessSound) {
+          try { App.playSuccessSound(); } catch (e) {}
+        }
+        this.closeDetails();
+        if (M && M.render) M.render();
+        if (M && M.refreshDashboardSummary) M.refreshDashboardSummary();
+        if (typeof DashboardModule !== 'undefined' && DashboardModule.render) DashboardModule.render();
+      } else {
+        if (bookBtn) {
+          bookBtn.disabled = false;
+          bookBtn.innerHTML = origHtml;
+        }
+        if (typeof App !== 'undefined' && App.showToast) {
+          App.showToast(res && res.message ? res.message : 'Could not complete reservation. Please try another slot.', 'warning');
+        }
+        this.refreshBookingMount();
+      }
+    } catch (err) {
+      console.error('Error reserving meeting room:', err);
+      if (bookBtn) {
+        bookBtn.disabled = false;
+        bookBtn.innerHTML = origHtml;
+      }
+      if (typeof App !== 'undefined' && App.showToast) {
+        App.showToast(err.message || 'An unexpected error occurred while reserving.', 'error');
+      }
     }
   },
 
@@ -590,7 +660,8 @@ window.RoomGallery = {
     const room = this.getRoom(roomId);
     if (!room) return;
     const M = window.MeetingRoomsModule;
-    this.activeRoomId = roomId;
+    this.activeRoomId = room.id;
+    this.rawRoomId = roomId;
 
     const images = this.getImages(room);
     const primary = images[0];
@@ -671,10 +742,9 @@ window.RoomGallery = {
           </div>
 
           <div class="rg-details-foot">
-            <div class="rg-foot-meta" id="rg-foot-meta"></div>
-            <div class="rg-foot-actions">
-              <button type="button" class="btn btn-outline" onclick="RoomGallery.closeDetails(); if(window.MeetingRoomsModule) MeetingRoomsModule.setSchedulerViewMode('compare')">⚖️ Compare</button>
-              <button type="button" class="btn btn-primary rg-book-btn" id="rg-foot-book-btn" ${isMaint ? 'disabled' : ''}
+            <div class="rg-foot-actions" style="display: flex; align-items: center; gap: 12px; width: 100%;">
+              <button type="button" class="btn btn-outline" style="flex: 0 0 auto; border-radius: 12px; font-weight: 700; padding: 12px 18px;" onclick="RoomGallery.closeDetails(); if(window.MeetingRoomsModule) MeetingRoomsModule.setSchedulerViewMode('compare')">⚖️ Compare</button>
+              <button type="button" class="btn btn-primary rg-book-btn" id="rg-foot-book-btn" style="flex: 1; border-radius: 12px; font-weight: 800; padding: 12px 20px; font-size: 14px;" ${isMaint ? 'disabled' : ''}
                 onclick="RoomGallery.proceedToBooking('${id}')">
                 ${isMaint ? '🔧 Under Maintenance' : '⚡ Confirm & Book Now'}
               </button>

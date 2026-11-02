@@ -1577,7 +1577,18 @@ class NexusStore {
   }
 
   getMeetingRoomById(id) {
-    return (this.state.meetingRooms || []).find(r => r.id === id);
+    if (!id) return null;
+    const rooms = this.state.meetingRooms || [];
+    let match = rooms.find(r => r.id === id);
+    if (match) return match;
+    const lower = String(id).trim().toLowerCase();
+    match = rooms.find(r => String(r.id || '').trim().toLowerCase() === lower);
+    if (match) return match;
+    const norm = s => String(s || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '').replace(/0*(\d+)$/, '$1');
+    const targetNorm = norm(id);
+    match = rooms.find(r => norm(r.id) === targetNorm);
+    if (match) return match;
+    return rooms.find(r => (r.code && String(r.code).toLowerCase() === lower) || (r.name && String(r.name).toLowerCase() === lower)) || null;
   }
 
   // Canonical conflict rule:
