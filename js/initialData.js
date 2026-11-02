@@ -1185,6 +1185,21 @@ window.INITIAL_DATA = {
         { id: "MR-06-IMG-1", url: "/assets/rooms/mr-06-main.jpg", thumbUrl: "/assets/rooms/thumbs/mr-06-main.jpg", width: 1200, alt: "Creative Studio – vibrant collaborative lounge", caption: "Studio space" }
       ],
       bookings: []
+    },
+    {
+      id: "MR-TEST-ADMIN",
+      name: "Innovation Amphitheater",
+      capacity: 50,
+      hourlyRate: 4000,
+      amenities: ["Dolby Atmos Sound", "4K Projection Screen", "Wireless Podium", "Acoustic Wall Paneling", "Stage Lighting"],
+      icon: "🎭",
+      badgeColor: "#8b5cf6",
+      description: "Grand amphitheater and presentation hall engineered for demo days, product launches, keynote presentations, and all-hands town halls. Features tiered acoustic seating for 50 with Dolby Atmos and multi-camera live streaming.",
+      images: [
+        { id: "MR-AMPHI-IMG-1", url: "/assets/rooms/mr-amphitheater.jpg", thumbUrl: "/assets/rooms/thumbs/mr-amphitheater.jpg", width: 1600, alt: "Innovation Amphitheater – main stage and tiered gallery", caption: "Main auditorium view" },
+        { id: "MR-AMPHI-IMG-2", url: "/assets/rooms/mr-02-stage.jpg", thumbUrl: "/assets/rooms/thumbs/mr-02-stage.jpg", width: 1376, alt: "Innovation Amphitheater – keynote stage and presentation podium", caption: "Stage & podium" }
+      ],
+      bookings: []
     }
   ],
 

@@ -22,12 +22,7 @@ window.RoomGallery = {
   MAX_SOURCE_BYTES: 15 * 1024 * 1024,   // raw file the admin picks (compressed before upload)
   MAX_UPLOAD_BYTES: 2.8 * 1024 * 1024,  // per stored variant after compression (server limit 3 MB)
   ACCEPTED_TYPES: ['image/jpeg', 'image/png', 'image/webp', 'image/avif'],
-  FALLBACK_IMAGE: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360"><rect width="640" height="360" fill="#eef0f7"/>' +
-    '<g fill="none" stroke="#a5acc8" stroke-width="10" stroke-linejoin="round"><rect x="250" y="120" width="140" height="105" rx="12"/>' +
-    '<circle cx="290" cy="155" r="13"/><path d="M262 212l38-38 26 26 18-16 36 28"/></g>' +
-    '<text x="320" y="270" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="22" font-weight="600" fill="#8c93b0">Photo unavailable</text></svg>'
-  ),
+  FALLBACK_IMAGE: 'assets/rooms/mr-01-main.jpg',
 
   lightbox: null,
   manager: null,
@@ -66,7 +61,24 @@ window.RoomGallery = {
     if (single) {
       return [{ url: single, thumbUrl: single, alt: room.name }];
     }
-    return [{ url: this.FALLBACK_IMAGE, thumbUrl: this.FALLBACK_IMAGE, alt: room.name || 'Room photo' }];
+    // High-resolution photography smart fallback by room type/capacity
+    const rName = String(room.name || '').toLowerCase();
+    const cap = Number(room.capacity || 0);
+    let photo = 'assets/rooms/mr-01-main.jpg';
+    if (rName.includes('amphitheater') || rName.includes('auditorium') || cap >= 30) {
+      photo = 'assets/rooms/mr-amphitheater.jpg';
+    } else if (rName.includes('pitch') || rName.includes('arena')) {
+      photo = 'assets/rooms/mr-02-main.jpg';
+    } else if (rName.includes('focus') || rName.includes('quantum') || rName.includes('pod') || cap <= 4) {
+      photo = 'assets/rooms/mr-03-main.jpg';
+    } else if (rName.includes('collab') || rName.includes('brainstorm')) {
+      photo = 'assets/rooms/mr-04-main.jpg';
+    } else if (rName.includes('train')) {
+      photo = 'assets/rooms/mr-05-main.jpg';
+    } else if (rName.includes('studio') || rName.includes('creative')) {
+      photo = 'assets/rooms/mr-06-main.jpg';
+    }
+    return [{ url: photo, thumbUrl: photo, alt: room.name || 'Meeting room photo' }];
   },
 
   getDescription(room) {
