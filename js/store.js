@@ -31,6 +31,15 @@ class NexusStore {
     this.syncIncubationData();
     this.save();
     this.syncFromCloud();
+
+    // Live continuous database synchronization across all sections
+    if (typeof window !== 'undefined' && !this._cloudSyncInterval) {
+      this._cloudSyncInterval = setInterval(() => {
+        if (!document.hidden) {
+          this.syncFromCloud();
+        }
+      }, 10000);
+    }
   }
 
   syncIncubationData() {
@@ -293,30 +302,90 @@ class NexusStore {
 
   async syncFromCloud() {
     try {
-      const [stateRes, startupsRes] = await Promise.all([
+      const [
+        stateRes,
+        startupsRes,
+        workspacesRes,
+        roomsRes,
+        invoicesRes,
+        paymentsRes,
+        milestonesRes,
+        inquiriesRes,
+        leadsRes
+      ] = await Promise.all([
         fetch('/api/state').then(r => r.json()).catch(() => null),
-        fetch('/api/database/table?name=startups&limit=200').then(r => r.json()).catch(() => null)
+        fetch('/api/database/table?name=startups&limit=200').then(r => r.json()).catch(() => null),
+        fetch('/api/database/table?name=workspaces&limit=200').then(r => r.json()).catch(() => null),
+        fetch('/api/database/table?name=meeting_rooms&limit=200').then(r => r.json()).catch(() => null),
+        fetch('/api/database/table?name=invoices&limit=200').then(r => r.json()).catch(() => null),
+        fetch('/api/database/table?name=payments&limit=200').then(r => r.json()).catch(() => null),
+        fetch('/api/database/table?name=milestones&limit=200').then(r => r.json()).catch(() => null),
+        fetch('/api/database/table?name=inquiries&limit=200').then(r => r.json()).catch(() => null),
+        fetch('/api/database/table?name=leads&limit=200').then(r => r.json()).catch(() => null)
       ]);
 
+      let hasChange = false;
+
+      // 1. Base App State
       if (stateRes && stateRes.ok && stateRes.state) {
-        this.state = stateRes.state;
+        this.state = { ...this.state, ...stateRes.state };
+        hasChange = true;
       }
 
-      if (startupsRes && startupsRes.records && startupsRes.records.length > 0) {
-        this.syncStartupsWithDatabase(startupsRes.records);
-      } else {
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
-        } catch (e) {}
-        this.notify();
+      // 2. Startups & Community Members
+      if (startupsRes && Array.isArray(startupsRes.records) && startupsRes.records.length > 0) {
+        if (this.syncStartupsWithDatabase(startupsRes.records)) hasChange = true;
       }
+
+      // 3. Workspaces & Dedicated Desks
+      if (workspacesRes && Array.isArray(workspacesRes.records) && workspacesRes.records.length > 0) {
+        if (this.syncWorkspacesWithDatabase(workspacesRes.records)) hasChange = true;
+      }
+
+      // 4. Meeting Rooms & Live Availability
+      if (roomsRes && Array.isArray(roomsRes.records) && roomsRes.records.length > 0) {
+        if (this.syncRoomsWithDatabase(roomsRes.records)) hasChange = true;
+      }
+      await this.fetchMeetingRoomsAvailability();
+
+      // 5. Invoices & Billing
+      if (invoicesRes && Array.isArray(invoicesRes.records) && invoicesRes.records.length > 0) {
+        if (this.syncInvoicesWithDatabase(invoicesRes.records)) hasChange = true;
+      }
+
+      // 6. Payments Ledger
+      if (paymentsRes && Array.isArray(paymentsRes.records) && paymentsRes.records.length > 0) {
+        if (this.syncPaymentsWithDatabase(paymentsRes.records)) hasChange = true;
+      }
+
+      // 7. Venture Milestones
+      if (milestonesRes && Array.isArray(milestonesRes.records) && milestonesRes.records.length > 0) {
+        if (this.syncMilestonesWithDatabase(milestonesRes.records)) hasChange = true;
+      }
+
+      // 8. Visitors & Security Gate Passes
+      if (inquiriesRes && Array.isArray(inquiriesRes.records) && inquiriesRes.records.length > 0) {
+        if (this.syncInquiriesWithDatabase(inquiriesRes.records)) hasChange = true;
+      }
+
+      // 9. Inbound Inquiries & Leads
+      if (leadsRes && Array.isArray(leadsRes.records) && leadsRes.records.length > 0) {
+        if (this.syncLeadsWithDatabase(leadsRes.records)) hasChange = true;
+      }
+
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
+      } catch (e) {}
+
+      // Notify all 10 application views that database state is freshly synced
+      this.notify();
     } catch (e) {
-      // Fallback to local storage
+      console.warn('Sync from cloud failed, fallback to local storage:', e);
     }
   }
 
   syncStartupsWithDatabase(dbStartups) {
-    if (!Array.isArray(dbStartups) || dbStartups.length === 0) return;
+    if (!Array.isArray(dbStartups) || dbStartups.length === 0) return false;
     if (!this.state.startups) this.state.startups = [];
 
     let hasChange = false;
@@ -342,12 +411,175 @@ class NexusStore {
       }
     });
 
-    if (hasChange) {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
-      } catch (e) {}
-      this.notify();
-    }
+    return hasChange;
+  }
+
+  syncWorkspacesWithDatabase(dbWorkspaces) {
+    if (!Array.isArray(dbWorkspaces) || dbWorkspaces.length === 0) return false;
+    if (!this.state.workspaces) this.state.workspaces = [];
+    let hasChange = false;
+
+    dbWorkspaces.forEach(dbItem => {
+      const id = dbItem.id || dbItem._id;
+      if (!id) return;
+      const idx = this.state.workspaces.findIndex(w => (w.id || w._id) === id);
+      if (idx !== -1) {
+        const local = this.state.workspaces[idx];
+        const merged = { ...local, ...dbItem };
+        if (JSON.stringify(local) !== JSON.stringify(merged)) {
+          this.state.workspaces[idx] = merged;
+          hasChange = true;
+        }
+      } else {
+        this.state.workspaces.push(dbItem);
+        hasChange = true;
+      }
+    });
+    return hasChange;
+  }
+
+  syncRoomsWithDatabase(dbRooms) {
+    if (!Array.isArray(dbRooms) || dbRooms.length === 0) return false;
+    if (!this.state.meetingRooms) this.state.meetingRooms = [];
+    let hasChange = false;
+
+    dbRooms.forEach(dbItem => {
+      const id = dbItem.id || dbItem._id;
+      if (!id) return;
+      const idx = this.state.meetingRooms.findIndex(r => r.id === id);
+      if (idx !== -1) {
+        const local = this.state.meetingRooms[idx];
+        const merged = { ...local, ...dbItem, bookings: local.bookings || dbItem.bookings || [] };
+        if (JSON.stringify(local) !== JSON.stringify(merged)) {
+          this.state.meetingRooms[idx] = merged;
+          hasChange = true;
+        }
+      } else {
+        this.state.meetingRooms.push(dbItem);
+        hasChange = true;
+      }
+    });
+    return hasChange;
+  }
+
+  syncInvoicesWithDatabase(dbInvoices) {
+    if (!Array.isArray(dbInvoices) || dbInvoices.length === 0) return false;
+    if (!this.state.invoices) this.state.invoices = [];
+    let hasChange = false;
+
+    dbInvoices.forEach(dbItem => {
+      const id = dbItem.id || dbItem.invoiceNumber || dbItem._id;
+      if (!id) return;
+      const idx = this.state.invoices.findIndex(inv => (inv.id || inv.invoiceNumber || inv._id) === id);
+      if (idx !== -1) {
+        const local = this.state.invoices[idx];
+        const merged = { ...local, ...dbItem };
+        if (JSON.stringify(local) !== JSON.stringify(merged)) {
+          this.state.invoices[idx] = merged;
+          hasChange = true;
+        }
+      } else {
+        this.state.invoices.push(dbItem);
+        hasChange = true;
+      }
+    });
+    return hasChange;
+  }
+
+  syncPaymentsWithDatabase(dbPayments) {
+    if (!Array.isArray(dbPayments) || dbPayments.length === 0) return false;
+    if (!this.state.payments) this.state.payments = [];
+    let hasChange = false;
+
+    dbPayments.forEach(dbItem => {
+      const id = dbItem.id || dbItem.paymentId || dbItem._id;
+      if (!id) return;
+      const idx = this.state.payments.findIndex(p => (p.id || p.paymentId || p._id) === id);
+      if (idx !== -1) {
+        const local = this.state.payments[idx];
+        const merged = { ...local, ...dbItem };
+        if (JSON.stringify(local) !== JSON.stringify(merged)) {
+          this.state.payments[idx] = merged;
+          hasChange = true;
+        }
+      } else {
+        this.state.payments.push(dbItem);
+        hasChange = true;
+      }
+    });
+    return hasChange;
+  }
+
+  syncMilestonesWithDatabase(dbMilestones) {
+    if (!Array.isArray(dbMilestones) || dbMilestones.length === 0) return false;
+    if (!this.state.milestones) this.state.milestones = [];
+    let hasChange = false;
+
+    dbMilestones.forEach(dbItem => {
+      const id = dbItem.id || dbItem._id;
+      if (!id) return;
+      const idx = this.state.milestones.findIndex(m => (m.id || m._id) === id);
+      if (idx !== -1) {
+        const local = this.state.milestones[idx];
+        const merged = { ...local, ...dbItem };
+        if (JSON.stringify(local) !== JSON.stringify(merged)) {
+          this.state.milestones[idx] = merged;
+          hasChange = true;
+        }
+      } else {
+        this.state.milestones.push(dbItem);
+        hasChange = true;
+      }
+    });
+    return hasChange;
+  }
+
+  syncInquiriesWithDatabase(dbInquiries) {
+    if (!Array.isArray(dbInquiries) || dbInquiries.length === 0) return false;
+    if (!this.state.contactInquiries) this.state.contactInquiries = [];
+    let hasChange = false;
+
+    dbInquiries.forEach(dbItem => {
+      const id = dbItem.id || dbItem._id;
+      if (!id) return;
+      const idx = this.state.contactInquiries.findIndex(inq => (inq.id || inq._id) === id);
+      if (idx !== -1) {
+        const local = this.state.contactInquiries[idx];
+        const merged = { ...local, ...dbItem };
+        if (JSON.stringify(local) !== JSON.stringify(merged)) {
+          this.state.contactInquiries[idx] = merged;
+          hasChange = true;
+        }
+      } else {
+        this.state.contactInquiries.push(dbItem);
+        hasChange = true;
+      }
+    });
+    return hasChange;
+  }
+
+  syncLeadsWithDatabase(dbLeads) {
+    if (!Array.isArray(dbLeads) || dbLeads.length === 0) return false;
+    if (!this.state.leads) this.state.leads = [];
+    let hasChange = false;
+
+    dbLeads.forEach(dbItem => {
+      const id = dbItem.id || dbItem._id;
+      if (!id) return;
+      const idx = this.state.leads.findIndex(l => (l.id || l._id) === id);
+      if (idx !== -1) {
+        const local = this.state.leads[idx];
+        const merged = { ...local, ...dbItem };
+        if (JSON.stringify(local) !== JSON.stringify(merged)) {
+          this.state.leads[idx] = merged;
+          hasChange = true;
+        }
+      } else {
+        this.state.leads.push(dbItem);
+        hasChange = true;
+      }
+    });
+    return hasChange;
   }
 
   resetToDefault() {

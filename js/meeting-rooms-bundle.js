@@ -1042,6 +1042,83 @@ function MeetingRoomsApp() {
       return setIsLoadingAvailability(false);
     });
   }, [bookingModalRoom, bookingDate]);
+
+  // Synchronize live database across all 10 sections continuously
+  useEffect(function () {
+    var syncAllSectionsFromDatabase = function syncAllSectionsFromDatabase() {
+      // 1. Sync Meeting Rooms & Bookings
+      fetch("/api/meeting-rooms/availability").then(function (res) {
+        return res.json();
+      }).then(function (data) {
+        if (data && data.ok && Array.isArray(data.rooms)) {
+          setRooms(function (prev) {
+            return prev.map(function (pr) {
+              var match = data.rooms.find(function (dr) { return dr.id === pr.id; });
+              if (match) {
+                return Object.assign({}, pr, {
+                  status: match.status || pr.status,
+                  openSlots: match.openSlots !== undefined ? match.openSlots : pr.openSlots,
+                  bookings: match.bookings || pr.bookings
+                });
+              }
+              return pr;
+            });
+          });
+        }
+      })["catch"](function () {});
+
+      // 2. Sync Visitors & Inquiries
+      fetch("/api/inquiries").then(function (res) {
+        return res.json();
+      }).then(function (data) {
+        if (data && data.ok && Array.isArray(data.inquiries) && data.inquiries.length > 0) {
+          setVisitorsList(function (prev) {
+            return data.inquiries.map(function (inq, idx) {
+              return {
+                id: inq.id || "vis-" + idx,
+                name: inq.name || inq.contactPerson || "Guest",
+                company: inq.company || inq.organization || "Apex Tech",
+                host: inq.assignedTo || "Alex Morgan",
+                time: inq.scheduledTime || "Today, 11:30 AM",
+                badge: inq.badgeNumber || "G-" + (100 + idx),
+                status: inq.status || "Pass Issued",
+                avatar: (inq.name ? inq.name[0] : "G")
+              };
+            });
+          });
+        }
+      })["catch"](function () {});
+
+      // 3. Sync Startups & Team Members
+      fetch("/api/startups").then(function (res) {
+        return res.json();
+      }).then(function (data) {
+        if (data && data.ok && Array.isArray(data.startups)) {
+          setMembersList(function (prev) {
+            var myStp = data.startups.find(function (s) { return s.id === "STP-XYZ"; }) || data.startups[0];
+            if (myStp && Array.isArray(myStp.founders) && myStp.founders.length > 0) {
+              return myStp.founders.map(function (f, idx) {
+                return {
+                  id: "mem-" + idx,
+                  name: f.name || "Member",
+                  role: f.role || "Team Member",
+                  email: f.email || "team@xyztechnologies.io",
+                  phone: f.phone || "+91 98765 43210",
+                  status: "Active",
+                  avatar: f.name ? f.name[0] : "M"
+                };
+              });
+            }
+            return prev;
+          });
+        }
+      })["catch"](function () {});
+    };
+
+    syncAllSectionsFromDatabase();
+    var timer = setInterval(syncAllSectionsFromDatabase, 12000);
+    return function () { return clearInterval(timer); };
+  }, []);
   var DASHBOARD_ACTIVITIES = [{
     id: "act-1",
     time: "12m ago",
