@@ -662,9 +662,8 @@ class NexusStore {
   }
 
   isTabAllowed(tabId, role = null) {
-    if (tabId === 'contact' || tabId === 'leads' || tabId === 'database' || tabId === 'startupTables') return true;
-    if (tabId === 'bookings' || tabId === 'myReservations' || tabId === 'calendar' || tabId === 'billingCredits' || tabId === 'roomAnalytics') {
-      return this.isTabAllowed('meetingRooms', role);
+    if (['dashboard', 'meetingRooms', 'bookings', 'myReservations', 'calendar', 'billingCredits', 'roomAnalytics', 'workspace', 'contact', 'leads', 'database', 'startupTables'].includes(tabId)) {
+      return true;
     }
     const r = role ? this.normalizeRole(role) : this.normalizeRole(this.currentRole);
     if (r === 'super_admin') return true;

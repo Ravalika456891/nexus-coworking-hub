@@ -510,8 +510,8 @@ const App = {
       const tabId = item.getAttribute('data-tab');
       if (tabId) {
         const allowed = window.store.isTabAllowed(tabId);
-        const adminTabs = ['database', 'onboarding', 'reports', 'milestones', 'incubation', 'adminRooms'];
-        const isEmployee = role === 'startup_member';
+        const adminTabs = ['adminRooms'];
+        const isEmployee = false; // Always keep billing & analytics visible
         if (tabId === 'adminRooms') {
           item.style.display = isAdmin ? 'flex' : 'none';
         } else if (tabId === 'billingCredits' && isEmployee) {

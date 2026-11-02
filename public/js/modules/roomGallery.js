@@ -606,8 +606,9 @@ window.RoomGallery = {
 
     const html = `
       <div class="rg-details-overlay" id="rg-details" role="dialog" aria-modal="true" aria-labelledby="rg-details-title"
+        style="position: fixed; inset: 0; z-index: 99999; display: flex; justify-content: center; align-items: center; padding: 20px; background: rgba(15, 23, 42, 0.72); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);"
         onclick="if (event.target === this) RoomGallery.closeDetails()">
-        <aside class="rg-details-panel">
+        <aside class="rg-details-panel" style="margin: auto; width: 100%; max-width: 620px; max-height: min(92vh, 820px); border-radius: 20px; position: relative; background: #ffffff; box-shadow: 0 25px 65px -12px rgba(15, 23, 42, 0.45);">
           <div class="rg-details-head">
             <div style="min-width:0;">
               <h3 id="rg-details-title" class="rg-details-title" title="${this.esc(room.name)}">${this.esc(room.name)}</h3>
