@@ -14,6 +14,7 @@ const MeetingRoomsModule = {
   selectedCustomWindowByRoom: {}, // { [roomId]: { startTime, endTime } }
   schedulerViewMode: 'cards', // 'cards' | 'day' | 'week' | 'month' | 'compare'
   calendarModalViewMode: 'month', // 'day' | 'week' | 'month'
+  filterFloor: 'all', // 'all' | '1F' | '2F' | '3F' | '4F' | '5F' | '6F' | '7F'
   filterCategory: 'all', // 'all' | 'meeting' | 'conference' | 'training' | 'pitch' | 'boardroom' | 'event'
   filterRoom: 'all', // 'all' | roomId
   filterCapacity: 'all', // 'all' | '4' | '8' | '16'
@@ -233,6 +234,11 @@ const MeetingRoomsModule = {
     this.render();
   },
 
+  setFilterFloor(floorCode) {
+    this.filterFloor = floorCode || 'all';
+    this.render();
+  },
+
   setFilterCategory(cat) {
     this.filterCategory = cat || 'all';
     this.filterRoom = 'all';
@@ -274,6 +280,7 @@ const MeetingRoomsModule = {
   },
 
   resetFilters() {
+    this.filterFloor = 'all';
     this.filterCategory = 'all';
     this.filterRoom = 'all';
     this.filterCapacity = 'all';
@@ -287,6 +294,14 @@ const MeetingRoomsModule = {
     const checkDate = targetDate || this.selectedDate;
     const sourceRooms = rooms || (typeof window !== 'undefined' && window.store ? window.store.getMeetingRooms() : []);
     return (sourceRooms || []).filter(room => {
+      // Building floor filter (1F to 7F)
+      if (this.filterFloor && this.filterFloor !== 'all') {
+        const targetFloor = String(this.filterFloor).toUpperCase();
+        const rFloor = String(room.floor || room.floorCode || '').toUpperCase();
+        if (rFloor !== targetFloor) {
+          return false;
+        }
+      }
       if (this.filterRoom && this.filterRoom !== 'all' && room.id !== this.filterRoom) {
         return false;
       }
@@ -610,12 +625,26 @@ const MeetingRoomsModule = {
     if (this.schedulerViewMode !== 'cards') {
       return `
         <!-- Secondary Mode Toolbar -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; background: #fff; padding: 12px 18px; border-radius: 14px; border: 1.5px solid #ede9fe;">
-          <div style="display: flex; align-items: center; gap: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; background: #fff; padding: 12px 18px; border-radius: 14px; border: 1.5px solid #ede9fe; flex-wrap: wrap; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
             <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.setSchedulerViewMode('cards')" style="font-weight: 700;">
               ← Back to Room Cards
             </button>
             <span style="font-size: 13px; font-weight: 800; color: #1e1b4b;">${formattedDateLabel}</span>
+            <!-- Compact Calendar Floor Filter -->
+            <div style="display: inline-flex; align-items: center; gap: 5px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 3px 8px;">
+              <span style="font-size: 11px; font-weight: 800; color: #475569;">🏢 Floor:</span>
+              <select onchange="MeetingRoomsModule.setFilterFloor(this.value)" style="border: none; background: transparent; font-size: 11.5px; font-weight: 700; color: #4338ca; cursor: pointer; outline: none;">
+                <option value="all" ${(!this.filterFloor || this.filterFloor === 'all') ? 'selected' : ''}>All Floors (10 Rooms)</option>
+                <option value="1F" ${this.filterFloor === '1F' ? 'selected' : ''}>1F (2 Rooms)</option>
+                <option value="2F" ${this.filterFloor === '2F' ? 'selected' : ''}>2F (1 Room)</option>
+                <option value="3F" ${this.filterFloor === '3F' ? 'selected' : ''}>3F (2 Rooms)</option>
+                <option value="4F" ${this.filterFloor === '4F' ? 'selected' : ''}>4F (1 Room)</option>
+                <option value="5F" ${this.filterFloor === '5F' ? 'selected' : ''}>5F (0 Rooms)</option>
+                <option value="6F" ${this.filterFloor === '6F' ? 'selected' : ''}>6F (2 Rooms)</option>
+                <option value="7F" ${this.filterFloor === '7F' ? 'selected' : ''}>7F (2 Rooms)</option>
+              </select>
+            </div>
           </div>
           <div class="hub-view-switcher">
             <button type="button" class="hub-view-btn ${this.schedulerViewMode === 'cards' ? 'active' : ''}" onclick="MeetingRoomsModule.setSchedulerViewMode('cards')">Cards</button>
@@ -626,13 +655,24 @@ const MeetingRoomsModule = {
           </div>
         </div>
 
-        ${this.schedulerViewMode === 'day'
-          ? this.renderDayCalendarView(filteredRooms, myStartup)
-          : this.schedulerViewMode === 'week'
-            ? this.renderWeekCalendarView(filteredRooms, myStartup)
-            : this.schedulerViewMode === 'month'
-              ? this.renderMonthCalendarView(filteredRooms, myStartup)
-              : this.renderRoomComparisonView(filteredRooms, myStartup)}
+        ${this.filterFloor === '5F' ? `
+          <div class="hub-empty-floor-card">
+            <div style="font-size: 38px; margin-bottom: 8px;">🏢</div>
+            <h4 style="font-size: 17px; font-weight: 800; color: #1e1b4b; margin: 0 0 6px 0;">No meeting rooms on 5F</h4>
+            <p style="font-size: 13.5px; color: #64748b; max-width: 440px; margin: 0 auto 16px auto; line-height: 1.5;">This floor currently has no meeting rooms. Please select another floor to explore available spaces.</p>
+            <button type="button" class="btn btn-primary" onclick="MeetingRoomsModule.setFilterFloor('all')" style="border-radius: 10px; font-weight: 700; padding: 8px 18px;">
+              View All Floors
+            </button>
+          </div>
+        ` : (
+          this.schedulerViewMode === 'day'
+            ? this.renderDayCalendarView(filteredRooms, myStartup)
+            : this.schedulerViewMode === 'week'
+              ? this.renderWeekCalendarView(filteredRooms, myStartup)
+              : this.schedulerViewMode === 'month'
+                ? this.renderMonthCalendarView(filteredRooms, myStartup)
+                : this.renderRoomComparisonView(filteredRooms, myStartup)
+        )}
       `;
     }
 
@@ -783,11 +823,34 @@ const MeetingRoomsModule = {
             </div>
           </div>
 
+          <!-- Floor Segmented Bar -->
+          <div class="hub-floor-bar">
+            <span class="hub-floor-label">
+              <span>🏢</span> Building Floor:
+            </span>
+            <div class="hub-floor-segmented">
+              <button type="button" class="hub-floor-pill ${(!this.filterFloor || this.filterFloor === 'all') ? 'active' : ''}" onclick="MeetingRoomsModule.setFilterFloor('all')">All Floors</button>
+              ${['1F', '2F', '3F', '4F', '5F', '6F', '7F'].map(fl => `
+                <button type="button" class="hub-floor-pill ${this.filterFloor === fl ? 'active' : ''}" onclick="MeetingRoomsModule.setFilterFloor('${fl}')">${fl}</button>
+              `).join('')}
+            </div>
+            ${this.filterFloor && this.filterFloor !== 'all' ? `
+              <span style="font-size: 11px; color: #64748b; font-weight: 700; margin-left: auto;">
+                Showing ${filteredRooms.length} room${filteredRooms.length === 1 ? '' : 's'} on ${this.filterFloor}
+              </span>
+            ` : `
+              <span style="font-size: 11px; color: #64748b; font-weight: 700; margin-left: auto;">
+                10 Rooms across 7 Floors
+              </span>
+            `}
+          </div>
+
           <!-- 3. AVAILABLE ROOMS HEADER & VIEW TOGGLES -->
           <div class="hub-rooms-header">
             <div class="hub-rooms-title-wrap">
               <h3 class="hub-rooms-heading">Available Rooms</h3>
               <span class="hub-count-pill">${availableRoomsCount} rooms available</span>
+              ${this.filterFloor && this.filterFloor !== 'all' ? `<span class="hub-count-pill" style="background:#EDE9FE; color:#4338CA; margin-left:6px;">Floor: ${this.filterFloor}</span>` : ''}
             </div>
 
             <div class="hub-view-switcher">
@@ -805,7 +868,25 @@ const MeetingRoomsModule = {
 
           <!-- 4. CLEAN 3-COLUMN ROOM CARDS GRID -->
           <div class="hub-rooms-grid">
-            ${filteredRooms.map(r => this.renderRoomCard(r, myStartup)).join('')}
+            ${this.filterFloor === '5F' ? `
+              <div class="hub-empty-floor-card">
+                <div style="font-size: 38px; margin-bottom: 8px;">🏢</div>
+                <h4 style="font-size: 17px; font-weight: 800; color: #1e1b4b; margin: 0 0 6px 0;">No meeting rooms on 5F</h4>
+                <p style="font-size: 13.5px; color: #64748b; max-width: 440px; margin: 0 auto 16px auto; line-height: 1.5;">This floor currently has no meeting rooms. Please select another floor to explore available spaces.</p>
+                <button type="button" class="btn btn-primary" onclick="MeetingRoomsModule.setFilterFloor('all')" style="border-radius: 10px; font-weight: 700; padding: 8px 18px;">
+                  View All Floors
+                </button>
+              </div>
+            ` : filteredRooms.length === 0 ? `
+              <div class="hub-empty-floor-card">
+                <div style="font-size: 34px; margin-bottom: 8px;">🔍</div>
+                <h4 style="font-size: 16px; font-weight: 800; color: #1e1b4b; margin: 0 0 6px 0;">No matching meeting rooms</h4>
+                <p style="font-size: 13px; color: #64748b; max-width: 400px; margin: 0 auto 14px auto;">No rooms match the selected filters on this date.</p>
+                <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.resetFilters()" style="font-weight: 700;">
+                  Clear All Filters
+                </button>
+              </div>
+            ` : filteredRooms.map(r => this.renderRoomCard(r, myStartup)).join('')}
           </div>
 
         </div>
@@ -1223,6 +1304,8 @@ const MeetingRoomsModule = {
                       statusBadge = '<span class="badge badge-warning" style="font-size: 10.5px; font-weight: 700;">⏰ Today</span>';
                     }
 
+                    const bRoom = window.store.getMeetingRoomById(b.roomId);
+
                     return `
                       <tr style="transition: all 0.15s ease;">
                         <!-- 1. Booking Ref & QR indicator -->
@@ -1266,10 +1349,14 @@ const MeetingRoomsModule = {
                               ${b.roomIcon || '🏢'}
                             </span>
                             <div>
-                              <strong style="color: var(--text-primary); font-size: 13px;">${b.roomName}</strong>
-                              <div style="font-size: 11px; color: var(--text-muted); font-family: var(--font-mono);">
-                                <span class="badge badge-info" style="font-size: 9.5px; padding: 1px 6px;">${b.capacity || 10} Pax</span>
-                                <span>${b.roomId}</span>
+                              <div style="display: flex; align-items: center; gap: 6px;">
+                                <strong style="color: var(--text-primary); font-size: 13px;">${b.roomName}</strong>
+                                <span class="badge" style="background: #ede9fe; color: #4338ca; font-size: 9.5px; padding: 1px 6px; font-weight: 800;">${bRoom ? (bRoom.floor || '1F') : '1F'}</span>
+                              </div>
+                              <div style="font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); margin-top: 2px;">
+                                <span>${bRoom ? (bRoom.roomNumber || bRoom.floor) : '1F-R01'}</span>
+                                <span style="margin: 0 3px;">•</span>
+                                <span class="badge badge-info" style="font-size: 9px; padding: 1px 5px;">${b.capacity || (bRoom && bRoom.capacity) || 10} Pax</span>
                               </div>
                             </div>
                           </div>
@@ -1411,7 +1498,9 @@ const MeetingRoomsModule = {
                 </div>
               ` : `
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
-                  ${filteredList.map(b => `
+                  ${filteredList.map(b => {
+                    const bRoom = window.store.getMeetingRoomById(b.roomId);
+                    return `
                     <div class="my-booking-card" style="${b.status === 'Cancelled' ? 'opacity: 0.75; border-color: rgba(100, 116, 139, 0.3);' : ''}">
                       <div class="my-booking-stripe" style="${b.status === 'Cancelled' ? 'background: #94a3b8;' : ''}"></div>
                       
@@ -1421,9 +1510,12 @@ const MeetingRoomsModule = {
                             ${b.roomIcon || '🏢'}
                           </span>
                           <div>
-                            <h4 style="font-size: 16px; font-weight: 800; color: var(--text-primary); margin: 0;">${b.roomName}</h4>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                              <h4 style="font-size: 15px; font-weight: 800; color: var(--text-primary); margin: 0;">${b.roomName}</h4>
+                              <span class="badge" style="background: #ede9fe; color: #4338ca; font-size: 9.5px; padding: 1px 6px; font-weight: 800;">${bRoom ? (bRoom.floor || '1F') : '1F'}</span>
+                            </div>
                             <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">
-                              Booking ID: <code style="color: #2563eb; font-weight: 700;">${b.id}</code>
+                              Floor: <strong style="color: #1e293b;">${bRoom ? (bRoom.floor || '1F') : '1F'}</strong> · Room: <strong style="color: #4f3fe0; font-family: monospace;">${bRoom ? (bRoom.roomNumber || '1F-R01') : '1F-R01'}</strong>
                             </div>
                           </div>
                         </div>
@@ -2417,6 +2509,37 @@ const MeetingRoomsModule = {
         </span>
       </div>
 
+      <!-- Building Floor Directory Overview -->
+      <div class="card" style="padding: 16px 20px; border: 1px solid var(--border-subtle); border-radius: 14px; margin-bottom: 20px; background: #ffffff;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+          <h4 style="font-size: 14px; font-weight: 800; color: #1e1b4b; margin: 0; display: flex; align-items: center; gap: 8px;">
+            <span>🏢</span> Building Floors &amp; Inventory Directory (NEXUS Cyber City Hub)
+          </h4>
+          <span class="badge badge-primary" style="font-size: 11px; font-weight: 700; padding: 3px 10px;">
+            7 Building Floors • 10 Meeting Rooms
+          </span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
+          ${[
+            { floor: '1F', label: '1st Floor', count: (rooms || []).filter(r => (r.floor || '1F') === '1F').length, badge: '2 Rooms' },
+            { floor: '2F', label: '2nd Floor', count: (rooms || []).filter(r => (r.floor || '') === '2F').length, badge: '1 Room' },
+            { floor: '3F', label: '3rd Floor', count: (rooms || []).filter(r => (r.floor || '') === '3F').length, badge: '2 Rooms' },
+            { floor: '4F', label: '4th Floor', count: (rooms || []).filter(r => (r.floor || '') === '4F').length, badge: '1 Room' },
+            { floor: '5F', label: '5th Floor', count: 0, badge: '0 Rooms (Empty)', empty: true },
+            { floor: '6F', label: '6th Floor', count: (rooms || []).filter(r => (r.floor || '') === '6F').length, badge: '2 Rooms' },
+            { floor: '7F', label: '7th Floor (Skydeck)', count: (rooms || []).filter(r => (r.floor || '') === '7F').length, badge: '2 Rooms' }
+          ].map(fl => `
+            <div style="background: ${fl.empty ? '#fef2f2' : '#f8fafc'}; border: 1.5px solid ${fl.empty ? '#fecaca' : '#e2e8f0'}; border-radius: 10px; padding: 10px 12px; text-align: center;">
+              <div style="font-size: 16px; font-weight: 800; color: ${fl.empty ? '#dc2626' : '#4f3fe0'};">${fl.floor}</div>
+              <div style="font-size: 10.5px; color: #64748b; font-weight: 600; margin: 2px 0 4px 0;">${fl.label}</div>
+              <span class="badge ${fl.empty ? 'badge-danger' : 'badge-info'}" style="font-size: 10px; padding: 1px 7px;">
+                ${fl.badge}
+              </span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
       <!-- 2-Column Admin Panel: Add/Edit Room Form + Booking Policies -->
       <div class="grid-2col" style="margin-bottom: 22px;">
         <!-- Add / Edit Room Form -->
@@ -2441,6 +2564,24 @@ const MeetingRoomsModule = {
               <div>
                 <label class="form-label" style="font-size: 11px; font-weight: 700;">Capacity (Pax) *</label>
                 <input type="number" name="capacity" class="form-control" value="${editingRoom ? editingRoom.capacity : 10}" min="1" max="200" required style="font-size: 12px;">
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+              <div>
+                <label class="form-label" style="font-size: 11px; font-weight: 700;">Building Floor *</label>
+                <select name="floor" class="form-control" style="font-size: 12px;">
+                  <option value="1F" ${editingRoom && editingRoom.floor === '1F' ? 'selected' : ''}>1F (First Floor)</option>
+                  <option value="2F" ${editingRoom && editingRoom.floor === '2F' ? 'selected' : ''}>2F (Second Floor)</option>
+                  <option value="3F" ${editingRoom && editingRoom.floor === '3F' ? 'selected' : ''}>3F (Third Floor)</option>
+                  <option value="4F" ${editingRoom && editingRoom.floor === '4F' ? 'selected' : ''}>4F (Fourth Floor)</option>
+                  <option value="5F" ${editingRoom && editingRoom.floor === '5F' ? 'selected' : ''}>5F (Fifth Floor - Zero Rooms)</option>
+                  <option value="6F" ${editingRoom && editingRoom.floor === '6F' ? 'selected' : ''}>6F (Sixth Floor)</option>
+                  <option value="7F" ${editingRoom && editingRoom.floor === '7F' ? 'selected' : ''}>7F (Seventh Floor / Skydeck)</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label" style="font-size: 11px; font-weight: 700;">Room Location Number *</label>
+                <input type="text" name="roomNumber" class="form-control" value="${editingRoom ? (editingRoom.roomNumber || '') : ''}" placeholder="e.g. 1F-R01" required style="font-size: 12px; font-family: monospace;">
               </div>
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
@@ -2541,6 +2682,7 @@ const MeetingRoomsModule = {
             <thead>
               <tr>
                 <th>Room</th>
+                <th>Floor &amp; Location</th>
                 <th>Capacity</th>
                 <th>Hourly Price</th>
                 <th>Amenities</th>
@@ -2554,6 +2696,10 @@ const MeetingRoomsModule = {
                 return `
                   <tr>
                     <td><strong>${r.icon || '🏢'} ${r.name}</strong> <span style="font-size: 11px; color: var(--text-muted);">(${r.id})</span></td>
+                    <td>
+                      <span class="badge" style="background:#EDE9FE; color:#4338CA; font-weight:800; font-size:11px; padding:2px 7px;">${r.floor || '1F'}</span>
+                      <code style="font-size: 11.5px; font-weight: 700; color: #1e293b; margin-left: 4px;">${r.roomNumber || '1F-R01'}</code>
+                    </td>
                     <td>${r.capacity} Pax</td>
                     <td style="font-family: var(--font-mono); font-weight: 700;">₹${r.hourlyRate}/hr</td>
                     <td style="font-size: 11.5px; color: var(--text-secondary);">${Array.isArray(r.amenities) ? r.amenities.join(' • ') : (r.amenities || 'Standard AV')}</td>
@@ -6655,13 +6801,20 @@ const MeetingRoomsModule = {
           <div class="hub-card-thumb-wrap" onclick="RoomGallery.openDetails('${room.id}')" title="Click to view full room details and booking schedule">
             <img src="${primaryImg}" alt="${room.name}" loading="lazy" onerror="RoomGallery.onImgError(this)">
             <span class="hub-card-status-badge ${badgeClass}">${badgeText}</span>
+            <span style="position: absolute; bottom: 8px; left: 8px; background: rgba(15, 23, 42, 0.78); backdrop-filter: blur(4px); color: #ffffff; font-size: 10.5px; font-weight: 800; padding: 2px 7px; border-radius: 6px; font-family: monospace;">${room.roomNumber || '1F-R01'}</span>
             <button type="button" class="hub-card-heart-btn" onclick="event.stopPropagation(); App.showToast('❤️ Saved to favorites', 'success');" title="Save to favorites">
               ♡
             </button>
           </div>
 
           <div class="hub-card-body">
-            <h4 class="hub-card-title" title="${room.name}">${room.name}</h4>
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 2px;">
+              <h4 class="hub-card-title" title="${room.name}" style="margin: 0; min-width: 0;">${room.name}</h4>
+              <span class="hub-card-floor-badge" title="Building Floor">${room.floor || '1F'}</span>
+            </div>
+            <div style="font-size: 11.5px; color: #64748b; font-weight: 700; margin-bottom: 5px;">
+              Floor: <strong style="color: #1e293b;">${room.floor || '1F'}</strong> · Room: <strong style="color: #4f3fe0; font-family: monospace;">${room.roomNumber || '1F-R01'}</strong>
+            </div>
             <div class="hub-card-capacity">
               <span>👥</span>
               <span>${room.capacity} people</span>

@@ -29,6 +29,7 @@ class NexusStore {
 
     // Ensure XYZ Technologies, John Smith, and sequential milestones exist
     this.syncIncubationData();
+    this.syncBuildingAndFloors();
     this.save();
     this.syncFromCloud();
 
@@ -39,6 +40,37 @@ class NexusStore {
           this.syncFromCloud();
         }
       }, 10000);
+    }
+  }
+
+  syncBuildingAndFloors() {
+    if (!this.state.building && window.INITIAL_DATA && window.INITIAL_DATA.building) {
+      this.state.building = JSON.parse(JSON.stringify(window.INITIAL_DATA.building));
+    }
+    if (!this.state.floors || this.state.floors.length === 0) {
+      if (window.INITIAL_DATA && window.INITIAL_DATA.floors) {
+        this.state.floors = JSON.parse(JSON.stringify(window.INITIAL_DATA.floors));
+      }
+    }
+
+    if (!this.state.meetingRooms) this.state.meetingRooms = [];
+
+    // Ensure all 10 seed rooms exist and have floors assigned
+    if (window.INITIAL_DATA && window.INITIAL_DATA.meetingRooms) {
+      window.INITIAL_DATA.meetingRooms.forEach(seedRoom => {
+        const existing = this.state.meetingRooms.find(r => r.id === seedRoom.id);
+        if (!existing) {
+          this.state.meetingRooms.push(JSON.parse(JSON.stringify(seedRoom)));
+        } else {
+          // Non-destructively ensure floor and roomNumber are updated
+          if (!existing.floor || !existing.roomNumber) {
+            existing.floor = seedRoom.floor;
+            existing.floorCode = seedRoom.floorCode;
+            existing.floorId = seedRoom.floorId;
+            existing.roomNumber = seedRoom.roomNumber;
+          }
+        }
+      });
     }
   }
 
@@ -1576,6 +1608,41 @@ class NexusStore {
     return this.state.meetingRooms || [];
   }
 
+  getBuilding() {
+    return this.state.building || (window.INITIAL_DATA && window.INITIAL_DATA.building) || {
+      id: "BLD-01",
+      name: "NEXUS Cyber City Hub",
+      location: "Level 1–7, Cyber City Innovation District, Hyderabad",
+      timezone: "Asia/Kolkata",
+      totalFloors: 7,
+      totalMeetingRooms: 10
+    };
+  }
+
+  getFloors() {
+    return this.state.floors || (window.INITIAL_DATA && window.INITIAL_DATA.floors) || [];
+  }
+
+  getRoomsByFloor(floorCode) {
+    const all = this.getMeetingRooms();
+    if (!floorCode || floorCode === 'all') return all;
+    return all.filter(r => (r.floor === floorCode || r.floorCode === floorCode));
+  }
+
+  updateRoomFloor(roomId, floorCode, roomNumber) {
+    const room = this.getMeetingRoomById(roomId);
+    if (!room) return { success: false, message: 'Room not found' };
+    const oldFloor = room.floor;
+    const oldNumber = room.roomNumber;
+    room.floor = floorCode;
+    room.floorCode = floorCode;
+    room.roomNumber = roomNumber || `${floorCode}-R01`;
+    const floorObj = this.getFloors().find(f => f.floorCode === floorCode);
+    if (floorObj) room.floorId = floorObj.id;
+    this.save();
+    return { success: true, room, oldFloor, oldNumber };
+  }
+
   getMeetingRoomById(id) {
     if (!id) return null;
     const rooms = this.state.meetingRooms || [];
@@ -2455,10 +2522,18 @@ class NexusStore {
         existing.amenities = amenitiesArr;
         if (rd.icon) existing.icon = rd.icon;
         if (rd.operatingHours) existing.operatingHours = rd.operatingHours;
+        if (rd.floor) {
+          existing.floor = rd.floor;
+          existing.floorCode = rd.floor;
+        }
+        if (rd.roomNumber) existing.roomNumber = rd.roomNumber;
       } else {
         existing = {
           id: targetId,
           name: rd.name,
+          floor: rd.floor || '1F',
+          floorCode: rd.floor || '1F',
+          roomNumber: rd.roomNumber || `${rd.floor || '1F'}-R01`,
           capacity: Number(rd.capacity) || 8,
           hourlyRate: Number(rd.hourlyRate) || 1200,
           amenities: amenitiesArr,

@@ -801,7 +801,7 @@ window.RoomGallery = {
           <div class="rg-details-head">
             <div style="min-width:0;">
               <h3 id="rg-details-title" class="rg-details-title" title="${this.esc(room.name)}">${this.esc(room.name)}</h3>
-              <div class="rg-details-sub">${id}${room.floor ? ` • ${this.esc(room.floor)}` : ''} • Max ${room.capacity} Pax</div>
+              <div class="rg-details-sub">Floor: ${this.esc(room.floor || '1F')} · Room: ${this.esc(room.roomNumber || id)} • Max ${room.capacity} Pax</div>
             </div>
             <button type="button" class="rg-close-btn" onclick="RoomGallery.closeDetails()" aria-label="Close room details">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 6l12 12M18 6L6 18"/></svg>
@@ -823,6 +823,7 @@ window.RoomGallery = {
               </div>` : ''}
 
             <div class="rg-facts">
+              <div class="rg-fact"><span class="rg-fact-label">Location</span><span class="rg-fact-value">🏢 Floor ${this.esc(room.floor || '1F')} (${this.esc(room.roomNumber || id)})</span></div>
               <div class="rg-fact"><span class="rg-fact-label">Capacity</span><span class="rg-fact-value">👥 ${room.capacity} people</span></div>
               <div class="rg-fact"><span class="rg-fact-label">Price</span><span class="rg-fact-value">₹${Number(room.hourlyRate || 0).toLocaleString('en-IN')}/hr</span></div>
               <div class="rg-fact"><span class="rg-fact-label">Status</span><span class="rg-fact-value rg-status ${this.esc(status.statusType)}">● ${this.esc(status.status)}</span></div>

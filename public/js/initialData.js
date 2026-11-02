@@ -1056,10 +1056,33 @@ window.INITIAL_DATA = {
     { id: "PB-03", label: "Phone Booth Echo-1", zone: "Zone D: Acoustic Pods", type: "Phone Booth", capacity: 1, monthlyRate: 0, status: "available", allocatedStartupId: null, allocatedStartupName: null, allocatedSince: null }
   ],
 
+  building: {
+    id: "BLD-01",
+    name: "NEXUS Cyber City Hub",
+    location: "Level 1–7, Cyber City Innovation District, Hyderabad",
+    timezone: "Asia/Kolkata",
+    totalFloors: 7,
+    totalMeetingRooms: 10
+  },
+
+  floors: [
+    { id: "FL-01", buildingId: "BLD-01", floorCode: "1F", floorNumber: 1, name: "Ground / 1st Floor", displayOrder: 1, totalRooms: 2, isActive: true },
+    { id: "FL-02", buildingId: "BLD-01", floorCode: "2F", floorNumber: 2, name: "Second Floor", displayOrder: 2, totalRooms: 1, isActive: true },
+    { id: "FL-03", buildingId: "BLD-01", floorCode: "3F", floorNumber: 3, name: "Third Floor", displayOrder: 3, totalRooms: 2, isActive: true },
+    { id: "FL-04", buildingId: "BLD-01", floorCode: "4F", floorNumber: 4, name: "Fourth Floor", displayOrder: 4, totalRooms: 1, isActive: true },
+    { id: "FL-05", buildingId: "BLD-01", floorCode: "5F", floorNumber: 5, name: "Fifth Floor (Zero Rooms)", displayOrder: 5, totalRooms: 0, isActive: true },
+    { id: "FL-06", buildingId: "BLD-01", floorCode: "6F", floorNumber: 6, name: "Sixth Floor", displayOrder: 6, totalRooms: 2, isActive: true },
+    { id: "FL-07", buildingId: "BLD-01", floorCode: "7F", floorNumber: 7, name: "Seventh Floor (Skydeck)", displayOrder: 7, totalRooms: 2, isActive: true }
+  ],
+
   meetingRooms: [
     {
       id: "MR-01",
       name: "Boardroom Alpha",
+      floor: "1F",
+      floorCode: "1F",
+      floorId: "FL-01",
+      roomNumber: "1F-R01",
       capacity: 16,
       hourlyRate: 1500,
       amenities: ["4K Dual Display", "Cisco Webex Kit", "Smart Glass", "Executive Leather", "Polycom Audio"],
@@ -1101,6 +1124,10 @@ window.INITIAL_DATA = {
     {
       id: "MR-02",
       name: "Pitch Arena Nexus",
+      floor: "6F",
+      floorCode: "6F",
+      floorId: "FL-06",
+      roomNumber: "6F-R01",
       capacity: 35,
       hourlyRate: 3000,
       amenities: ["Laser Projector & Stage", "Wireless Lapel Mics", "Livestream Console", "Acoustic Baffles"],
@@ -1130,6 +1157,10 @@ window.INITIAL_DATA = {
     {
       id: "MR-03",
       name: "Brainstorm Pod Beta",
+      floor: "1F",
+      floorCode: "1F",
+      floorId: "FL-01",
+      roomNumber: "1F-R02",
       capacity: 8,
       hourlyRate: 800,
       amenities: ["Floor-to-Ceiling Whiteboard", "Apple TV AirPlay", "Magnetic Sticky Wall", "Ergonomic Chairs"],
@@ -1146,6 +1177,10 @@ window.INITIAL_DATA = {
     {
       id: "MR-04",
       name: "Focus Room Quantum",
+      floor: "2F",
+      floorCode: "2F",
+      floorId: "FL-02",
+      roomNumber: "2F-R01",
       capacity: 4,
       hourlyRate: 500,
       amenities: ["High-Def Webcam", "Noise Dampening", "Dual 27-inch Monitors", "Fast Mesh Wi-Fi 7"],
@@ -1161,6 +1196,10 @@ window.INITIAL_DATA = {
     {
       id: "MR-05",
       name: "Training Room",
+      floor: "3F",
+      floorCode: "3F",
+      floorId: "FL-03",
+      roomNumber: "3F-R01",
       capacity: 20,
       hourlyRate: 2200,
       amenities: ["Interactive Projector", "Flexible Modular Desks", "Wireless Presentation", "High-Speed Wi-Fi"],
@@ -1173,8 +1212,30 @@ window.INITIAL_DATA = {
       bookings: []
     },
     {
+      id: "MR-07",
+      name: "Synergy Lab",
+      floor: "3F",
+      floorCode: "3F",
+      floorId: "FL-03",
+      roomNumber: "3F-R02",
+      capacity: 12,
+      hourlyRate: 1400,
+      amenities: ["Interactive Smartboard", "Dual 4K Displays", "Fast Mesh Wi-Fi 7", "Video Conferencing Bar"],
+      icon: "🔬",
+      badgeColor: "#0ea5e9",
+      description: "Collaborative research and engineering design lab with interactive smartboard, fast Wi-Fi 7, and video conferencing bar for 12 engineers.",
+      images: [
+        { id: "MR-07-IMG-1", url: "/assets/rooms/mr-03-table.jpg", thumbUrl: "/assets/rooms/thumbs/mr-03-table.jpg", width: 1376, alt: "Synergy Lab – collaborative work area", caption: "Lab workspace" }
+      ],
+      bookings: []
+    },
+    {
       id: "MR-06",
       name: "Creative Studio",
+      floor: "4F",
+      floorCode: "4F",
+      floorId: "FL-04",
+      roomNumber: "4F-R01",
       capacity: 8,
       hourlyRate: 1200,
       amenities: ["Podcast Audio Kit", "Softbox Lighting", "Modular Seating", "4K Video Cam"],
@@ -1187,8 +1248,30 @@ window.INITIAL_DATA = {
       bookings: []
     },
     {
+      id: "MR-08",
+      name: "Strategy Suite",
+      floor: "6F",
+      floorCode: "6F",
+      floorId: "FL-06",
+      roomNumber: "6F-R02",
+      capacity: 14,
+      hourlyRate: 1800,
+      amenities: ["4K Video Conferencing", "Smart Touchscreen", "Executive Seating", "Acoustic Walls"],
+      icon: "📊",
+      badgeColor: "#6366f1",
+      description: "Executive strategy and partnership negotiation suite with 4K video conferencing, smart touchscreen display, and acoustic isolation for 14 leaders.",
+      images: [
+        { id: "MR-08-IMG-1", url: "/assets/rooms/mr-01-table.jpg", thumbUrl: "/assets/rooms/thumbs/mr-01-table.jpg", width: 1376, alt: "Strategy Suite – executive table and seating", caption: "Suite table" }
+      ],
+      bookings: []
+    },
+    {
       id: "MR-TEST-ADMIN",
       name: "Innovation Amphitheater",
+      floor: "7F",
+      floorCode: "7F",
+      floorId: "FL-07",
+      roomNumber: "7F-R01",
       capacity: 50,
       hourlyRate: 4000,
       amenities: ["Dolby Atmos Sound", "4K Projection Screen", "Wireless Podium", "Acoustic Wall Paneling", "Stage Lighting"],
@@ -1198,6 +1281,24 @@ window.INITIAL_DATA = {
       images: [
         { id: "MR-AMPHI-IMG-1", url: "/assets/rooms/mr-amphitheater.jpg", thumbUrl: "/assets/rooms/thumbs/mr-amphitheater.jpg", width: 1600, alt: "Innovation Amphitheater – main stage and tiered gallery", caption: "Main auditorium view" },
         { id: "MR-AMPHI-IMG-2", url: "/assets/rooms/mr-02-stage.jpg", thumbUrl: "/assets/rooms/thumbs/mr-02-stage.jpg", width: 1376, alt: "Innovation Amphitheater – keynote stage and presentation podium", caption: "Stage & podium" }
+      ],
+      bookings: []
+    },
+    {
+      id: "MR-09",
+      name: "Sky Lounge Boardroom",
+      floor: "7F",
+      floorCode: "7F",
+      floorId: "FL-07",
+      roomNumber: "7F-R02",
+      capacity: 18,
+      hourlyRate: 2500,
+      amenities: ["Panoramic Skyline View", "Cisco Webex Kit", "4K Dual Display", "Executive Leather", "Polycom Audio"],
+      icon: "🌆",
+      badgeColor: "#8b5cf6",
+      description: "Top-floor penthouse boardroom with panoramic city skyline views, Cisco Webex collaboration suite, and executive leather seating for 18.",
+      images: [
+        { id: "MR-09-IMG-1", url: "/assets/rooms/mr-01-main.jpg", thumbUrl: "/assets/rooms/thumbs/mr-01-main.jpg", width: 1376, alt: "Sky Lounge Boardroom – panoramic skyline view and conference table", caption: "Sky Lounge view" }
       ],
       bookings: []
     }
