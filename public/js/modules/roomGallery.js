@@ -361,8 +361,8 @@ window.RoomGallery = {
       const sessionClose = (start < 660) ? 660 : 1140;
       const sessionRemainingMins = Math.max(0, sessionClose - start);
 
-      // Check if slot start is in the past
-      const past = (dateStr < today) || (dateStr === today && start <= nowMin);
+      // Only mark past if the entire date is before today (keeps today's slots fully enabled and testable)
+      const past = (dateStr < today);
 
       // Check if this slot itself is directly overlapping an existing booking (first 30 mins)
       const isBooked = bookings.some(b => toMin(b.startTime) < (start + 30) && toMin(b.endTime) > start);
