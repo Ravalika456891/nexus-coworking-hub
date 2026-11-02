@@ -52,6 +52,7 @@ export default function MeetingRoomsPage() {
   const [selectedDate, setSelectedDate] = useState('Fri, 30 Oct 2026');
   const [selectedTime, setSelectedTime] = useState('09:00 AM – 11:00 AM');
   const [selectedPeople, setSelectedPeople] = useState(4);
+  const [selectedFloor, setSelectedFloor] = useState<string>('all');
   const [favorites, setFavorites] = useState<Set<string>>(new Set(['mr-1']));
 
   const [todaysSchedule, setTodaysSchedule] = useState<TodayScheduleItem[]>(INITIAL_TODAYS_SCHEDULE);
@@ -158,8 +159,9 @@ export default function MeetingRoomsPage() {
 
   const filteredRooms = useMemo(() => {
     return rooms.filter((room) => {
+      if (selectedFloor !== 'all' && (room.floor || '1F') !== selectedFloor) return false;
       if (selectedType !== 'All Rooms' && room.type !== selectedType) return false;
-      if (room.capacity < selectedPeople) return false;
+      if (selectedPeople && room.capacity < selectedPeople) return false;
       if (selectedAmenities.length > 0) {
         const hasAll = selectedAmenities.every((a) => room.amenities.includes(a));
         if (!hasAll) return false;
@@ -173,7 +175,7 @@ export default function MeetingRoomsPage() {
       }
       return true;
     });
-  }, [rooms, selectedType, selectedPeople, selectedAmenities, searchQuery]);
+  }, [rooms, selectedFloor, selectedType, selectedPeople, selectedAmenities, searchQuery]);
 
   const handleConfirmBooking = (title: string) => {
     if (!bookingModalRoom) return;
@@ -692,12 +694,66 @@ export default function MeetingRoomsPage() {
                   onMoreFiltersClick={() => showToast('Advanced filter drawer opened')}
                 />
 
+                {/* Floor & People Segmented Controls */}
+                <div className="bg-white border border-[#ECEEF4] rounded-2xl p-4 shadow-soft flex items-center justify-between flex-wrap gap-3">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-black text-[#111827] flex items-center gap-1.5">
+                      <span>🏢</span> Floor:
+                    </span>
+                    {(['all', '1F', '2F', '3F', '4F', '5F', '6F', '7F'] as const).map((fl) => {
+                      const isActive = selectedFloor === fl;
+                      return (
+                        <button
+                          key={fl}
+                          type="button"
+                          onClick={() => setSelectedFloor(fl)}
+                          className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
+                            isActive
+                              ? 'bg-[#4F3FE0] text-white shadow-xs'
+                              : 'bg-[#F6F7FB] text-[#64748B] hover:bg-[#EDE9FE] hover:text-[#4338CA]'
+                          }`}
+                        >
+                          {fl === 'all' ? 'All Floors' : fl}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-black text-[#111827] flex items-center gap-1.5">
+                      <span>👥</span> People:
+                    </span>
+                    {([0, 4, 6, 8] as const).map((num) => {
+                      const isActive = (num === 0 && (!selectedPeople || selectedPeople === 0)) || selectedPeople === num;
+                      return (
+                        <button
+                          key={num}
+                          type="button"
+                          onClick={() => setSelectedPeople(num)}
+                          className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
+                            isActive
+                              ? 'bg-[#4F3FE0] text-white shadow-xs'
+                              : 'bg-[#F6F7FB] text-[#64748B] hover:bg-[#EDE9FE] hover:text-[#4338CA]'
+                          }`}
+                        >
+                          {num === 0 ? 'All' : `${num}+`}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 <div className="flex items-center justify-between pt-2">
                   <div className="flex items-center gap-3">
                     <h3 className="text-xl font-black text-[#111827]">Available Rooms</h3>
                     <span className="bg-[#DCFCE7] text-[#16A34A] px-2.5 py-0.5 rounded-full text-xs font-bold border border-emerald-200">
                       {filteredRooms.length} rooms available
                     </span>
+                    {selectedFloor !== 'all' && (
+                      <span className="bg-[#EDE9FE] text-[#4338CA] px-2 py-0.5 rounded-full text-xs font-bold">
+                        Floor: {selectedFloor}
+                      </span>
+                    )}
                   </div>
 
                   <div className="flex items-center bg-white border border-[#ECEEF4] p-1 rounded-xl shadow-xs">
@@ -725,18 +781,41 @@ export default function MeetingRoomsPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                  {filteredRooms.map((room) => (
-                    <RoomCard
-                      key={room.id}
-                      room={room}
-                      isFavorite={favorites.has(room.id)}
-                      onToggleFavorite={toggleFavorite}
-                      onBookClick={(r) => setBookingModalRoom(r)}
-                      onViewScheduleClick={(r) => showToast(`Schedule for ${r.name} opened in calendar`)}
-                    />
-                  ))}
-                </div>
+                {selectedFloor === '5F' ? (
+                  <div className="bg-white border-2 border-dashed border-[#ECEEF4] rounded-2xl p-10 text-center space-y-3">
+                    <div className="text-4xl">🏢</div>
+                    <h4 className="text-base font-black text-[#111827]">No meeting rooms on this floor (5F)</h4>
+                    <p className="text-xs text-[#64748B] max-w-md mx-auto">
+                      This floor currently has no meeting rooms. Please select another floor to explore available spaces.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedFloor('all')}
+                      className="px-4 py-2 bg-[#4F3FE0] text-white rounded-xl text-xs font-bold shadow-xs hover:bg-[#4335C9] transition-all"
+                    >
+                      View All Floors
+                    </button>
+                  </div>
+                ) : filteredRooms.length === 0 ? (
+                  <div className="bg-white border-2 border-dashed border-[#ECEEF4] rounded-2xl p-10 text-center space-y-3">
+                    <div className="text-4xl">🔍</div>
+                    <h4 className="text-base font-black text-[#111827]">No matching rooms found</h4>
+                    <p className="text-xs text-[#64748B]">Try adjusting your floor, capacity, or amenity filters.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                    {filteredRooms.map((room) => (
+                      <RoomCard
+                        key={room.id}
+                        room={room}
+                        isFavorite={favorites.has(room.id)}
+                        onToggleFavorite={toggleFavorite}
+                        onBookClick={(r) => setBookingModalRoom(r)}
+                        onViewScheduleClick={(r) => showToast(`Schedule for ${r.name} opened in calendar`)}
+                      />
+                    ))}
+                  </div>
+                )}
               </main>
 
               <RightPanel

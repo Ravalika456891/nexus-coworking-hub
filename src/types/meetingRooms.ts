@@ -21,6 +21,8 @@ export interface Room {
   fallbackImage: string;
   amenities: string[];
   rate: string;
+  floor?: string;
+  roomNumber?: string;
 }
 
 export interface AmenityItem {

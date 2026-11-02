@@ -68,12 +68,23 @@ export default function RoomCard({
       {/* Card Content Body */}
       <div className="p-4 flex-1 flex flex-col justify-between">
         <div>
-          <h4
-            onClick={() => onBookClick(room)}
-            className="font-bold text-[15px] text-[#111827] leading-tight cursor-pointer hover:text-[#4F3FE0] transition-colors"
-          >
-            {room.name}
-          </h4>
+          <div className="flex items-start justify-between gap-2 mb-1">
+            <h4
+              onClick={() => onBookClick(room)}
+              className="font-bold text-[15px] text-[#111827] leading-tight cursor-pointer hover:text-[#4F3FE0] transition-colors"
+            >
+              {room.name}
+            </h4>
+            {room.floor && (
+              <span className="px-2 py-0.5 bg-[#EDE9FE] text-[#4338CA] text-[10px] font-extrabold rounded-md uppercase shrink-0">
+                {room.floor}
+              </span>
+            )}
+          </div>
+
+          <div className="text-[11px] font-semibold text-[#64748B] mb-1">
+            Floor: <strong className="text-[#1E293B]">{room.floor || '1F'}</strong> · Room: <strong className="text-[#4F3FE0] font-mono">{room.roomNumber || room.id}</strong>
+          </div>
 
           <div className="flex items-center gap-1.5 text-xs text-[#64748B] font-medium mt-1">
             <Users className="w-3.5 h-3.5 text-[#8A90A2]" />
