@@ -127,7 +127,7 @@ export default function Sidebar({ activeNav, setActiveNav, onUpgradeClick }: Sid
           onClick={onUpgradeClick}
           className="w-full mt-3 bg-[#4F3FE0] hover:bg-[#4335C9] text-white py-2 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-[0.98]"
         >
-          Upgrade Plan
+          Upgrade Plan &rarr;
         </button>
       </div>
     </aside>

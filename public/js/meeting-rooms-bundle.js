@@ -1563,7 +1563,7 @@ function MeetingRoomsApp() {
       return navigateTo("Billing & Credits");
     },
     className: "w-full mt-3 bg-[#4F3FE0] hover:bg-[#4335C9] text-white py-2 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-[0.98]"
-  }, "Upgrade Plan"))), /*#__PURE__*/React.createElement("div", {
+  }, "Upgrade Plan \u2192"))), /*#__PURE__*/React.createElement("div", {
     className: "flex-1 flex flex-col min-w-0"
   }, /*#__PURE__*/React.createElement("header", {
     className: "h-[70px] bg-white border-b border-[#ECEEF4] px-8 flex items-center justify-between sticky top-0 z-30"
