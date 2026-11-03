@@ -4178,23 +4178,37 @@ const MeetingRoomsModule = {
     }
 
     return `
-      <div class="card" style="margin-bottom: 26px; padding: 18px 20px; border: 1.5px solid var(--border-subtle); border-radius: 16px; background: var(--bg-surface);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+      <div class="nexus-cal-card">
+        <!-- Month Card Header -->
+        <div class="nexus-cal-header">
           <div>
-            <h3 style="font-size: 16px; font-weight: 800; color: var(--text-primary); margin: 0;">🗓️ ${currentMonthLabel} — Monthly Booking Activity</h3>
-            <p style="font-size: 12px; color: var(--text-muted); margin: 2px 0 0 0;">Select any date to inspect detailed slot availability or reserve a room.</p>
+            <h3 class="nexus-cal-title">
+              <span>🗓️ Monthly Booking Activity — ${currentMonthLabel}</span>
+            </h3>
+            <p class="nexus-cal-subtitle">Select any date to inspect detailed slot availability or reserve a room.</p>
           </div>
-          <div style="display: flex; gap: 8px;">
-            <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.cycleCalendarRange(-1)">‹ Prev Month</button>
-            <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.setDate('${ist.todayStr}')">Today</button>
-            <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.cycleCalendarRange(1)">Next Month ›</button>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.cycleCalendarRange(-1)" style="font-size: 12px; font-weight: 700; border-radius: 8px; padding: 6px 12px;">‹ Prev Month</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.setDate('${ist.todayStr}')" style="font-size: 12px; font-weight: 700; border-radius: 8px; padding: 6px 14px; background: #eef2ff; color: #4338ca; border-color: #c7d2fe;">Today</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.cycleCalendarRange(1)" style="font-size: 12px; font-weight: 700; border-radius: 8px; padding: 6px 12px;">Next Month ›</button>
           </div>
         </div>
-        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 8px; text-align: center;">
-          ${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => `<div style="font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">${d}</div>`).join('')}
+
+        <!-- Month Legend -->
+        <div class="nexus-cal-legend">
+          <span class="nexus-cal-legend-item"><span class="nexus-cal-legend-dot mine"></span> Your Reservation</span>
+          <span class="nexus-cal-legend-item"><span class="nexus-cal-legend-dot available"></span> Open Slots</span>
+          <span class="nexus-cal-legend-item"><span class="nexus-cal-legend-dot other"></span> Reserved</span>
         </div>
-        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px;">
-          ${cellsHtml}
+
+        <!-- Month Grid -->
+        <div style="padding: 18px 20px;">
+          <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 8px; text-align: center;">
+            ${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => `<div style="font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">${d}</div>`).join('')}
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px;">
+            ${cellsHtml}
+          </div>
         </div>
       </div>
     `;
@@ -4204,17 +4218,17 @@ const MeetingRoomsModule = {
     const remainingCredits = Math.max(0, (myStartup.includedMeetingHours || 12) - (myStartup.usedMeetingHours || 0));
 
     return `
-      <div class="card" style="margin-bottom: 26px; padding: 0; overflow: hidden; border: 1.5px solid var(--border-subtle); border-radius: 16px; background: var(--bg-surface);">
-        <div style="padding: 16px 20px; background: var(--bg-surface-elevated); border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+      <div class="nexus-cal-card">
+        <div class="nexus-cal-header">
           <div>
-            <h3 style="font-size: 16px; font-weight: 800; color: var(--text-primary); margin: 0; display: flex; align-items: center; gap: 8px;">
+            <h3 class="nexus-cal-title">
               <span>⚖️ Side-by-Side Meeting Room Comparison (${this.selectedDate})</span>
             </h3>
-            <p style="font-size: 12px; color: var(--text-muted); margin: 3px 0 0 0;">
+            <p class="nexus-cal-subtitle">
               Compare capacity, hourly rate, included amenities, next available slot, and real-time room status.
             </p>
           </div>
-          <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.setSchedulerViewMode('cards')" style="font-size: 11.5px; font-weight: 700; border-radius: 8px;">
+          <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.setSchedulerViewMode('cards')" style="font-size: 12px; font-weight: 700; border-radius: 8px; padding: 6px 14px;">
             🎴 Back to Room Cards
           </button>
         </div>
