@@ -1681,6 +1681,114 @@ class NexusStore {
     return this.state.meetingRooms || [];
   }
 
+  getMonthlyAllowance(startupId = null, targetMonth = null) {
+    const sId = startupId || (this.getActiveStartup ? (this.getActiveStartup()?.id) : this.activeFounderId) || 'STP-XYZ';
+    const startup = this.getStartupById(sId) || (this.getStartups() || []).find(s => s.id === sId) || { id: sId, name: 'Startup', includedMeetingHours: 15 };
+    
+    // Determine target month in IST (YYYY-MM)
+    let mStr = targetMonth;
+    if (!mStr) {
+      const nowIST = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit' }).format(new Date());
+      mStr = nowIST.substring(0, 7); // e.g. '2026-11'
+    }
+
+    const monthParts = mStr.split('-');
+    const mNum = parseInt(monthParts[1], 10) - 1;
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthName = monthNames[mNum] || mStr;
+
+    const includedHours = Number(startup.includedMeetingHours !== undefined ? startup.includedMeetingHours : 15);
+    
+    // Calculate total hours booked in this specific calendar month across all rooms for this startup
+    let monthBookedHours = 0;
+    let monthBookingsCount = 0;
+    const rooms = this.getMeetingRooms() || [];
+    rooms.forEach(r => {
+      (r.bookings || []).forEach(b => {
+        if (!b || b.status === 'Cancelled') return;
+        const isMine = (b.startupId === sId || (b.startupName && startup.name && b.startupName.toLowerCase() === startup.name.toLowerCase()));
+        if (!isMine) return;
+        if (b.date && String(b.date).startsWith(mStr)) {
+          let dur = Number(b.duration);
+          if (isNaN(dur) || dur <= 0) {
+            const sParts = (b.startTime || '00:00').split(':').map(Number);
+            const eParts = (b.endTime || '00:00').split(':').map(Number);
+            dur = ((eParts[0] * 60 + eParts[1]) - (sParts[0] * 60 + sParts[1])) / 60;
+          }
+          if (dur > 0) {
+            monthBookedHours += dur;
+            monthBookingsCount++;
+          }
+        }
+      });
+    });
+
+    monthBookedHours = Number(monthBookedHours.toFixed(1));
+    const remainingHours = Math.max(0, Number((includedHours - monthBookedHours).toFixed(1)));
+    const overageHours = Math.max(0, Number((monthBookedHours - includedHours).toFixed(1)));
+    const hourlyRate = Number(startup.additionalHourRate || startup.overageHourlyRate || 1500);
+    const overageFee = Math.round(overageHours * hourlyRate);
+
+    // Keep startup model synchronized with active month
+    startup.usedMeetingHours = monthBookedHours;
+
+    return {
+      startupId: sId,
+      startupName: startup.name,
+      month: mStr,
+      monthName,
+      includedHours,
+      usedHours: monthBookedHours,
+      remainingHours,
+      overageHours,
+      hourlyRate,
+      overageFee,
+      bookingsCount: monthBookingsCount
+    };
+  }
+
+  findNearestFreeSlot(roomId, date, durMinutes = 60, afterTime = null) {
+    const room = this.getMeetingRoomById(roomId);
+    if (!room) return null;
+    const bookings = (room.bookings || []).filter(b => b.date === date && b.status !== 'Cancelled');
+    const toM = (t) => {
+      const [h, m] = (t || '00:00').split(':').map(Number);
+      return (h || 0) * 60 + (m || 0);
+    };
+    const startCheckMin = afterTime ? toM(afterTime) : 8 * 60;
+    const closeMin = toM((room.operatingHours && room.operatingHours.close) || '20:00');
+
+    for (let m = startCheckMin; m + durMinutes <= closeMin; m += 30) {
+      const candStart = m;
+      const candEnd = m + durMinutes;
+      const conflict = bookings.some(b => {
+        const bs = toM(b.startTime);
+        const be = toM(b.endTime);
+        return candStart < be && candEnd > bs;
+      });
+      if (!conflict) {
+        const sh = Math.floor(candStart / 60);
+        const sm = candStart % 60;
+        const eh = Math.floor(candEnd / 60);
+        const em = candEnd % 60;
+        const sStr = `${String(sh).padStart(2, '0')}:${String(sm).padStart(2, '0')}`;
+        const eStr = `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`;
+        const f12 = t => {
+          let [h, min] = t.split(':').map(Number);
+          const ap = h >= 12 ? 'PM' : 'AM';
+          h = h % 12 || 12;
+          return `${h}:${String(min).padStart(2, '0')} ${ap}`;
+        };
+        return {
+          startTime: sStr,
+          endTime: eStr,
+          label: `${f12(sStr)} – ${f12(eStr)}`
+        };
+      }
+    }
+    return null;
+  }
+
   getBuilding() {
     return this.state.building || (window.INITIAL_DATA && window.INITIAL_DATA.building) || {
       id: "BLD-01",
@@ -2046,13 +2154,21 @@ class NexusStore {
     const endHour = parseFloat(endTime.split(':')[0]) + parseFloat(endTime.split(':')[1]) / 60;
     const duration = Math.max(0.25, endHour - startHour);
 
+    const bookingMonth = (date || '').substring(0, 7);
+    const allowance = this.getMonthlyAllowance(startup.id, bookingMonth);
     let cost = 0;
-    const remainingCredits = Math.max(0, (startup.includedMeetingHours || 12) - (startup.usedMeetingHours || 0));
+    let creditHoursUsed = 0;
+    let overageHours = 0;
+    const remainingCredits = allowance.remainingHours;
     if (remainingCredits >= duration) {
       cost = 0;
+      creditHoursUsed = duration;
+      overageHours = 0;
     } else {
-      const overageHours = duration - remainingCredits;
-      cost = Math.round(overageHours * room.hourlyRate);
+      creditHoursUsed = Math.max(0, remainingCredits);
+      overageHours = Number((duration - creditHoursUsed).toFixed(1));
+      const rate = Number(startup.additionalHourRate || startup.overageHourlyRate || room.hourlyRate || 1500);
+      cost = Math.round(overageHours * rate);
     }
 
     const normalizedAmenities = Array.isArray(requestedAmenities)
@@ -2177,10 +2293,13 @@ class NexusStore {
     const createdLocal = [];
     for (let idx = 0; idx < occDates.length; idx++) {
       const occDate = occDates[idx];
-      const rem = Math.max(0, (startup.includedMeetingHours || 12) - (startup.usedMeetingHours || 0));
+      const occMonth = (occDate || '').substring(0, 7);
+      const occAllowance = this.getMonthlyAllowance(startup.id, occMonth);
+      const rem = occAllowance.remainingHours;
       const credUsed = Math.min(rem, duration);
       const ovgHrs = Math.max(0, Number((duration - credUsed).toFixed(2)));
-      const occCost = ovgHrs > 0 ? Math.round(ovgHrs * room.hourlyRate) : 0;
+      const rate = Number(startup.additionalHourRate || startup.overageHourlyRate || room.hourlyRate || 1500);
+      const occCost = ovgHrs > 0 ? Math.round(ovgHrs * rate) : 0;
       startup.usedMeetingHours = Number(((startup.usedMeetingHours || 0) + credUsed).toFixed(2));
 
       const bookingId = this.generateBookingRef(occDate);

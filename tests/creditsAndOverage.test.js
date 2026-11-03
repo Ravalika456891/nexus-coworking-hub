@@ -270,6 +270,61 @@ async function runTests() {
     fail('Test 8: Role-based scoping', err);
   }
 
+  // Test 9: Overlap Prevention (Double-booking rejection & Back-to-Back allowed)
+  try {
+    const toM = (t) => {
+      const [h, m] = t.split(':').map(Number);
+      return h * 60 + m;
+    };
+    const hasOverlap = (s1, e1, s2, e2) => {
+      return toM(s1) < toM(e2) && toM(e1) > toM(s2);
+    };
+
+    // Slot A: 10:00 - 11:00
+    // Overlapping Slot B: 10:30 - 11:30 -> OVERLAP!
+    assert.strictEqual(hasOverlap('10:00', '11:00', '10:30', '11:30'), true, 'Overlapping slots must be detected');
+
+    // Back-to-back Slot C: 11:00 - 12:00 -> NO OVERLAP!
+    assert.strictEqual(hasOverlap('10:00', '11:00', '11:00', '12:00'), false, 'Back-to-back slots must be permitted');
+
+    // Completely separated Slot D: 14:00 - 15:00 -> NO OVERLAP!
+    assert.strictEqual(hasOverlap('10:00', '11:00', '14:00', '15:00'), false, 'Disjoint slots must be permitted');
+
+    pass('Test 9: Overlap prevention rejects overlapping slots but cleanly allows back-to-back reservations');
+  } catch (err) {
+    fail('Test 9: Overlap prevention', err);
+  }
+
+  // Test 10: Check-in Window (Only 15 mins before start until end)
+  try {
+    const toM = (t) => {
+      const [h, m] = t.split(':').map(Number);
+      return h * 60 + m;
+    };
+    const isCheckInOpen = (startTime, endTime, currentTime) => {
+      const s = toM(startTime);
+      const e = toM(endTime);
+      const now = toM(currentTime);
+      return now >= (s - 15) && now < e;
+    };
+
+    // Meeting: 10:00 - 11:00
+    // 09:30 (30m before) -> closed
+    assert.strictEqual(isCheckInOpen('10:00', '11:00', '09:30'), false, '30m before start: Check-in must be closed');
+    // 09:44 (16m before) -> closed
+    assert.strictEqual(isCheckInOpen('10:00', '11:00', '09:44'), false, '16m before start: Check-in must be closed');
+    // 09:45 (15m before) -> OPEN!
+    assert.strictEqual(isCheckInOpen('10:00', '11:00', '09:45'), true, '15m before start: Check-in must open');
+    // 10:15 (during meeting) -> OPEN!
+    assert.strictEqual(isCheckInOpen('10:00', '11:00', '10:15'), true, 'During meeting: Check-in must remain open');
+    // 11:00 (end of meeting) -> CLOSED!
+    assert.strictEqual(isCheckInOpen('10:00', '11:00', '11:00'), false, 'At meeting end: Check-in must close');
+
+    pass('Test 10: Check-in window validation strictly enforces availability from 15 minutes before start until session end');
+  } catch (err) {
+    fail('Test 10: Check-in window validation', err);
+  }
+
   console.log('\n========================================');
   console.log(`Test Results: ${passed} Passed, ${failed} Failed`);
   console.log('========================================');

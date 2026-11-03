@@ -7,7 +7,7 @@ const MeetingRoomsModule = {
   myBookingsFilterDate: 'all', // 'all' | 'selected'
   myBookingsViewMode: 'table', // 'table' | 'cards'
   myBookingsSearch: '',
-  myBookingsStatusFilter: 'all', // 'all' | 'today' | 'upcoming' | 'completed' | 'cancelled'
+  myBookingsStatusFilter: 'upcoming', // 'upcoming' | 'past' | 'cancelled'
   myBookingsRoomFilter: 'all', // 'all' | roomId
   myBookingsPage: 1,
   myBookingsPageSize: 25,
@@ -1094,6 +1094,32 @@ const MeetingRoomsModule = {
     };
   },
 
+  formatDateSectionHeader(dateStr, todayStr) {
+    if (!dateStr) return '';
+    const parts = String(dateStr).split('-');
+    let dayMonth = dateStr;
+    if (parts.length === 3) {
+      const y = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10) - 1;
+      const d = parseInt(parts[2], 10);
+      const dt = new Date(Date.UTC(y, m, d, 12, 0, 0));
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      dayMonth = `${days[dt.getUTCDay()]}, ${d} ${months[dt.getUTCMonth()]}`;
+    }
+
+    if (dateStr === todayStr) {
+      return `Today • ${dayMonth}`;
+    }
+    const todayDt = new Date();
+    const yestDt = new Date(todayDt.getTime() - 86400000);
+    const yesterdayStr = `${yestDt.getFullYear()}-${String(yestDt.getMonth() + 1).padStart(2, '0')}-${String(yestDt.getDate()).padStart(2, '0')}`;
+    if (dateStr === yesterdayStr) {
+      return `Yesterday • ${dayMonth}`;
+    }
+    return dayMonth;
+  },
+
   getFilteredMyBookings(myBookings) {
     const { todayStr, liveTimeStr } = this.getISTNow();
     let list = [...(myBookings || this.getMyBookings())];
@@ -1107,14 +1133,12 @@ const MeetingRoomsModule = {
     if (this.myBookingsRoomFilter && this.myBookingsRoomFilter !== 'all') {
       list = list.filter(b => b.roomId === this.myBookingsRoomFilter);
     }
-    if (this.myBookingsStatusFilter === 'today') {
-      list = list.filter(b => b.date === todayStr && b.status !== 'Cancelled');
-    } else if (this.myBookingsStatusFilter === 'upcoming') {
-      list = list.filter(b => (b.date > todayStr || (b.date === todayStr && b.startTime > liveTimeStr)) && b.status !== 'Cancelled');
-    } else if (this.myBookingsStatusFilter === 'completed') {
+    if (this.myBookingsStatusFilter === 'past' || this.myBookingsStatusFilter === 'completed') {
       list = list.filter(b => (b.date < todayStr || (b.date === todayStr && b.endTime <= liveTimeStr)) && b.status !== 'Cancelled');
     } else if (this.myBookingsStatusFilter === 'cancelled') {
       list = list.filter(b => b.status === 'Cancelled');
+    } else if (this.myBookingsStatusFilter === 'upcoming') {
+      list = list.filter(b => (b.date > todayStr || (b.date === todayStr && b.endTime > liveTimeStr)) && b.status !== 'Cancelled');
     }
 
     if (this.myBookingsSearch && this.myBookingsSearch.trim()) {
@@ -1193,22 +1217,27 @@ const MeetingRoomsModule = {
     const totalHoursBooked = nonCancelledBookings.reduce((acc, b) => acc + this.calculateBookingDuration(b.startTime, b.endTime), 0);
     const totalFeesBilled = nonCancelledBookings.reduce((sum, b) => sum + (Number(b.cost) || 0), 0);
 
-    // Monthly usage per billing cycle (hours)
+    // Single source of truth: Monthly allowance per calendar month
     const currMonth = todayStr.slice(0, 7);
-    const monthBookings = nonCancelledBookings.filter(b => (b.date || '').startsWith(currMonth));
-    const totalMonthHours = monthBookings.reduce((sum, b) => sum + this.calculateBookingDuration(b.startTime, b.endTime), 0);
-    const includedAllowance = Number(myStartup.includedMeetingHours || 15);
-    const remainingCredits = Math.max(0, Number((includedAllowance - totalMonthHours).toFixed(1)));
-    const overageHours = Math.max(0, Number((totalMonthHours - includedAllowance).toFixed(1)));
+    const allowance = (window.store && window.store.getMonthlyAllowance)
+      ? window.store.getMonthlyAllowance(myStartup.id, currMonth)
+      : {
+          monthLabel: 'Nov',
+          includedHours: Number(myStartup.includedMeetingHours || 15),
+          usedHours: 0,
+          remainingHours: Number(myStartup.includedMeetingHours || 15),
+          overageHours: 0,
+          overageFee: 0
+        };
 
-    // Categorized sets for filter tabs & badge counts
-    const todayList = myBookings.filter(b => b.date === todayStr && b.status !== 'Cancelled');
-    const upcomingList = myBookings.filter(b => (b.date > todayStr || (b.date === todayStr && b.startTime > liveTimeStr)) && b.status !== 'Cancelled');
-    const completedList = myBookings.filter(b => (b.date < todayStr || (b.date === todayStr && b.endTime <= liveTimeStr)) && b.status !== 'Cancelled');
+    // Categorized sets for filter tabs & badge counts (Upcoming | Past | Cancelled)
+    const upcomingList = myBookings.filter(b => (b.date > todayStr || (b.date === todayStr && b.endTime > liveTimeStr)) && b.status !== 'Cancelled');
+    const pastList = myBookings.filter(b => (b.date < todayStr || (b.date === todayStr && b.endTime <= liveTimeStr)) && b.status !== 'Cancelled');
     const cancelledList = myBookings.filter(b => b.status === 'Cancelled');
 
     // Filtered and sorted dataset
     const filteredList = this.getFilteredMyBookings(myBookings);
+    const filteredHours = filteredList.reduce((acc, b) => acc + (b.status !== 'Cancelled' ? this.calculateBookingDuration(b.startTime, b.endTime) : 0), 0);
 
     // Pagination
     const pageSize = this.myBookingsPageSize || 25;
@@ -1221,8 +1250,8 @@ const MeetingRoomsModule = {
 
     const rooms = window.store.getMeetingRooms();
     const isFiltered = (
-      this.myBookingsStatusFilter !== 'all' ||
-      this.myBookingsRoomFilter !== 'all' ||
+      this.myBookingsStatusFilter !== 'upcoming' ||
+      (this.myBookingsRoomFilter && this.myBookingsRoomFilter !== 'all') ||
       (this.myBookingsSearch && this.myBookingsSearch.trim() !== '') ||
       Boolean(this.myBookingsDateFrom) ||
       Boolean(this.myBookingsDateTo)
@@ -1271,15 +1300,15 @@ const MeetingRoomsModule = {
             </div>
           </div>
 
-          <!-- 3. Monthly Credit Balance -->
+          <!-- 3. Monthly Credit Balance (Single Source of Truth) -->
           <div class="kpi-card" style="padding: 16px; border: 1.5px solid rgba(34, 197, 94, 0.3);">
             <div class="kpi-header">
               <span class="kpi-title" style="font-size: 12px; font-weight: 700; text-transform: uppercase;">Monthly Credit Balance</span>
               <div class="kpi-icon-wrap" style="color: #16a34a;">💳</div>
             </div>
-            <div class="kpi-value" style="font-size: 26px; font-weight: 800; color: #16a34a;">${remainingCredits.toFixed(1)} hrs free</div>
+            <div class="kpi-value" style="font-size: 26px; font-weight: 800; color: #16a34a;">${allowance.remainingHours.toFixed(1)} hrs free</div>
             <div class="kpi-footer" style="font-size: 11.5px; color: var(--text-muted);">
-              <span>${totalMonthHours.toFixed(1)} hrs consumed of ${includedAllowance.toFixed(1)} hrs allowance</span>
+              <span>${allowance.usedHours.toFixed(1)} hrs consumed of ${allowance.includedHours.toFixed(1)} hrs allowance</span>
             </div>
           </div>
 
@@ -1293,15 +1322,15 @@ const MeetingRoomsModule = {
               ₹${totalFeesBilled.toLocaleString('en-IN')}
             </div>
             <div class="kpi-footer" style="font-size: 11.5px; color: var(--text-muted);">
-              <span>${overageHours > 0 ? `${overageHours.toFixed(1)}h overage billed` : '✓ 100% within plan allowance'}</span>
+              <span>${allowance.overageHours > 0 ? `${allowance.overageHours.toFixed(1)}h overage billed` : '✓ 100% within plan allowance'}</span>
             </div>
           </div>
         </div>
 
-        <!-- Master Card: My Meeting Room Bookings Fee Report Table -->
+        <!-- Master Card: My Meeting Room Bookings Table -->
         <div class="card" style="margin-bottom: 24px; padding: 0; overflow: hidden; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); background: var(--bg-surface);">
           
-          <!-- Card Header & Fee Controls -->
+          <!-- Card Header & Actions -->
           <div style="padding: 18px 22px; background: var(--bg-surface-elevated); border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
             <div>
               <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
@@ -1317,30 +1346,30 @@ const MeetingRoomsModule = {
               </p>
             </div>
 
-            <!-- View Toggle & Export / Action Buttons -->
+            <!-- View Switcher & Export / Action Buttons -->
             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
               <!-- View Switcher (Table vs Cards) -->
               <div style="display: flex; background: var(--bg-surface); border: 1px solid var(--border-medium); border-radius: 8px; padding: 3px; gap: 2px;">
-                <button class="btn btn-sm ${this.myBookingsViewMode === 'table' ? 'btn-primary' : 'btn-outline'}" onclick="MeetingRoomsModule.setMyBookingsViewMode('table')" style="font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 6px; border: none;" title="Fee Report Table View">
+                <button class="btn btn-sm ${this.myBookingsViewMode === 'table' ? 'btn-primary' : 'btn-outline'}" onclick="MeetingRoomsModule.setMyBookingsViewMode('table')" style="font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 6px; border: none;" title="Decluttered Table View" aria-label="Table View">
                   📊 Table
                 </button>
-                <button class="btn btn-sm ${this.myBookingsViewMode === 'cards' ? 'btn-primary' : 'btn-outline'}" onclick="MeetingRoomsModule.setMyBookingsViewMode('cards')" style="font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 6px; border: none;" title="Visual Cards View">
+                <button class="btn btn-sm ${this.myBookingsViewMode === 'cards' ? 'btn-primary' : 'btn-outline'}" onclick="MeetingRoomsModule.setMyBookingsViewMode('cards')" style="font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 6px; border: none;" title="Visual Cards View" aria-label="Cards View">
                   🎴 Cards
                 </button>
               </div>
 
               <!-- Export CSV Button (Respects active filters) -->
-              <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.exportMyBookingsCSV()" style="font-size: 11.5px; font-weight: 700; padding: 5px 12px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;" title="Export filtered bookings to CSV spreadsheet">
+              <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.exportMyBookingsCSV()" style="font-size: 11.5px; font-weight: 700; padding: 5px 12px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;" title="Export filtered bookings to CSV spreadsheet" aria-label="Export CSV">
                 <span>📥</span> <span>Export CSV</span>
               </button>
 
               <!-- Print / PDF Report Button (Respects active filters) -->
-              <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.printMyBookingsReport()" style="font-size: 11.5px; font-weight: 700; padding: 5px 12px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;" title="Print formal report of filtered bookings">
+              <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.printMyBookingsReport()" style="font-size: 11.5px; font-weight: 700; padding: 5px 12px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;" title="Print formal report of filtered bookings" aria-label="Print Report">
                 <span>🖨️</span> <span>Print Report</span>
               </button>
 
               <!-- + New Booking Button -->
-              <button class="btn btn-primary btn-sm" onclick="MeetingRoomsModule.openBookModal(null, null, '${myStartup.id}')" style="font-weight: 700; padding: 5px 14px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;">
+              <button class="btn btn-primary btn-sm" onclick="MeetingRoomsModule.openBookModal(null, null, '${myStartup.id}')" style="font-weight: 700; padding: 5px 14px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;" aria-label="Book a Room">
                 <span>⚡</span> <span>+ Book Room</span>
               </button>
             </div>
@@ -1358,10 +1387,11 @@ const MeetingRoomsModule = {
                   placeholder="Search purpose, room, ref..." 
                   value="${this.myBookingsSearch || ''}"
                   oninput="MeetingRoomsModule.setMyBookingsSearch(this.value)"
+                  aria-label="Search bookings by purpose, room, or ref"
                   style="width: 100%; padding: 6px 10px 6px 30px; font-size: 12px; border-radius: 6px; border: 1px solid var(--border-medium); background: var(--bg-surface-elevated); color: var(--text-primary);"
                 >
                 ${this.myBookingsSearch ? `
-                  <button onclick="MeetingRoomsModule.setMyBookingsSearch('')" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: none; background: transparent; font-size: 11px; cursor: pointer; color: var(--text-muted);">✕</button>
+                  <button onclick="MeetingRoomsModule.setMyBookingsSearch('')" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: none; background: transparent; font-size: 11px; cursor: pointer; color: var(--text-muted);" aria-label="Clear search">✕</button>
                 ` : ''}
               </div>
 
@@ -1372,6 +1402,7 @@ const MeetingRoomsModule = {
                   type="date" 
                   value="${this.myBookingsDateFrom || ''}" 
                   onchange="MeetingRoomsModule.setMyBookingsDateRange(this.value, MeetingRoomsModule.myBookingsDateTo)"
+                  aria-label="Filter bookings from date"
                   style="padding: 5px 8px; font-size: 11.5px; border-radius: 6px; border: 1px solid var(--border-medium); background: var(--bg-surface-elevated); color: var(--text-primary);"
                 >
                 <span>To:</span>
@@ -1379,6 +1410,7 @@ const MeetingRoomsModule = {
                   type="date" 
                   value="${this.myBookingsDateTo || ''}" 
                   onchange="MeetingRoomsModule.setMyBookingsDateRange(MeetingRoomsModule.myBookingsDateFrom, this.value)"
+                  aria-label="Filter bookings to date"
                   style="padding: 5px 8px; font-size: 11.5px; border-radius: 6px; border: 1px solid var(--border-medium); background: var(--bg-surface-elevated); color: var(--text-primary);"
                 >
               </div>
@@ -1386,6 +1418,7 @@ const MeetingRoomsModule = {
               <!-- Room Selector Dropdown -->
               <select 
                 onchange="MeetingRoomsModule.setMyBookingsRoomFilter(this.value)"
+                aria-label="Filter bookings by room"
                 style="padding: 6px 10px; font-size: 12px; font-weight: 600; border-radius: 6px; border: 1px solid var(--border-medium); background: var(--bg-surface-elevated); color: var(--text-primary); cursor: pointer;"
               >
                 <option value="all" ${this.myBookingsRoomFilter === 'all' ? 'selected' : ''}>🏢 All Meeting Spaces</option>
@@ -1395,58 +1428,59 @@ const MeetingRoomsModule = {
               </select>
 
               ${isFiltered ? `
-                <button class="btn btn-sm btn-outline" onclick="MeetingRoomsModule.resetMyBookingsFilters()" style="font-size: 11px; font-weight: 700; padding: 5px 10px; border-radius: 6px; color: var(--text-secondary);">
-                  ✕ Reset Filters
+                <button class="btn btn-sm btn-outline" onclick="MeetingRoomsModule.resetMyBookingsFilters()" style="font-size: 11px; font-weight: 700; padding: 5px 10px; border-radius: 6px; color: var(--text-secondary);" aria-label="Clear all filters">
+                  ✕ Clear filters
                 </button>
               ` : ''}
             </div>
 
-            <!-- Status Filter Pills -->
-            <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-              <button class="btn btn-sm ${this.myBookingsStatusFilter === 'all' ? 'btn-primary' : 'btn-secondary'}" onclick="MeetingRoomsModule.setMyBookingsStatusFilter('all')" style="font-size: 11px; padding: 4px 10px; border-radius: 6px;">
-                All (${myBookings.length})
-              </button>
-              <button class="btn btn-sm ${this.myBookingsStatusFilter === 'today' ? 'btn-primary' : 'btn-secondary'}" onclick="MeetingRoomsModule.setMyBookingsStatusFilter('today')" style="font-size: 11px; padding: 4px 10px; border-radius: 6px;">
-                Today (${todayList.length})
-              </button>
-              <button class="btn btn-sm ${this.myBookingsStatusFilter === 'upcoming' ? 'btn-primary' : 'btn-secondary'}" onclick="MeetingRoomsModule.setMyBookingsStatusFilter('upcoming')" style="font-size: 11px; padding: 4px 10px; border-radius: 6px;">
+            <!-- Tabs: Upcoming | Past | Cancelled (Default view is Upcoming) -->
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              <button class="btn btn-sm ${this.myBookingsStatusFilter === 'upcoming' ? 'btn-primary' : 'btn-secondary'}" onclick="MeetingRoomsModule.setMyBookingsStatusFilter('upcoming')" style="font-size: 11.5px; padding: 5px 12px; border-radius: 6px; font-weight: 700;" aria-label="Show upcoming bookings">
                 Upcoming (${upcomingList.length})
               </button>
-              <button class="btn btn-sm ${this.myBookingsStatusFilter === 'completed' ? 'btn-primary' : 'btn-secondary'}" onclick="MeetingRoomsModule.setMyBookingsStatusFilter('completed')" style="font-size: 11px; padding: 4px 10px; border-radius: 6px;">
-                Completed (${completedList.length})
+              <button class="btn btn-sm ${this.myBookingsStatusFilter === 'past' ? 'btn-primary' : 'btn-secondary'}" onclick="MeetingRoomsModule.setMyBookingsStatusFilter('past')" style="font-size: 11.5px; padding: 5px 12px; border-radius: 6px; font-weight: 700;" aria-label="Show past bookings">
+                Past (${pastList.length})
               </button>
-              <button class="btn btn-sm ${this.myBookingsStatusFilter === 'cancelled' ? 'btn-primary' : 'btn-secondary'}" onclick="MeetingRoomsModule.setMyBookingsStatusFilter('cancelled')" style="font-size: 11px; padding: 4px 10px; border-radius: 6px;">
+              <button class="btn btn-sm ${this.myBookingsStatusFilter === 'cancelled' ? 'btn-primary' : 'btn-secondary'}" onclick="MeetingRoomsModule.setMyBookingsStatusFilter('cancelled')" style="font-size: 11.5px; padding: 5px 12px; border-radius: 6px; font-weight: 700;" aria-label="Show cancelled bookings">
                 Cancelled (${cancelledList.length})
               </button>
+              ${this.myBookingsStatusFilter === 'all' ? `
+                <button class="btn btn-sm btn-primary" onclick="MeetingRoomsModule.setMyBookingsStatusFilter('all')" style="font-size: 11.5px; padding: 5px 12px; border-radius: 6px; font-weight: 700;" aria-label="Show all bookings">
+                  All (${myBookings.length})
+                </button>
+              ` : ''}
             </div>
           </div>
 
-          <!-- Content: Fee Report Table or Cards Grid -->
+          <!-- Content: Decluttered Table or Cards Grid -->
           ${this.myBookingsViewMode === 'table' ? `
-            <div class="table-wrapper" style="overflow-x: auto; position: relative;">
-              <table class="nexus-table" style="width: 100%; border-collapse: separate; border-spacing: 0; margin: 0; font-size: 12.5px;">
+            <div class="table-wrapper my-bookings-table-wrapper" style="overflow-x: auto; position: relative;">
+              <table class="nexus-table my-bookings-table" style="width: 100%; border-collapse: separate; border-spacing: 0; margin: 0; font-size: 12.5px;">
                 <thead>
                   <tr style="background: var(--bg-surface-elevated);">
-                    <th style="min-width: 140px; white-space: nowrap; cursor: pointer;" onclick="MeetingRoomsModule.toggleRowSort('default')">
-                      Booking Ref${sortIndicator('default')}
+                    <!-- 1. Room (Sticky Left) -->
+                    <th class="col-room" style="position: sticky; left: 0; background: var(--bg-surface-elevated); z-index: 6; box-shadow: 3px 0 6px rgba(0,0,0,0.04); cursor: pointer;" onclick="MeetingRoomsModule.toggleRowSort('room')">
+                      Room${sortIndicator('room')}
                     </th>
-                    <th style="min-width: 170px; white-space: nowrap; cursor: pointer;" onclick="MeetingRoomsModule.toggleRowSort('room')">
-                      Meeting Space${sortIndicator('room')}
+                    <!-- 2. Purpose & Attendees -->
+                    <th class="col-purpose">
+                      Purpose &amp; Attendees
                     </th>
-                    <th style="min-width: 220px;">
-                      Purpose &amp; Agenda
+                    <!-- 3. Time (IST Header) -->
+                    <th class="col-time" style="cursor: pointer;" onclick="MeetingRoomsModule.toggleRowSort('date')">
+                      Time (IST)${sortIndicator('date')}
                     </th>
-                    <th style="min-width: 170px; white-space: nowrap; cursor: pointer;" onclick="MeetingRoomsModule.toggleRowSort('date')">
-                      Date &amp; Schedule${sortIndicator('date')}
+                    <!-- 4. Usage -->
+                    <th class="col-usage" style="cursor: pointer;" onclick="MeetingRoomsModule.toggleRowSort('duration')">
+                      Usage${sortIndicator('duration')}
                     </th>
-                    <th style="min-width: 150px; white-space: nowrap; cursor: pointer;" onclick="MeetingRoomsModule.toggleRowSort('duration')">
-                      Allowance &amp; Fees${sortIndicator('duration')}
+                    <!-- 5. Status -->
+                    <th class="col-status" style="cursor: pointer;" onclick="MeetingRoomsModule.toggleRowSort('status')">
+                      Status${sortIndicator('status')}
                     </th>
-                    <th style="min-width: 140px; white-space: nowrap; cursor: pointer;" onclick="MeetingRoomsModule.toggleRowSort('status')">
-                      Live Status${sortIndicator('status')}
-                    </th>
-                    <!-- Sticky Actions Header -->
-                    <th style="min-width: 200px; text-align: center; white-space: nowrap; position: sticky; right: 0; background: var(--bg-surface-elevated); z-index: 6; box-shadow: -3px 0 6px rgba(0,0,0,0.06);">
+                    <!-- 6. Sticky Actions Header -->
+                    <th class="col-actions" style="text-align: right; position: sticky; right: 0; background: var(--bg-surface-elevated); z-index: 6; box-shadow: -3px 0 6px rgba(0,0,0,0.06); padding-right: 16px;">
                       Actions
                     </th>
                   </tr>
@@ -1454,7 +1488,7 @@ const MeetingRoomsModule = {
                 <tbody>
                   ${paginatedList.length === 0 ? `
                     <tr>
-                      <td colspan="7" style="text-align: center; padding: 48px 20px; color: var(--text-muted);">
+                      <td colspan="6" style="text-align: center; padding: 48px 20px; color: var(--text-muted);">
                         <div style="font-size: 32px; margin-bottom: 8px;">🎟️</div>
                         <div style="font-weight: 700; font-size: 14px; color: var(--text-primary);">
                           No meeting room bookings match your filter criteria.
@@ -1464,11 +1498,11 @@ const MeetingRoomsModule = {
                         </p>
                         <div style="display: flex; gap: 8px; justify-content: center;">
                           ${isFiltered ? `
-                            <button class="btn btn-sm btn-outline" onclick="MeetingRoomsModule.resetMyBookingsFilters()">
-                              Clear Filters
+                            <button class="btn btn-sm btn-outline" onclick="MeetingRoomsModule.resetMyBookingsFilters()" aria-label="Clear filters">
+                              Clear filters
                             </button>
                           ` : ''}
-                          <button class="btn btn-sm btn-primary" onclick="MeetingRoomsModule.openBookModal(null, null, '${myStartup.id}')">
+                          <button class="btn btn-sm btn-primary" onclick="MeetingRoomsModule.openBookModal(null, null, '${myStartup.id}')" aria-label="Book a Room">
                             + Book a Room
                           </button>
                         </div>
@@ -1477,12 +1511,26 @@ const MeetingRoomsModule = {
                   ` : (() => {
                     const renderedRows = [];
                     const renderedSeries = new Set();
+                    let currentDateSection = null;
 
                     paginatedList.forEach(b => {
+                      // Date section header grouping
+                      if (b.date !== currentDateSection) {
+                        currentDateSection = b.date;
+                        const headerTitle = this.formatDateSectionHeader(b.date, todayStr);
+                        renderedRows.push(`
+                          <tr class="date-section-header-row" style="background: var(--bg-surface-elevated); border-top: 1.5px solid var(--border-medium); border-bottom: 1px solid var(--border-subtle);">
+                            <td colspan="6" style="padding: 7px 16px; font-weight: 800; font-size: 12px; color: var(--accent-primary); letter-spacing: 0.3px;">
+                              📅 ${headerTitle}
+                            </td>
+                          </tr>
+                        `);
+                      }
+
                       const sId = b.seriesId;
                       const isSeriesParent = sId && seriesGroups[sId] && seriesGroups[sId].length > 1;
 
-                      // If this is part of a recurring series and hasn't been rendered yet
+                      // Recurring series master row
                       if (isSeriesParent && !renderedSeries.has(sId)) {
                         renderedSeries.add(sId);
                         const group = seriesGroups[sId];
@@ -1491,61 +1539,51 @@ const MeetingRoomsModule = {
                         const lastItem = group[group.length - 1];
                         const sRoom = window.store.getMeetingRoomById(firstItem.roomId);
                         const totalSeriesHours = group.reduce((acc, item) => acc + this.calculateBookingDuration(item.startTime, item.endTime), 0);
+                        const durClean = totalSeriesHours === 1 ? '1 hr' : `${totalSeriesHours.toFixed(1)} hrs`;
                         const upcomingCount = group.filter(item => !this.isBookingCompleted(item) && item.status !== 'Cancelled').length;
 
-                        // Master series header row
                         renderedRows.push(`
                           <tr style="background: rgba(147, 51, 234, 0.04); border-top: 2px solid rgba(147, 51, 234, 0.2); font-weight: 600;">
-                            <td style="white-space: nowrap;">
-                              <div style="font-family: var(--font-mono); font-weight: 800; color: #7e22ce; font-size: 12px; display: flex; align-items: center; gap: 5px;">
-                                <span>🔁</span> <span>${sId}</span>
-                              </div>
-                              <span class="badge" style="background: rgba(147, 51, 234, 0.12); color: #7e22ce; font-size: 9.5px; padding: 1px 6px; margin-top: 3px; font-weight: 700;">
-                                Series (${group.length} Sessions)
-                              </span>
-                            </td>
-                            <td style="white-space: nowrap;">
+                            <td class="col-room" style="position: sticky; left: 0; background: var(--bg-surface); z-index: 5; box-shadow: 3px 0 6px rgba(0,0,0,0.04); white-space: nowrap;">
                               <div style="display: flex; align-items: center; gap: 8px;">
-                                <span style="font-size: 20px;">${firstItem.roomIcon || '🏢'}</span>
-                                <div>
-                                  <strong style="color: var(--text-primary); font-size: 13px;">${firstItem.roomName}</strong>
-                                  <div style="font-size: 11px; color: var(--text-muted);">${sRoom ? sRoom.floor : '6F'} • ${firstItem.capacity || 4} Pax</div>
+                                <span style="font-size: 18px;">${firstItem.roomIcon || '🏢'}</span>
+                                <div style="min-width: 0; overflow: hidden;">
+                                  <strong style="color: var(--text-primary); font-size: 12.5px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; display: block;">${firstItem.roomName}</strong>
+                                  <div style="font-size: 10.5px; color: var(--text-muted);">${sRoom ? sRoom.floor : '6F'} • ${sRoom ? sRoom.capacity : 4} Pax</div>
                                 </div>
                               </div>
                             </td>
-                            <td>
-                              <div style="font-weight: 700; color: var(--text-primary); font-size: 13px;">
-                                ${firstItem.title || 'Enterprise Architecture & Client Demo'}
+                            <td class="col-purpose" style="min-width: 0;">
+                              <div style="display: flex; align-items: center; gap: 6px;">
+                                <span style="font-family: var(--font-mono); font-weight: 800; color: #7e22ce; font-size: 11px;">🔁 Series</span>
+                                <span style="font-weight: 700; color: var(--text-primary); font-size: 12.5px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="${firstItem.title || 'Enterprise Architecture & Client Demo'}">
+                                  ${firstItem.title || 'Enterprise Architecture & Client Demo'}
+                                </span>
                               </div>
                               <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
-                                👥 <strong>${firstItem.attendees} Attendees</strong> • Daily / Weekly Series
+                                👥 <strong>${firstItem.attendees}</strong> • ${group.length} occurrences (${firstItem.date} → ${lastItem.date})
                               </div>
                             </td>
-                            <td style="white-space: nowrap;">
+                            <td class="col-time" style="white-space: nowrap;">
                               <div style="font-weight: 700; color: var(--text-primary); font-size: 12px;">
-                                ${group.length} occurrences (${firstItem.date} ➔ ${lastItem.date})
-                              </div>
-                              <div style="font-size: 11px; color: #2563eb; font-weight: 700; margin-top: 2px;">
-                                ⏰ ${this.formatTimeTo12Hour(firstItem.startTime)} – ${this.formatTimeTo12Hour(firstItem.endTime)} IST
+                                ${this.formatTimeTo12Hour(firstItem.startTime)} – ${this.formatTimeTo12Hour(firstItem.endTime)}, ${this.calculateBookingDuration(firstItem.startTime, firstItem.endTime) === 1 ? '1 hr' : `${this.calculateBookingDuration(firstItem.startTime, firstItem.endTime).toFixed(1)} hrs`}
                               </div>
                             </td>
-                            <td style="white-space: nowrap;">
-                              <span class="badge badge-success" style="font-size: 10px; font-weight: 700; padding: 2px 7px;">
-                                ✓ ${totalSeriesHours.toFixed(1)} hrs total
+                            <td class="col-usage" style="white-space: nowrap;">
+                              <span style="font-weight: 700; font-size: 12px; color: var(--text-primary);">${durClean}</span>
+                            </td>
+                            <td class="col-status" style="white-space: nowrap;">
+                              <span style="display: inline-flex; align-items: center; gap: 5px; font-weight: 700; color: #7e22ce; font-size: 11px;">
+                                <span style="width: 7px; height: 7px; border-radius: 50%; background: #9333ea; display: inline-block;"></span>
+                                ${upcomingCount} upcoming / ${group.length}
                               </span>
                             </td>
-                            <td style="white-space: nowrap;">
-                              <span class="badge" style="background: rgba(147, 51, 234, 0.12); color: #7e22ce; font-size: 10.5px; font-weight: 700;">
-                                ${upcomingCount} upcoming / ${group.length} total
-                              </span>
-                            </td>
-                            <!-- Master Series Actions Sticky -->
-                            <td style="white-space: nowrap; text-align: center; position: sticky; right: 0; background: var(--bg-surface); z-index: 5; box-shadow: -3px 0 6px rgba(0,0,0,0.06); padding: 8px;">
-                              <div style="display: flex; gap: 6px; justify-content: center; align-items: center;">
-                                <button type="button" class="btn btn-sm btn-outline" onclick="MeetingRoomsModule.toggleSeriesExpansion('${sId}')" style="font-size: 11px; padding: 4px 9px; font-weight: 700; border-radius: 6px; color: #7e22ce; border-color: rgba(147, 51, 234, 0.4);">
+                            <td class="col-actions" style="white-space: nowrap; text-align: right; position: sticky; right: 0; background: var(--bg-surface); z-index: 5; box-shadow: -3px 0 6px rgba(0,0,0,0.06); padding-right: 16px;">
+                              <div style="display: flex; gap: 6px; justify-content: flex-end; align-items: center;">
+                                <button type="button" class="btn btn-sm btn-outline" onclick="MeetingRoomsModule.toggleSeriesExpansion('${sId}')" style="font-size: 11px; padding: 4px 9px; font-weight: 700; border-radius: 6px; color: #7e22ce; border-color: rgba(147, 51, 234, 0.4);" aria-label="Toggle series expansion">
                                   ${isExpanded ? '▲ Hide' : `▼ Show ${group.length}`}
                                 </button>
-                                <button type="button" class="btn btn-sm btn-outline" onclick="MeetingRoomsModule.handleCancelRecurringSeries('${sId}', '${firstItem.roomId}')" style="font-size: 11px; padding: 4px 8px; font-weight: 700; border-radius: 6px; color: #dc2626; border-color: rgba(220, 38, 38, 0.35);" title="Cancel entire recurring series">
+                                <button type="button" class="btn btn-sm btn-outline" onclick="MeetingRoomsModule.handleCancelRecurringSeries('${sId}', '${firstItem.roomId}')" style="font-size: 11px; padding: 4px 8px; font-weight: 700; border-radius: 6px; color: #dc2626; border-color: rgba(220, 38, 38, 0.35);" title="Cancel entire recurring series" aria-label="Cancel entire recurring series">
                                   Cancel Series
                                 </button>
                               </div>
@@ -1553,20 +1591,17 @@ const MeetingRoomsModule = {
                           </tr>
                         `);
 
-                        // If expanded, render child rows
                         if (isExpanded) {
                           group.forEach((item, idx) => {
-                            renderedRows.push(this.renderBookingRowHtml(item, myStartup, currentRole, todayStr, liveTimeStr, true, idx + 1, group.length));
+                            renderedRows.push(this.renderDeclutteredRowHtml(item, myStartup, currentRole, todayStr, liveTimeStr, true, idx + 1, group.length));
                           });
                         }
                         return;
                       }
 
-                      // If part of an already processed series, skip individual rendering outside the group
                       if (isSeriesParent) return;
 
-                      // Standard single row
-                      renderedRows.push(this.renderBookingRowHtml(b, myStartup, currentRole, todayStr, liveTimeStr, false));
+                      renderedRows.push(this.renderDeclutteredRowHtml(b, myStartup, currentRole, todayStr, liveTimeStr, false));
                     });
 
                     return renderedRows.join('');
@@ -1575,48 +1610,55 @@ const MeetingRoomsModule = {
               </table>
             </div>
 
-            <!-- Table Summary & Server-Side Pagination Footer -->
+            <!-- Table Summary & Pagination Footer -->
             <div style="padding: 12px 20px; background: var(--bg-surface-elevated); border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--text-muted);">
               <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                 <span>
-                  Showing <strong>${totalItems === 0 ? 0 : startIndex + 1}–${endIndex}</strong> of <strong>${totalItems}</strong> matching reservations.
+                  Showing <strong>${totalItems}</strong> bookings, <strong>${filteredHours.toFixed(1)} hrs</strong>
                 </span>
-                <span>•</span>
-                <div style="display: flex; align-items: center; gap: 6px;">
-                  <span>Per page:</span>
-                  <select onchange="MeetingRoomsModule.setMyBookingsPageSize(this.value)" style="padding: 3px 6px; font-size: 11.5px; border-radius: 5px; border: 1px solid var(--border-medium); background: var(--bg-surface); color: var(--text-primary); cursor: pointer;">
-                    <option value="10" ${pageSize === 10 ? 'selected' : ''}>10</option>
-                    <option value="25" ${pageSize === 25 ? 'selected' : ''}>25</option>
-                    <option value="50" ${pageSize === 50 ? 'selected' : ''}>50</option>
-                  </select>
-                </div>
+                <span class="badge" style="background: rgba(34, 197, 94, 0.12); color: #16a34a; font-weight: 700; font-size: 11px; padding: 3px 8px; border-radius: 6px;">
+                  ${allowance.monthLabel}: ${allowance.usedHours.toFixed(1)} / ${allowance.includedHours.toFixed(1)} hrs used, ${allowance.remainingHours.toFixed(1)} left
+                </span>
+                ${totalPages > 1 ? `
+                  <span>•</span>
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <span>Per page:</span>
+                    <select onchange="MeetingRoomsModule.setMyBookingsPageSize(this.value)" style="padding: 3px 6px; font-size: 11.5px; border-radius: 5px; border: 1px solid var(--border-medium); background: var(--bg-surface); color: var(--text-primary); cursor: pointer;" aria-label="Bookings per page">
+                      <option value="10" ${pageSize === 10 ? 'selected' : ''}>10</option>
+                      <option value="25" ${pageSize === 25 ? 'selected' : ''}>25</option>
+                      <option value="50" ${pageSize === 50 ? 'selected' : ''}>50</option>
+                    </select>
+                  </div>
+                ` : ''}
               </div>
 
-              <!-- Pagination Controls -->
-              <div style="display: flex; gap: 6px; align-items: center;">
-                <button 
-                  class="btn btn-sm btn-outline" 
-                  ${currentPage <= 1 ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : `onclick="MeetingRoomsModule.setMyBookingsPage(${currentPage - 1})"`}
-                  style="font-size: 11px; padding: 4px 10px; border-radius: 6px;"
-                >
-                  ◀ Prev
-                </button>
-                <span style="font-weight: 700; color: var(--text-primary); padding: 0 4px;">
-                  Page ${currentPage} of ${totalPages}
-                </span>
-                <button 
-                  class="btn btn-sm btn-outline" 
-                  ${currentPage >= totalPages ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : `onclick="MeetingRoomsModule.setMyBookingsPage(${currentPage + 1})"`}
-                  style="font-size: 11px; padding: 4px 10px; border-radius: 6px;"
-                >
-                  Next ▶
-                </button>
-              </div>
+              <!-- Pagination Controls (Hidden when totalPages <= 1) -->
+              ${totalPages > 1 ? `
+                <div style="display: flex; gap: 6px; align-items: center;">
+                  <button 
+                    class="btn btn-sm btn-outline" 
+                    ${currentPage <= 1 ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : `onclick="MeetingRoomsModule.setMyBookingsPage(${currentPage - 1})"`}
+                    style="font-size: 11px; padding: 4px 10px; border-radius: 6px;"
+                    aria-label="Previous page"
+                  >
+                    ◀ Prev
+                  </button>
+                  <span style="font-weight: 700; color: var(--text-primary); padding: 0 4px;">
+                    Page ${currentPage} of ${totalPages}
+                  </span>
+                  <button 
+                    class="btn btn-sm btn-outline" 
+                    ${currentPage >= totalPages ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : `onclick="MeetingRoomsModule.setMyBookingsPage(${currentPage + 1})"`}
+                    style="font-size: 11px; padding: 4px 10px; border-radius: 6px;"
+                    aria-label="Next page"
+                  >
+                    Next ▶
+                  </button>
+                </div>
+              ` : ''}
 
               <div style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
                 <span>Total Reserved: <strong style="color: var(--text-primary); font-family: var(--font-mono);">${totalHoursBooked.toFixed(1)} hrs</strong></span>
-                <span>•</span>
-                <span>Monthly Allowance: <strong style="color: #16a34a; font-family: var(--font-mono);">${remainingCredits.toFixed(1)} hrs free</strong></span>
                 <span>•</span>
                 <span>Total Fees: <strong style="color: #2563eb; font-family: var(--font-mono);">₹${totalFeesBilled.toLocaleString('en-IN')}</strong></span>
               </div>
@@ -1642,6 +1684,8 @@ const MeetingRoomsModule = {
                     const dur = this.calculateBookingDuration(b.startTime, b.endTime);
                     const isCompleted = this.isBookingCompleted(b);
                     const sched = this.formatScheduleDisplay(b.date, b.startTime, b.endTime, dur);
+                    const roomCap = (bRoom && bRoom.capacity) || b.capacity || 4;
+                    const isOverCap = b.attendees > roomCap;
 
                     return `
                     <div class="my-booking-card" style="${b.status === 'Cancelled' ? 'opacity: 0.75; border-color: rgba(100, 116, 139, 0.3);' : ''}">
@@ -1658,7 +1702,8 @@ const MeetingRoomsModule = {
                               <span class="badge" style="background: #ede9fe; color: #4338ca; font-size: 9.5px; padding: 1px 6px; font-weight: 800;">${bRoom ? (bRoom.floor || '1F') : '1F'}</span>
                             </div>
                             <div style="font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); margin-top: 2px;">
-                              ${b.id} • ${b.capacity || (bRoom && bRoom.capacity) || 4} Pax Max
+                              ${b.id} • ${roomCap} Pax Max
+                              ${isOverCap ? `<span class="badge" style="background: #fee2e2; color: #b91c1c; font-size: 9.5px; padding: 1px 4px; font-weight: 700; margin-left: 4px;">⚠️ Over capacity</span>` : ''}
                             </div>
                           </div>
                         </div>
@@ -1676,7 +1721,7 @@ const MeetingRoomsModule = {
                           <span>•</span>
                           <span style="font-weight: 700; color: #2563eb;">⏰ ${sched.timeFormatted}${sched.durStr}</span>
                           <span>•</span>
-                          <span>👥 <strong>${b.attendees} Pax</strong> (Booked by: <strong>${b.bookedBy || 'Alex Morgan'}</strong>)</span>
+                          <span>👥 <strong>${b.attendees} Pax</strong> ${(b.bookedBy && b.bookedBy !== 'Alex Morgan') ? `(Booked by: <strong>${b.bookedBy}</strong>)` : ''}</span>
                         </div>
                       </div>
 
@@ -1684,25 +1729,25 @@ const MeetingRoomsModule = {
                         <div>
                           ${b.status === 'Cancelled' ? `
                             <span class="badge" style="background: rgba(100, 116, 139, 0.12); color: #64748b;">🚫 Cancelled</span>
-                          ` : b.cost > 0 ? `
+                          ` : Number(b.cost) > 0 ? `
                             <span class="badge badge-warning" style="font-weight: 700;">⚠️ ₹${Number(b.cost).toLocaleString('en-IN')} Overage</span>
                           ` : `
-                            <span class="badge badge-success" style="font-weight: 700;">✓ ${dur.toFixed(1)} hrs deducted</span>
+                            <span class="badge badge-success" style="font-weight: 700;">✓ ${dur === 1 ? '1 hr' : `${dur.toFixed(1)} hrs`}</span>
                           `}
                         </div>
                         <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-                          <button class="btn btn-sm btn-primary" onclick="MeetingRoomsModule.openReservationDetailsModal('${b.roomId}', '${b.id}')" style="font-size: 11.5px; padding: 5px 12px; border-radius: 6px; font-weight: 700;">
+                          <button class="btn btn-sm btn-primary" onclick="MeetingRoomsModule.openReservationDetailsModal('${b.roomId}', '${b.id}')" style="font-size: 11.5px; padding: 5px 12px; border-radius: 6px; font-weight: 700;" aria-label="View booking details">
                             📋 Details
                           </button>
                           ${b.status !== 'Cancelled' && !isCompleted ? `
-                            <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openEditTimeWindowModal('${b.roomId}', '${b.id}')" style="font-size: 11.5px; padding: 5px 9px; border-radius: 6px; color: #2563eb; border-color: rgba(37,99,235,0.4);">
+                            <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openEditTimeWindowModal('${b.roomId}', '${b.id}')" style="font-size: 11.5px; padding: 5px 9px; border-radius: 6px; color: #2563eb; border-color: rgba(37,99,235,0.4);" aria-label="Reschedule booking">
                               Reschedule
                             </button>
-                            <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openCancellationModal('${b.roomId}', '${b.id}')" style="font-size: 11.5px; padding: 5px 10px; border-radius: 6px; color: #dc2626; border-color: rgba(239, 68, 68, 0.4);">
+                            <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openCancellationModal('${b.roomId}', '${b.id}')" style="font-size: 11.5px; padding: 5px 10px; border-radius: 6px; color: #dc2626; border-color: rgba(239, 68, 68, 0.4);" aria-label="Cancel booking">
                               Cancel
                             </button>
                           ` : isCompleted ? `
-                            <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openBookModal('${b.roomId}', null, '${myStartup.id}')" style="font-size: 11.5px; padding: 5px 9px; border-radius: 6px; color: #2563eb; border-color: rgba(37,99,235,0.4);">
+                            <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openBookModal('${b.roomId}', null, '${myStartup.id}')" style="font-size: 11.5px; padding: 5px 9px; border-radius: 6px; color: #2563eb; border-color: rgba(37,99,235,0.4);" aria-label="Rebook room">
                               Rebook
                             </button>
                           ` : ''}
@@ -1720,217 +1765,236 @@ const MeetingRoomsModule = {
     `;
   },
 
-  renderBookingRowHtml(b, myStartup, currentRole, todayStr, liveTimeStr, isIndented = false, occurrenceIdx = 1, totalOccurrences = 1) {
+  renderDeclutteredRowHtml(b, myStartup, currentRole, todayStr, liveTimeStr, isIndented = false, occurrenceIdx = 1, totalOccurrences = 1) {
     const dur = this.calculateBookingDuration(b.startTime, b.endTime);
+    const durStrClean = dur === 1 ? '1 hr' : `${dur.toFixed(1)} hrs`;
     const bRoom = window.store.getMeetingRoomById(b.roomId);
+    const roomCap = (bRoom && bRoom.capacity) || b.capacity || 4;
+    const isOverCap = b.attendees > roomCap;
     const isCompleted = this.isBookingCompleted(b);
-    const sched = this.formatScheduleDisplay(b.date, b.startTime, b.endTime, dur);
+    const isCancelled = b.status === 'Cancelled';
+    const isToday = b.date === todayStr;
 
-    // Smart live status calculation
-    let statusBadge = '<span class="badge badge-info" style="font-size: 10.5px; font-weight: 700;">⏳ Upcoming</span>';
-    let checkInBtn = '';
+    const start12 = this.formatTimeTo12Hour(b.startTime);
+    const end12 = this.formatTimeTo12Hour(b.endTime);
 
-    if (b.status === 'Cancelled') {
-      statusBadge = '<span class="badge" style="background: rgba(100, 116, 139, 0.12); color: #64748b; border: 1px solid rgba(100, 116, 139, 0.25); font-weight: 700; font-size: 10.5px;">🚫 Cancelled</span>';
+    const sMins = this.parseTimeToMinutes(b.startTime);
+    const eMins = this.parseTimeToMinutes(b.endTime);
+    const nowMins = this.parseTimeToMinutes(liveTimeStr);
+
+    const isInProgress = !isCancelled && isToday && (nowMins >= sMins && nowMins < eMins);
+    const isStartingSoon = !isCancelled && isToday && (sMins > nowMins && (sMins - nowMins) <= 60);
+    const minsUntilStart = isStartingSoon ? (sMins - nowMins) : 0;
+    const isCheckInOpen = !isCancelled && isToday && (nowMins >= (sMins - 15) && nowMins < eMins);
+
+    // Status: Small dot + Label
+    let statusDotHtml = '';
+    if (isCancelled) {
+      statusDotHtml = `
+        <span style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: #64748b; font-size: 11.5px;">
+          <span style="width: 7px; height: 7px; border-radius: 50%; background: #94a3b8; display: inline-block;"></span>
+          Cancelled
+        </span>
+      `;
     } else if (isCompleted) {
-      statusBadge = '<span class="badge" style="font-size: 10.5px; font-weight: 600; background: rgba(100, 116, 139, 0.12); color: #475569; border: 1px solid rgba(100, 116, 139, 0.25);">✓ Completed</span>';
-    } else if (b.date === todayStr && b.startTime <= liveTimeStr && b.endTime > liveTimeStr) {
-      statusBadge = '<span class="badge badge-success" style="font-size: 10.5px; font-weight: 700; background: #16a34a; color: #fff;">🟢 In Progress</span>';
-      checkInBtn = `<div style="margin-top: 3px;"><button class="btn btn-sm btn-primary" onclick="MeetingRoomsModule.printReservationSlip('${b.roomId}', '${b.id}')" style="font-size: 9.5px; padding: 2px 7px;">🔑 Room Pass</button></div>`;
-    } else if (b.date === todayStr && b.startTime > liveTimeStr) {
-      const sMins = this.parseTimeToMinutes(b.startTime);
-      const nowMins = this.parseTimeToMinutes(liveTimeStr);
-      const diffMins = sMins - nowMins;
-      if (diffMins > 0 && diffMins <= 60) {
-        statusBadge = `<span class="badge" style="background: #fef3c7; color: #b45309; border: 1px solid #fde68a; font-size: 10.5px; font-weight: 800;">🟢 Starts in ${diffMins} min</span>`;
-        checkInBtn = `<div style="margin-top: 3px;"><button class="btn btn-sm btn-success" onclick="MeetingRoomsModule.checkInBooking('${b.roomId}', '${b.id}')" style="font-size: 9.5px; padding: 2px 7px; background: #16a34a; color: #fff;">✅ Check-in</button></div>`;
-      } else {
-        statusBadge = '<span class="badge badge-warning" style="font-size: 10.5px; font-weight: 700;">⏰ Today</span>';
-      }
+      statusDotHtml = `
+        <span style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: #475569; font-size: 11.5px;">
+          <span style="width: 7px; height: 7px; border-radius: 50%; background: #64748b; display: inline-block;"></span>
+          Completed
+        </span>
+      `;
+    } else if (isInProgress) {
+      statusDotHtml = `
+        <span style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: #16a34a; font-size: 11.5px;">
+          <span style="width: 7px; height: 7px; border-radius: 50%; background: #16a34a; display: inline-block; box-shadow: 0 0 0 2px rgba(22,163,74,0.25);"></span>
+          In progress
+        </span>
+      `;
+    } else if (isStartingSoon) {
+      statusDotHtml = `
+        <span style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: #b45309; font-size: 11.5px;">
+          <span style="width: 7px; height: 7px; border-radius: 50%; background: #f59e0b; display: inline-block;"></span>
+          Starts in ${minsUntilStart} min
+        </span>
+      `;
+    } else {
+      statusDotHtml = `
+        <span style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: #2563eb; font-size: 11.5px;">
+          <span style="width: 7px; height: 7px; border-radius: 50%; background: #3b82f6; display: inline-block;"></span>
+          Upcoming
+        </span>
+      `;
     }
 
-    // Context-sensitive Actions based on status
-    let actionButtons = '';
-    if (b.status === 'Cancelled') {
-      actionButtons = `
-        <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openBookModal('${b.roomId}', null, '${myStartup.id}')" style="font-size: 11px; padding: 4px 8px; font-weight: 700; color: #2563eb; border-color: rgba(37,99,235,0.4);" title="Rebook this room">
+    // Actions: 1 primary button + "..." overflow menu
+    let primaryBtnHtml = '';
+    let menuItemsHtml = '';
+
+    if (isCancelled) {
+      primaryBtnHtml = `
+        <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openBookModal('${b.roomId}', null, '${myStartup.id}')" style="font-size: 11px; padding: 4px 10px; font-weight: 700; color: #2563eb; border-color: rgba(37,99,235,0.4);" aria-label="Rebook room">
           Rebook
         </button>
-        <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openReservationDetailsModal('${b.roomId}', '${b.id}')" style="font-size: 11px; padding: 4px 8px; font-weight: 600; color: var(--text-secondary);" title="View cancellation details">
-          Details
+      `;
+      menuItemsHtml = `
+        <button class="row-menu-item" onclick="MeetingRoomsModule.closeAllRowMenus(); MeetingRoomsModule.openReservationDetailsModal('${b.roomId}', '${b.id}')" aria-label="View booking details">
+          <span>📋</span> <span>Details</span>
         </button>
       `;
     } else if (isCompleted) {
-      actionButtons = `
-        <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openBookModal('${b.roomId}', null, '${myStartup.id}')" style="font-size: 11px; padding: 4px 8px; font-weight: 700; color: #2563eb; border-color: rgba(37,99,235,0.4);" title="Book this room again">
+      primaryBtnHtml = `
+        <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openBookModal('${b.roomId}', null, '${myStartup.id}')" style="font-size: 11px; padding: 4px 10px; font-weight: 700; color: #2563eb; border-color: rgba(37,99,235,0.4);" aria-label="Book this room again">
           Rebook
         </button>
-        <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.printReservationSlip('${b.roomId}', '${b.id}')" style="font-size: 11px; padding: 4px 8px; font-weight: 600; color: var(--text-primary);" title="Download or print receipt">
-          Receipt
+      `;
+      menuItemsHtml = `
+        <button class="row-menu-item" onclick="MeetingRoomsModule.closeAllRowMenus(); MeetingRoomsModule.openReservationDetailsModal('${b.roomId}', '${b.id}')" aria-label="View booking details">
+          <span>📋</span> <span>Details</span>
         </button>
-        <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openReservationDetailsModal('${b.roomId}', '${b.id}')" style="font-size: 11px; padding: 4px 7px; font-weight: 600; color: var(--text-secondary);" title="Details">
-          📋
+        <button class="row-menu-item" onclick="MeetingRoomsModule.closeAllRowMenus(); MeetingRoomsModule.printReservationSlip('${b.roomId}', '${b.id}')" aria-label="${Number(b.cost) > 0 ? 'Download invoice receipt' : 'View usage summary'}">
+          <span>🧾</span> <span>${Number(b.cost) > 0 ? 'Download Receipt' : 'Usage summary'}</span>
         </button>
       `;
-    } else if (b.date === todayStr && b.startTime <= liveTimeStr && b.endTime > liveTimeStr) {
-      // In progress
-      actionButtons = `
-        <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.handleQuickExtend('${b.roomId}', '${b.id}', 30)" style="font-size: 11px; padding: 4px 8px; font-weight: 700; color: #2563eb; border-color: rgba(37,99,235,0.4);" title="Extend reservation by 30 mins">
-          Extend +30m
+    } else if (isInProgress) {
+      primaryBtnHtml = `
+        <button class="btn btn-primary btn-sm" onclick="MeetingRoomsModule.handleQuickExtend('${b.roomId}', '${b.id}', 30)" style="font-size: 11px; padding: 4px 10px; font-weight: 700;" aria-label="Extend reservation by 30 mins">
+          Extend
         </button>
-        <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.handleEndEarly('${b.roomId}', '${b.id}')" style="font-size: 11px; padding: 4px 8px; font-weight: 700; color: #16a34a; border-color: rgba(22,163,74,0.4);" title="Conclude session early">
-          End Early
+      `;
+      menuItemsHtml = `
+        <button class="row-menu-item" onclick="MeetingRoomsModule.closeAllRowMenus(); MeetingRoomsModule.handleEndEarly('${b.roomId}', '${b.id}')" aria-label="End meeting session early">
+          <span>⏹️</span> <span>End early</span>
         </button>
-        <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openReservationDetailsModal('${b.roomId}', '${b.id}')" style="font-size: 11px; padding: 4px 7px; font-weight: 600; color: var(--text-secondary);">
-          ⋯
+        <button class="row-menu-item" onclick="MeetingRoomsModule.closeAllRowMenus(); MeetingRoomsModule.openReservationDetailsModal('${b.roomId}', '${b.id}')" aria-label="View booking details">
+          <span>📋</span> <span>Details</span>
         </button>
       `;
     } else {
       // Upcoming
-      actionButtons = `
-        <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openEditTimeWindowModal('${b.roomId}', '${b.id}')" style="font-size: 11px; padding: 4px 8px; font-weight: 700; color: #2563eb; border-color: rgba(37,99,235,0.4);" title="Reschedule reservation time">
-          Reschedule
-        </button>
-        <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.handleQuickExtend('${b.roomId}', '${b.id}', 30)" style="font-size: 11px; padding: 4px 8px; font-weight: 700; color: #4338ca; border-color: rgba(67,56,202,0.4);" title="Extend by 30 mins">
-          Extend
-        </button>
-        <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openCancellationModal('${b.roomId}', '${b.id}')" style="font-size: 11px; padding: 4px 8px; font-weight: 700; color: #dc2626; border-color: rgba(220,38,38,0.4);" title="Cancel reservation">
-          Cancel
-        </button>
-        <div class="meeting-row-menu-wrapper" style="position: relative; display: inline-block;">
-          <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.toggleRowMenu(event, '${b.id}')" style="font-size: 13px; padding: 3px 6px; line-height: 1; border-color: var(--border-medium); color: var(--text-secondary);" title="More options">
-            ⋯
+      if (isCheckInOpen) {
+        primaryBtnHtml = `
+          <button class="btn btn-primary btn-sm" onclick="MeetingRoomsModule.checkInBooking('${b.roomId}', '${b.id}')" style="font-size: 11px; padding: 4px 10px; font-weight: 700; background: #16a34a; border-color: #16a34a; color: #fff;" aria-label="Check in to booking">
+            Check-in
           </button>
-          <div id="room-menu-${b.id}" class="meeting-row-menu" style="display: none; position: absolute; right: 0; top: 100%; margin-top: 4px; z-index: 1000; min-width: 175px; background: var(--bg-surface); border: 1px solid var(--border-medium); border-radius: var(--radius-md); box-shadow: 0 10px 25px rgba(0,0,0,0.18); padding: 5px; text-align: left;">
-            <button class="row-menu-item" onclick="MeetingRoomsModule.closeAllRowMenus(); MeetingRoomsModule.downloadBookingIcs('${b.id}')" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 7px 10px; font-size: 11.5px; font-weight: 600; color: #2563eb; border: none; background: transparent; cursor: pointer; border-radius: 6px; text-align: left;">
-              <span>📅</span> <span>Add to Calendar (.ics)</span>
-            </button>
-            <button class="row-menu-item" onclick="MeetingRoomsModule.closeAllRowMenus(); MeetingRoomsModule.printReservationSlip('${b.roomId}', '${b.id}')" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 7px 10px; font-size: 11.5px; font-weight: 600; color: var(--text-primary); border: none; background: transparent; cursor: pointer; border-radius: 6px; text-align: left;">
-              <span>🖨️</span> <span>Print Room Slip</span>
-            </button>
-            <button class="row-menu-item" onclick="MeetingRoomsModule.closeAllRowMenus(); MeetingRoomsModule.openReservationDetailsModal('${b.roomId}', '${b.id}')" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 7px 10px; font-size: 11.5px; font-weight: 600; color: var(--text-primary); border: none; background: transparent; cursor: pointer; border-radius: 6px; text-align: left;">
-              <span>📋</span> <span>Full Details</span>
-            </button>
-          </div>
-        </div>
+        `;
+      } else {
+        primaryBtnHtml = `
+          <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openEditTimeWindowModal('${b.roomId}', '${b.id}')" style="font-size: 11px; padding: 4px 10px; font-weight: 700; color: #2563eb; border-color: rgba(37,99,235,0.4);" aria-label="Reschedule reservation">
+            Reschedule
+          </button>
+        `;
+      }
+      menuItemsHtml = `
+        ${!isCheckInOpen ? `
+          <button class="row-menu-item" onclick="MeetingRoomsModule.closeAllRowMenus(); MeetingRoomsModule.openEditTimeWindowModal('${b.roomId}', '${b.id}')" aria-label="Reschedule reservation">
+            <span>🔄</span> <span>Reschedule</span>
+          </button>
+        ` : ''}
+        <button class="row-menu-item" onclick="MeetingRoomsModule.closeAllRowMenus(); MeetingRoomsModule.handleQuickExtend('${b.roomId}', '${b.id}', 30)" aria-label="Extend booking by 30 mins">
+          <span>⏰</span> <span>Extend (+30m)</span>
+        </button>
+        <button class="row-menu-item" onclick="MeetingRoomsModule.closeAllRowMenus(); MeetingRoomsModule.openCancellationModal('${b.roomId}', '${b.id}')" style="color: #dc2626;" aria-label="Cancel reservation">
+          <span>🚫</span> <span>Cancel</span>
+        </button>
+        <button class="row-menu-item" onclick="MeetingRoomsModule.closeAllRowMenus(); MeetingRoomsModule.openReservationDetailsModal('${b.roomId}', '${b.id}')" aria-label="View booking details">
+          <span>📋</span> <span>Details</span>
+        </button>
+        <button class="row-menu-item" onclick="MeetingRoomsModule.closeAllRowMenus(); MeetingRoomsModule.downloadBookingIcs('${b.id}')" aria-label="Add to Calendar (.ics)">
+          <span>📅</span> <span>Add to Calendar (.ics)</span>
+        </button>
       `;
     }
 
     return `
       <tr style="transition: all 0.15s ease; ${isIndented ? 'background: rgba(147, 51, 234, 0.02);' : ''}">
-        <!-- 1. Booking Ref & Sync Chips (Sync chips ONLY on upcoming!) -->
-        <td style="white-space: nowrap; ${isIndented ? 'padding-left: 28px;' : ''}">
-          <div style="font-family: var(--font-mono); font-weight: 800; color: var(--accent-primary); font-size: 13px;">
-            ${isIndented ? `↳ ` : ''}${b.id}
+        <!-- 1. Room (Sticky Left) -->
+        <td class="col-room" style="position: sticky; left: 0; background: var(--bg-surface); z-index: 5; box-shadow: 3px 0 6px rgba(0,0,0,0.04); white-space: nowrap; ${isIndented ? 'padding-left: 28px;' : ''}">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 18px; width: 30px; height: 30px; border-radius: 7px; background: rgba(37, 99, 235, 0.08); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+              ${b.roomIcon || '🏢'}
+            </span>
+            <div style="min-width: 0; overflow: hidden;">
+              <strong style="color: var(--text-primary); font-size: 12.5px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; display: block;" title="${b.roomName}">
+                ${isIndented ? '↳ ' : ''}${b.roomName}
+              </strong>
+              <div style="font-size: 10.5px; color: var(--text-muted); display: flex; align-items: center; gap: 4px;">
+                <span>${bRoom ? (bRoom.floor || '1F') : '1F'}</span>
+                <span>•</span>
+                <span>${roomCap} Pax</span>
+              </div>
+            </div>
           </div>
-          ${isIndented ? `
-            <div style="font-size: 10px; color: #7e22ce; font-weight: 600;">
-              Session ${occurrenceIdx} of ${totalOccurrences}
-            </div>
-          ` : `
-            <div style="display: inline-flex; align-items: center; gap: 4px; margin-top: 3px; font-size: 10.5px; color: ${b.status === 'Cancelled' ? '#64748b' : '#16a34a'}; font-weight: 600;">
-              <span>${b.status === 'Cancelled' ? '🚫' : '✅'}</span> <span>${b.status === 'Cancelled' ? 'Cancelled Slot' : 'Confirmed'}</span>
-            </div>
-          `}
-          <!-- External Calendar Sync Chips: ONLY show for upcoming bookings -->
-          ${(!isCompleted && b.status !== 'Cancelled') ? `
-            <div style="margin-top: 4px; display: flex; gap: 4px; flex-wrap: wrap;">
-              ${(b.calendarSync && b.calendarSync.google && b.calendarSync.google.status === 'synced') ? `
-                <span class="badge" style="background: rgba(22, 163, 74, 0.12); color: #15803d; font-size: 9px; padding: 1px 5px;">✓ GCal</span>
-              ` : `
-                <button type="button" onclick="MeetingRoomsModule.syncBookingWithProvider('${b.roomId}', '${b.id}', 'google')" style="border: 1px solid var(--border-subtle); background: var(--bg-surface-elevated); font-size: 9px; padding: 1px 5px; border-radius: 4px; cursor: pointer; color: #2563eb; font-weight: 600;" title="Sync to Google Calendar">+GCal</button>
-              `}
-              ${(b.calendarSync && b.calendarSync.outlook && b.calendarSync.outlook.status === 'synced') ? `
-                <span class="badge" style="background: rgba(37, 99, 235, 0.12); color: #1d4ed8; font-size: 9px; padding: 1px 5px;">✓ Outlook</span>
-              ` : `
-                <button type="button" onclick="MeetingRoomsModule.syncBookingWithProvider('${b.roomId}', '${b.id}', 'outlook')" style="border: 1px solid var(--border-subtle); background: var(--bg-surface-elevated); font-size: 9px; padding: 1px 5px; border-radius: 4px; cursor: pointer; color: #0284c7; font-weight: 600;" title="Sync to Microsoft Outlook">+Outlook</button>
-              `}
+        </td>
+
+        <!-- 2. Purpose & Attendees -->
+        <td class="col-purpose" style="min-width: 0;">
+          <div style="font-weight: 700; color: var(--text-primary); font-size: 12.5px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 250px;" title="${b.title || b.purpose || 'Meeting'}">
+            ${b.title || b.purpose || 'Meeting'}
+          </div>
+          <div style="font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 5px; margin-top: 2px; white-space: nowrap;">
+            <span title="${b.attendees} attendees" style="white-space: nowrap; font-weight: 600;">👥 ${b.attendees}</span>
+            ${isOverCap ? `
+              <span class="badge" title="Over capacity: ${b.attendees} attendees booked in ${roomCap} pax room" style="background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; font-size: 9.5px; padding: 1px 5px; font-weight: 700; white-space: nowrap;">
+                ⚠️ Over capacity
+              </span>
+            ` : ''}
+            ${(b.bookedBy && b.bookedBy !== 'Alex Morgan') ? `
+              <span style="color: var(--text-muted);">•</span>
+              <span style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="Booked by ${b.bookedBy}">By: <strong>${b.bookedBy}</strong></span>
+            ` : ''}
+          </div>
+        </td>
+
+        <!-- 3. Time (IST) -->
+        <td class="col-time" style="white-space: nowrap;">
+          <div style="font-weight: 700; color: var(--text-primary); font-size: 12px;">
+            ${start12} – ${end12}, ${durStrClean}
+          </div>
+          ${(!isCompleted && !isCancelled) ? `
+            <div style="display: flex; gap: 4px; margin-top: 3px;">
+              <button type="button" onclick="MeetingRoomsModule.syncBookingWithProvider('${b.roomId}', '${b.id}', 'google')" style="font-size: 9px; padding: 1px 5px; border-radius: 4px; border: 1px solid var(--border-subtle); background: var(--bg-surface-elevated); color: #2563eb; cursor: pointer;" title="Sync to Google Calendar" aria-label="Sync to Google Calendar">+GCal</button>
+              <button type="button" onclick="MeetingRoomsModule.syncBookingWithProvider('${b.roomId}', '${b.id}', 'outlook')" style="font-size: 9px; padding: 1px 5px; border-radius: 4px; border: 1px solid var(--border-subtle); background: var(--bg-surface-elevated); color: #0284c7; cursor: pointer;" title="Sync to Outlook" aria-label="Sync to Outlook">+Outlook</button>
             </div>
           ` : ''}
         </td>
 
-        <!-- 2. Meeting Space & Floor -->
-        <td style="white-space: nowrap;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 22px; width: 34px; height: 34px; border-radius: 8px; background: rgba(37, 99, 235, 0.08); display: flex; align-items: center; justify-content: center; border: 1px solid rgba(37, 99, 235, 0.2);">
-              ${b.roomIcon || '🏢'}
-            </span>
-            <div>
-              <div style="display: flex; align-items: center; gap: 6px;">
-                <strong style="color: var(--text-primary); font-size: 13px;">${b.roomName}</strong>
-                <span class="badge" style="background: #ede9fe; color: #4338ca; font-size: 9.5px; padding: 1px 6px; font-weight: 800;">${bRoom ? (bRoom.floor || '1F') : '1F'}</span>
+        <!-- 4. Usage -->
+        <td class="col-usage" style="white-space: nowrap;">
+          <span style="font-weight: 700; font-size: 12px; color: var(--text-primary);">${durStrClean}</span>
+          ${Number(b.cost) > 0 ? `
+            <div style="margin-top: 2px;">
+              <span class="badge" style="background: #fef3c7; color: #92400e; border: 1px solid #fde68a; font-size: 9.5px; padding: 1px 5px; font-weight: 700;">
+                ₹${Number(b.cost).toLocaleString('en-IN')} overage
+              </span>
+            </div>
+          ` : ''}
+        </td>
+
+        <!-- 5. Status (Dot + Label) -->
+        <td class="col-status" style="white-space: nowrap;">
+          ${statusDotHtml}
+        </td>
+
+        <!-- 6. Sticky Actions Column -->
+        <td class="col-actions" style="white-space: nowrap; text-align: right; position: sticky; right: 0; background: var(--bg-surface); z-index: 5; box-shadow: -3px 0 6px rgba(0,0,0,0.06); padding: 8px 16px 8px 8px;">
+          <div style="display: flex; gap: 6px; justify-content: flex-end; align-items: center; flex-wrap: nowrap;">
+            ${primaryBtnHtml}
+            <div class="meeting-row-menu-wrapper" style="position: relative; display: inline-block;">
+              <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.toggleRowMenu(event, '${b.id}')" style="font-size: 13px; padding: 3px 7px; line-height: 1; border-color: var(--border-medium); color: var(--text-secondary);" title="More options" aria-label="More actions for booking ${b.id}">
+                ⋯
+              </button>
+              <div id="room-menu-${b.id}" class="meeting-row-menu" style="display: none; position: absolute; right: 0; top: 100%; margin-top: 4px; z-index: 1000; min-width: 165px; background: var(--bg-surface); border: 1px solid var(--border-medium); border-radius: var(--radius-md); box-shadow: 0 10px 25px rgba(0,0,0,0.18); padding: 5px; text-align: left;">
+                ${menuItemsHtml}
               </div>
-              <div style="font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); margin-top: 2px;">
-                <span>${bRoom ? (bRoom.roomNumber || bRoom.floor) : '1F-R01'}</span>
-                <span style="margin: 0 3px;">•</span>
-                <span class="badge badge-info" style="font-size: 9px; padding: 1px 5px;">Max ${b.capacity || (bRoom && bRoom.capacity) || 4} Pax</span>
-              </div>
             </div>
-          </div>
-        </td>
-
-        <!-- 3. Purpose & Agenda & Booked By -->
-        <td style="min-width: 200px;">
-          <div style="font-weight: 700; color: var(--text-primary); font-size: 13px;">
-            ${b.title || b.purpose || 'Executive Planning Session'}
-          </div>
-          <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
-            <span>Booked by: <strong style="color: var(--text-primary);">${b.bookedBy || 'Alex Morgan'}</strong></span>
-            <span style="margin: 0 4px;">•</span>
-            <span>👥 <strong>${b.attendees} Attendees</strong></span>
-          </div>
-        </td>
-
-        <!-- 4. Date & Schedule (Duration Merged) -->
-        <td style="white-space: nowrap;">
-          <div style="font-weight: 700; color: var(--text-primary); font-size: 12.5px;">
-            📅 ${sched.dateFormatted}
-          </div>
-          <div style="font-size: 11.5px; color: #2563eb; font-weight: 700; margin-top: 2px;">
-            ⏰ ${sched.timeFormatted} <span style="color: var(--text-secondary); font-weight: 600;">${sched.durStr}</span>
-          </div>
-        </td>
-
-        <!-- 5. Allowance / Fees (Clean hours deduction & overage badge) -->
-        <td style="white-space: nowrap;">
-          ${b.status === 'Cancelled' ? `
-            <span class="badge" style="font-size: 10px; font-weight: 700; padding: 2px 7px; background: rgba(100, 116, 139, 0.12); color: #64748b;">
-              🚫 Cancelled
-            </span>
-            <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">
-              Allowance released
-            </div>
-          ` : Number(b.cost) > 0 ? `
-            <span class="badge badge-warning" style="font-size: 10px; font-weight: 700; padding: 2px 7px; background: #fef3c7; color: #92400e; border: 1px solid #fde68a;">
-              ⚠️ ₹${Number(b.cost).toLocaleString('en-IN')} Overage
-            </span>
-            <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">
-              ${b.creditHoursUsed ? `${Number(b.creditHoursUsed).toFixed(1)}h allowance + ` : ''}${(dur - (b.creditHoursUsed || 0)).toFixed(1)}h billed
-            </div>
-          ` : `
-            <span class="badge badge-success" style="font-size: 10px; font-weight: 700; padding: 2px 7px; background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0;">
-              ✓ ${dur.toFixed(1)} hrs deducted
-            </span>
-            <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">
-              from monthly allowance
-            </div>
-          `}
-        </td>
-
-        <!-- 6. Smart Live Status -->
-        <td style="white-space: nowrap;">
-          ${statusBadge}
-          ${checkInBtn}
-        </td>
-
-        <!-- 7. STICKY Actions Column -->
-        <td style="white-space: nowrap; text-align: center; position: sticky; right: 0; background: var(--bg-surface); z-index: 5; box-shadow: -3px 0 6px rgba(0,0,0,0.06); padding: 8px;">
-          <div style="display: flex; gap: 5px; justify-content: center; align-items: center; flex-wrap: nowrap;">
-            ${actionButtons}
           </div>
         </td>
       </tr>
     `;
+  },
+
+  renderBookingRowHtml(b, myStartup, currentRole, todayStr, liveTimeStr, isIndented = false, occurrenceIdx = 1, totalOccurrences = 1) {
+    return this.renderDeclutteredRowHtml(b, myStartup, currentRole, todayStr, liveTimeStr, isIndented, occurrenceIdx, totalOccurrences);
   },
 
   formatTimeTo12Hour(time24) {

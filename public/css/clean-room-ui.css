@@ -1582,5 +1582,134 @@ body.rg-no-scroll {
   margin: 10px 0 !important;
 }
 
+/* ==========================================================================
+   DECLUTTERED MY BOOKINGS TABLE LAYOUT (SECTION B & C)
+   ========================================================================== */
+.my-bookings-table {
+  width: 100% !important;
+  table-layout: fixed !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+}
+
+.my-bookings-table th,
+.my-bookings-table td {
+  box-sizing: border-box !important;
+  vertical-align: middle !important;
+}
+
+.my-bookings-table tr {
+  max-height: 64px !important;
+}
+
+.my-bookings-table .col-room {
+  width: 190px !important;
+  min-width: 170px !important;
+  max-width: 210px !important;
+}
+
+.my-bookings-table .col-purpose {
+  width: auto !important;
+  min-width: 180px !important;
+}
+
+.my-bookings-table .col-time {
+  width: 180px !important;
+  min-width: 165px !important;
+}
+
+.my-bookings-table .col-usage {
+  width: 130px !important;
+  min-width: 115px !important;
+}
+
+.my-bookings-table .col-status {
+  width: 140px !important;
+  min-width: 125px !important;
+}
+
+.my-bookings-table .col-actions {
+  width: 150px !important;
+  min-width: 140px !important;
+}
+
+.meeting-row-menu .row-menu-item {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 7px 10px !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  color: var(--text-primary) !important;
+  border: none !important;
+  background: transparent !important;
+  cursor: pointer !important;
+  border-radius: 6px !important;
+  text-align: left !important;
+  transition: background 0.15s ease !important;
+}
+
+.meeting-row-menu .row-menu-item:hover,
+.meeting-row-menu .row-menu-item:focus {
+  background: rgba(99, 102, 241, 0.08) !important;
+  color: var(--accent-primary) !important;
+  outline: none !important;
+}
+
+/* Responsive Mobile Cards below 900px */
+@media (max-width: 900px) {
+  .my-bookings-table-wrapper {
+    overflow-x: visible !important;
+  }
+  .my-bookings-table,
+  .my-bookings-table thead,
+  .my-bookings-table tbody,
+  .my-bookings-table tr,
+  .my-bookings-table td {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .my-bookings-table thead {
+    display: none !important;
+  }
+  .my-bookings-table tr.date-section-header-row td {
+    background: #ede9fe !important;
+    color: #4338ca !important;
+    font-weight: 800 !important;
+    border-radius: 8px !important;
+    margin-top: 14px !important;
+    margin-bottom: 8px !important;
+    padding: 8px 12px !important;
+  }
+  .my-bookings-table tr:not(.date-section-header-row) {
+    background: var(--bg-surface) !important;
+    border: 1px solid var(--border-medium) !important;
+    border-radius: 12px !important;
+    margin-bottom: 12px !important;
+    padding: 12px 14px !important;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04) !important;
+    max-height: none !important;
+  }
+  .my-bookings-table tr:not(.date-section-header-row) td {
+    position: static !important;
+    box-shadow: none !important;
+    padding: 5px 0 !important;
+    border: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    white-space: normal !important;
+  }
+  .my-bookings-table tr:not(.date-section-header-row) td.col-actions {
+    margin-top: 8px !important;
+    padding-top: 8px !important;
+    border-top: 1px solid var(--border-subtle) !important;
+    justify-content: flex-end !important;
+  }
+}
+
+
 
 

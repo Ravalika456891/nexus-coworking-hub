@@ -538,11 +538,14 @@ const App = {
   },
 
   updateSidebarPlanAllowance() {
-    const startup = (window.store && window.store.getActiveStartup) ? window.store.getActiveStartup() : null;
-    const included = startup ? (Number(startup.includedMeetingHours) || 15) : 15;
-    const used = startup ? (Number(startup.usedMeetingHours) || 0) : 0;
-    const rem = Math.max(0, Number((included - used).toFixed(1)));
-    const pct = Math.min(100, Math.round((rem / included) * 100));
+    const allowance = (window.store && window.store.getMonthlyAllowance)
+      ? window.store.getMonthlyAllowance()
+      : { includedHours: 15, usedHours: 0, remainingHours: 15, overageHours: 0, overageFee: 0 };
+
+    const included = allowance.includedHours;
+    const used = allowance.usedHours;
+    const rem = allowance.remainingHours;
+    const pct = Math.min(100, Math.round((rem / Math.max(1, included)) * 100));
 
     const allwEl = document.getElementById('sidebar-plan-allowance');
     const progEl = document.getElementById('sidebar-plan-progress');
@@ -550,7 +553,13 @@ const App = {
 
     if (allwEl) allwEl.innerText = `${included} hrs allowance`;
     if (progEl) progEl.style.width = `${pct}%`;
-    if (remEl) remEl.innerText = `${rem.toFixed(1)} hrs free balance`;
+    if (remEl) {
+      if (allowance.overageHours > 0) {
+        remEl.innerHTML = `<span style="color: #ea580c; font-weight: 800;">${allowance.overageHours.toFixed(1)}h overage</span> (₹${allowance.overageFee})`;
+      } else {
+        remEl.innerText = `${rem.toFixed(1)} hrs free balance`;
+      }
+    }
   },
 
   openRbacMatrixModal() {
