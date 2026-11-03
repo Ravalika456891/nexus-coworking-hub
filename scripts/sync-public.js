@@ -36,6 +36,8 @@ copyFile(path.join(root, 'meeting-rooms.html'), path.join(pub, 'meeting-rooms.ht
 copyFile(path.join(root, 'meeting-rooms.html'), path.join(pub, 'index.html'));
 copyFile(path.join(root, 'index.html'), path.join(pub, 'landing.html'));
 copyFile(path.join(root, 'cancellation.js'), path.join(pub, 'cancellation.js'));
+copyFile(path.join(root, 'creditService.js'), path.join(pub, 'creditService.js'));
+copyFile(path.join(root, 'billingService.js'), path.join(pub, 'billingService.js'));
 
 // Remove conflicting directory folders if they exist to prevent cleanUrls loops
 const appDir = path.join(pub, 'app');

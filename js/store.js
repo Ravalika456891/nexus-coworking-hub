@@ -1683,8 +1683,16 @@ class NexusStore {
 
   getMonthlyAllowance(startupId = null, targetMonth = null) {
     const sId = startupId || (this.getActiveStartup ? (this.getActiveStartup()?.id) : this.activeFounderId) || 'STP-XYZ';
-    const startup = this.getStartupById(sId) || (this.getStartups() || []).find(s => s.id === sId) || { id: sId, name: 'Startup', includedMeetingHours: 15 };
+    const startup = this.getStartupById(sId) || (this.getStartups() || []).find(s => s.id === sId) || { id: sId, name: 'Startup', includedMeetingHours: 15, subscriptionPlan: 'Startup Plan' };
     
+    // Delegate to unified creditService (Single Source of Truth)
+    if (typeof window !== 'undefined' && window.creditService && window.creditService.getMonthlyAllowance) {
+      const rooms = this.getMeetingRooms() || [];
+      const allowance = window.creditService.getMonthlyAllowance(startup, rooms, targetMonth, startup.topUps || []);
+      startup.usedMeetingHours = allowance.usedHours;
+      return allowance;
+    }
+
     // Determine target month in IST (YYYY-MM)
     let mStr = targetMonth;
     if (!mStr) {
@@ -1698,6 +1706,7 @@ class NexusStore {
     const monthName = monthNames[mNum] || mStr;
 
     const includedHours = Number(startup.includedMeetingHours !== undefined ? startup.includedMeetingHours : 15);
+    const planCredits = includedHours * 10;
     
     // Calculate total hours booked in this specific calendar month across all rooms for this startup
     let monthBookedHours = 0;
@@ -1724,27 +1733,53 @@ class NexusStore {
     });
 
     monthBookedHours = Number(monthBookedHours.toFixed(1));
+    const usedCredits = Math.round(monthBookedHours * 10);
     const remainingHours = Math.max(0, Number((includedHours - monthBookedHours).toFixed(1)));
+    const remainingCredits = Math.round(remainingHours * 10);
     const overageHours = Math.max(0, Number((monthBookedHours - includedHours).toFixed(1)));
-    const hourlyRate = Number(startup.additionalHourRate || startup.overageHourlyRate || 1500);
+    const overageCredits = Math.round(overageHours * 10);
+    const hourlyRate = 1500; // Fixed overage rate: ₹1,500/hr
     const overageFee = Math.round(overageHours * hourlyRate);
 
     // Keep startup model synchronized with active month
     startup.usedMeetingHours = monthBookedHours;
 
+    const pctUsed = planCredits > 0 ? Math.min(100, Math.round((usedCredits / planCredits) * 100)) : 0;
+    const status = pctUsed >= 100 ? 'danger' : pctUsed >= 80 ? 'warning' : 'normal';
+    const statusColor = status === 'danger' ? '#EF4444' : status === 'warning' ? '#F59E0B' : '#10B981';
+
     return {
       startupId: sId,
       startupName: startup.name,
+      planName: startup.subscriptionPlan || startup.plan || 'Startup Plan',
       month: mStr,
       monthName,
       monthLabel: monthName,
       includedHours,
+      planCredits,
+      totalTopUpCredits: 0,
+      totalAvailableCredits: planCredits,
+      totalAvailableHours: includedHours,
       usedHours: monthBookedHours,
+      usedCredits,
       remainingHours,
+      remainingCredits,
       overageHours,
+      overageCredits,
       hourlyRate,
       overageFee,
-      bookingsCount: monthBookingsCount
+      hourlyOverageRate: 1500,
+      creditOverageRate: 150,
+      hourlyTopUpRate: 500,
+      creditTopUpRate: 50,
+      pctUsed,
+      status,
+      statusColor,
+      statusLabel: status === 'danger' ? 'Quota Exceeded' : status === 'warning' ? 'Approaching Limit' : 'On Track',
+      showOverageWarning: pctUsed >= 80 || overageHours > 0,
+      bookingsCount: monthBookingsCount,
+      roomBreakdown: [],
+      ledger: []
     };
   }
 

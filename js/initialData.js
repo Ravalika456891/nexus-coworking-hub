@@ -18,6 +18,7 @@ window.INITIAL_DATA = {
   startups: [
     {
       id: "STP-01",
+      subscriptionPlan: "Growth Plan",
       name: "NeuroPulse AI",
       slug: "neuropulse-ai",
       logoEmoji: "🧠",
@@ -79,6 +80,7 @@ window.INITIAL_DATA = {
     },
     {
       id: "STP-02",
+      subscriptionPlan: "Starter Plan",
       name: "BioGenic Health",
       slug: "biogenic-health",
       logoEmoji: "🧬",
@@ -140,6 +142,7 @@ window.INITIAL_DATA = {
     },
     {
       id: "STP-03",
+      subscriptionPlan: "Enterprise Scale Plan",
       name: "FinEdge Protocol",
       slug: "finedge-protocol",
       logoEmoji: "💳",
@@ -201,6 +204,7 @@ window.INITIAL_DATA = {
     },
     {
       id: "STP-04",
+      subscriptionPlan: "Starter Plan",
       name: "Solarix CleanTech",
       slug: "solarix-cleantech",
       logoEmoji: "☀️",
@@ -262,6 +266,7 @@ window.INITIAL_DATA = {
     },
     {
       id: "STP-05",
+      subscriptionPlan: "Micro Plan",
       name: "Kredo Logistics",
       slug: "kredo-logistics",
       logoEmoji: "🚚",
@@ -323,6 +328,7 @@ window.INITIAL_DATA = {
     },
     {
       id: "STP-06",
+      subscriptionPlan: "Micro Plan",
       name: "QuantZeta Labs",
       slug: "quantzeta-labs",
       logoEmoji: "⚛️",
@@ -383,6 +389,7 @@ window.INITIAL_DATA = {
     },
     {
       id: "STP-07",
+      subscriptionPlan: "Incubator Track",
       name: "AgriDrone Robotics",
       slug: "agridrone-robotics",
       logoEmoji: "🌾",
@@ -444,6 +451,7 @@ window.INITIAL_DATA = {
     {
       id: "STP-XYZ",
       name: "XYZ Technologies",
+      subscriptionPlan: "Startup Plan",
       slug: "xyz-technologies",
       logoEmoji: "⚡",
       category: "Enterprise AI & Cloud Automation",
@@ -528,6 +536,7 @@ window.INITIAL_DATA = {
     },
     {
       id: "STP-010",
+      subscriptionPlan: "Starter Plan",
       name: "RJ Groups",
       slug: "rj-groups",
       logoEmoji: "🚀",
@@ -574,6 +583,7 @@ window.INITIAL_DATA = {
     },
     {
       id: "STP-09",
+      subscriptionPlan: "Starter Plan",
       name: "JR Groups",
       slug: "jr-groups",
       logoEmoji: "🚀",

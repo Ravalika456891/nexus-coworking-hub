@@ -19,6 +19,11 @@ const MIME_TYPES = {
 const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.avif', '.svg', '.ico']);
 
 const db = require('./db');
+const creditService = require('./creditService');
+const billingService = require('./billingService');
+
+// In-memory Idempotency Store for Top-up & Payment transactions
+const IDEMPOTENCY_CACHE = new Map();
 
 const liveReloadClients = new Set();
 
@@ -257,6 +262,196 @@ async function handleApi(req, res, parsedUrl) {
       const previewOnly = Boolean(body.previewOnly);
       const result = await db.generateInvoicesBatchAtomic({ billingPeriod, previewOnly });
       return sendJson(res, result.ok ? 200 : 400, result);
+    }
+
+    // -----------------------------------------------------------
+    // Single Source of Truth Credit & Allowance Endpoints
+    // -----------------------------------------------------------
+    if (pathname === '/api/credits/allowance' && req.method === 'GET') {
+      const startupId = searchParams.get('startupId') || req.headers['x-startup-id'] || 'STP-XYZ';
+      const month = searchParams.get('month') || undefined;
+      const appState = await db.getAppState();
+      const startups = (appState && appState.startups) ? appState.startups : [];
+      const rooms = (appState && appState.meetingRooms) ? appState.meetingRooms : [];
+      const startup = startups.find(s => s.id === startupId) || { id: startupId, name: 'Startup', includedMeetingHours: 15, subscriptionPlan: 'Startup Plan' };
+
+      const allowance = creditService.getMonthlyAllowance(startup, rooms, month, startup.topUps || []);
+      return sendJson(res, 200, { ok: true, allowance });
+    }
+
+    if (pathname === '/api/credits/ledger' && req.method === 'GET') {
+      const startupId = searchParams.get('startupId') || req.headers['x-startup-id'] || 'STP-XYZ';
+      const month = searchParams.get('month') || undefined;
+      const appState = await db.getAppState();
+      const startups = (appState && appState.startups) ? appState.startups : [];
+      const rooms = (appState && appState.meetingRooms) ? appState.meetingRooms : [];
+      const startup = startups.find(s => s.id === startupId) || { id: startupId, name: 'Startup', includedMeetingHours: 15, subscriptionPlan: 'Startup Plan' };
+
+      const allowance = creditService.getMonthlyAllowance(startup, rooms, month, startup.topUps || []);
+      return sendJson(res, 200, { ok: true, ledger: allowance.ledger, balance: allowance.remainingCredits });
+    }
+
+    if (pathname === '/api/credits/topup' && req.method === 'POST') {
+      const body = await parseJsonBody(req);
+      const { startupId, credits, hours, amount, packTitle, paymentMethod, idempotencyKey } = body;
+
+      if (!startupId || !credits || !amount) {
+        return sendJson(res, 400, { ok: false, error: 'startupId, credits, and amount are required' });
+      }
+
+      // 1. Idempotency Check
+      if (idempotencyKey && IDEMPOTENCY_CACHE.has(idempotencyKey)) {
+        const cached = IDEMPOTENCY_CACHE.get(idempotencyKey);
+        return sendJson(res, 200, { ok: true, idempotentReplay: true, ...cached });
+      }
+
+      const appState = await db.getAppState();
+      if (!appState) {
+        return sendJson(res, 500, { ok: false, error: 'Database state unavailable' });
+      }
+
+      const startups = appState.startups || [];
+      const startup = startups.find(s => s.id === startupId);
+      if (!startup) {
+        return sendJson(res, 404, { ok: false, error: 'Startup not found' });
+      }
+
+      const now = new Date();
+      const todayIST = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+      const validityDays = Number(body.validityDays) || creditService.DEFAULT_TOPUP_VALIDITY_DAYS;
+      const expDateObj = new Date(now.getTime() + validityDays * 24 * 60 * 60 * 1000);
+      const expiresAt = expDateObj.toISOString().split('T')[0];
+
+      // 2. Generate consecutive GST Invoice
+      if (!Array.isArray(appState.invoices)) appState.invoices = [];
+      const nextInvNum = billingService.generateNextInvoiceNumber(appState.invoices, todayIST);
+      const gstCalc = billingService.calculateGST(amount, startup.gstin || '29AAACX9920M1Z4');
+
+      const invoice = {
+        id: nextInvNum,
+        startupId: startup.id,
+        startupName: startup.name,
+        issueDate: todayIST,
+        dueDate: todayIST,
+        billingPeriod: new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(now),
+        lineItems: [
+          {
+            desc: `Meeting Room Credit Top-up (${packTitle || 'Top-up Pack'} - ${hours || credits / 10} hrs / ${credits} credits)`,
+            qty: 1,
+            rate: amount,
+            amount: amount,
+            sac: '997212'
+          }
+        ],
+        subtotal: amount,
+        taxType: gstCalc.taxType,
+        cgstAmount: gstCalc.cgstAmount,
+        sgstAmount: gstCalc.sgstAmount,
+        igstAmount: gstCalc.igstAmount,
+        taxGst: gstCalc.totalGst,
+        total: gstCalc.totalAmount,
+        amountInWords: billingService.numberToWordsIndian(gstCalc.totalAmount),
+        status: 'Paid',
+        paymentMethod: paymentMethod || 'UPI',
+        paidAt: now.toISOString(),
+        receiptUrl: `/receipts/${nextInvNum}`
+      };
+
+      appState.invoices.unshift(invoice);
+
+      // 3. Add top-up credit bucket entry
+      if (!Array.isArray(startup.topUps)) startup.topUps = [];
+      const topUpEntry = {
+        id: `TOPUP-${Date.now()}`,
+        purchasedAt: now.toISOString(),
+        date: todayIST,
+        time: new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: false }).format(now),
+        credits: Number(credits),
+        remainingCredits: Number(credits),
+        packTitle: packTitle || 'Top-up Pack',
+        invoiceId: invoice.id,
+        expiresAt,
+        amount,
+        paymentMethod: paymentMethod || 'UPI'
+      };
+      startup.topUps.push(topUpEntry);
+
+      // 4. Save state
+      await db.saveAppState(appState);
+
+      const allowance = creditService.getMonthlyAllowance(startup, appState.meetingRooms || [], todayIST.substring(0, 7), startup.topUps);
+
+      const responsePayload = {
+        message: `Successfully credited ${credits} credits (${(credits / 10).toFixed(1)} hrs) to ${startup.name}.`,
+        topUp: topUpEntry,
+        invoice,
+        allowance
+      };
+
+      if (idempotencyKey) {
+        IDEMPOTENCY_CACHE.set(idempotencyKey, responsePayload);
+      }
+
+      broadcastMeetingRoomUpdate({ action: 'topup_credited', startupId, credits });
+      return sendJson(res, 200, { ok: true, ...responsePayload });
+    }
+
+    if (pathname === '/api/invoices/void' && req.method === 'POST') {
+      const userRole = req.headers['x-user-role'] || 'super_admin';
+      const body = await parseJsonBody(req);
+      const { invoiceId, reason } = body;
+
+      const appState = await db.getAppState();
+      const invoices = (appState && appState.invoices) ? appState.invoices : [];
+      const invoice = invoices.find(i => i.id === invoiceId);
+
+      if (!invoice) {
+        return sendJson(res, 404, { ok: false, error: 'Invoice not found' });
+      }
+
+      const voidResult = billingService.voidInvoice(invoice, reason, userRole, 'Staff Admin');
+      if (!voidResult.success) {
+        return sendJson(res, 403, { ok: false, error: voidResult.message });
+      }
+
+      await db.saveAppState(appState);
+      return sendJson(res, 200, { ok: true, message: `Invoice #${invoiceId} voided successfully.`, invoice });
+    }
+
+    if (pathname === '/api/billing/profile' && req.method === 'POST') {
+      const userRole = req.headers['x-user-role'] || 'founder';
+      const body = await parseJsonBody(req);
+      const { startupId, legalName, gstin, billingAddress, state, invoiceEmails } = body;
+
+      const isAuthorized = userRole === 'admin' || userRole === 'super_admin' || userRole === 'founder' || userRole === 'company_admin';
+      if (!isAuthorized) {
+        return sendJson(res, 403, { ok: false, error: 'Forbidden: Only company admin or staff can update billing profile.' });
+      }
+
+      if (gstin && !billingService.validateGSTIN(gstin)) {
+        return sendJson(res, 400, { ok: false, error: 'Invalid GSTIN format. Expected 15-character alphanumeric format (e.g. 29AAACX9920M1Z4).' });
+      }
+
+      const appState = await db.getAppState();
+      const startups = (appState && appState.startups) ? appState.startups : [];
+      const startup = startups.find(s => s.id === startupId);
+
+      if (!startup) {
+        return sendJson(res, 404, { ok: false, error: 'Startup not found' });
+      }
+
+      startup.legalName = legalName || startup.legalName;
+      if (gstin) startup.gstin = gstin.trim().toUpperCase();
+      if (billingAddress) startup.billingAddress = billingAddress;
+      if (state) startup.state = state;
+      if (invoiceEmails) startup.invoiceEmails = invoiceEmails;
+
+      await db.saveAppState(appState);
+      return sendJson(res, 200, { ok: true, message: 'Billing profile updated successfully.', startup });
+    }
+
+    if (pathname === '/api/billing/audit-logs' && req.method === 'GET') {
+      return sendJson(res, 200, { ok: true, auditLogs: billingService.AUDIT_LOGS });
     }
 
     if ((pathname === '/api/dashboard/summary' || pathname === '/api/startup/dashboard-summary') && req.method === 'GET') {

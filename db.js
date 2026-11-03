@@ -6,6 +6,7 @@ const fs = require('fs');
 const vm = require('vm');
 const https = require('https');
 const cancellation = require('./cancellation');
+const creditService = require('./creditService');
 
 // On Windows, ensure Atlas SRV resolution works across ISP/local DNS
 try {
@@ -2759,11 +2760,14 @@ async function getStartupDashboardSummary(requestedStartupId, requestedMonth, ro
     if (!isOccupied) availableRoomsCount++;
   });
 
-  // Remaining credits
-  const totalCredits = startup.meetingRoomAllowance || 120;
-  const usedCredits = startup.usedMeetingHours || 40;
-  const remainingCredits = Math.max(0, totalCredits - usedCredits);
-  const remainingPercent = Math.round((remainingCredits / totalCredits) * 100);
+  // Single Source of Truth Credit Allowance via creditService
+  const creditAllowance = creditService.getMonthlyAllowance(startup, meetingRooms, targetMonth, startup.topUps || []);
+  const totalCredits = creditAllowance.totalAvailableCredits;
+  const usedCredits = creditAllowance.usedCredits;
+  const remainingCredits = creditAllowance.remainingCredits;
+  const remainingPercent = creditAllowance.pctUsed; // Direction: USED
+  const remainingHours = creditAllowance.remainingHours;
+  const usedHours = creditAllowance.usedHours;
 
   // Pending requests
   const pendingRequests = startupBookings.filter(b => b.status === 'Pending');

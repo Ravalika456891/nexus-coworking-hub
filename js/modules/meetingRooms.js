@@ -2286,529 +2286,807 @@ const MeetingRoomsModule = {
     return this.renderSchedulerView(data);
   },
 
-  // Tab 4: Credits & Billing View (Dynamic Quota Tracker, SVG Donut, Live Ledger, Real Invoices & Top-Up)
+  // Tab 4: Credits & Billing View (Single Source of Truth, Quota Tracker, Reconciled Ledger, GST Invoices & Top-Up)
+  creditsBillingSubTab: 'overview', // 'overview' | 'ledger' | 'invoices' | 'profile'
+  creditsBillingMonth: null, // null defaults to current IST month
+  ledgerTypeFilter: 'all',
+  ledgerSearch: '',
+  invoiceStatusFilter: 'all',
+  invoiceSearch: '',
+
+  setCreditsBillingSubTab(tab) {
+    this.creditsBillingSubTab = tab;
+    this.render();
+  },
+
+  setCreditsBillingMonth(month) {
+    this.creditsBillingMonth = month;
+    this.render();
+  },
+
+  setLedgerTypeFilter(type) {
+    this.ledgerTypeFilter = type;
+    this.render();
+  },
+
+  setLedgerSearch(q) {
+    this.ledgerSearch = q;
+    this.render();
+    const input = document.getElementById('ledger-search-input');
+    if (input) {
+      input.focus();
+      input.value = q;
+      input.setSelectionRange(q.length, q.length);
+    }
+  },
+
+  setInvoiceStatusFilter(status) {
+    this.invoiceStatusFilter = status;
+    this.render();
+  },
+
+  setInvoiceSearch(q) {
+    this.invoiceSearch = q;
+    this.render();
+    const input = document.getElementById('invoice-search-input');
+    if (input) {
+      input.focus();
+      input.value = q;
+      input.setSelectionRange(q.length, q.length);
+    }
+  },
+
+  exportLedgerCSV() {
+    const startup = this.getMyStartup();
+    const istNow = this.getISTNow();
+    const targetMonth = this.creditsBillingMonth || istNow.todayStr.substring(0, 7);
+    const rooms = this.getRooms();
+    const cs = (typeof window !== 'undefined' && window.creditService) ? window.creditService : require('../../creditService');
+    const bs = (typeof window !== 'undefined' && window.billingService) ? window.billingService : require('../../billingService');
+
+    const allowance = cs.getMonthlyAllowance(startup, rooms, targetMonth, startup.topUps || []);
+    const ledger = allowance.ledger || [];
+
+    const headers = ['Date', 'Time', 'Type', 'Description', 'Booking Ref', 'Credits', 'Hours', 'Running Balance Credits', 'Running Balance Hours', 'Expires On'];
+    const rows = [headers.join(',')];
+
+    ledger.forEach(entry => {
+      const row = [
+        bs.sanitizeCSVCell(entry.displayDate || entry.date),
+        bs.sanitizeCSVCell(entry.time),
+        bs.sanitizeCSVCell(entry.typeLabel || entry.type),
+        bs.sanitizeCSVCell(entry.description),
+        bs.sanitizeCSVCell(entry.bookingRef || 'N/A'),
+        bs.sanitizeCSVCell(entry.creditsDisplay),
+        bs.sanitizeCSVCell(entry.hoursDisplay),
+        bs.sanitizeCSVCell(entry.runningBalanceCredits),
+        bs.sanitizeCSVCell(entry.runningBalanceHours),
+        bs.sanitizeCSVCell(entry.expiresAt || 'N/A')
+      ];
+      rows.push(row.join(','));
+    });
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + encodeURIComponent(rows.join('\n'));
+    const link = document.createElement('a');
+    link.setAttribute('href', csvContent);
+    link.setAttribute('download', `nexus-credits-ledger-${targetMonth}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    if (typeof App !== 'undefined' && App.showToast) {
+      App.showToast(`📊 Exported credit ledger for ${targetMonth} (${ledger.length} entries).`, 'success');
+    }
+  },
+
   renderCreditsAndBillingView(data) {
     const startup = data.myStartup || (window.store && window.store.getActiveStartup ? window.store.getActiveStartup() : null) || {
       id: 'STP-XYZ',
       name: 'XYZ Technologies',
-      subscriptionPlan: 'Scale-up Venture',
+      subscriptionPlan: 'Startup Plan',
       includedMeetingHours: 15
     };
 
-    // Current month target in IST
     const istNow = this.getISTNow();
-    const currMonth = istNow.todayStr.substring(0, 7); // e.g. "2026-11"
+    const currentMonth = istNow.todayStr.substring(0, 7);
+    const targetMonth = this.creditsBillingMonth || currentMonth;
+    const rooms = this.getRooms();
 
-    const allowance = (window.store && window.store.getMonthlyAllowance)
-      ? window.store.getMonthlyAllowance(startup.id, currMonth)
-      : {
-          includedHours: startup.includedMeetingHours || 15,
-          usedHours: 10.5,
-          remainingHours: 4.5,
-          overageHours: 0,
-          hourlyRate: 500,
-          overageFee: 0,
-          monthName: 'Nov',
-          monthLabel: 'Nov 2026'
-        };
+    // Use unified server-side creditService (Single Source of Truth)
+    const cs = (typeof window !== 'undefined' && window.creditService) ? window.creditService : require('../../creditService');
+    const bs = (typeof window !== 'undefined' && window.billingService) ? window.billingService : require('../../billingService');
 
-    const includedHours = Number(allowance.includedHours || 15);
-    const usedHours = Number(allowance.usedHours || 0);
-    const remainingHours = Number(allowance.remainingHours || 0);
-    const overageHours = Number(allowance.overageHours || 0);
-    const overageFee = Number(allowance.overageFee || 0);
+    const allowance = cs.getMonthlyAllowance(startup, rooms, targetMonth, startup.topUps || []);
+    const subTab = this.creditsBillingSubTab || 'overview';
 
-    // Standard Conversion: 1 Hour = 10 Credits
-    const totalCredits = includedHours * 10;
-    const usedCredits = Number((usedHours * 10).toFixed(0));
-    const remainingCredits = Number((remainingHours * 10).toFixed(0));
-
-    const pctUsed = Math.min(100, Math.round((usedHours / Math.max(0.1, includedHours)) * 100));
-    const pctRemaining = Math.max(0, 100 - pctUsed);
-    const planName = startup.subscriptionPlan || 'Scale-up Venture';
-
-    // Donut SVG circumference = 2 * PI * 48 = 301.59
+    // SVG Donut calculation - SHOW USED
     const circumference = 301.59;
-    const strokeOffset = Math.max(0, (circumference * (1 - (pctUsed / 100))).toFixed(2));
+    const strokeOffset = Math.max(0, (circumference * (1 - (allowance.pctUsed / 100))).toFixed(2));
 
-    // Dynamic Room Breakdown from active startup bookings
-    const activeBookings = (data.myBookings || []).filter(b => b.status !== 'Cancelled');
-    const roomBreakdown = {};
-    activeBookings.forEach(b => {
-      const rName = b.roomName || 'Meeting Space';
-      const dur = this.calculateBookingDuration(b.startTime, b.endTime);
-      if (!roomBreakdown[rName]) {
-        roomBreakdown[rName] = { name: rName, hours: 0, count: 0 };
-      }
-      roomBreakdown[rName].hours += dur;
-      roomBreakdown[rName].count += 1;
-    });
+    // User Role for Permission Checks
+    const rawRole = (window.store && window.store.currentRole) || 'founder';
+    const currentRole = (window.store && window.store.normalizeRole) ? window.store.normalizeRole(rawRole) : rawRole;
+    const isAdmin = currentRole === 'super_admin' || currentRole === 'admin' || currentRole === 'incubator_admin' || currentRole === 'finance_admin';
 
-    const roomBreakdownList = Object.values(roomBreakdown).sort((a, b) => b.hours - a.hours);
-    const colorPalette = ['#4F3FE0', '#059669', '#D97706', '#2563EB', '#8B5CF6', '#EC4899', '#06B6D4'];
-
-    // Real Invoices & Receipts for this startup
+    // Invoices list for this startup
     const allInvoices = (window.store && window.store.getInvoices) ? window.store.getInvoices() : [];
-    const startupInvoices = allInvoices.filter(inv => !inv.startupId || inv.startupId === startup.id || inv.startupName === startup.name);
-    // If none found for this startup, fallback to recent invoices
-    const displayInvoices = startupInvoices.length > 0 ? startupInvoices : allInvoices.slice(0, 4);
+    let startupInvoices = allInvoices.filter(inv => !inv.startupId || inv.startupId === startup.id || inv.startupName === startup.name);
+    if (startupInvoices.length === 0) startupInvoices = allInvoices.slice(0, 5);
 
     return `
-      <div style="display: flex; flex-direction: column; gap: 24px; animation: fadeIn 0.25s ease;">
-        <!-- Top Page Header with 3D Card Illustration and Purchase Button -->
+      <div style="display: flex; flex-direction: column; gap: 20px; animation: fadeIn 0.25s ease;">
+        <!-- Top Page Header -->
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
           <div>
             <div style="font-size: 11px; font-weight: 800; letter-spacing: 0.08em; color: var(--text-muted, #8A90A2); text-transform: uppercase; margin-bottom: 4px;">
-              Billing &amp; Credits Management
+              Billing &amp; Meeting Room Credits
             </div>
             <h2 style="font-size: 26px; font-weight: 900; color: var(--text-primary, #111827); margin: 0; letter-spacing: -0.02em;">
               Billing &amp; Meeting Room Credits
             </h2>
             <p style="font-size: 13px; color: var(--text-muted, #64748B); margin: 4px 0 0 0;">
-              Live quota tracker, hourly room allowance, real-time consumption ledger, and GST tax invoices.
+              Single source of truth for credit allowances, strictly segregated monthly reset, GST invoices, and top-up checkout.
             </p>
           </div>
 
-          <div style="display: flex; align-items: center; gap: 14px;">
-            <!-- 3D Floating Credit Card + Coin Illustration -->
-            <div style="width: 112px; height: 64px; flex-shrink: 0;" class="hide-mobile">
-              <svg viewBox="0 0 140 90" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%; filter: drop-shadow(0 4px 10px rgba(79, 63, 224, 0.15));">
-                <ellipse cx="65" cy="45" rx="50" ry="30" fill="#C7D2FE" fill-opacity="0.4" filter="blur(14px)" />
-                <g transform="rotate(-7 55 42)">
-                  <rect x="15" y="12" width="82" height="50" rx="9" fill="url(#cardGradBillMod)" />
-                  <rect x="25" y="24" width="13" height="10" rx="2" fill="#FCD34D" />
-                  <line x1="25" y1="29" x2="38" y2="29" stroke="#F59E0B" stroke-width="0.8" />
-                  <line x1="31.5" y1="24" x2="31.5" y2="34" stroke="#F59E0B" stroke-width="0.8" />
-                  <rect x="25" y="44" width="36" height="4" rx="2" fill="white" fill-opacity="0.85" />
-                  <circle cx="80" cy="44" r="5.5" fill="#F472B6" fill-opacity="0.85" />
-                  <circle cx="87" cy="44" r="5.5" fill="#FBBF24" fill-opacity="0.85" />
-                </g>
-                <g transform="translate(88, 40)">
-                  <circle cx="15" cy="15" r="13" fill="#FBBF24" stroke="#F59E0B" stroke-width="1.2" />
-                  <circle cx="15" cy="15" r="9.5" fill="#FDE68A" />
-                  <text x="15" y="19" font-size="11" font-weight="bold" text-anchor="middle" fill="#D97706">₹</text>
-                </g>
-                <defs>
-                  <linearGradient id="cardGradBillMod" x1="15" y1="12" x2="97" y2="62" gradientUnits="userSpaceOnUse">
-                    <stop stop-color="#6366F1" />
-                    <stop offset="0.5" stop-color="#4F46E5" />
-                    <stop offset="1" stop-color="#3B82F6" />
-                  </linearGradient>
-                </defs>
-              </svg>
+          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <!-- Month Selector -->
+            <div style="display: flex; align-items: center; gap: 6px; background: var(--bg-surface-elevated, #F8FAFC); border: 1px solid var(--border-subtle, #ECEEF4); padding: 4px 10px; border-radius: 10px;">
+              <span style="font-size: 12px;">📅</span>
+              <select onchange="MeetingRoomsModule.setCreditsBillingMonth(this.value)" style="border: none; background: transparent; font-size: 12px; font-weight: 800; color: var(--text-primary, #111827); cursor: pointer;" aria-label="Select billing month">
+                <option value="2026-11" ${targetMonth === '2026-11' ? 'selected' : ''}>November 2026 (Active)</option>
+                <option value="2026-10" ${targetMonth === '2026-10' ? 'selected' : ''}>October 2026</option>
+                <option value="2026-09" ${targetMonth === '2026-09' ? 'selected' : ''}>September 2026</option>
+              </select>
             </div>
 
-            <!-- Primary CTA Button -->
+            <!-- Purchase Extra Credits CTA -->
             <button
               type="button"
               onclick="MeetingRoomsModule.openCreditTopUpModal('${startup.id}')"
-              style="background: #4F3FE0; color: #ffffff; border: none; padding: 11px 22px; border-radius: 12px; font-size: 13px; font-weight: 800; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 14px rgba(79, 63, 224, 0.25); display: inline-flex; align-items: center; gap: 8px;"
-              onmouseover="this.style.background='#4335C9'; this.style.transform='translateY(-1px)'"
-              onmouseout="this.style.background='#4F3FE0'; this.style.transform='translateY(0)'"
+              class="btn btn-primary"
+              style="background: #4F3FE0; border-color: #4338CA; color: #ffffff; padding: 10px 20px; border-radius: 12px; font-size: 13px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 14px rgba(79, 63, 224, 0.25);"
             >
-              <span style="font-size: 16px; font-weight: 900;">+</span>
+              <span style="font-size: 15px;">+</span>
               <span>Purchase Extra Credits</span>
             </button>
           </div>
         </div>
 
-        <!-- Section: Three Modern KPI Cards -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px;">
-          <!-- Card 1: Available Credit Balance -->
-          <div class="nexus-billing-kpi-card">
-            <div>
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                  <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(79, 63, 224, 0.1); color: #4F3FE0; display: flex; align-items: center; justify-content: center; font-size: 22px;">
-                    🪙
-                  </div>
-                  <div>
-                    <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted, #8A90A2);">Remaining Balance</span>
-                    <div style="font-size: 28px; font-weight: 900; color: var(--text-primary, #111827); margin-top: 2px;">
-                      ${remainingCredits} <span style="font-size: 15px; font-weight: 700; color: var(--text-muted, #64748B);">credits</span>
-                    </div>
-                  </div>
-                </div>
-                <span class="badge" style="background: rgba(79, 63, 224, 0.1); color: #4F3FE0; font-weight: 800; font-size: 11px; padding: 4px 10px; border-radius: 999px;">
-                  ${pctRemaining}% left
-                </span>
-              </div>
-
-              <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted, #64748B); margin-top: 16px; font-weight: 600;">
-                <span>Out of ${totalCredits} credits quota</span>
-                <span style="font-weight: 800; color: #4F3FE0;">${remainingHours.toFixed(1)} hrs free balance</span>
-              </div>
-
-              <!-- Progress Bar -->
-              <div style="width: 100%; height: 8px; background: var(--bg-surface-elevated, #EEEBFF); border-radius: 999px; margin-top: 8px; overflow: hidden;">
-                <div style="height: 100%; background: linear-gradient(90deg, #5937F5, #4F3FE0); border-radius: 999px; width: ${pctRemaining}%; transition: width 0.4s ease;"></div>
-              </div>
-            </div>
-
-            <div style="display: flex; justify-content: space-between; font-size: 11.5px; font-weight: 600; color: var(--text-muted, #8A90A2); padding-top: 14px; margin-top: 14px; border-top: 1px solid var(--border-subtle, #ECEEF4);">
-              <span>${usedCredits} credits consumed</span>
-              <span>10 credits = 1.0 hour</span>
-            </div>
-          </div>
-
-          <!-- Card 2: Monthly Free Hours -->
-          <div class="nexus-billing-kpi-card">
-            <div>
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                  <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(16, 185, 129, 0.1); color: #059669; display: flex; align-items: center; justify-content: center; font-size: 22px;">
-                    ⏱️
-                  </div>
-                  <div>
-                    <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted, #8A90A2);">Monthly Free Hours</span>
-                    <div style="font-size: 28px; font-weight: 900; color: #059669; margin-top: 2px;">
-                      ${remainingHours.toFixed(1)} <span style="font-size: 15px; font-weight: 700; color: #059669;">hrs left</span>
-                    </div>
-                  </div>
-                </div>
-                <span class="badge" style="background: rgba(16, 185, 129, 0.1); color: #059669; font-weight: 800; font-size: 11px; padding: 4px 10px; border-radius: 999px;">
-                  ${allowance.monthName || 'Nov'} 2026
-                </span>
-              </div>
-
-              <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted, #64748B); margin-top: 16px; font-weight: 600;">
-                <span>${usedHours.toFixed(1)} / ${includedHours.toFixed(1)} hrs consumed</span>
-                <span style="font-weight: 800; color: #059669;">${pctRemaining}% left</span>
-              </div>
-
-              <!-- Progress Bar -->
-              <div style="width: 100%; height: 8px; background: var(--bg-surface-elevated, #E6F4EA); border-radius: 999px; margin-top: 8px; overflow: hidden;">
-                <div style="height: 100%; background: linear-gradient(90deg, #10B981, #059669); border-radius: 999px; width: ${pctRemaining}%; transition: width 0.4s ease;"></div>
-              </div>
-            </div>
-
-            <div style="display: flex; justify-content: space-between; font-size: 11.5px; font-weight: 600; color: var(--text-muted, #8A90A2); padding-top: 14px; margin-top: 14px; border-top: 1px solid var(--border-subtle, #ECEEF4);">
-              <span>Rate: ₹${allowance.hourlyRate || 500}/hr overage</span>
-              <span>${overageHours > 0 ? `<strong style="color: #dc2626;">₹${overageFee.toLocaleString('en-IN')} overage</strong>` : 'Zero overage fees'}</span>
-            </div>
-          </div>
-
-          <!-- Card 3: Subscription Plan -->
-          <div class="nexus-billing-kpi-card">
-            <div>
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                  <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(245, 158, 11, 0.12); color: #D97706; display: flex; align-items: center; justify-content: center; font-size: 22px;">
-                    👑
-                  </div>
-                  <div>
-                    <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted, #8A90A2);">Subscription Plan</span>
-                    <div style="font-size: 22px; font-weight: 900; color: var(--text-primary, #111827); margin-top: 2px;">${planName}</div>
-                  </div>
-                </div>
-                <span style="background: rgba(16, 185, 129, 0.12); color: #059669; font-size: 10px; font-weight: 800; padding: 4px 9px; border-radius: 999px; border: 1px solid rgba(16, 185, 129, 0.25);">
-                  ● ACTIVE
-                </span>
-              </div>
-
-              <p style="font-size: 12px; color: var(--text-muted, #64748B); margin: 14px 0 0 0; font-weight: 500;">
-                Auto-renews next cycle on <strong>1 Dec 2026</strong>
-              </p>
-            </div>
-
-            <!-- 3 mini details -->
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding-top: 14px; margin-top: 14px; border-top: 1px solid var(--border-subtle, #ECEEF4); font-size: 11px;">
+        <!-- Overage Warning Banner (At >= 80% usage or active overage) -->
+        ${allowance.showOverageWarning ? `
+          <div style="background: ${allowance.overageCredits > 0 ? 'rgba(239, 68, 68, 0.08)' : 'rgba(245, 158, 11, 0.1)'}; border: 1.5px solid ${allowance.overageCredits > 0 ? '#EF4444' : '#F59E0B'}; border-radius: 14px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 24px;">${allowance.overageCredits > 0 ? '⚠️' : '⚡'}</span>
               <div>
-                <span style="display: block; font-size: 9.5px; font-weight: 700; color: var(--text-muted, #8A90A2); text-transform: uppercase;">Monthly</span>
-                <span style="font-weight: 800; color: var(--text-primary, #111827);">${includedHours.toFixed(1)} hrs</span>
-              </div>
-              <div>
-                <span style="display: block; font-size: 9.5px; font-weight: 700; color: var(--text-muted, #8A90A2); text-transform: uppercase;">Base quota</span>
-                <span style="font-weight: 800; color: var(--text-primary, #111827);">${totalCredits} credits</span>
-              </div>
-              <div>
-                <span style="display: block; font-size: 9.5px; font-weight: 700; color: var(--text-muted, #8A90A2); text-transform: uppercase;">Top-up</span>
-                <span style="font-weight: 800; color: var(--text-primary, #111827);">₹500 / 10 cr</span>
+                <div style="font-size: 13px; font-weight: 900; color: ${allowance.overageCredits > 0 ? '#B91C1C' : '#B45309'};">
+                  ${allowance.overageCredits > 0 ? `Quota Exceeded! ${allowance.overageHours} hrs (${allowance.overageCredits} cr) overage billed` : `Quota Alert: ${allowance.pctUsed}% of monthly allowance consumed`}
+                </div>
+                <div style="font-size: 11.5px; color: ${allowance.overageCredits > 0 ? '#DC2626' : '#92400E'}; margin-top: 2px;">
+                  Overage penalty rate is <strong>₹1,500/hr</strong>. Top up extra credits now at <strong>₹500/hr</strong> to save ₹1,000/hr on room bookings!
+                </div>
               </div>
             </div>
+            <button
+              type="button"
+              onclick="MeetingRoomsModule.openCreditTopUpModal('${startup.id}')"
+              class="btn btn-sm"
+              style="background: ${allowance.overageCredits > 0 ? '#DC2626' : '#D97706'}; color: #ffffff; border: none; font-weight: 800; font-size: 12px; padding: 6px 16px; border-radius: 8px; cursor: pointer;"
+            >
+              Top Up Now &amp; Save
+            </button>
           </div>
+        ` : ''}
+
+        <!-- Sub-Tab Navigation Bar -->
+        <div style="display: flex; gap: 8px; border-bottom: 2px solid var(--border-subtle, #ECEEF4); padding-bottom: 8px; overflow-x: auto;">
+          <button
+            type="button"
+            onclick="MeetingRoomsModule.setCreditsBillingSubTab('overview')"
+            style="border: none; background: ${subTab === 'overview' ? '#4F3FE0' : 'transparent'}; color: ${subTab === 'overview' ? '#ffffff' : 'var(--text-muted, #64748B)'}; font-size: 12.5px; font-weight: 800; padding: 8px 18px; border-radius: 10px; cursor: pointer; transition: all 0.15s ease;"
+          >
+            📊 Quota &amp; Overview
+          </button>
+          <button
+            type="button"
+            onclick="MeetingRoomsModule.setCreditsBillingSubTab('ledger')"
+            style="border: none; background: ${subTab === 'ledger' ? '#4F3FE0' : 'transparent'}; color: ${subTab === 'ledger' ? '#ffffff' : 'var(--text-muted, #64748B)'}; font-size: 12.5px; font-weight: 800; padding: 8px 18px; border-radius: 10px; cursor: pointer; transition: all 0.15s ease;"
+          >
+            📑 Full Credit Ledger (${allowance.ledger.length})
+          </button>
+          <button
+            type="button"
+            onclick="MeetingRoomsModule.setCreditsBillingSubTab('invoices')"
+            style="border: none; background: ${subTab === 'invoices' ? '#4F3FE0' : 'transparent'}; color: ${subTab === 'invoices' ? '#ffffff' : 'var(--text-muted, #64748B)'}; font-size: 12.5px; font-weight: 800; padding: 8px 18px; border-radius: 10px; cursor: pointer; transition: all 0.15s ease;"
+          >
+            🧾 GST Tax Invoices (${startupInvoices.length})
+          </button>
+          <button
+            type="button"
+            onclick="MeetingRoomsModule.setCreditsBillingSubTab('profile')"
+            style="border: none; background: ${subTab === 'profile' ? '#4F3FE0' : 'transparent'}; color: ${subTab === 'profile' ? '#ffffff' : 'var(--text-muted, #64748B)'}; font-size: 12.5px; font-weight: 800; padding: 8px 18px; border-radius: 10px; cursor: pointer; transition: all 0.15s ease;"
+          >
+            ⚙️ Billing Profile &amp; Plan
+          </button>
         </div>
 
-        <!-- Main 2-Column Section (Donut Meter + Recent Credit Ledger) -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; align-items: start;">
-          <!-- Left Column: Donut Usage & Plan Details -->
-          <div style="display: flex; flex-direction: column; gap: 20px;">
-            <!-- Credit Usage Donut Card -->
+        <!-- TAB 1: OVERVIEW & QUOTA -->
+        ${subTab === 'overview' ? `
+          <!-- Section: Three Modern KPI Cards -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px;">
+            <!-- Card 1: Available Credit Balance -->
+            <div class="nexus-billing-kpi-card">
+              <div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(79, 63, 224, 0.1); color: #4F3FE0; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+                      🪙
+                    </div>
+                    <div>
+                      <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted, #8A90A2);">Available Balance</span>
+                      <div style="font-size: 26px; font-weight: 900; color: var(--text-primary, #111827); margin-top: 2px;">
+                        ${allowance.remainingCredits} <span style="font-size: 14px; font-weight: 700; color: var(--text-muted, #64748B);">credits · ${allowance.remainingHours.toFixed(1)} hrs</span>
+                      </div>
+                    </div>
+                  </div>
+                  <span class="badge" style="background: ${allowance.statusColor}20; color: ${allowance.statusColor}; font-weight: 800; font-size: 11px; padding: 4px 10px; border-radius: 999px;">
+                    ${allowance.statusLabel}
+                  </span>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted, #64748B); margin-top: 16px; font-weight: 600;">
+                  <span>${allowance.usedCredits} credits used (${allowance.pctUsed}%)</span>
+                  <span style="font-weight: 800; color: #4F3FE0;">${allowance.totalAvailableCredits} credits total</span>
+                </div>
+
+                <!-- Progress Bar: Direction SHOW USED -->
+                <div style="width: 100%; height: 8px; background: var(--bg-surface-elevated, #EEEBFF); border-radius: 999px; margin-top: 8px; overflow: hidden;">
+                  <div style="height: 100%; background: ${allowance.statusColor}; border-radius: 999px; width: ${allowance.pctUsed}%; transition: width 0.4s ease;"></div>
+                </div>
+              </div>
+
+              <div style="display: flex; justify-content: space-between; font-size: 11.5px; font-weight: 600; color: var(--text-muted, #8A90A2); padding-top: 14px; margin-top: 14px; border-top: 1px solid var(--border-subtle, #ECEEF4);">
+                <span>10 credits = 1.0 hour</span>
+                <span>Plan: ${allowance.remainingPlanCredits} cr • Top-up: ${allowance.remainingTopUpCredits} cr</span>
+              </div>
+            </div>
+
+            <!-- Card 2: Monthly Free Hours -->
+            <div class="nexus-billing-kpi-card">
+              <div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(16, 185, 129, 0.1); color: #059669; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+                      ⏱️
+                    </div>
+                    <div>
+                      <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted, #8A90A2);">Monthly Free Hours</span>
+                      <div style="font-size: 26px; font-weight: 900; color: #059669; margin-top: 2px;">
+                        ${allowance.remainingHours.toFixed(1)} <span style="font-size: 14px; font-weight: 700; color: #059669;">hrs left · ${allowance.remainingCredits} cr</span>
+                      </div>
+                    </div>
+                  </div>
+                  <span class="badge" style="background: rgba(16, 185, 129, 0.1); color: #059669; font-weight: 800; font-size: 11px; padding: 4px 10px; border-radius: 999px;">
+                    ${allowance.monthLabel}
+                  </span>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted, #64748B); margin-top: 16px; font-weight: 600;">
+                  <span>${allowance.usedHours.toFixed(1)} / ${allowance.totalAvailableHours.toFixed(1)} hrs consumed</span>
+                  <span style="font-weight: 800; color: #059669;">${allowance.pctUsed}% used</span>
+                </div>
+
+                <!-- Progress Bar: Direction SHOW USED -->
+                <div style="width: 100%; height: 8px; background: var(--bg-surface-elevated, #E6F4EA); border-radius: 999px; margin-top: 8px; overflow: hidden;">
+                  <div style="height: 100%; background: ${allowance.statusColor}; border-radius: 999px; width: ${allowance.pctUsed}%; transition: width 0.4s ease;"></div>
+                </div>
+              </div>
+
+              <div style="display: flex; justify-content: space-between; font-size: 11.5px; font-weight: 600; color: var(--text-muted, #8A90A2); padding-top: 14px; margin-top: 14px; border-top: 1px solid var(--border-subtle, #ECEEF4);">
+                <span>Overage: ₹${allowance.hourlyOverageRate}/hr</span>
+                <span>${allowance.overageHours > 0 ? `<strong style="color: #dc2626;">₹${allowance.overageFee.toLocaleString('en-IN')} fee</strong>` : 'Zero overage fees'}</span>
+              </div>
+            </div>
+
+            <!-- Card 3: Single Plan Record -->
+            <div class="nexus-billing-kpi-card">
+              <div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(245, 158, 11, 0.12); color: #D97706; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+                      👑
+                    </div>
+                    <div>
+                      <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted, #8A90A2);">Subscription Plan</span>
+                      <div style="font-size: 22px; font-weight: 900; color: var(--text-primary, #111827); margin-top: 2px;">${allowance.planName}</div>
+                    </div>
+                  </div>
+                  <span style="background: rgba(16, 185, 129, 0.12); color: #059669; font-size: 10px; font-weight: 800; padding: 4px 9px; border-radius: 999px; border: 1px solid rgba(16, 185, 129, 0.25);">
+                    ● ACTIVE
+                  </span>
+                </div>
+
+                <p style="font-size: 12px; color: var(--text-muted, #64748B); margin: 14px 0 0 0; font-weight: 500;">
+                  Plan credits reset at month-end (<strong>${allowance.planExpiryDate}</strong>)
+                </p>
+              </div>
+
+              <!-- 3 mini specs -->
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding-top: 14px; margin-top: 14px; border-top: 1px solid var(--border-subtle, #ECEEF4); font-size: 11px;">
+                <div>
+                  <span style="display: block; font-size: 9.5px; font-weight: 700; color: var(--text-muted, #8A90A2); text-transform: uppercase;">Plan Quota</span>
+                  <span style="font-weight: 800; color: var(--text-primary, #111827);">${allowance.includedHours} hrs</span>
+                </div>
+                <div>
+                  <span style="display: block; font-size: 9.5px; font-weight: 700; color: var(--text-muted, #8A90A2); text-transform: uppercase;">Top-up Rate</span>
+                  <span style="font-weight: 800; color: var(--text-primary, #111827);">₹500 / 10 cr</span>
+                </div>
+                <div>
+                  <span style="display: block; font-size: 9.5px; font-weight: 700; color: var(--text-muted, #8A90A2); text-transform: uppercase;">Overage Rate</span>
+                  <span style="font-weight: 800; color: #dc2626;">₹1,500 / hr</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Main 2-Column: Dynamic Donut + Room Breakdown & Quick Ledger -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; align-items: start;">
+            <!-- Left Column: Donut Meter & Room Breakdown -->
             <div class="nexus-billing-panel">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
                 <h4 style="font-size: 14px; font-weight: 900; color: var(--text-primary, #111827); margin: 0; display: flex; align-items: center; gap: 8px;">
                   <span style="width: 24px; height: 24px; border-radius: 8px; background: rgba(79, 63, 224, 0.1); color: #4F3FE0; display: flex; align-items: center; justify-content: center; font-size: 12px;">📊</span>
-                  <span>Room Quota Consumption (${allowance.monthName || 'Nov'} 2026)</span>
+                  <span>Room Quota Consumption (${allowance.monthLabel})</span>
                 </h4>
-                <span style="font-size: 11.5px; font-weight: 700; color: var(--text-primary, #374151); background: var(--bg-surface-elevated, #F8FAFC); border: 1px solid var(--border-subtle, #ECEEF4); padding: 4px 10px; border-radius: 8px;">
-                  ${allowance.monthLabel || 'November 2026'}
+                <span style="font-size: 11px; font-weight: 800; color: ${allowance.statusColor}; background: ${allowance.statusColor}15; padding: 4px 8px; border-radius: 6px;">
+                  ${allowance.usedHours.toFixed(1)} hrs (${allowance.pctUsed}%) consumed
                 </span>
               </div>
 
               <!-- Donut and Legend -->
               <div style="display: flex; align-items: center; gap: 24px; flex-wrap: wrap;">
-                <!-- Circular SVG Donut -->
+                <!-- Circular SVG Donut (SHOW USED) -->
                 <div style="position: relative; width: 130px; height: 130px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin: auto;">
                   <svg style="width: 100%; height: 100%; transform: rotate(-90deg);" viewBox="0 0 120 120">
                     <circle cx="60" cy="60" r="48" stroke="var(--bg-surface-elevated, #EEEBFF)" stroke-width="13" fill="transparent" />
-                    <circle cx="60" cy="60" r="48" stroke="${overageHours > 0 ? '#EA580C' : '#4F3FE0'}" stroke-width="13" stroke-dasharray="${circumference}" stroke-dashoffset="${strokeOffset}" stroke-linecap="round" fill="transparent" />
+                    <circle cx="60" cy="60" r="48" stroke="${allowance.statusColor}" stroke-width="13" stroke-dasharray="${circumference}" stroke-dashoffset="${strokeOffset}" stroke-linecap="round" fill="transparent" />
                   </svg>
                   <div style="position: absolute; text-align: center;">
-                    <div style="font-size: 22px; font-weight: 900; color: var(--text-primary, #111827); line-height: 1;">${pctUsed}%</div>
-                    <div style="font-size: 10px; color: var(--text-muted, #8A90A2); font-weight: 700; margin-top: 2px;">CONSUMED</div>
+                    <div style="font-size: 22px; font-weight: 900; color: var(--text-primary, #111827); line-height: 1;">${allowance.pctUsed}%</div>
+                    <div style="font-size: 10px; color: var(--text-muted, #8A90A2); font-weight: 800; margin-top: 2px;">CONSUMED</div>
                   </div>
                 </div>
 
-                <!-- Legend Breakdown -->
+                <!-- Legend Breakdown: Strictly sums to consumed total -->
                 <div style="flex: 1; min-width: 170px; display: flex; flex-direction: column; gap: 9px; font-size: 12px;">
-                  ${roomBreakdownList.length > 0 ? roomBreakdownList.map((rb, idx) => `
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                      <div style="display: flex; align-items: center; gap: 7px;">
-                        <div style="width: 8px; height: 8px; border-radius: 999px; background: ${colorPalette[idx % colorPalette.length]};"></div>
-                        <span style="font-weight: 600; color: var(--text-primary, #374151);">${rb.name}</span>
+                  ${allowance.roomBreakdown.length > 0 ? allowance.roomBreakdown.map((rb, idx) => {
+                    const colors = ['#4F3FE0', '#059669', '#D97706', '#2563EB', '#8B5CF6'];
+                    return `
+                      <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div style="display: flex; align-items: center; gap: 7px;">
+                          <div style="width: 8px; height: 8px; border-radius: 999px; background: ${colors[idx % colors.length]};"></div>
+                          <span style="font-weight: 600; color: var(--text-primary, #374151);">${rb.name}</span>
+                        </div>
+                        <span style="font-weight: 800; color: var(--text-primary, #111827);">
+                          ${rb.hours.toFixed(1)} hrs · ${rb.credits} cr
+                        </span>
                       </div>
-                      <span style="font-weight: 800; color: var(--text-primary, #111827);">
-                        ${rb.hours.toFixed(1)} hrs (${(rb.hours * 10).toFixed(0)} cr)
-                      </span>
-                    </div>
-                  `).join('') : `
-                    <div style="font-size: 12px; color: var(--text-muted, #64748B); padding: 8px 0;">No room bookings recorded this month yet.</div>
+                    `;
+                  }).join('') : `
+                    <div style="font-size: 12px; color: var(--text-muted, #64748B); padding: 8px 0;">No room bookings recorded for ${allowance.monthLabel}.</div>
                   `}
 
                   <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px solid var(--border-subtle, #ECEEF4); font-size: 11.5px;">
                     <div style="display: flex; align-items: center; gap: 7px;">
                       <div style="width: 8px; height: 8px; border-radius: 999px; background: #10B981;"></div>
-                      <span style="color: var(--text-muted, #6B7280); font-weight: 600;">${remainingCredits} credits remaining</span>
+                      <span style="color: var(--text-muted, #6B7280); font-weight: 600;">Remaining Balance</span>
                     </div>
-                    <span style="font-weight: 800; color: #059669;">${pctRemaining}%</span>
+                    <span style="font-weight: 800; color: #059669;">${allowance.remainingCredits} cr · ${allowance.remainingHours.toFixed(1)} hrs</span>
                   </div>
-                </div>
-              </div>
-
-              <!-- Dynamic Status Callout Card -->
-              ${overageHours > 0 ? `
-                <div style="margin-top: 18px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 14px; padding: 14px; display: flex; align-items: center; gap: 12px;">
-                  <div style="width: 34px; height: 34px; border-radius: 10px; background: rgba(239, 68, 68, 0.15); color: #DC2626; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0;">
-                    ⚠️
-                  </div>
-                  <div>
-                    <div style="font-size: 12px; font-weight: 800; color: #B91C1C;">Quota Exceeded (${overageHours.toFixed(1)} extra hrs)</div>
-                    <div style="font-size: 11px; color: #DC2626; margin-top: 2px;">An overage fee of ₹${overageFee.toLocaleString('en-IN')} will be billed to your invoice. Purchase a top-up to waive overage penalties.</div>
-                  </div>
-                </div>
-              ` : `
-                <div style="margin-top: 18px; background: rgba(79, 63, 224, 0.06); border: 1px solid rgba(79, 63, 224, 0.18); border-radius: 14px; padding: 14px; display: flex; align-items: center; gap: 12px;">
-                  <div style="width: 34px; height: 34px; border-radius: 10px; background: rgba(79, 63, 224, 0.12); color: #4F3FE0; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0;">
-                    📈
-                  </div>
-                  <div>
-                    <div style="font-size: 12px; font-weight: 800; color: #4F3FE0;">You're on track!</div>
-                    <div style="font-size: 11px; color: #6366F1; margin-top: 2px;">${remainingHours.toFixed(1)} free hours (${pctRemaining}%) of your monthly quota are ready to use.</div>
-                  </div>
-                </div>
-              `}
-            </div>
-
-            <!-- Card: Plan & Billing Details -->
-            <div class="nexus-billing-panel">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                <h4 style="font-size: 14px; font-weight: 900; color: var(--text-primary, #111827); margin: 0; display: flex; align-items: center; gap: 8px;">
-                  <span style="width: 24px; height: 24px; border-radius: 8px; background: rgba(79, 63, 224, 0.1); color: #4F3FE0; display: flex; align-items: center; justify-content: center; font-size: 12px;">📄</span>
-                  <span>Plan &amp; Billing Details</span>
-                </h4>
-                <button type="button" onclick="MeetingRoomsModule.openCreditTopUpModal('${startup.id}')" style="background: none; border: none; font-size: 12px; font-weight: 800; color: #4F3FE0; cursor: pointer;">
-                  Top-up Quota →
-                </button>
-              </div>
-
-              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
-                <div style="padding: 12px; background: var(--bg-surface-elevated, #F8FAFC); border: 1px solid var(--border-subtle, #ECEEF4); border-radius: 12px;">
-                  <div style="font-size: 10px; font-weight: 700; color: var(--text-muted, #8A90A2); text-transform: uppercase;">📅 Next Renewal</div>
-                  <div style="font-size: 12.5px; font-weight: 800; color: var(--text-primary, #111827); margin-top: 4px;">1 Dec 2026</div>
-                  <div style="font-size: 10px; color: #059669; font-weight: 700; margin-top: 2px;">● Auto-renew active</div>
-                </div>
-                <div style="padding: 12px; background: var(--bg-surface-elevated, #F8FAFC); border: 1px solid var(--border-subtle, #ECEEF4); border-radius: 12px;">
-                  <div style="font-size: 10px; font-weight: 700; color: var(--text-muted, #8A90A2); text-transform: uppercase;">📄 Recent Invoice</div>
-                  <div style="font-size: 12.5px; font-weight: 800; color: var(--text-primary, #111827); margin-top: 4px; display: flex; align-items: center; gap: 4px;">
-                    <span>${displayInvoices[0] ? displayInvoices[0].id : 'INV-2026-080'}</span>
-                    <span style="background: rgba(16, 185, 129, 0.12); color: #059669; font-size: 9px; font-weight: 800; padding: 1px 4px; border-radius: 4px;">Paid</span>
-                  </div>
-                  <div style="font-size: 10px; color: var(--text-muted, #8A90A2); margin-top: 2px;">${displayInvoices[0] ? displayInvoices[0].issueDate : '2026-11-01'}</div>
-                </div>
-                <div style="padding: 12px; background: var(--bg-surface-elevated, #F8FAFC); border: 1px solid var(--border-subtle, #ECEEF4); border-radius: 12px;">
-                  <div style="font-size: 10px; font-weight: 700; color: var(--text-muted, #8A90A2); text-transform: uppercase;">🪙 Extra Credits</div>
-                  <div style="font-size: 12.5px; font-weight: 800; color: var(--text-primary, #111827); margin-top: 4px;">₹500 / 10 cr</div>
-                  <div style="font-size: 10px; color: #4F3FE0; font-weight: 700; margin-top: 2px; cursor: pointer;" onclick="MeetingRoomsModule.openCreditTopUpModal('${startup.id}')">+ Instant pack</div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- Right Column: Recent Credit Ledger -->
-          <div>
+            <!-- Right Column: Recent Ledger (Reconciled) -->
             <div class="nexus-billing-panel">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                 <h4 style="font-size: 14px; font-weight: 900; color: var(--text-primary, #111827); margin: 0; display: flex; align-items: center; gap: 8px;">
                   <span style="width: 24px; height: 24px; border-radius: 8px; background: rgba(79, 63, 224, 0.1); color: #4F3FE0; display: flex; align-items: center; justify-content: center; font-size: 12px;">📑</span>
-                  <span>Live Credit &amp; Hour Ledger</span>
+                  <span>Ledger Activity (${allowance.monthLabel})</span>
                 </h4>
-                <button type="button" onclick="MeetingRoomsModule.switchTab('myBookings')" style="background: none; border: none; font-size: 12px; font-weight: 800; color: #4F3FE0; cursor: pointer;">
-                  All Bookings →
+                <button type="button" onclick="MeetingRoomsModule.setCreditsBillingSubTab('ledger')" style="background: none; border: none; font-size: 12px; font-weight: 800; color: #4F3FE0; cursor: pointer;">
+                  View Full Ledger (${allowance.ledger.length}) →
                 </button>
               </div>
 
-              <!-- List of Transactions combining allowance grant & real reservations -->
               <div style="display: flex; flex-direction: column;">
-                <!-- Initial Monthly Grant Entry -->
-                <div class="nexus-ledger-row">
-                  <div style="display: flex; align-items: center; gap: 14px;">
-                    <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(16, 185, 129, 0.12); color: #059669; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
-                      🎁
-                    </div>
-                    <div>
-                      <div style="font-size: 13px; font-weight: 800; color: var(--text-primary, #111827);">
-                        Monthly Incubator Quota Credited
+                ${allowance.ledger.slice(0, 6).map(entry => `
+                  <div class="nexus-ledger-row">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                      <div style="width: 36px; height: 36px; border-radius: 10px; background: ${entry.isPositive ? 'rgba(16, 185, 129, 0.12)' : 'rgba(79, 63, 224, 0.08)'}; color: ${entry.isPositive ? '#059669' : '#4F3FE0'}; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0;">
+                        ${entry.type === 'credit' ? '🎁' : entry.type === 'top-up' ? '🪙' : '📅'}
                       </div>
-                      <div style="font-size: 11px; color: var(--text-muted, #8A90A2); margin-top: 2px;">
-                        01 Nov 2026 • Base Plan Allowance
+                      <div>
+                        <div style="font-size: 12.5px; font-weight: 800; color: var(--text-primary, #111827);">
+                          ${entry.description}
+                        </div>
+                        <div style="font-size: 11px; color: var(--text-muted, #8A90A2); margin-top: 1px;">
+                          ${entry.displayDateTime} ${entry.bookingRef ? `• <a href="javascript:void(0)" onclick="MeetingRoomsModule.switchTab('myBookings')" style="color: #2563EB; font-weight: 700;">Ref: ${entry.bookingRef}</a>` : ''}
+                        </div>
+                      </div>
+                    </div>
+                    <div style="text-align: right;">
+                      <div style="font-size: 12.5px; font-weight: 900; color: ${entry.isPositive ? '#059669' : 'var(--text-primary, #111827)'};">
+                        ${entry.creditsDisplay}
+                      </div>
+                      <div style="font-size: 10.5px; color: var(--text-muted, #8A90A2); font-weight: 600;">
+                        bal: ${entry.runningBalanceCredits} cr
                       </div>
                     </div>
                   </div>
-                  <div style="text-align: right;">
-                    <div style="font-size: 13px; font-weight: 900; color: #059669;">
-                      +${totalCredits} credits
-                    </div>
-                    <div style="font-size: 11px; color: #059669; font-weight: 700;">
-                      +${includedHours.toFixed(1)} hrs
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Real Booking Deductions -->
-                ${activeBookings.slice(0, 5).map(b => {
-                  const dur = this.calculateBookingDuration(b.startTime, b.endTime);
-                  const crDeducted = Math.round(dur * 10);
-                  return `
-                    <div class="nexus-ledger-row">
-                      <div style="display: flex; align-items: center; gap: 14px;">
-                        <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(79, 63, 224, 0.08); color: #4F3FE0; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
-                          ${b.roomType === 'Amphitheater' ? '🎭' : b.roomType === 'Executive' ? '🏢' : '📅'}
-                        </div>
-                        <div>
-                          <div style="font-size: 13px; font-weight: 800; color: var(--text-primary, #111827);">
-                            ${b.roomName || 'Meeting Space'}
-                          </div>
-                          <div style="font-size: 11px; color: var(--text-muted, #8A90A2); margin-top: 2px;">
-                            ${b.date} • ${b.startTime} - ${b.endTime}
-                          </div>
-                        </div>
-                      </div>
-                      <div style="text-align: right;">
-                        <div style="font-size: 13px; font-weight: 900; color: var(--text-primary, #111827);">
-                          -${crDeducted} credits
-                        </div>
-                        <div style="font-size: 11px; color: var(--text-muted, #8A90A2); font-weight: 600;">
-                          -${dur.toFixed(1)} hrs
-                        </div>
-                      </div>
-                    </div>
-                  `;
-                }).join('')}
+                `).join('')}
               </div>
             </div>
           </div>
-        </div>
+        ` : ''}
 
-        <!-- Full-Width Invoices & Receipts Section -->
-        <div class="nexus-billing-panel">
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 18px;">
-            <div>
-              <h3 style="font-size: 16px; font-weight: 900; color: var(--text-primary, #111827); margin: 0; display: flex; align-items: center; gap: 8px;">
-                <span>🧾</span>
-                <span>Tax Invoices &amp; Payment Receipts</span>
-              </h3>
-              <p style="font-size: 12px; color: var(--text-muted, #64748B); margin: 4px 0 0 0;">
-                Official GST-compliant tax invoices for monthly co-working membership, seat allocations, and meeting room credit top-ups.
-              </p>
+        <!-- TAB 2: FULL RECONCILED LEDGER -->
+        ${subTab === 'ledger' ? `
+          <div class="nexus-billing-panel">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+              <div>
+                <h3 style="font-size: 16px; font-weight: 900; color: var(--text-primary, #111827); margin: 0; display: flex; align-items: center; gap: 8px;">
+                  <span>📑</span>
+                  <span>Credit Ledger — ${allowance.monthLabel}</span>
+                </h3>
+                <p style="font-size: 12px; color: var(--text-muted, #64748B); margin: 4px 0 0 0;">
+                  Reconciled account statement: opening quota + top-ups - room booking debits = ending balance (${allowance.remainingCredits} credits · ${allowance.remainingHours.toFixed(1)} hrs).
+                </p>
+              </div>
+
+              <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <!-- Search Input -->
+                <input
+                  type="text"
+                  id="ledger-search-input"
+                  placeholder="Search ledger..."
+                  value="${this.ledgerSearch || ''}"
+                  oninput="MeetingRoomsModule.setLedgerSearch(this.value)"
+                  style="padding: 6px 12px; font-size: 12px; border-radius: 8px; border: 1px solid var(--border-subtle, #E2E8F0); background: var(--bg-surface, #ffffff);"
+                />
+
+                <!-- Export CSV Button (Formula injection safe) -->
+                <button
+                  type="button"
+                  onclick="MeetingRoomsModule.exportLedgerCSV()"
+                  class="btn btn-outline btn-sm"
+                  style="font-size: 12px; font-weight: 800; border-radius: 8px; padding: 6px 14px; display: inline-flex; align-items: center; gap: 6px; color: #4F3FE0; border-color: rgba(79, 63, 224, 0.35);"
+                >
+                  <span>📥 Export CSV</span>
+                </button>
+              </div>
             </div>
-            <button
-              type="button"
-              onclick="if(typeof InvoiceModule !== 'undefined' && InvoiceModule.openGenerator) { InvoiceModule.openGenerator('${startup.id}'); } else if(typeof App !== 'undefined') { App.showToast('Invoice wizard opening', 'info'); }"
-              class="btn btn-outline btn-sm"
-              style="font-size: 12px; font-weight: 700; border-radius: 8px; padding: 6px 14px; display: inline-flex; align-items: center; gap: 6px; color: #4F3FE0; border-color: rgba(79, 63, 224, 0.35);"
-            >
-              <span>+ Generate Custom Invoice</span>
-            </button>
-          </div>
 
-          <div style="overflow-x: auto; border: 1px solid var(--border-subtle, #E2E8F0); border-radius: 12px;">
-            <table class="nexus-billing-table">
-              <thead>
-                <tr>
-                  <th>Invoice ID</th>
-                  <th>Billing Period</th>
-                  <th>Issued Date</th>
-                  <th>Description / Services</th>
-                  <th>Total Amount</th>
-                  <th>Status</th>
-                  <th style="text-align: right;">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${displayInvoices.map(inv => {
-                  const lineSummary = (inv.lineItems && inv.lineItems.length > 0)
-                    ? inv.lineItems.map(l => l.desc).join(', ')
-                    : 'Co-Working Membership & Meeting Allowance';
-                  const isPaid = (inv.status || '').toLowerCase() === 'paid';
-                  return `
-                    <tr>
-                      <td style="font-weight: 800; font-family: monospace; font-size: 13px; color: #4F3FE0;">
-                        ${inv.id}
-                      </td>
-                      <td style="font-weight: 700; color: var(--text-primary, #111827);">
-                        ${inv.billingPeriod || 'November 2026'}
-                      </td>
-                      <td style="color: var(--text-muted, #64748B); font-size: 12px;">
-                        ${inv.issueDate || '2026-11-01'}
-                      </td>
-                      <td style="max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-primary, #374151);" title="${lineSummary}">
-                        ${lineSummary}
-                      </td>
-                      <td style="font-weight: 900; color: var(--text-primary, #111827); font-size: 13.5px;">
-                        ₹${Number(inv.total || 0).toLocaleString('en-IN')}
-                      </td>
-                      <td>
-                        <span class="badge" style="background: ${isPaid ? 'rgba(16, 185, 129, 0.12)' : 'rgba(245, 158, 11, 0.12)'}; color: ${isPaid ? '#059669' : '#D97706'}; font-weight: 800; font-size: 11px; padding: 3px 8px; border-radius: 6px;">
-                          ${isPaid ? '✓ Paid' : '● ' + (inv.status || 'Issued')}
-                        </span>
-                      </td>
-                      <td style="text-align: right; white-space: nowrap;">
-                        <button
-                          type="button"
-                          class="btn btn-outline btn-sm"
-                          onclick="if(typeof InvoiceModule !== 'undefined' && InvoiceModule.viewInvoice) { InvoiceModule.viewInvoice('${inv.id}'); } else { App.showToast('Viewing invoice ${inv.id}', 'info'); }"
-                          style="font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 6px; margin-right: 6px; color: #2563EB; border-color: rgba(37,99,235,0.3);"
-                          title="View PDF invoice preview"
-                        >
-                          👁️ View
-                        </button>
-                        <button
-                          type="button"
-                          class="btn btn-outline btn-sm"
-                          onclick="if(typeof InvoiceModule !== 'undefined' && InvoiceModule._printExistingInvoice) { InvoiceModule._printExistingInvoice('${inv.id}'); } else { window.print(); }"
-                          style="font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 6px; color: #059669; border-color: rgba(16,185,129,0.3);"
-                          title="Print or export PDF"
-                        >
-                          🖨️ Print
-                        </button>
-                      </td>
-                    </tr>
-                  `;
-                }).join('')}
-              </tbody>
-            </table>
+            <!-- Full Ledger Table -->
+            <div style="overflow-x: auto; border: 1px solid var(--border-subtle, #E2E8F0); border-radius: 12px;">
+              <table class="nexus-billing-table">
+                <thead>
+                  <tr>
+                    <th>Date &amp; Time (IST)</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th>Booking Ref</th>
+                    <th>Credits</th>
+                    <th>Hours</th>
+                    <th>Running Balance</th>
+                    <th>Expires On</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${allowance.ledger
+                    .filter(e => {
+                      if (!this.ledgerSearch) return true;
+                      const q = this.ledgerSearch.toLowerCase();
+                      return e.description.toLowerCase().includes(q) || (e.bookingRef && e.bookingRef.toLowerCase().includes(q));
+                    })
+                    .map(entry => `
+                      <tr>
+                        <td style="white-space: nowrap; font-size: 12px; font-weight: 700; color: var(--text-primary, #111827);">
+                          ${entry.displayDateTime}
+                        </td>
+                        <td>
+                          <span class="badge" style="background: ${entry.isPositive ? 'rgba(16, 185, 129, 0.12)' : 'rgba(79, 63, 224, 0.08)'}; color: ${entry.isPositive ? '#059669' : '#4F3FE0'}; font-weight: 800; font-size: 10.5px; padding: 2px 7px; border-radius: 4px;">
+                            ${entry.typeLabel || entry.type}
+                          </span>
+                        </td>
+                        <td style="max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600;" title="${entry.description}">
+                          ${entry.description}
+                        </td>
+                        <td style="font-family: monospace; font-size: 11.5px;">
+                          ${entry.bookingRef ? `
+                            <a href="javascript:void(0)" onclick="MeetingRoomsModule.switchTab('myBookings')" style="color: #2563EB; font-weight: 800; text-decoration: none;">
+                              ${entry.bookingRef}
+                            </a>
+                          ` : '<span style="color: #94A3B8;">—</span>'}
+                        </td>
+                        <td style="font-weight: 900; color: ${entry.isPositive ? '#059669' : 'var(--text-primary, #111827)'}; font-size: 12.5px;">
+                          ${entry.creditsDisplay}
+                        </td>
+                        <td style="font-weight: 700; color: ${entry.isPositive ? '#059669' : 'var(--text-muted, #64748B)'}; font-size: 12px;">
+                          ${entry.hoursDisplay}
+                        </td>
+                        <td style="font-weight: 900; color: #4F3FE0; font-size: 12.5px;">
+                          ${entry.runningBalanceCredits} cr · ${entry.runningBalanceHours}h
+                        </td>
+                        <td style="font-size: 11.5px; color: var(--text-muted, #64748B);">
+                          ${entry.expiresAt ? entry.expiresAt : '—'}
+                        </td>
+                      </tr>
+                    `).join('')}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        ` : ''}
+
+        <!-- TAB 3: GST TAX INVOICES & RECEIPTS -->
+        ${subTab === 'invoices' ? `
+          <div class="nexus-billing-panel">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+              <div>
+                <h3 style="font-size: 16px; font-weight: 900; color: var(--text-primary, #111827); margin: 0; display: flex; align-items: center; gap: 8px;">
+                  <span>🧾</span>
+                  <span>Official GST Tax Invoices</span>
+                </h3>
+                <p style="font-size: 12px; color: var(--text-muted, #64748B); margin: 4px 0 0 0;">
+                  SAC Code 997212 (Co-working Space &amp; Conference Facilities). Consecutive Financial Year numbers.
+                </p>
+              </div>
+
+              <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <!-- Status Filter -->
+                <select onchange="MeetingRoomsModule.setInvoiceStatusFilter(this.value)" style="padding: 6px 10px; font-size: 12px; border-radius: 8px; border: 1px solid var(--border-subtle, #E2E8F0); background: var(--bg-surface, #ffffff); font-weight: 700;" aria-label="Filter invoices by status">
+                  <option value="all" ${this.invoiceStatusFilter === 'all' ? 'selected' : ''}>All Statuses</option>
+                  <option value="Paid" ${this.invoiceStatusFilter === 'Paid' ? 'selected' : ''}>Paid</option>
+                  <option value="Pending" ${this.invoiceStatusFilter === 'Pending' ? 'selected' : ''}>Pending</option>
+                  <option value="Overdue" ${this.invoiceStatusFilter === 'Overdue' ? 'selected' : ''}>Overdue</option>
+                  <option value="Void" ${this.invoiceStatusFilter === 'Void' ? 'selected' : ''}>Void</option>
+                </select>
+
+                <!-- Search Input -->
+                <input
+                  type="text"
+                  id="invoice-search-input"
+                  placeholder="Search invoices..."
+                  value="${this.invoiceSearch || ''}"
+                  oninput="MeetingRoomsModule.setInvoiceSearch(this.value)"
+                  style="padding: 6px 12px; font-size: 12px; border-radius: 8px; border: 1px solid var(--border-subtle, #E2E8F0); background: var(--bg-surface, #ffffff);"
+                />
+
+                ${isAdmin ? `
+                  <button
+                    type="button"
+                    onclick="if(typeof InvoiceModule !== 'undefined') InvoiceModule.openGenerator('${startup.id}');"
+                    class="btn btn-outline btn-sm"
+                    style="font-size: 12px; font-weight: 800; border-radius: 8px; padding: 6px 14px; color: #4F3FE0; border-color: rgba(79, 63, 224, 0.35);"
+                  >
+                    + Generate Custom Invoice
+                  </button>
+                ` : `
+                  <button
+                    type="button"
+                    onclick="MeetingRoomsModule.openRequestInvoiceModal('${startup.id}')"
+                    class="btn btn-outline btn-sm"
+                    style="font-size: 12px; font-weight: 800; border-radius: 8px; padding: 6px 14px; color: #4F3FE0; border-color: rgba(79, 63, 224, 0.35);"
+                  >
+                    ✉️ Request Invoice
+                  </button>
+                `}
+              </div>
+            </div>
+
+            <!-- Invoices Table -->
+            <div style="overflow-x: auto; border: 1px solid var(--border-subtle, #E2E8F0); border-radius: 12px;">
+              <table class="nexus-billing-table">
+                <thead>
+                  <tr>
+                    <th>Invoice No</th>
+                    <th>Billing Period</th>
+                    <th>Issued Date</th>
+                    <th>Due Date</th>
+                    <th>Description</th>
+                    <th>Base (₹)</th>
+                    <th>GST (₹)</th>
+                    <th>Total Amount</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${startupInvoices
+                    .filter(inv => {
+                      if (this.invoiceStatusFilter && this.invoiceStatusFilter !== 'all') {
+                        const s = bs.evaluateInvoiceStatus(inv, istNow.todayStr);
+                        if (s !== this.invoiceStatusFilter) return false;
+                      }
+                      if (this.invoiceSearch) {
+                        const q = this.invoiceSearch.toLowerCase();
+                        return (inv.id && inv.id.toLowerCase().includes(q)) || (inv.billingPeriod && inv.billingPeriod.toLowerCase().includes(q));
+                      }
+                      return true;
+                    })
+                    .map(inv => {
+                      const computedStatus = bs.evaluateInvoiceStatus(inv, istNow.todayStr);
+                      const baseAmt = inv.subtotal || inv.taxableAmount || Math.round((inv.total || 0) / 1.18);
+                      const gstAmt = inv.taxGst || (inv.total ? inv.total - baseAmt : 0);
+                      const isPaid = computedStatus === 'Paid';
+                      const isOverdue = computedStatus === 'Overdue';
+                      const isVoid = computedStatus === 'Void';
+
+                      return `
+                        <tr>
+                          <td style="font-weight: 800; font-family: monospace; font-size: 13px; color: #4F3FE0; white-space: nowrap;">
+                            ${inv.id}
+                          </td>
+                          <td style="font-weight: 700; color: var(--text-primary, #111827); white-space: nowrap;">
+                            ${inv.billingPeriod || 'November 2026'}
+                          </td>
+                          <td style="color: var(--text-muted, #64748B); font-size: 12px; white-space: nowrap;">
+                            ${inv.issueDate ? cs.formatDateIndian(inv.issueDate) : '01 Nov 2026'}
+                          </td>
+                          <td style="color: var(--text-muted, #64748B); font-size: 12px; white-space: nowrap;">
+                            ${inv.dueDate ? cs.formatDateIndian(inv.dueDate) : '05 Nov 2026'}
+                          </td>
+                          <td style="max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px;" title="${(inv.lineItems && inv.lineItems[0]) ? inv.lineItems[0].desc : 'Membership & Meeting Quota'}">
+                            ${(inv.lineItems && inv.lineItems[0]) ? inv.lineItems[0].desc : 'Membership & Meeting Quota'}
+                          </td>
+                          <td style="font-weight: 700; font-size: 12px; color: var(--text-muted, #64748B);">
+                            ₹${Number(baseAmt).toLocaleString('en-IN')}
+                          </td>
+                          <td style="font-weight: 700; font-size: 12px; color: var(--text-muted, #64748B);">
+                            ₹${Number(gstAmt).toLocaleString('en-IN')}
+                          </td>
+                          <td style="font-weight: 900; color: var(--text-primary, #111827); font-size: 13px;">
+                            ₹${Number(inv.total || 0).toLocaleString('en-IN')}
+                          </td>
+                          <td>
+                            <span class="badge" style="background: ${isPaid ? 'rgba(16, 185, 129, 0.12)' : isOverdue ? 'rgba(239, 68, 68, 0.12)' : isVoid ? 'rgba(148, 163, 184, 0.2)' : 'rgba(245, 158, 11, 0.12)'}; color: ${isPaid ? '#059669' : isOverdue ? '#DC2626' : isVoid ? '#64748B' : '#D97706'}; font-weight: 800; font-size: 11px; padding: 3px 8px; border-radius: 6px;">
+                              ${isPaid ? '✓ Paid' : isOverdue ? '● Overdue' : isVoid ? '✕ Void' : '● ' + computedStatus}
+                            </span>
+                          </td>
+                          <td style="text-align: right; white-space: nowrap;">
+                            <button
+                              type="button"
+                              class="btn btn-outline btn-sm"
+                              onclick="MeetingRoomsModule.openInvoiceDetailsModal('${inv.id}')"
+                              style="font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 6px; margin-right: 4px; color: #2563EB; border-color: rgba(37,99,235,0.3);"
+                              title="View Tax Invoice Details"
+                            >
+                              👁️ View
+                            </button>
+                            <button
+                              type="button"
+                              class="btn btn-outline btn-sm"
+                              onclick="window.print()"
+                              style="font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 6px; margin-right: 4px; color: #059669; border-color: rgba(16,185,129,0.3);"
+                              title="Print Invoice"
+                            >
+                              🖨️ Print
+                            </button>
+                            ${!isPaid && !isVoid ? `
+                              <button
+                                type="button"
+                                class="btn btn-primary btn-sm"
+                                onclick="App.showToast('Redirecting to payment gateway for ${inv.id}...', 'info')"
+                                style="font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 6px; background: #4F3FE0; border-color: #4338CA; color: #ffffff;"
+                              >
+                                Pay Now
+                              </button>
+                            ` : ''}
+                            ${isAdmin && !isVoid ? `
+                              <button
+                                type="button"
+                                class="btn btn-outline btn-sm"
+                                onclick="MeetingRoomsModule.openVoidInvoiceModal('${inv.id}')"
+                                style="font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 6px; color: #DC2626; border-color: rgba(220,38,38,0.3);"
+                                title="Void this invoice (Admin only)"
+                              >
+                                ✕ Void
+                              </button>
+                            ` : ''}
+                          </td>
+                        </tr>
+                      `;
+                    }).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ` : ''}
+
+        <!-- TAB 4: BILLING PROFILE, PAYMENT METHODS & PLANS -->
+        ${subTab === 'profile' ? `
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+            <!-- Profile Card -->
+            <div class="nexus-billing-panel">
+              <h4 style="font-size: 14px; font-weight: 900; color: var(--text-primary, #111827); margin: 0 0 14px 0; display: flex; align-items: center; gap: 8px;">
+                <span>🏢</span>
+                <span>GST Legal Billing Profile</span>
+              </h4>
+              <form onsubmit="MeetingRoomsModule.updateBillingProfile('${startup.id}', event)">
+                <div style="display: flex; flex-direction: column; gap: 12px; font-size: 12px;">
+                  <div>
+                    <label style="display: block; font-weight: 800; color: var(--text-muted, #64748B); text-transform: uppercase; font-size: 10.5px; margin-bottom: 4px;">
+                      Company Legal Name
+                    </label>
+                    <input type="text" id="billing-legal-name" value="${startup.name || 'XYZ Technologies Private Limited'}" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-subtle, #E2E8F0); background: var(--bg-surface, #ffffff); font-size: 12.5px; font-weight: 700;" required />
+                  </div>
+                  <div>
+                    <label style="display: block; font-weight: 800; color: var(--text-muted, #64748B); text-transform: uppercase; font-size: 10.5px; margin-bottom: 4px;">
+                      GSTIN (15 Characters)
+                    </label>
+                    <input type="text" id="billing-gstin" value="${startup.gstin || '29AAACX9920M1Z4'}" maxlength="15" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-subtle, #E2E8F0); background: var(--bg-surface, #ffffff); font-size: 12.5px; font-weight: 700; font-family: monospace;" required />
+                  </div>
+                  <div>
+                    <label style="display: block; font-weight: 800; color: var(--text-muted, #64748B); text-transform: uppercase; font-size: 10.5px; margin-bottom: 4px;">
+                      Registered Billing Address
+                    </label>
+                    <textarea id="billing-address" rows="2" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-subtle, #E2E8F0); background: var(--bg-surface, #ffffff); font-size: 12px;">Cabin PC-103, Nexus Hub, Indiranagar, Bengaluru, Karnataka 560038</textarea>
+                  </div>
+                  <button type="submit" class="btn btn-primary btn-sm" style="background: #4F3FE0; border-color: #4338CA; font-weight: 800; font-size: 12px; padding: 8px 16px; border-radius: 8px; align-self: flex-start;">
+                    Save Profile Changes
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Payment Methods & Auto-Renew Card -->
+            <div class="nexus-billing-panel">
+              <h4 style="font-size: 14px; font-weight: 900; color: var(--text-primary, #111827); margin: 0 0 14px 0; display: flex; align-items: center; gap: 8px;">
+                <span>💳</span>
+                <span>Payment Methods &amp; Auto-Renew</span>
+              </h4>
+              <div style="display: flex; flex-direction: column; gap: 14px; font-size: 12px;">
+                <!-- Saved Card -->
+                <div style="border: 1px solid var(--border-subtle, #E2E8F0); border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center;">
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 20px;">💳</span>
+                    <div>
+                      <div style="font-weight: 800; color: var(--text-primary, #111827);">HDFC Corporate Visa •••• 4821</div>
+                      <div style="font-size: 10.5px; color: var(--text-muted, #8A90A2); margin-top: 2px;">Expires 08/29 • Primary method</div>
+                    </div>
+                  </div>
+                  <span style="font-size: 10.5px; font-weight: 800; background: rgba(16, 185, 129, 0.12); color: #059669; padding: 3px 8px; border-radius: 6px;">
+                    ✓ Default
+                  </span>
+                </div>
+
+                <!-- Auto Renew Toggle -->
+                <div style="background: var(--bg-surface-elevated, #F8FAFC); border: 1px solid var(--border-subtle, #E2E8F0); border-radius: 12px; padding: 14px; display: flex; justify-content: space-between; align-items: center;">
+                  <div>
+                    <div style="font-weight: 800; color: var(--text-primary, #111827);">Auto-Renew Membership</div>
+                    <div style="font-size: 11px; color: var(--text-muted, #64748B); margin-top: 2px;">Next cycle: <strong>1 Dec 2026</strong> (₹29,500 via HDFC Corporate)</div>
+                  </div>
+                  <label style="position: relative; display: inline-block; width: 44px; height: 24px; cursor: pointer;">
+                    <input type="checkbox" checked onchange="MeetingRoomsModule.toggleAutoRenew('${startup.id}', this.checked)" style="opacity: 0; width: 0; height: 0;" />
+                    <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #4F3FE0; transition: .3s; border-radius: 24px;"></span>
+                  </label>
+                </div>
+
+                <!-- TDS Deduction Option -->
+                <div style="border: 1px dashed var(--border-subtle, #CBD5E1); border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center;">
+                  <div>
+                    <div style="font-weight: 800; color: var(--text-primary, #111827);">Pay Net of TDS (Section 194-I)</div>
+                    <div style="font-size: 10.5px; color: var(--text-muted, #64748B); margin-top: 2px;">Upload Form 16A TDS certificate for 10% tax credit.</div>
+                  </div>
+                  <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openTDSModal('${startupInvoices[0] ? startupInvoices[0].id : 'INV-2026-080'}')" style="font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px;">
+                    Upload TDS
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ` : ''}
       </div>
     `;
   },
@@ -2817,6 +3095,7 @@ const MeetingRoomsModule = {
     const sId = startupId || (window.store && window.store.getActiveStartup ? window.store.getActiveStartup().id : 'STP-XYZ');
     const startup = (window.store && window.store.getStartupById) ? window.store.getStartupById(sId) : null;
     const startupName = startup ? startup.name : 'Your Startup';
+    const idemKey = `IDEM-TOPUP-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
 
     const modalHtml = `
       <div class="modal-overlay active" id="modal-credit-topup" onclick="if(event.target === this) MeetingRoomsModule.closeModal('modal-credit-topup')" style="display: flex; align-items: center; justify-content: center; z-index: 1050; padding: 16px; background: rgba(15, 23, 42, 0.78); backdrop-filter: blur(8px); animation: fadeIn 0.2s ease;">
@@ -2833,7 +3112,7 @@ const MeetingRoomsModule = {
               Purchase Extra Meeting Credits
             </h3>
             <p style="font-size: 12.5px; opacity: 0.9; margin: 4px 0 0 0;">
-              Credits immediately reflect in ${startupName}'s account and never expire.
+              Credits immediately reflect in ${startupName}'s account and are valid for 90 days.
             </p>
           </div>
 
@@ -2884,12 +3163,12 @@ const MeetingRoomsModule = {
               </label>
               <div style="display: flex; gap: 10px;">
                 <label style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 10px 14px; border: 1px solid var(--border-subtle, #E2E8F0); border-radius: 10px; cursor: pointer; font-size: 12px; font-weight: 700;">
-                  <input type="radio" name="topup-paymethod" value="upi" checked />
+                  <input type="radio" name="topup-paymethod" value="UPI" checked />
                   <span>⚡ Instant UPI / NetBanking</span>
                 </label>
                 <label style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 10px 14px; border: 1px solid var(--border-subtle, #E2E8F0); border-radius: 10px; cursor: pointer; font-size: 12px; font-weight: 700;">
-                  <input type="radio" name="topup-paymethod" value="invoice" />
-                  <span>🧾 Add to Monthly Invoice</span>
+                  <input type="radio" name="topup-paymethod" value="Corporate Card" />
+                  <span>💳 Corporate Card</span>
                 </label>
               </div>
             </div>
@@ -2901,7 +3180,7 @@ const MeetingRoomsModule = {
                 <span id="topup-subtotal" style="font-weight: 700; color: var(--text-primary, #111827);">₹4,500</span>
               </div>
               <div style="display: flex; justify-content: space-between; color: var(--text-muted, #64748B); margin-bottom: 6px;">
-                <span>GST (18% Input Tax Credit):</span>
+                <span>GST (18% ITC Eligible):</span>
                 <span id="topup-gst" style="font-weight: 700; color: var(--text-primary, #111827);">₹810</span>
               </div>
               <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--border-subtle, #E2E8F0); padding-top: 8px; font-size: 13.5px; font-weight: 900;">
@@ -2916,7 +3195,7 @@ const MeetingRoomsModule = {
             <button type="button" class="btn btn-outline" onclick="MeetingRoomsModule.closeModal('modal-credit-topup')" style="font-weight: 700; font-size: 12.5px; padding: 8px 18px; border-radius: 8px;">
               Cancel
             </button>
-            <button type="button" id="btn-confirm-topup" class="btn btn-primary" onclick="MeetingRoomsModule.confirmCreditTopUp('${sId}')" style="background: #4F3FE0; border-color: #4338CA; font-weight: 800; font-size: 12.5px; padding: 9px 24px; border-radius: 8px; box-shadow: 0 4px 14px rgba(79, 63, 224, 0.3);">
+            <button type="button" id="btn-confirm-topup" class="btn btn-primary" onclick="MeetingRoomsModule.confirmCreditTopUp('${sId}', '${idemKey}')" style="background: #4F3FE0; border-color: #4338CA; font-weight: 800; font-size: 12.5px; padding: 9px 24px; border-radius: 8px; box-shadow: 0 4px 14px rgba(79, 63, 224, 0.3);">
               Confirm &amp; Add Credits
             </button>
           </div>
@@ -2924,15 +3203,14 @@ const MeetingRoomsModule = {
       </div>
     `;
 
-    this._selectedTopUp = { hours: 10, amount: 4500, packTitle: 'Growth Pack' };
+    this._selectedTopUp = { hours: 10, credits: 100, amount: 4500, packTitle: 'Growth Pack' };
     const mount = document.getElementById('modal-mount');
-    if (mount) {
-      mount.innerHTML = modalHtml;
-    }
+    if (mount) mount.innerHTML = modalHtml;
   },
 
   selectTopUpPack(hours, amount, packTitle) {
-    this._selectedTopUp = { hours, amount, packTitle };
+    const credits = hours * 10;
+    this._selectedTopUp = { hours, credits, amount, packTitle };
     [5, 10, 20].forEach(h => {
       const el = document.getElementById(`topup-pack-${h}`);
       if (el) {
@@ -2951,8 +3229,8 @@ const MeetingRoomsModule = {
     if (totEl) totEl.textContent = `₹${total.toLocaleString('en-IN')}`;
   },
 
-  confirmCreditTopUp(startupId) {
-    const pack = this._selectedTopUp || { hours: 10, amount: 4500, packTitle: 'Growth Pack' };
+  async confirmCreditTopUp(startupId, idempotencyKey) {
+    const pack = this._selectedTopUp || { hours: 10, credits: 100, amount: 4500, packTitle: 'Growth Pack' };
     const btn = document.getElementById('btn-confirm-topup');
     if (btn) {
       btn.disabled = true;
@@ -2962,56 +3240,46 @@ const MeetingRoomsModule = {
     try {
       const sId = startupId || (window.store && window.store.getActiveStartup ? window.store.getActiveStartup().id : 'STP-XYZ');
       const startup = (window.store && window.store.getStartupById) ? window.store.getStartupById(sId) : null;
-      const currentHours = startup && startup.includedMeetingHours !== undefined ? startup.includedMeetingHours : 15;
-      const newHours = currentHours + pack.hours;
+      const paymentMethodRadio = document.querySelector('input[name="topup-paymethod"]:checked');
+      const paymentMethod = paymentMethodRadio ? paymentMethodRadio.value : 'UPI';
 
-      if (window.store && window.store.updateStartup) {
-        window.store.updateStartup(sId, { includedMeetingHours: newHours });
+      const res = await fetch('/api/credits/topup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          startupId: sId,
+          credits: pack.credits || pack.hours * 10,
+          hours: pack.hours,
+          amount: pack.amount,
+          packTitle: pack.packTitle,
+          paymentMethod,
+          idempotencyKey
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || 'Top-up transaction could not be processed.');
       }
 
-      // Generate Invoice & Receipt
-      const invId = `INV-2026-CR-${Math.floor(1000 + Math.random() * 9000)}`;
-      const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
-      const gst = Math.round(pack.amount * 0.18);
-      const total = pack.amount + gst;
-
+      // Sync client store state with server response
+      if (startup) {
+        if (!Array.isArray(startup.topUps)) startup.topUps = [];
+        startup.topUps.push(data.topUp);
+      }
       if (window.store && window.store.state && Array.isArray(window.store.state.invoices)) {
-        window.store.state.invoices.unshift({
-          id: invId,
-          startupId: sId,
-          startupName: startup ? startup.name : 'Startup',
-          issueDate: today,
-          dueDate: today,
-          billingPeriod: 'November 2026',
-          lineItems: [
-            { desc: `Meeting Room Credit Top-up (${pack.packTitle} - ${pack.hours} hrs / ${pack.hours * 10} credits)`, qty: 1, rate: pack.amount, amount: pack.amount, sac: "997212" }
-          ],
-          subtotal: pack.amount,
-          grantSubsidyPercent: 0,
-          subsidyDeduction: 0,
-          taxableAmount: pack.amount,
-          taxGst: gst,
-          total: total,
-          status: 'Paid',
-          paidAt: new Date().toISOString()
-        });
+        window.store.state.invoices.unshift(data.invoice);
         if (window.store.save) window.store.save();
-        if (window.store.addActivity) {
-          window.store.addActivity('Billing', `Purchased ${pack.hours} extra meeting room hours (${pack.hours * 10} credits) for ₹${total.toLocaleString('en-IN')}.`, '🪙');
-        }
       }
 
       this.closeModal('modal-credit-topup');
       if (typeof App !== 'undefined' && App.showToast) {
-        App.showToast(`🎉 Top-up successful! Added ${pack.hours} extra hours (${pack.hours * 10} credits). Total: ${newHours} hrs.`, 'success');
+        App.showToast(`🎉 Top-up successful! Added ${pack.credits} credits (${pack.hours} hrs) to ${startup ? startup.name : 'account'}.`, 'success');
       }
 
-      // Re-render and refresh sidebar allowances
       this.render();
       this.refreshDashboardSummary();
-      if (window.store) {
-        window.dispatchEvent(new CustomEvent('store:updated'));
-      }
+      window.dispatchEvent(new CustomEvent('store:updated'));
     } catch (err) {
       if (btn) {
         btn.disabled = false;
@@ -3021,6 +3289,272 @@ const MeetingRoomsModule = {
         App.showToast(`Error processing credit top-up: ${err.message}`, 'danger');
       }
     }
+  },
+
+  openInvoiceDetailsModal(invoiceId) {
+    const inv = window.store ? window.store.getInvoiceById(invoiceId) : null;
+    if (!inv) {
+      if (typeof App !== 'undefined') App.showToast('Invoice not found.', 'danger');
+      return;
+    }
+
+    const bs = (typeof window !== 'undefined' && window.billingService) ? window.billingService : require('../../billingService');
+    const baseAmt = inv.subtotal || inv.taxableAmount || Math.round((inv.total || 0) / 1.18);
+    const gstAmt = inv.taxGst || (inv.total ? inv.total - baseAmt : 0);
+    const gst = bs.calculateGST(baseAmt, inv.gstin || '29AAACX9920M1Z4');
+    const words = bs.numberToWordsIndian(inv.total);
+
+    const modalHtml = `
+      <div class="modal-overlay active" id="modal-invoice-detail" onclick="if(event.target === this) MeetingRoomsModule.closeModal('modal-invoice-detail')" style="display: flex; align-items: center; justify-content: center; z-index: 1060; padding: 16px; background: rgba(15, 23, 42, 0.78); backdrop-filter: blur(8px);">
+        <div style="background: #ffffff; border-radius: 18px; max-width: 680px; width: 100%; overflow: hidden; box-shadow: 0 25px 60px rgba(0,0,0,0.35); border: 1px solid #E2E8F0; color: #1E293B;">
+          <!-- Header -->
+          <div style="background: #0F172A; color: #ffffff; padding: 20px 24px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-size: 11px; font-weight: 800; color: #38BDF8; letter-spacing: 0.08em; text-transform: uppercase;">TAX INVOICE (GST)</div>
+              <h3 style="font-size: 20px; font-weight: 900; margin: 4px 0 0 0; color: #ffffff; font-family: monospace;">${inv.id}</h3>
+            </div>
+            <button type="button" onclick="MeetingRoomsModule.closeModal('modal-invoice-detail')" style="color: #ffffff; background: rgba(255,255,255,0.15); border: none; border-radius: 50%; width: 30px; height: 30px; font-size: 16px; cursor: pointer;">✕</button>
+          </div>
+
+          <!-- Body -->
+          <div style="padding: 24px; max-height: 75vh; overflow-y: auto; font-size: 12px; display: flex; flex-direction: column; gap: 16px;">
+            <!-- Two Column Seller & Buyer Info -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 14px;">
+              <div>
+                <div style="font-size: 10.5px; font-weight: 800; color: #64748B; text-transform: uppercase;">SUPPLIER / ISSUER</div>
+                <div style="font-weight: 800; font-size: 12.5px; margin-top: 2px;">${bs.SELLER_INFO.legalName}</div>
+                <div style="color: #64748B; font-size: 11px; margin-top: 2px;">GSTIN: <strong>${bs.SELLER_INFO.gstin}</strong> (State: 29)</div>
+                <div style="color: #64748B; font-size: 11px;">SAC Code: <strong>${bs.SELLER_INFO.sacCode}</strong></div>
+              </div>
+              <div>
+                <div style="font-size: 10.5px; font-weight: 800; color: #64748B; text-transform: uppercase;">BILLED TO (BUYER)</div>
+                <div style="font-weight: 800; font-size: 12.5px; margin-top: 2px;">${inv.startupName || 'XYZ Technologies Private Limited'}</div>
+                <div style="color: #64748B; font-size: 11px; margin-top: 2px;">GSTIN: <strong>${inv.gstin || '29AAACX9920M1Z4'}</strong></div>
+                <div style="color: #64748B; font-size: 11px;">Billing Period: <strong>${inv.billingPeriod || 'November 2026'}</strong></div>
+              </div>
+            </div>
+
+            <!-- Line Items Table -->
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+              <thead>
+                <tr style="border-bottom: 2px solid #E2E8F0; text-align: left; color: #64748B; font-size: 10.5px; text-transform: uppercase;">
+                  <th style="padding: 8px 4px;">Description / Service</th>
+                  <th style="padding: 8px 4px;">SAC</th>
+                  <th style="padding: 8px 4px; text-align: right;">Base (₹)</th>
+                  <th style="padding: 8px 4px; text-align: right;">GST (₹)</th>
+                  <th style="padding: 8px 4px; text-align: right;">Total (₹)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="border-bottom: 1px solid #F1F5F9;">
+                  <td style="padding: 10px 4px; font-weight: 700;">${(inv.lineItems && inv.lineItems[0]) ? inv.lineItems[0].desc : 'Co-Working Membership & Meeting Allowance'}</td>
+                  <td style="padding: 10px 4px; color: #64748B;">997212</td>
+                  <td style="padding: 10px 4px; text-align: right; font-weight: 700;">₹${baseAmt.toLocaleString('en-IN')}</td>
+                  <td style="padding: 10px 4px; text-align: right; font-weight: 700;">₹${gstAmt.toLocaleString('en-IN')}</td>
+                  <td style="padding: 10px 4px; text-align: right; font-weight: 900;">₹${Number(inv.total || 0).toLocaleString('en-IN')}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <!-- GST Tax Breakdown -->
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 12px 16px;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                <span>Taxable Amount (Base):</span>
+                <span style="font-weight: 800;">₹${baseAmt.toLocaleString('en-IN')}</span>
+              </div>
+              ${gst.taxType === 'INTRA_STATE' ? `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px; color: #64748B;">
+                  <span>CGST (9%):</span>
+                  <span style="font-weight: 700;">₹${gst.cgstAmount.toLocaleString('en-IN')}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px; color: #64748B;">
+                  <span>SGST (9%):</span>
+                  <span style="font-weight: 700;">₹${gst.sgstAmount.toLocaleString('en-IN')}</span>
+                </div>
+              ` : `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px; color: #64748B;">
+                  <span>IGST (18%):</span>
+                  <span style="font-weight: 700;">₹${gst.igstAmount.toLocaleString('en-IN')}</span>
+                </div>
+              `}
+              <div style="display: flex; justify-content: space-between; border-top: 1px solid #E2E8F0; padding-top: 8px; font-size: 14px; font-weight: 900; color: #4F3FE0;">
+                <span>Invoice Total:</span>
+                <span>₹${Number(inv.total || 0).toLocaleString('en-IN')}</span>
+              </div>
+              <div style="font-size: 11px; color: #64748B; margin-top: 6px; font-style: italic;">
+                Amount in Words: <strong>${words}</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Footer Actions -->
+          <div style="padding: 14px 24px; background: #F8FAFC; border-top: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="App.showToast('Invoice sent to registered email addresses.', 'success')" style="font-weight: 700;">
+              ✉️ Email Invoice
+            </button>
+            <div style="display: flex; gap: 8px;">
+              <button type="button" class="btn btn-outline btn-sm" onclick="window.print()" style="font-weight: 700;">
+                🖨️ Print / PDF
+              </button>
+              <button type="button" class="btn btn-primary btn-sm" onclick="MeetingRoomsModule.closeModal('modal-invoice-detail')" style="background: #4F3FE0; border-color: #4338CA; font-weight: 800;">
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const mount = document.getElementById('modal-mount');
+    if (mount) mount.innerHTML = modalHtml;
+  },
+
+  openVoidInvoiceModal(invoiceId) {
+    const modalHtml = `
+      <div class="modal-overlay active" id="modal-void-invoice" onclick="if(event.target === this) MeetingRoomsModule.closeModal('modal-void-invoice')" style="display: flex; align-items: center; justify-content: center; z-index: 1070; padding: 16px; background: rgba(15, 23, 42, 0.78); backdrop-filter: blur(8px);">
+        <div style="background: #ffffff; border-radius: 18px; max-width: 480px; width: 100%; overflow: hidden; padding: 24px; box-shadow: 0 25px 60px rgba(0,0,0,0.35);">
+          <h3 style="font-size: 18px; font-weight: 900; color: #DC2626; margin: 0 0 8px 0;">
+            ⚠️ Void Invoice #${invoiceId}
+          </h3>
+          <p style="font-size: 12.5px; color: #64748B; margin: 0 0 16px 0;">
+            Voiding marks this invoice as cancelled without deleting the record from the audit trail. A valid operational reason is mandatory.
+          </p>
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-size: 11px; font-weight: 800; text-transform: uppercase; color: #64748B; margin-bottom: 6px;">
+              Reason for Voiding: <span style="color: #dc2626;">*</span>
+            </label>
+            <textarea id="void-reason-input" rows="3" placeholder="e.g. Duplicate batch generation of January 2027 cabin rent..." style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 12px;" required></textarea>
+          </div>
+          <div style="display: flex; justify-content: flex-end; gap: 8px;">
+            <button type="button" class="btn btn-outline" onclick="MeetingRoomsModule.closeModal('modal-void-invoice')" style="font-size: 12px; font-weight: 700; padding: 6px 14px;">
+              Cancel
+            </button>
+            <button type="button" class="btn btn-primary" onclick="MeetingRoomsModule.confirmVoidInvoice('${invoiceId}')" style="background: #DC2626; border-color: #B91C1C; font-size: 12px; font-weight: 800; padding: 6px 18px;">
+              Confirm Void
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+    const mount = document.getElementById('modal-mount');
+    if (mount) mount.innerHTML = modalHtml;
+  },
+
+  async confirmVoidInvoice(invoiceId) {
+    const input = document.getElementById('void-reason-input');
+    const reason = input ? input.value.trim() : '';
+    if (!reason || reason.length < 5) {
+      if (typeof App !== 'undefined') App.showToast('A specific reason (minimum 5 chars) is required.', 'danger');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/invoices/void', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-user-role': 'super_admin' },
+        body: JSON.stringify({ invoiceId, reason })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'Failed to void invoice');
+
+      const inv = window.store.getInvoiceById(invoiceId);
+      if (inv) {
+        inv.status = 'Void';
+        inv.voidReason = reason;
+      }
+
+      this.closeModal('modal-void-invoice');
+      if (typeof App !== 'undefined') App.showToast(`Invoice #${invoiceId} voided.`, 'success');
+      this.render();
+    } catch (err) {
+      if (typeof App !== 'undefined') App.showToast(err.message, 'danger');
+    }
+  },
+
+  openRequestInvoiceModal(startupId) {
+    const modalHtml = `
+      <div class="modal-overlay active" id="modal-req-invoice" onclick="if(event.target === this) MeetingRoomsModule.closeModal('modal-req-invoice')" style="display: flex; align-items: center; justify-content: center; z-index: 1070; padding: 16px; background: rgba(15, 23, 42, 0.78); backdrop-filter: blur(8px);">
+        <div style="background: #ffffff; border-radius: 18px; max-width: 480px; width: 100%; overflow: hidden; padding: 24px; box-shadow: 0 25px 60px rgba(0,0,0,0.35);">
+          <h3 style="font-size: 18px; font-weight: 900; color: #111827; margin: 0 0 8px 0;">
+            ✉️ Request Custom Tax Invoice
+          </h3>
+          <p style="font-size: 12.5px; color: #64748B; margin: 0 0 16px 0;">
+            Submit a request to Finance Operations for custom billing, credit note adjustment, or corporate purchase order matching.
+          </p>
+          <div style="margin-bottom: 12px;">
+            <label style="display: block; font-size: 11px; font-weight: 800; text-transform: uppercase; color: #64748B; margin-bottom: 4px;">Service / Subject</label>
+            <input type="text" id="req-inv-subject" placeholder="e.g. November 2026 Top-Up Bulk Order" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 12px;" />
+          </div>
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-size: 11px; font-weight: 800; text-transform: uppercase; color: #64748B; margin-bottom: 4px;">Notes / PO Details</label>
+            <textarea id="req-inv-notes" rows="3" placeholder="Enter PO reference, special instructions..." style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 12px;"></textarea>
+          </div>
+          <div style="display: flex; justify-content: flex-end; gap: 8px;">
+            <button type="button" class="btn btn-outline" onclick="MeetingRoomsModule.closeModal('modal-req-invoice')" style="font-size: 12px; font-weight: 700;">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="MeetingRoomsModule.closeModal('modal-req-invoice'); App.showToast('Invoice request dispatched to Finance Ops.', 'success');" style="background: #4F3FE0; font-size: 12px; font-weight: 800;">Submit Request</button>
+          </div>
+        </div>
+      </div>
+    `;
+    const mount = document.getElementById('modal-mount');
+    if (mount) mount.innerHTML = modalHtml;
+  },
+
+  updateBillingProfile(startupId, event) {
+    if (event) event.preventDefault();
+    const legalName = document.getElementById('billing-legal-name')?.value;
+    const gstin = document.getElementById('billing-gstin')?.value;
+    const address = document.getElementById('billing-address')?.value;
+
+    const bs = (typeof window !== 'undefined' && window.billingService) ? window.billingService : require('../../billingService');
+    if (gstin && !bs.validateGSTIN(gstin)) {
+      if (typeof App !== 'undefined') App.showToast('Invalid GSTIN format (must be 15 alphanumeric characters).', 'danger');
+      return;
+    }
+
+    const startup = window.store.getStartupById(startupId);
+    if (startup) {
+      startup.name = legalName || startup.name;
+      startup.gstin = gstin ? gstin.trim().toUpperCase() : startup.gstin;
+      startup.billingAddress = address;
+      if (window.store.save) window.store.save();
+    }
+
+    if (typeof App !== 'undefined') App.showToast('Billing profile saved successfully.', 'success');
+  },
+
+  toggleAutoRenew(startupId, enabled) {
+    if (typeof App !== 'undefined') {
+      App.showToast(enabled ? 'Auto-renew enabled for next cycle (1 Dec 2026).' : 'Auto-renew disabled.', 'info');
+    }
+  },
+
+  openTDSModal(invoiceId) {
+    const modalHtml = `
+      <div class="modal-overlay active" id="modal-tds" onclick="if(event.target === this) MeetingRoomsModule.closeModal('modal-tds')" style="display: flex; align-items: center; justify-content: center; z-index: 1070; padding: 16px; background: rgba(15, 23, 42, 0.78); backdrop-filter: blur(8px);">
+        <div style="background: #ffffff; border-radius: 18px; max-width: 460px; width: 100%; overflow: hidden; padding: 24px; box-shadow: 0 25px 60px rgba(0,0,0,0.35);">
+          <h3 style="font-size: 18px; font-weight: 900; color: #111827; margin: 0 0 6px 0;">
+            🏢 Section 194-I TDS Credit
+          </h3>
+          <p style="font-size: 12px; color: #64748B; margin: 0 0 14px 0;">
+            Attach Form 16A or Challan ITNS 281 for 10% rent TDS deduction on invoice #${invoiceId}.
+          </p>
+          <div style="border: 2px dashed #CBD5E1; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 16px; cursor: pointer;" onclick="document.getElementById('tds-file').click()">
+            <span style="font-size: 28px;">📄</span>
+            <div style="font-weight: 800; font-size: 12px; margin-top: 4px; color: #4F3FE0;">Click to select Form 16A PDF</div>
+            <div style="font-size: 10px; color: #94A3B8;">Max size: 5 MB</div>
+            <input type="file" id="tds-file" accept=".pdf" style="display: none;" onchange="document.getElementById('tds-filename').textContent = this.files[0]?.name || ''" />
+            <div id="tds-filename" style="font-weight: 700; color: #059669; font-size: 11px; margin-top: 4px;"></div>
+          </div>
+          <div style="display: flex; justify-content: flex-end; gap: 8px;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.closeModal('modal-tds')" style="font-weight: 700;">Cancel</button>
+            <button type="button" class="btn btn-primary btn-sm" onclick="MeetingRoomsModule.closeModal('modal-tds'); App.showToast('TDS certificate submitted for Admin approval.', 'success');" style="background: #4F3FE0; font-weight: 800;">Upload &amp; Submit</button>
+          </div>
+        </div>
+      </div>
+    `;
+    const mount = document.getElementById('modal-mount');
+    if (mount) mount.innerHTML = modalHtml;
   },
 
   // Tab 5: Analytics Dashboard View (Utilization, Peak Hours, Cancellations, Revenue, Startup Usage)
@@ -8340,33 +8874,95 @@ const MeetingRoomsModule = {
       });
     }
 
-    const remainingCredits = Math.max(0, (startup.includedMeetingHours || 12) - (startup.usedMeetingHours || 0));
-    const isCovered = remainingCredits >= duration;
-    const billableHours = Math.max(0, duration - remainingCredits);
-    const charge = isCovered ? 0 : Math.round(room.hourlyRate * billableHours);
+    const dateInput = document.getElementById('book-modal-date');
+    const bookDate = (dateInput && dateInput.value) || this.selectedDate || '2026-11-03';
 
-    if (isCovered) {
-      titleEl.innerHTML = `Covered by Plan (₹0) • <span style="font-size: 11.5px; font-weight: 600; color: var(--text-secondary);">${durText} deducted</span>`;
-      titleEl.style.color = '#15803d';
-      if (badgeEl) {
-        badgeEl.className = 'badge badge-success';
-        badgeEl.textContent = `${Number((remainingCredits - duration).toFixed(2))} hrs remaining`;
-      }
-    } else {
-      titleEl.innerHTML = `Additional Payable: ₹${charge.toLocaleString('en-IN')} • <span style="font-size: 11.5px; font-weight: 600; color: var(--text-secondary);">${durText} at ₹${room.hourlyRate}/hr</span>`;
-      titleEl.style.color = '#2563eb';
-      if (badgeEl) {
-        badgeEl.className = 'badge badge-primary';
-        badgeEl.textContent = `₹${charge.toLocaleString('en-IN')} payable`;
-      }
+    // Single source of truth credit evaluation
+    let evalResult = null;
+    const cs = (typeof window !== 'undefined' && window.creditService) ? window.creditService : (typeof creditService !== 'undefined' ? creditService : null);
+    if (cs && typeof cs.evaluateBookingCost === 'function') {
+      const allRooms = window.store.getMeetingRooms();
+      evalResult = cs.evaluateBookingCost(startup, allRooms, {
+        roomId,
+        date: bookDate,
+        startTime,
+        endTime
+      });
     }
 
-    if (breakdownEl) {
-      breakdownEl.innerHTML = `
-        <div style="display: flex; justify-content: space-between;"><span>Hourly Rate (${room.name}):</span><strong>₹${room.hourlyRate}/hr × ${durText}</strong></div>
-        <div style="display: flex; justify-content: space-between;"><span>Included Plan Credits (${startup.name}):</span><strong style="color: #16a34a;">${remainingCredits}h available</strong></div>
-        <div style="display: flex; justify-content: space-between; border-top: 1px dashed rgba(37,99,235,0.25); padding-top: 3px; margin-top: 2px;"><span><strong>Additional Amount Payable:</strong></span><strong style="color: ${isCovered ? '#16a34a' : '#2563eb'};">${isCovered ? '₹0 (Covered by Plan)' : `₹${charge.toLocaleString('en-IN')}`}</strong></div>
-      `;
+    if (evalResult) {
+      if (evalResult.willCauseOverage) {
+        titleEl.innerHTML = `⚠️ Quota Exceeded — Extra Overage: ₹${evalResult.overageFee.toLocaleString('en-IN')} • <span style="font-size: 11.5px; font-weight: 600; color: #dc2626;">${evalResult.overageHours} hrs @ ₹1,500/hr</span>`;
+        titleEl.style.color = '#dc2626';
+        if (badgeEl) {
+          badgeEl.className = 'badge badge-danger';
+          badgeEl.style.background = '#FEE2E2';
+          badgeEl.style.color = '#B91C1C';
+          badgeEl.textContent = `₹${evalResult.overageFee.toLocaleString('en-IN')} overage`;
+        }
+        if (breakdownEl) {
+          breakdownEl.innerHTML = `
+            <div style="display: flex; justify-content: space-between;"><span>Reservation Duration:</span><strong>${durText} (${evalResult.neededCredits} credits)</strong></div>
+            <div style="display: flex; justify-content: space-between;"><span>Available Allowance (${startup.name}):</span><strong style="color: #2563eb;">${evalResult.availableCredits} credits (${(evalResult.availableCredits / 10).toFixed(1)} hrs)</strong></div>
+            <div style="display: flex; justify-content: space-between;"><span>Overage Billed (${evalResult.overageHours} hrs @ ₹1,500/hr):</span><strong style="color: #dc2626;">₹${evalResult.overageFee.toLocaleString('en-IN')}</strong></div>
+            <div style="margin-top: 6px; padding: 8px 12px; background: #FEF3C7; border: 1.5px solid #F59E0B; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+              <div style="font-size: 11px; color: #92400E; font-weight: 700; line-height: 1.3;">
+                💡 Top up instead for ₹500/hr (Save ₹${evalResult.savingsWithTopUp.toLocaleString('en-IN')})!
+              </div>
+              <button type="button" class="btn btn-sm" onclick="MeetingRoomsModule.openCreditTopUpModal('${startup.id}')" style="background: #D97706; color: #ffffff; font-size: 10.5px; font-weight: 800; padding: 4px 10px; border-radius: 6px; border: none; cursor: pointer; white-space: nowrap;">
+                + Top Up Instead
+              </button>
+            </div>
+          `;
+        }
+      } else {
+        const remAfter = evalResult.availableCredits - evalResult.neededCredits;
+        const remHours = Number((remAfter / 10).toFixed(1));
+        titleEl.innerHTML = `Covered by Plan (₹0) • <span style="font-size: 11.5px; font-weight: 600; color: var(--text-secondary);">${durText} (${evalResult.neededCredits} credits) deducted</span>`;
+        titleEl.style.color = '#15803d';
+        if (badgeEl) {
+          badgeEl.className = 'badge badge-success';
+          badgeEl.style.background = '#DCFCE7';
+          badgeEl.style.color = '#15803D';
+          badgeEl.textContent = `${remAfter} credits · ${remHours} hrs left`;
+        }
+        if (breakdownEl) {
+          breakdownEl.innerHTML = `
+            <div style="display: flex; justify-content: space-between;"><span>Reservation Duration:</span><strong>${durText} (${evalResult.neededCredits} credits)</strong></div>
+            <div style="display: flex; justify-content: space-between;"><span>Monthly Allowance (${startup.name}):</span><strong style="color: #16a34a;">${evalResult.availableCredits} credits (${(evalResult.availableCredits / 10).toFixed(1)} hrs)</strong></div>
+            <div style="display: flex; justify-content: space-between; border-top: 1px dashed rgba(37,99,235,0.25); padding-top: 3px; margin-top: 2px;"><span><strong>Payable Amount:</strong></span><strong style="color: #16a34a;">₹0 (Covered by ${startup.subscriptionPlan || 'Startup Plan'})</strong></div>
+          `;
+        }
+      }
+    } else {
+      const remainingCredits = Math.max(0, (startup.includedMeetingHours || 12) - (startup.usedMeetingHours || 0));
+      const isCovered = remainingCredits >= duration;
+      const billableHours = Math.max(0, duration - remainingCredits);
+      const charge = isCovered ? 0 : Math.round(room.hourlyRate * billableHours);
+
+      if (isCovered) {
+        titleEl.innerHTML = `Covered by Plan (₹0) • <span style="font-size: 11.5px; font-weight: 600; color: var(--text-secondary);">${durText} deducted</span>`;
+        titleEl.style.color = '#15803d';
+        if (badgeEl) {
+          badgeEl.className = 'badge badge-success';
+          badgeEl.textContent = `${Number((remainingCredits - duration).toFixed(2))} hrs remaining`;
+        }
+      } else {
+        titleEl.innerHTML = `Additional Payable: ₹${charge.toLocaleString('en-IN')} • <span style="font-size: 11.5px; font-weight: 600; color: var(--text-secondary);">${durText} at ₹${room.hourlyRate}/hr</span>`;
+        titleEl.style.color = '#2563eb';
+        if (badgeEl) {
+          badgeEl.className = 'badge badge-primary';
+          badgeEl.textContent = `₹${charge.toLocaleString('en-IN')} payable`;
+        }
+      }
+
+      if (breakdownEl) {
+        breakdownEl.innerHTML = `
+          <div style="display: flex; justify-content: space-between;"><span>Hourly Rate (${room.name}):</span><strong>₹${room.hourlyRate}/hr × ${durText}</strong></div>
+          <div style="display: flex; justify-content: space-between;"><span>Included Plan Credits (${startup.name}):</span><strong style="color: #16a34a;">${remainingCredits}h available</strong></div>
+          <div style="display: flex; justify-content: space-between; border-top: 1px dashed rgba(37,99,235,0.25); padding-top: 3px; margin-top: 2px;"><span><strong>Additional Amount Payable:</strong></span><strong style="color: ${isCovered ? '#16a34a' : '#2563eb'};">${isCovered ? '₹0 (Covered by Plan)' : `₹${charge.toLocaleString('en-IN')}`}</strong></div>
+        `;
+      }
     }
   },
 
@@ -8588,14 +9184,14 @@ const MeetingRoomsModule = {
     this.switchModalSession(initialSession);
     if (preselectedTime) {
       const startSelect = document.getElementById('book-start-time');
-      if (startSelect && [...startSelect.options].some(o => o.value === preselectedTime)) {
+      if (startSelect && Array.from(startSelect.options || []).some(o => o.value === preselectedTime)) {
         startSelect.value = preselectedTime;
         this.syncEndTime(preselectedTime);
       }
     }
     if (preselectedEndTime) {
       const endSelect = document.getElementById('book-end-time');
-      if (endSelect && [...endSelect.options].some(o => o.value === preselectedEndTime)) {
+      if (endSelect && Array.from(endSelect.options || []).some(o => o.value === preselectedEndTime)) {
         endSelect.value = preselectedEndTime;
       }
     }
