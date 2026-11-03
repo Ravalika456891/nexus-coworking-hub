@@ -400,12 +400,8 @@ window.RoomGallery = {
 
     return candidateSlots.map(s => {
       const start = toMin(s);
-      const end = start + durMins;
-
-      // Operating session closing time boundary:
-      // Morning session closes at 11:00 (660 mins); Evening session closes at 19:00 (1140 mins)
       const sessionClose = (start < 660) ? 660 : 1140;
-      const exceedsOperatingHours = (end > sessionClose);
+      const sessionRemainingMins = Math.max(0, sessionClose - start);
 
       // Past slot check using incubator center's IST timezone
       const isPastSlot = isPastDate || (isToday && (start < istClock.clockMinutes));
@@ -417,13 +413,14 @@ window.RoomGallery = {
         return start >= bStart && start < bEnd;
       });
 
-      // Full-Duration conflict validation:
-      // Conflict rule: newStart < existingEnd AND newEnd > existingStart
-      const hasConflict = bookings.some(b => {
-        const bStart = toMin(b.startTime);
-        const bEnd = toMin(b.endTime);
-        return start < bEnd && end > bStart;
-      });
+      // Max continuous minutes available starting from this slot before a booking or session close
+      let maxAvailableMins = sessionRemainingMins;
+      const upcomingBooking = bookings
+        .filter(b => toMin(b.startTime) >= start && toMin(b.startTime) < sessionClose)
+        .sort((a, b) => toMin(a.startTime) - toMin(b.startTime))[0];
+      if (upcomingBooking) {
+        maxAvailableMins = Math.min(maxAvailableMins, toMin(upcomingBooking.startTime) - start);
+      }
 
       let state = 'open';
       let label = 'Available';
@@ -437,13 +434,9 @@ window.RoomGallery = {
         state = 'past';
         label = 'Past';
         disabled = true;
-      } else if (isDirectlyBooked) {
+      } else if (isDirectlyBooked || maxAvailableMins < 30) {
         state = 'booked';
-        label = 'Booked';
-        disabled = true;
-      } else if (exceedsOperatingHours || hasConflict) {
-        state = 'unavailable';
-        label = exceedsOperatingHours ? 'Closed' : 'Unavailable';
+        label = isDirectlyBooked ? 'Booked' : 'Closed';
         disabled = true;
       } else {
         state = 'open';
@@ -453,8 +446,8 @@ window.RoomGallery = {
 
       return {
         start: s,
-        endMin: end,
-        durationMins: durMins,
+        maxAvailableMins,
+        fitsRequestedDuration: maxAvailableMins >= durMins,
         state,
         label,
         disabled
@@ -624,13 +617,47 @@ window.RoomGallery = {
     const slots = this.getSlotsForDate(room, this.activeDate, this.selectedDurationMins || 60);
     const targetSlot = slots.find(s => s.start === slotTime);
 
-    if (!targetSlot || targetSlot.disabled || targetSlot.state !== 'open') {
-      // Non-selectable slot per rule 4
+    if (!targetSlot) return;
+
+    if (targetSlot.state === 'booked') {
+      if (typeof App !== 'undefined' && App.showToast) {
+        App.showToast(`⚠️ ${this.fmt12(slotTime)} is already booked. Please choose an open slot.`, 'warning');
+      }
+      return;
+    }
+
+    if (targetSlot.state === 'closed') {
+      if (typeof App !== 'undefined' && App.showToast) {
+        App.showToast(`⚠️ This room is currently under maintenance.`, 'warning');
+      }
+      return;
+    }
+
+    if (targetSlot.state === 'past') {
+      if (typeof App !== 'undefined' && App.showToast) {
+        App.showToast(`⚠️ ${this.fmt12(slotTime)} has already passed today.`, 'warning');
+      }
       return;
     }
 
     // Set selected start time and highlight in purple
     this.selectedSlot = slotTime;
+
+    // Check if the current selectedDurationMins fits within operating session
+    const curDur = this.selectedDurationMins || 60;
+    const maxAvail = targetSlot.maxAvailableMins || 180;
+    
+    if (curDur > maxAvail) {
+      // Pick highest supported duration that fits: 180, 120, 90, 60, 30
+      const supportedDurations = [180, 120, 90, 60, 30];
+      const newDur = supportedDurations.find(d => d <= maxAvail) || 30;
+      this.selectedDurationMins = newDur;
+      const durLabel = newDur === 30 ? '30m' : newDur === 60 ? '1hr' : newDur === 90 ? '1.5hrs' : newDur === 120 ? '2hrs' : '3hrs';
+      if (typeof App !== 'undefined' && App.showToast) {
+        App.showToast(`Selected ${this.fmt12(slotTime)}. Duration set to ${durLabel} to fit operating session hours.`, 'info');
+      }
+    }
+
     this.refreshBookingMount();
     this.updateFooterButtonState();
   },
@@ -644,10 +671,19 @@ window.RoomGallery = {
     
     // Check if the currently selected slot can fit this new duration
     const current = slots.find(s => s.start === this.selectedSlot);
-    if (!current || current.state !== 'open') {
-      // Clear or find first open slot that fits the new full duration
-      const suitableSlot = slots.find(s => s.state === 'open');
-      this.selectedSlot = suitableSlot ? suitableSlot.start : null;
+    if (!current || current.state !== 'open' || (current.maxAvailableMins && current.maxAvailableMins < this.selectedDurationMins)) {
+      // Auto-relocate to an open slot that fits the new full duration
+      const suitableSlot = slots.find(s => s.state === 'open' && s.maxAvailableMins >= this.selectedDurationMins);
+      if (suitableSlot) {
+        this.selectedSlot = suitableSlot.start;
+        const durLabel = mins === 30 ? '30m' : mins === 60 ? '1hr' : mins === 90 ? '1.5hrs' : mins === 120 ? '2hrs' : '3hrs';
+        if (typeof App !== 'undefined' && App.showToast) {
+          App.showToast(`Switched to ${durLabel} duration. Selected ${this.fmt12(suitableSlot.start)} to fit session hours.`, 'info');
+        }
+      } else {
+        const firstOpen = slots.find(s => s.state === 'open');
+        this.selectedSlot = firstOpen ? firstOpen.start : null;
+      }
     }
 
     this.refreshBookingMount();
@@ -660,14 +696,14 @@ window.RoomGallery = {
     const M = window.MeetingRoomsModule;
     if (M) M.selectedDate = this.activeDate;
 
-    // Refresh slots and clear or select valid start time
+    // Refresh slots and select valid open start time
     const room = this.getRoom(this.activeRoomId);
     if (room) {
       const slots = this.getSlotsForDate(room, this.activeDate, this.selectedDurationMins || 60);
       const current = slots.find(s => s.start === this.selectedSlot);
-      if (!current || current.state !== 'open') {
-        const firstOpen = slots.find(s => s.state === 'open');
-        this.selectedSlot = firstOpen ? firstOpen.start : null;
+      if (!current || current.state !== 'open' || (current.maxAvailableMins && current.maxAvailableMins < (this.selectedDurationMins || 60))) {
+        const suitable = slots.find(s => s.state === 'open' && s.maxAvailableMins >= (this.selectedDurationMins || 60));
+        this.selectedSlot = suitable ? suitable.start : (slots.find(s => s.state === 'open') || {}).start || null;
       }
     }
     this.refreshBookingMount();
@@ -838,10 +874,10 @@ window.RoomGallery = {
     // Default duration to 60 minutes
     if (!this.selectedDurationMins) this.selectedDurationMins = 60;
 
-    // Auto-select a valid open slot so the user always starts with a valid reservation ready to book
+    // Auto-select a valid open slot that fits the duration
     const slots = this.getSlotsForDate(room, this.activeDate, this.selectedDurationMins);
-    const firstOpen = slots.find(s => s.state === 'open');
-    this.selectedSlot = firstOpen ? firstOpen.start : '08:00';
+    const suitable = slots.find(s => s.state === 'open' && s.maxAvailableMins >= this.selectedDurationMins);
+    this.selectedSlot = suitable ? suitable.start : ((slots.find(s => s.state === 'open') || {}).start || '08:00');
 
     const status = M && M.computeRoomStatus ? M.computeRoomStatus(room, dateStr) : { status: 'Available', statusType: 'available' };
     const isMaint = M && M.isRoomUnderMaintenance ? M.isRoomUnderMaintenance(room) : false;

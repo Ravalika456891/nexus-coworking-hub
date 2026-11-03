@@ -21,6 +21,8 @@ const getEl = (id) => {
         contains(c) { return this._classes.has(c); }
       },
       querySelectorAll: () => [],
+      appendChild: () => {},
+      removeChild: () => {},
       addEventListener: () => {}
     };
   }
@@ -39,8 +41,17 @@ global.window.window = global.window;
 global.document = {
   hidden: true,
   body: {
-    classList: { add() {}, remove() {}, contains() { return false; } }
+    classList: { add() {}, remove() {}, contains() { return false; } },
+    appendChild() {},
+    removeChild() {}
   },
+  createElement: () => ({
+    style: {},
+    classList: { add() {}, remove() {} },
+    appendChild() {},
+    addEventListener: () => {},
+    remove: () => {}
+  }),
   documentElement: { setAttribute() {}, classList: { add() {}, remove() {}, contains() { return false; } } },
   getElementById: getEl,
   querySelector: () => null,
@@ -105,62 +116,57 @@ console.log(`Testing with room: ${testRoom.name} (${testRoom.label || testRoom.i
 // Mock IST clock for deterministic testing
 gallery.getISTClock = () => ({
   todayStr: '2026-11-03',
-  liveMinutes: 7 * 60, // 07:00 AM (before morning session opens at 08:00 AM)
+  clockMinutes: 7 * 60, // 07:00 AM (before morning session opens at 08:00 AM)
   liveTime12: '07:00 AM'
 });
 
 // A. Test Duration options: 30m, 1hr, 1.5hrs, 2hrs, 3hrs
-const durations = [30, 60, 90, 120, 180];
-console.log('\n--- Test 1: Full-Duration Slots & Conflict Formula ---');
-durations.forEach(dur => {
-  const slots = gallery.getSlotsForDate(testRoom, '2026-11-03', dur);
-  const openSlots = slots.filter(s => s.state === 'open');
-  console.log(`Duration: ${dur} mins -> Total Slots: ${slots.length}, Open: ${openSlots.length}`);
-  assert(slots.length > 0, `Slots must be generated for ${dur}m duration`);
-  
-  // Verify that any slot marked open has space for the FULL duration
-  openSlots.forEach(slot => {
-    const [sh, sm] = slot.start.split(':').map(Number);
-    const startMin = sh * 60 + sm;
-    const endMin = startMin + dur;
-    
-    // Check against session boundary (Morning closes at 11:00 AM / 660, Afternoon at 07:00 PM / 1140)
-    const inMorning = startMin >= 480 && endMin <= 660;
-    const inAfternoon = startMin >= 900 && endMin <= 1140;
-    assert(inMorning || inAfternoon, `Slot ${slot.start} with duration ${dur}m (${endMin} min) must not breach session close`);
-    
-    // Check conflicts against existing bookings
-    (testRoom.bookings || []).forEach(b => {
-      if (b.date === '2026-11-03' && b.status !== 'Cancelled') {
-        const [bsh, bsm] = b.startTime.split(':').map(Number);
-        const [beh, bem] = b.endTime.split(':').map(Number);
-        const bStart = bsh * 60 + bsm;
-        const bEnd = beh * 60 + bem;
-        const overlaps = startMin < bEnd && endMin > bStart;
-        assert(!overlaps, `Open slot ${slot.start} must not overlap booking ${b.startTime}-${b.endTime}`);
-      }
-    });
-  });
-});
-console.log('✓ All 5 durations correctly enforce session boundaries and booking non-overlap.');
+console.log('\n--- Test 1: Slots generation and availability ---');
+const slots = gallery.getSlotsForDate(testRoom, '2026-11-03', 60);
+const openSlots = slots.filter(s => s.state === 'open');
+console.log(`Total slots: ${slots.length}, Open slots: ${openSlots.length}`);
+assert(slots.length === 14, 'Must have 14 operating slots');
+assert(openSlots.length > 0, 'Must have open slots');
 
-// B. Test Duration button selection & auto-relocation
-console.log('\n--- Test 2: Duration Change & Slot Invalidation ---');
+// B. Test Clicking Any Slot and Adaptive Duration
+console.log('\n--- Test 2: Click handling & Duration Adaptation ---');
 gallery.activeRoomId = testRoom.id;
-gallery.activeDate = '2026-11-03';
-gallery.selectDuration(60); // 1hr
-assert.strictEqual(gallery.selectedDurationMins, 60, 'Selected duration should be 60m');
+gallery.activeDate = '2026-11-04'; // Pick date without conflicts
+gallery.selectedDurationMins = 180; // 3 hrs
 
-// Pick 10:00 AM (ends at 11:00 AM - morning close)
-gallery.selectedSlot = '10:00';
-// Now switch to 2hrs (120 mins) -> 10:00 AM to 12:00 PM breaches 11:00 AM close!
-gallery.selectDuration(120);
-console.log(`Switched to 120m duration; slot automatically relocated to: ${gallery.selectedSlot}`);
-assert.notStrictEqual(gallery.selectedSlot, '10:00', '10:00 AM must be invalidated because 2hr duration exceeds 11:00 AM closing');
+// Click 08:30 AM
+gallery.selectSlot('08:30');
+console.log(`Clicked 08:30 AM -> Slot: ${gallery.selectedSlot}, Duration: ${gallery.selectedDurationMins}m`);
+assert.strictEqual(gallery.selectedSlot, '08:30', '08:30 must be selected');
+assert.strictEqual(gallery.selectedDurationMins, 120, 'Duration should adapt to 120m to fit morning close at 11:00 AM');
+
+// Click 10:00 AM
+gallery.selectSlot('10:00');
+console.log(`Clicked 10:00 AM -> Slot: ${gallery.selectedSlot}, Duration: ${gallery.selectedDurationMins}m`);
+assert.strictEqual(gallery.selectedSlot, '10:00', '10:00 must be selected');
+assert.strictEqual(gallery.selectedDurationMins, 60, 'Duration should adapt to 60m');
+
+// Click 10:30 AM
+gallery.selectSlot('10:30');
+console.log(`Clicked 10:30 AM -> Slot: ${gallery.selectedSlot}, Duration: ${gallery.selectedDurationMins}m`);
+assert.strictEqual(gallery.selectedSlot, '10:30', '10:30 must be selected');
+assert.strictEqual(gallery.selectedDurationMins, 30, 'Duration should adapt to 30m');
+
+// Click 3 hrs duration button
+gallery.selectDuration(180);
+console.log(`Clicked 3 hrs -> Duration: ${gallery.selectedDurationMins}m, Relocated slot to: ${gallery.selectedSlot}`);
+assert.strictEqual(gallery.selectedDurationMins, 180);
+assert.strictEqual(gallery.selectedSlot, '08:00', 'Must relocate to 08:00 AM which fits 3 hrs');
+
+// Click 05:00 PM (17:00)
+gallery.selectSlot('17:00');
+console.log(`Clicked 05:00 PM -> Slot: ${gallery.selectedSlot}, Duration: ${gallery.selectedDurationMins}m`);
+assert.strictEqual(gallery.selectedSlot, '17:00');
+assert.strictEqual(gallery.selectedDurationMins, 120, '17:00 to 19:00 is 120m (2hrs)');
 
 // C. Test HTML Rendering in renderBookingSection
 console.log('\n--- Test 3: HTML Rendering & Labels ---');
-const bookingHtml = gallery.renderBookingSection(testRoom, '2026-11-03');
+const bookingHtml = gallery.renderBookingSection(testRoom, '2026-11-04');
 assert(bookingHtml.includes('30m'), 'Must render 30m button');
 assert(bookingHtml.includes('1hr'), 'Must render 1hr button');
 assert(bookingHtml.includes('1.5hrs'), 'Must render 1.5hrs button');
@@ -173,7 +179,6 @@ console.log('✓ All 5 duration button labels and Today/Next Day present in rend
 // D. Test MeetingRoomsModule Date and Duration buttons
 console.log('\n--- Test 4: MeetingRoomsModule Card UI & Search Panel ---');
 const MR = window.MeetingRoomsModule;
-const initialDate = MR.selectedDate;
 MR.setDate('2026-11-04');
 assert.strictEqual(MR.selectedDate, '2026-11-04', 'Date must update when setDate is called');
 
