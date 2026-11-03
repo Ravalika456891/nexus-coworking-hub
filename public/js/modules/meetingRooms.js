@@ -215,6 +215,17 @@ const MeetingRoomsModule = {
   },
 
   setSchedulerViewMode(mode, withSkeleton = false) {
+    if (mode === 'cards') {
+      this.activeTab = 'scheduler';
+      this.schedulerViewMode = 'cards';
+      if (typeof window !== 'undefined' && window.App && typeof window.App.switchTab === 'function') {
+        window.App.switchTab('meetingRooms');
+        return;
+      }
+      this.isCalendarLoading = false;
+      this.render();
+      return;
+    }
     this.schedulerViewMode = mode || 'cards';
     if (withSkeleton && typeof window !== 'undefined' && typeof setTimeout === 'function') {
       this.isCalendarLoading = true;
@@ -435,12 +446,12 @@ const MeetingRoomsModule = {
   },
 
   switchTab(tab) {
-    if (tab === 'explore') {
+    if (tab === 'explore' || tab === 'scheduler' || tab === 'cards') {
       this.activeTab = 'scheduler';
-      if (this.schedulerViewMode !== 'compare') this.schedulerViewMode = 'cards';
+      this.schedulerViewMode = 'cards';
     } else if (tab === 'calendar') {
       this.activeTab = 'calendar';
-      if (!['day', 'week', 'month'].includes(this.schedulerViewMode)) {
+      if (!['day', 'week', 'month', 'compare'].includes(this.schedulerViewMode)) {
         this.schedulerViewMode = 'day';
       }
     } else if (tab === 'admin') {
@@ -1861,7 +1872,11 @@ const MeetingRoomsModule = {
 
   // Tab 2: Booking Calendar View (Day View, Week View, Month View, Room-Specific Schedules, 30m & 60m Slots)
   renderBookingCalendarTabView(data) {
-    if (!['day', 'week', 'month'].includes(this.schedulerViewMode)) {
+    if (this.schedulerViewMode === 'cards') {
+      this.activeTab = 'scheduler';
+      return this.renderSchedulerView(data);
+    }
+    if (!['day', 'week', 'month', 'compare'].includes(this.schedulerViewMode)) {
       this.schedulerViewMode = 'day';
     }
     return this.renderSchedulerView(data);
@@ -3375,9 +3390,6 @@ const MeetingRoomsModule = {
             </p>
           </div>
           <div style="display: flex; gap: 8px; align-items: center;">
-            <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.setSchedulerViewMode('cards')" style="font-size: 11.5px; font-weight: 700; border-radius: 8px;">
-              🎴 Switch to Room Cards
-            </button>
             <button type="button" class="btn btn-primary btn-sm" onclick="MeetingRoomsModule.openBookModal()" style="font-size: 11.5px; font-weight: 700; border-radius: 8px;">
               + Custom Booking
             </button>
