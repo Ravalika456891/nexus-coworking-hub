@@ -646,7 +646,8 @@ const MeetingRoomsModule = {
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: var(--bg-surface, #ffffff); padding: 12px 18px; border-radius: 14px; border: 1px solid var(--border-subtle, #e2e8f0); box-shadow: 0 2px 8px rgba(0,0,0,0.02); flex-wrap: wrap; gap: 12px;">
           <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
             <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.setSchedulerViewMode('cards')" style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: 8px; background: var(--bg-surface, #ffffff); border: 1px solid var(--border-medium, #cbd5e1); color: var(--text-primary, #1e293b); cursor: pointer; transition: all 0.15s ease;">
-              <span>←</span> <span>Overview Cards</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+              <span>Overview Cards</span>
             </button>
             <div style="display: inline-flex; align-items: center; gap: 6px; background: var(--bg-surface-elevated, #f8fafc); border: 1px solid var(--border-subtle, #e2e8f0); padding: 5px 12px; border-radius: 8px; font-size: 12.5px; font-weight: 800; color: var(--text-primary, #0f172a);">
               <span>📅</span> <span>${formattedDateLabel}</span>
@@ -4064,45 +4065,43 @@ const MeetingRoomsModule = {
                             onclick="MeetingRoomsModule.setDate('${wd.dateStr}'); MeetingRoomsModule.openBookModal('${room.id}', null, '${myStartup.id}')"
                             title="Click to reserve ${room.name} on ${wd.shortDay}, ${wd.dayNum} ${wd.monthShort}">
                           ${(myDayBookings.length === 0 && otherDayBookings === 0) ? `
-                            <!-- Clean Symmetric Open Card for Day with Zero Bookings -->
-                            <div class="cal-week-open-card">
-                              <div class="cal-week-open-badge">
-                                <span class="cal-dot-green"></span>
-                                <span>${st.availableSlotsCount} Open</span>
+                            <!-- Pristine Minimal Open Cell (Prompt on Hover Only) -->
+                            <div class="cal-open-cell-inner">
+                              <div class="cal-open-hover-hint">
+                                <span style="font-size: 13px; line-height: 1;">+</span>
+                                <span>Reserve Slot</span>
                               </div>
-                              <div class="cal-week-open-action">+ Book</div>
                             </div>
                           ` : `
                             <!-- Day with Active Bookings -->
                             <div style="display: flex; flex-direction: column; gap: 4px; height: 100%;">
-                              ${st.availableSlotsCount > 0 ? `
-                                <div class="cal-avail-badge">
-                                  <span style="display: inline-flex; align-items: center; gap: 5px;">
-                                    <span style="width: 6px; height: 6px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
-                                    <span>${st.availableSlotsCount} Open</span>
-                                  </span>
-                                  <span class="cal-hover-btn" style="margin: 0; padding: 1px 7px;">+ Book</span>
-                                </div>
-                              ` : `
-                                <div style="font-size: 10px; font-weight: 700; color: #64748b; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; text-align: center;">
-                                  Fully Booked
-                                </div>
-                              `}
-
                               <!-- User's Active Bookings (Rendered as Sleek Event Cards) -->
-                              ${myDayBookings.map(mb => `
-                                <div onclick="event.stopPropagation(); MeetingRoomsModule.openReservationDetailsModal('${room.id}', '${mb.id}')"
-                                     class="cal-event-card mine"
-                                     title="Your Booking: ${mb.startTime}–${mb.endTime} • ${mb.title || 'Session'} (Click to view or reschedule)">
-                                  <div class="cal-event-time">⏰ ${mb.startTime} – ${mb.endTime}</div>
-                                  <div class="cal-event-title">${mb.title || 'Team Session'}</div>
-                                </div>
-                              `).join('')}
+                              ${myDayBookings.map(mb => {
+                                let displayTitle = mb.title || 'Team Session';
+                                displayTitle = displayTitle.replace(new RegExp(`\\s+in\\s+${room.name}`, 'i'), '').trim();
+                                if (!displayTitle) displayTitle = 'Team Session';
+                                return `
+                                  <div onclick="event.stopPropagation(); MeetingRoomsModule.openReservationDetailsModal('${room.id}', '${mb.id}')"
+                                       class="cal-event-card mine"
+                                       title="Your Booking: ${mb.startTime}–${mb.endTime} • ${displayTitle} (Click to view or reschedule)">
+                                    <div class="cal-event-time">⏰ ${mb.startTime} – ${mb.endTime}</div>
+                                    <div class="cal-event-title">${displayTitle}</div>
+                                  </div>
+                                `;
+                              }).join('')}
 
                               <!-- Other Bookings -->
                               ${otherDayBookings > 0 ? `
                                 <div class="cal-event-card other" title="${otherDayBookings} slot(s) reserved by other members">
-                                  <span>🔒 ${otherDayBookings} Session${otherDayBookings > 1 ? 's' : ''} Reserved</span>
+                                  <span>🔒 ${otherDayBookings} Reserved</span>
+                                </div>
+                              ` : ''}
+
+                              <!-- Remaining Availability Pill if still slots open -->
+                              ${st.availableSlotsCount > 0 ? `
+                                <div class="cal-slot-avail-mini" title="${st.availableSlotsCount} slots still available on this day">
+                                  <span class="cal-dot-green"></span>
+                                  <span>+ ${st.availableSlotsCount} open</span>
                                 </div>
                               ` : ''}
                             </div>
