@@ -1519,9 +1519,14 @@ const MeetingRoomsModule = {
                         currentDateSection = b.date;
                         const headerTitle = this.formatDateSectionHeader(b.date, todayStr);
                         renderedRows.push(`
-                          <tr class="date-section-header-row" style="background: var(--bg-surface-elevated); border-top: 1.5px solid var(--border-medium); border-bottom: 1px solid var(--border-subtle);">
-                            <td colspan="6" style="padding: 7px 16px; font-weight: 800; font-size: 12px; color: var(--accent-primary); letter-spacing: 0.3px;">
-                              📅 ${headerTitle}
+                          <tr class="date-section-header-row" style="background: #f8fafc; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #f1f5f9;">
+                            <td colspan="6" style="padding: 10px 18px;">
+                              <div style="display: flex; align-items: center; gap: 10px;">
+                                <span class="badge" style="background: #ede9fe; color: #4338ca; font-size: 11.5px; font-weight: 800; padding: 4px 10px; border-radius: 6px; letter-spacing: 0.2px;">
+                                  📅 ${headerTitle}
+                                </span>
+                                <span style="height: 1px; flex: 1; background: #e2e8f0;"></span>
+                              </div>
                             </td>
                           </tr>
                         `);
@@ -1614,10 +1619,10 @@ const MeetingRoomsModule = {
             <div style="padding: 12px 20px; background: var(--bg-surface-elevated); border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--text-muted);">
               <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                 <span>
-                  Showing <strong>${totalItems}</strong> bookings, <strong>${filteredHours.toFixed(1)} hrs</strong>
+                  Showing <strong>${totalItems}</strong> reservations (<strong>${filteredHours.toFixed(1)} hrs</strong>)
                 </span>
-                <span class="badge" style="background: rgba(34, 197, 94, 0.12); color: #16a34a; font-weight: 700; font-size: 11px; padding: 3px 8px; border-radius: 6px;">
-                  ${allowance.monthLabel}: ${allowance.usedHours.toFixed(1)} / ${allowance.includedHours.toFixed(1)} hrs used, ${allowance.remainingHours.toFixed(1)} left
+                <span class="badge" style="background: rgba(34, 197, 94, 0.12); color: #15803d; font-weight: 700; font-size: 11px; padding: 4px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
+                  <span>💳</span> <span>${allowance.monthLabel || allowance.monthName || 'November'}: ${allowance.usedHours.toFixed(1)} / ${allowance.includedHours.toFixed(1)} hrs used • <strong>${allowance.remainingHours.toFixed(1)} hrs free remaining</strong></span>
                 </span>
                 ${totalPages > 1 ? `
                   <span>•</span>
@@ -1660,7 +1665,7 @@ const MeetingRoomsModule = {
               <div style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
                 <span>Total Reserved: <strong style="color: var(--text-primary); font-family: var(--font-mono);">${totalHoursBooked.toFixed(1)} hrs</strong></span>
                 <span>•</span>
-                <span>Total Fees: <strong style="color: #2563eb; font-family: var(--font-mono);">₹${totalFeesBilled.toLocaleString('en-IN')}</strong></span>
+                <span>Total Fees: <strong style="color: #2563eb; font-family: var(--font-mono);">${totalFeesBilled > 0 ? `₹${totalFeesBilled.toLocaleString('en-IN')}` : '₹0 (100% Free)'}</strong></span>
               </div>
             </div>
           ` : `
@@ -1947,27 +1952,37 @@ const MeetingRoomsModule = {
 
         <!-- 3. Time (IST) -->
         <td class="col-time" style="white-space: nowrap;">
-          <div style="font-weight: 700; color: var(--text-primary); font-size: 12px;">
-            ${start12} – ${end12}, ${durStrClean}
+          <div style="font-weight: 700; color: var(--text-primary); font-size: 12.5px;">
+            ${start12} – ${end12}
           </div>
           ${(!isCompleted && !isCancelled) ? `
-            <div style="display: flex; gap: 4px; margin-top: 3px;">
+            <div style="display: flex; gap: 4px; margin-top: 4px;">
               <button type="button" onclick="MeetingRoomsModule.syncBookingWithProvider('${b.roomId}', '${b.id}', 'google')" style="font-size: 9px; padding: 1px 5px; border-radius: 4px; border: 1px solid var(--border-subtle); background: var(--bg-surface-elevated); color: #2563eb; cursor: pointer;" title="Sync to Google Calendar" aria-label="Sync to Google Calendar">+GCal</button>
               <button type="button" onclick="MeetingRoomsModule.syncBookingWithProvider('${b.roomId}', '${b.id}', 'outlook')" style="font-size: 9px; padding: 1px 5px; border-radius: 4px; border: 1px solid var(--border-subtle); background: var(--bg-surface-elevated); color: #0284c7; cursor: pointer;" title="Sync to Outlook" aria-label="Sync to Outlook">+Outlook</button>
             </div>
           ` : ''}
         </td>
 
-        <!-- 4. Usage -->
+        <!-- 4. Usage (Clear & Free Indicator) -->
         <td class="col-usage" style="white-space: nowrap;">
-          <span style="font-weight: 700; font-size: 12px; color: var(--text-primary);">${durStrClean}</span>
-          ${Number(b.cost) > 0 ? `
-            <div style="margin-top: 2px;">
-              <span class="badge" style="background: #fef3c7; color: #92400e; border: 1px solid #fde68a; font-size: 9.5px; padding: 1px 5px; font-weight: 700;">
-                ₹${Number(b.cost).toLocaleString('en-IN')} overage
+          <div style="font-weight: 700; font-size: 12.5px; color: var(--text-primary);">${durStrClean}</div>
+          ${b.status === 'Cancelled' ? `
+            <div style="margin-top: 3px;">
+              <span class="badge" style="background: #f1f5f9; color: #64748b; font-size: 9.5px; padding: 1px 6px; font-weight: 600; border-radius: 4px;">Refunded</span>
+            </div>
+          ` : Number(b.cost) > 0 ? `
+            <div style="margin-top: 3px;">
+              <span class="badge" style="background: #fef3c7; color: #92400e; border: 1px solid #fde68a; font-size: 9.5px; padding: 1px 6px; font-weight: 700; border-radius: 4px;">
+                ⚠️ ₹${Number(b.cost).toLocaleString('en-IN')} overage
               </span>
             </div>
-          ` : ''}
+          ` : `
+            <div style="margin-top: 3px;">
+              <span class="badge" style="background: rgba(34, 197, 94, 0.12); color: #15803d; border: 1px solid rgba(34, 197, 94, 0.25); font-size: 9.5px; padding: 1px 6px; font-weight: 700; border-radius: 4px;">
+                ✓ Free (Plan)
+              </span>
+            </div>
+          `}
         </td>
 
         <!-- 5. Status (Dot + Label) -->
@@ -8390,12 +8405,20 @@ const MeetingRoomsModule = {
     this.closeAllRowMenus();
     if (targetMenu && !isCurrentlyOpen) {
       targetMenu.style.display = 'block';
+      const td = targetMenu.closest('td');
+      if (td) td.style.zIndex = '9999';
+      const tr = targetMenu.closest('tr');
+      if (tr) tr.style.zIndex = '9999';
     }
   },
 
   closeAllRowMenus() {
     document.querySelectorAll('.meeting-row-menu').forEach(menu => {
       menu.style.display = 'none';
+      const td = menu.closest('td');
+      if (td) td.style.zIndex = '5';
+      const tr = menu.closest('tr');
+      if (tr) tr.style.zIndex = '';
     });
   },
 

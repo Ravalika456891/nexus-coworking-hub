@@ -1737,6 +1737,7 @@ class NexusStore {
       startupName: startup.name,
       month: mStr,
       monthName,
+      monthLabel: monthName,
       includedHours,
       usedHours: monthBookedHours,
       remainingHours,
