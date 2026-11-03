@@ -54,7 +54,22 @@ EXCLUDE USING gist (
   tstzrange(start_datetime, end_datetime, '[)') WITH &&
 ) WHERE (status != 'Cancelled');
 
--- 4. Index for fast monthly allowance lookups per startup
+-- 4. Unique Booking Ref Constraint & Remediation of Legacy Duplicates
+-- If legacy tables contain non-unique refs (e.g. BKG-751), regenerate unique refs server-side:
+WITH ranked_dupes AS (
+  SELECT ctid, id, date,
+         ROW_NUMBER() OVER (PARTITION BY id ORDER BY created_at ASC) AS rn
+  FROM bookings
+)
+UPDATE bookings b
+SET id = 'BKG-' || TO_CHAR(b.date, 'YYYYMMDD') || '-' || LPAD(b.ctid::text, 4, '0')
+FROM ranked_dupes r
+WHERE b.ctid = r.ctid AND r.rn > 1;
+
+ALTER TABLE bookings DROP CONSTRAINT IF EXISTS uq_booking_ref;
+ALTER TABLE bookings ADD CONSTRAINT uq_booking_ref UNIQUE (id);
+
+-- 5. Index for fast monthly allowance lookups per startup
 CREATE INDEX IF NOT EXISTS idx_bookings_startup_month 
 ON bookings (startup_id, date) 
 WHERE (status != 'Cancelled');
