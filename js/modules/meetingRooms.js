@@ -5090,6 +5090,10 @@ const MeetingRoomsModule = {
   showBookingSuccessModal(room, booking, myStartup) {
     if (!room || !booking) return;
 
+    // Clean up any existing modal instance
+    const existing = document.getElementById('modal-booking-success');
+    if (existing) existing.remove();
+
     const formatSlot12h = (slot24) => {
       const [h, m] = slot24.split(':').map(Number);
       const period = h >= 12 ? 'PM' : 'AM';
@@ -5131,7 +5135,7 @@ const MeetingRoomsModule = {
     const pinDigits = String(Math.abs((booking.id || 'BKG100').split('').reduce((acc, c) => acc + c.charCodeAt(0), 1234)) % 9000 + 1000);
 
     const html = `
-      <div class="modal-overlay active" id="modal-booking-success" onclick="if(event.target === this) MeetingRoomsModule.closeModal('modal-booking-success')" style="z-index: 1060; display: flex; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.78); backdrop-filter: blur(8px); padding: 16px; animation: fadeIn 0.2s ease;">
+      <div class="modal-overlay active" id="modal-booking-success" onclick="if(event.target === this) MeetingRoomsModule.closeModal('modal-booking-success')" style="z-index: 100050; display: flex; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.78); backdrop-filter: blur(8px); padding: 16px; animation: fadeIn 0.2s ease;">
         <div class="modal-content" style="max-width: 520px; width: 100%; max-height: min(92vh, 660px); border-radius: 20px; background: var(--bg-surface); border: 1.5px solid rgba(34, 197, 94, 0.4); display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6); animation: scaleUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);">
           
           <!-- Celebratory Header Banner (Fixed) -->
@@ -5143,6 +5147,11 @@ const MeetingRoomsModule = {
             </div>
             
             <h2 style="font-size: 19px; font-weight: 800; color: #ffffff; margin: 0 0 3px 0; letter-spacing: -0.01em;">
+              Room Successfully Booked!
+            </h2>
+            <p style="font-size: 12px; color: #a7f3d0; margin: 0;">
+              Your reservation is confirmed &amp; synced across schedules.
+            </p>
               Room Successfully Booked!
             </h2>
             <p style="font-size: 12px; color: #a7f3d0; margin: 0;">
@@ -5256,10 +5265,8 @@ const MeetingRoomsModule = {
       </div>
     `;
 
-    const mount = document.getElementById('modal-mount');
-    if (mount) {
-      mount.insertAdjacentHTML('beforeend', html);
-    }
+    const mount = document.getElementById('modal-mount') || document.body;
+    mount.insertAdjacentHTML('beforeend', html);
   },
 
   openRescheduleModal(roomId, bookingId) {

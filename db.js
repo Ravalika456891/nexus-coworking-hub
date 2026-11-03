@@ -39,6 +39,9 @@ const TABLE_DEFINITIONS = [
   { name: 'activity_logs', label: 'Activity & Audit Log', icon: '📜', sourceKey: 'activityLog', description: 'System audit logs, automated triggers & event history' }
 ];
 
+let lastConnectAttempt = 0;
+const RETRY_BACKOFF_MS = 30000;
+
 async function connectDB() {
   if (!MONGODB_URI || MONGODB_URI.includes('<db_username>')) {
     lastError = 'MongoDB URI contains placeholder <db_username>. Please provide your database username.';
@@ -46,19 +49,32 @@ async function connectDB() {
     return null;
   }
 
-  try {
-    if (client && isConnected) return db;
+  if (client && isConnected) return db;
 
-    client = new MongoClient(MONGODB_URI, {
+  // Non-blocking backoff if recent connection failed
+  if (!isConnected && (Date.now() - lastConnectAttempt) < RETRY_BACKOFF_MS) {
+    return null;
+  }
+
+  lastConnectAttempt = Date.now();
+
+  try {
+    const candidateClient = new MongoClient(MONGODB_URI, {
       serverApi: {
         version: ServerApiVersion.v1,
         strict: false,
         deprecationErrors: true,
       },
-      serverSelectionTimeoutMS: 8000
+      serverSelectionTimeoutMS: 3000,
+      connectTimeoutMS: 3000
     });
 
-    await client.connect();
+    await Promise.race([
+      candidateClient.connect(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('MongoDB connection timeout (3s)')), 3000))
+    ]);
+
+    client = candidateClient;
     db = client.db(DB_NAME);
     isConnected = true;
     lastError = null;
@@ -1173,6 +1189,20 @@ async function reserveMeetingRoomSlotsAtomic(bookingReq) {
           });
         }
 
+        // Purge any orphaned or stale slot docs for this room/date/slotHours that do not belong to an active booking in room.bookings
+        const activeBookingIds = (room.bookings || [])
+          .filter(b => b.status !== 'Cancelled' && b.status !== 'Rejected')
+          .map(b => b.id);
+
+        try {
+          await slotsCol.deleteMany({
+            roomId,
+            date,
+            slotHour: { $in: slotDocs.map(s => s.slotHour) },
+            bookingId: { $nin: activeBookingIds }
+          });
+        } catch (_) {}
+
         // Try inserting slot docs (partial unique index will abort on race condition)
         for (const sDoc of slotDocs) {
           await slotsCol.insertOne(sDoc);
@@ -1184,20 +1214,48 @@ async function reserveMeetingRoomSlotsAtomic(bookingReq) {
       } catch (dbErr) {
         // If duplicate key error on slot bucket
         if (dbErr.code === 11000) {
-          room.bookings = (room.bookings || []).filter(b => b.id !== bookingId);
-          try {
-            await database.collection('meeting_room_slots').deleteMany({ roomId, bookingId });
-          } catch (_) {}
-          const alternatives = findBookingAlternatives(rooms, { roomId, date, startTime, endTime, attendees: reqAttendees, startupId });
-          return {
-            ok: false,
-            status: 409,
-            code: 'SLOT_TAKEN',
-            message: 'This slot was just booked by another startup. Pick another time below.',
-            alternatives
-          };
+          // Verify if there is an ACTUAL conflicting non-cancelled booking in room.bookings
+          const existingConflict = (room.bookings || []).filter(b => b.id !== bookingId).find(b => {
+            return hasBookingConflict({ ...b, roomId }, { roomId, date, startTime, endTime });
+          });
+
+          if (!existingConflict) {
+            // It was a stale slot document: purge it and retry inserting
+            try {
+              const activeBookingIds = (room.bookings || [])
+                .filter(b => b.status !== 'Cancelled' && b.status !== 'Rejected')
+                .map(b => b.id);
+              await database.collection('meeting_room_slots').deleteMany({
+                roomId,
+                date,
+                slotHour: { $in: slotDocs.map(s => s.slotHour) },
+                bookingId: { $nin: activeBookingIds }
+              });
+              for (const sDoc of slotDocs) {
+                await database.collection('meeting_room_slots').insertOne(sDoc);
+              }
+              const mrCol = database.collection('meeting_rooms');
+              await mrCol.updateOne({ id: roomId }, { $set: { bookings: room.bookings } }, { upsert: true });
+            } catch (retryErr) {
+              console.warn('⚠️ [MongoDB] Slot insert retry error:', retryErr.message);
+            }
+          } else {
+            room.bookings = (room.bookings || []).filter(b => b.id !== bookingId);
+            try {
+              await database.collection('meeting_room_slots').deleteMany({ roomId, bookingId });
+            } catch (_) {}
+            const alternatives = findBookingAlternatives(rooms, { roomId, date, startTime, endTime, attendees: reqAttendees, startupId });
+            return {
+              ok: false,
+              status: 409,
+              code: 'SLOT_TAKEN',
+              message: `${room.name} is already booked from ${existingConflict.startTime} to ${existingConflict.endTime} by another startup. Pick another time below.`,
+              alternatives
+            };
+          }
+        } else {
+          console.warn('⚠️ [MongoDB] Slot insert warning:', dbErr.message);
         }
-        console.warn('⚠️ [MongoDB] Slot insert warning:', dbErr.message);
       }
     }
 

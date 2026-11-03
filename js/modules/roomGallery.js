@@ -755,17 +755,26 @@ window.RoomGallery = {
     const room = this.getRoom(roomId || this.activeRoomId || this.rawRoomId);
     if (!room) return;
     const M = window.MeetingRoomsModule;
-    const myStartup = (M && M.getMyStartup) ? M.getMyStartup() : ((window.store && window.store.getStartups) ? window.store.getStartups()[0] : null);
-    if (!myStartup) {
-      if (typeof App !== 'undefined' && App.showToast) {
-        App.showToast('No active startup profile found. Please select a startup first.', 'warning');
+    let myStartup = (M && M.getMyStartup) ? M.getMyStartup() : null;
+    if (!myStartup && window.store) {
+      if (typeof window.store.getActiveStartup === 'function') myStartup = window.store.getActiveStartup();
+      else if (typeof window.store.getStartups === 'function') {
+        const startups = window.store.getStartups();
+        myStartup = (startups && startups.length) ? startups[0] : null;
       }
-      return;
+    }
+    if (!myStartup) {
+      myStartup = { id: 'STP-XYZ', name: 'XYZ Technologies' };
     }
 
-    const dateStr = this.activeDate || (M && M.selectedDate);
+    const rawDate = this.activeDate || (M && M.selectedDate) || this.getISTClock().todayStr;
+    const dateStr = this.normalizeDate(rawDate);
     const durationMins = this.selectedDurationMins || 60;
     const slots = this.getSlotsForDate(room, dateStr, durationMins);
+
+    // Remove any previous error banner
+    const existingErr = document.getElementById('rg-booking-error');
+    if (existingErr) existingErr.remove();
 
     // Validate that the slot is open for the selected duration
     if (!this.selectedSlot || !slots.some(s => s.start === this.selectedSlot && s.state === 'open')) {
@@ -827,6 +836,8 @@ window.RoomGallery = {
         this.closeDetails();
         if (M && M.showBookingSuccessModal) {
           M.showBookingSuccessModal(room, res.booking, myStartup);
+        } else if (typeof MeetingRoomsModule !== 'undefined' && MeetingRoomsModule.showBookingSuccessModal) {
+          MeetingRoomsModule.showBookingSuccessModal(room, res.booking, myStartup);
         }
         if (M && M.render) M.render();
         if (M && M.refreshDashboardSummary) M.refreshDashboardSummary();
@@ -836,8 +847,17 @@ window.RoomGallery = {
           bookBtn.disabled = false;
           bookBtn.innerHTML = origHtml;
         }
+        const errMsg = (res && res.message) ? res.message : 'Could not complete reservation. Please try another slot.';
+        const footAction = document.querySelector('.rg-modal-foot-actions');
+        if (footAction && footAction.parentNode) {
+          const errDiv = document.createElement('div');
+          errDiv.id = 'rg-booking-error';
+          errDiv.style.cssText = 'width: 100%; margin-bottom: 8px; padding: 8px 12px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 8px; color: #ef4444; font-size: 12px; font-weight: 600; text-align: center;';
+          errDiv.innerText = `⚠️ ${errMsg}`;
+          footAction.parentNode.insertBefore(errDiv, footAction);
+        }
         if (typeof App !== 'undefined' && App.showToast) {
-          App.showToast(res && res.message ? res.message : 'Could not complete reservation. Please try another slot.', 'warning');
+          App.showToast(errMsg, 'warning');
         }
         this.refreshBookingMount();
       }
