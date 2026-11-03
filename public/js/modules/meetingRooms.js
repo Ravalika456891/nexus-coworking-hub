@@ -642,17 +642,19 @@ const MeetingRoomsModule = {
     // Check if user is in classic calendar mode (day/week/month/compare)
     if (this.schedulerViewMode !== 'cards') {
       return `
-        <!-- Secondary Mode Toolbar -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; background: #fff; padding: 12px 18px; border-radius: 14px; border: 1.5px solid #ede9fe; flex-wrap: wrap; gap: 10px;">
+        <!-- Modern Secondary Mode Toolbar -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: var(--bg-surface, #ffffff); padding: 12px 18px; border-radius: 14px; border: 1px solid var(--border-subtle, #e2e8f0); box-shadow: 0 2px 8px rgba(0,0,0,0.02); flex-wrap: wrap; gap: 12px;">
           <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-            <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.setSchedulerViewMode('cards')" style="font-weight: 700;">
-              ← Back to Room Cards
+            <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.setSchedulerViewMode('cards')" style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: 8px; background: var(--bg-surface, #ffffff); border: 1px solid var(--border-medium, #cbd5e1); color: var(--text-primary, #1e293b); cursor: pointer; transition: all 0.15s ease;">
+              <span>←</span> <span>Overview Cards</span>
             </button>
-            <span style="font-size: 13px; font-weight: 800; color: #1e1b4b;">${formattedDateLabel}</span>
+            <div style="display: inline-flex; align-items: center; gap: 6px; background: var(--bg-surface-elevated, #f8fafc); border: 1px solid var(--border-subtle, #e2e8f0); padding: 5px 12px; border-radius: 8px; font-size: 12.5px; font-weight: 800; color: var(--text-primary, #0f172a);">
+              <span>📅</span> <span>${formattedDateLabel}</span>
+            </div>
             <!-- Compact Calendar Floor & People Filter -->
-            <div style="display: inline-flex; align-items: center; gap: 5px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 3px 8px;">
-              <span style="font-size: 11px; font-weight: 800; color: #475569;">🏢 Floor:</span>
-              <select onchange="MeetingRoomsModule.setFilterFloor(this.value)" style="border: none; background: transparent; font-size: 11.5px; font-weight: 700; color: #4338ca; cursor: pointer; outline: none;">
+            <div style="display: inline-flex; align-items: center; gap: 6px; background: var(--bg-surface-elevated, #f8fafc); border: 1px solid var(--border-subtle, #e2e8f0); border-radius: 8px; padding: 4px 10px;">
+              <span style="font-size: 11px; font-weight: 800; color: var(--text-muted, #64748b);">🏢 Floor:</span>
+              <select onchange="MeetingRoomsModule.setFilterFloor(this.value)" style="border: none; background: transparent; font-size: 12px; font-weight: 700; color: #4338ca; cursor: pointer; outline: none;">
                 <option value="all" ${(!this.filterFloor || this.filterFloor === 'all') ? 'selected' : ''}>All Floors (10 Rooms)</option>
                 <option value="1F" ${this.filterFloor === '1F' ? 'selected' : ''}>1F (2 Rooms)</option>
                 <option value="2F" ${this.filterFloor === '2F' ? 'selected' : ''}>2F (1 Room)</option>
@@ -663,9 +665,9 @@ const MeetingRoomsModule = {
                 <option value="7F" ${this.filterFloor === '7F' ? 'selected' : ''}>7F (2 Rooms)</option>
               </select>
             </div>
-            <div style="display: inline-flex; align-items: center; gap: 5px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 3px 8px;">
-              <span style="font-size: 11px; font-weight: 800; color: #475569;">👥 People:</span>
-              <select onchange="MeetingRoomsModule.setFilterCapacity(this.value)" style="border: none; background: transparent; font-size: 11.5px; font-weight: 700; color: #4338ca; cursor: pointer; outline: none;">
+            <div style="display: inline-flex; align-items: center; gap: 6px; background: var(--bg-surface-elevated, #f8fafc); border: 1px solid var(--border-subtle, #e2e8f0); border-radius: 8px; padding: 4px 10px;">
+              <span style="font-size: 11px; font-weight: 800; color: var(--text-muted, #64748b);">👥 People:</span>
+              <select onchange="MeetingRoomsModule.setFilterCapacity(this.value)" style="border: none; background: transparent; font-size: 12px; font-weight: 700; color: #4338ca; cursor: pointer; outline: none;">
                 <option value="all" ${(!this.filterCapacity || this.filterCapacity === 'all') ? 'selected' : ''}>All</option>
                 <option value="4" ${this.filterCapacity === '4' ? 'selected' : ''}>4+ People</option>
                 <option value="6" ${this.filterCapacity === '6' ? 'selected' : ''}>6+ People</option>
@@ -3844,10 +3846,10 @@ const MeetingRoomsModule = {
                       if (st.key === 'mine' && st.booking) {
                         return `
                           <td onclick="MeetingRoomsModule.openReservationDetailsModal('${room.id}', '${st.booking.id}')"
-                              title="Reserved by ${myStartup.name}: ${st.booking.title} (${st.booking.startTime}–${st.booking.endTime}) — Click for details"
-                              style="background: ${st.bg}; border: 1.5px solid ${st.border}; color: ${st.color}; border-radius: 8px; padding: 8px 4px; text-align: center; cursor: pointer; font-size: 10px; font-weight: 800;">
+                              title="Reserved by ${myStartup.name}: ${st.booking.title || 'Session'} (${st.booking.startTime}–${st.booking.endTime}) — Click for details"
+                              style="background: #eef2ff; border: 1.5px solid #6366f1; color: #3730a3; border-radius: 8px; padding: 6px 4px; text-align: center; cursor: pointer; font-size: 10px; font-weight: 800; transition: all 0.15s ease;">
                             <div>🔵 Mine</div>
-                            <div style="font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 64px; margin: 0 auto;">${st.booking.id}</div>
+                            <div style="font-size: 9px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 68px; margin: 1px auto 0 auto;">${st.booking.title || 'Session'}</div>
                           </td>
                         `;
                       }
@@ -3921,33 +3923,49 @@ const MeetingRoomsModule = {
     const weekRangeLabel = `${weekDays[0].monthShort} ${weekDays[0].dayNum} – ${weekDays[6].monthShort} ${weekDays[6].dayNum}, ${weekStart.getFullYear()}`;
 
     return `
-      <div class="card" style="margin-bottom: 26px; padding: 0; overflow: hidden; border: 1.5px solid var(--border-subtle); border-radius: 16px; background: var(--bg-surface);">
-        <div style="padding: 16px 20px; background: var(--bg-surface-elevated); border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+      <div class="nexus-cal-card">
+        <!-- Calendar Card Header & Navigation -->
+        <div class="nexus-cal-header">
           <div>
-            <h3 style="font-size: 16px; font-weight: 800; color: var(--text-primary); margin: 0; display: flex; align-items: center; gap: 8px;">
-              <span>📆 7-Day Weekly Availability &amp; Reservations (${weekRangeLabel})</span>
+            <h3 class="nexus-cal-title">
+              <span>📆 7-Day Weekly Availability &amp; Reservations</span>
+              <span class="badge badge-primary" style="font-size: 11.5px; font-weight: 700; padding: 3px 9px;">${weekRangeLabel}</span>
             </h3>
-            <p style="font-size: 12px; color: var(--text-muted); margin: 3px 0 0 0;">
-              Click any day header to inspect that day, or click an open room cell to book directly.
+            <p class="nexus-cal-subtitle">
+              Click any open room cell to instantly book that space, or click a reservation pill to manage.
             </p>
           </div>
           <div style="display: flex; gap: 8px; align-items: center;">
-            <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.cycleDate(-7)" style="font-size: 11.5px; font-weight: 700; border-radius: 8px;">‹ Prev Week</button>
-            <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.setDate('${ist.todayStr}')" style="font-size: 11.5px; font-weight: 700; border-radius: 8px;">Today</button>
-            <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.cycleDate(7)" style="font-size: 11.5px; font-weight: 700; border-radius: 8px;">Next Week ›</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.cycleDate(-7)" style="font-size: 12px; font-weight: 700; border-radius: 8px; padding: 6px 12px;">‹ Prev Week</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.setDate('${ist.todayStr}')" style="font-size: 12px; font-weight: 700; border-radius: 8px; padding: 6px 14px; background: #eef2ff; color: #4338ca; border-color: #c7d2fe;">Today</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.cycleDate(7)" style="font-size: 12px; font-weight: 700; border-radius: 8px; padding: 6px 12px;">Next Week ›</button>
           </div>
         </div>
 
-        <div style="overflow-x: auto; padding: 14px 16px;">
-          <table class="nexus-table" style="width: 100%; min-width: 880px; border-collapse: separate; border-spacing: 6px; margin: 0;">
+        <!-- Clean Status Legend Bar -->
+        <div class="nexus-cal-legend">
+          <span class="nexus-cal-legend-item"><span class="nexus-cal-legend-dot mine"></span> Your Team's Booking</span>
+          <span class="nexus-cal-legend-item"><span class="nexus-cal-legend-dot available"></span> Available Slot (Click cell to book)</span>
+          <span class="nexus-cal-legend-item"><span class="nexus-cal-legend-dot other"></span> Reserved by Others</span>
+          <span class="nexus-cal-legend-item"><span class="nexus-cal-legend-dot past"></span> Past Date</span>
+        </div>
+
+        <!-- Weekly Interactive Grid -->
+        <div style="overflow-x: auto;">
+          <table class="nexus-cal-table">
             <thead>
               <tr>
-                <th style="min-width: 200px; background: var(--bg-surface-elevated); border-radius: 10px; padding: 10px 12px;">Meeting Room</th>
+                <th class="col-room">Meeting Room Space</th>
                 ${weekDays.map(wd => `
                   <th onclick="MeetingRoomsModule.setDate('${wd.dateStr}')"
-                      style="text-align: center; cursor: pointer; background: ${wd.isSelected ? 'rgba(37, 99, 235, 0.12)' : wd.isToday ? 'rgba(34, 197, 94, 0.1)' : 'var(--bg-surface-elevated)'}; border: 1.5px solid ${wd.isSelected ? '#2563eb' : wd.isToday ? '#22c55e' : 'var(--border-subtle)'}; border-radius: 10px; padding: 8px 6px;">
-                    <div style="font-size: 10.5px; font-weight: 800; color: ${wd.isSelected ? '#2563eb' : wd.isToday ? '#15803d' : 'var(--text-muted)'};">${wd.shortDay}</div>
-                    <div style="font-size: 14px; font-weight: 800; color: var(--text-primary);">${wd.dayNum} ${wd.monthShort}</div>
+                      class="day-header ${wd.isToday ? 'today' : ''}"
+                      title="Click to focus on ${wd.shortDay}, ${wd.dayNum} ${wd.monthShort}">
+                    <div style="font-size: 11px; font-weight: 800; color: ${wd.isToday ? '#4f46e5' : wd.isSelected ? '#2563eb' : 'var(--text-muted)'}; text-transform: uppercase; letter-spacing: 0.04em;">
+                      ${wd.shortDay} ${wd.isToday ? '<span style="font-size: 9px; background: #4f46e5; color: #fff; padding: 1px 5px; border-radius: 4px; margin-left: 3px;">TODAY</span>' : ''}
+                    </div>
+                    <div style="font-size: 14.5px; font-weight: 800; color: ${wd.isToday ? '#1e1b4b' : 'var(--text-primary)'}; margin-top: 2px;">
+                      ${wd.dayNum} ${wd.monthShort}
+                    </div>
                   </th>
                 `).join('')}
               </tr>
@@ -3957,23 +3975,33 @@ const MeetingRoomsModule = {
                 const isMaint = this.isRoomUnderMaintenance(room);
                 return `
                   <tr>
-                    <td style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 10px 12px; vertical-align: middle;">
-                      <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="font-size: 18px;">${room.icon || '🏢'}</span>
-                        <div>
-                          <div style="font-weight: 800; font-size: 13px; color: var(--text-primary);">${room.name}</div>
-                          <div style="font-size: 10.5px; color: var(--text-muted);">👥 ${room.capacity} Pax • ₹${room.hourlyRate}/hr</div>
+                    <!-- Sticky Room Header Column -->
+                    <td class="col-room">
+                      <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 22px; flex-shrink: 0;">${room.icon || '🏢'}</span>
+                        <div style="min-width: 0;">
+                          <div style="font-weight: 800; font-size: 13.5px; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${room.name}">
+                            ${room.name}
+                          </div>
+                          <div style="font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; margin-top: 2px;">
+                            <span>👥 ${room.capacity} Pax</span>
+                            <span>•</span>
+                            <span style="font-weight: 700; color: #4f46e5;">₹${room.hourlyRate}/hr</span>
+                          </div>
                         </div>
                       </div>
                     </td>
+
+                    <!-- 7 Days Grid Cells -->
                     ${weekDays.map(wd => {
                       if (isMaint) {
                         return `
-                          <td style="background: rgba(249, 115, 22, 0.12); border: 1.5px solid rgba(249, 115, 22, 0.4); border-radius: 10px; padding: 8px; text-align: center; color: #c2410c; font-size: 11px; font-weight: 700;">
-                            🟠 Under Maintenance
+                          <td style="background: rgba(249, 115, 22, 0.05); text-align: center; vertical-align: middle; color: #c2410c; font-size: 11px; font-weight: 700;">
+                            🟠 Maintenance
                           </td>
                         `;
                       }
+
                       const st = this.computeRoomStatus(room, wd.dateStr);
                       const dayBookings = (room.bookings || []).filter(b => b.date === wd.dateStr && b.status !== 'Cancelled');
                       const myDayBookings = dayBookings.filter(b => b.startupId === myStartup.id || (b.startupName && b.startupName.toLowerCase() === myStartup.name.toLowerCase()));
@@ -3981,43 +4009,56 @@ const MeetingRoomsModule = {
 
                       if (wd.isPast) {
                         return `
-                          <td onclick="MeetingRoomsModule.setDate('${wd.dateStr}')"
-                              style="background: rgba(148, 163, 184, 0.12); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 8px; text-align: center; color: #64748b; font-size: 11px; cursor: pointer; opacity: 0.75;">
-                            <div style="font-weight: 700;">⚪ Past</div>
-                            <div style="font-size: 10px; margin-top: 2px;">${dayBookings.length} Completed</div>
+                          <td class="cal-cell-past" onclick="MeetingRoomsModule.setDate('${wd.dateStr}')" title="Past date — ${dayBookings.length} session(s) completed">
+                            <div style="display: flex; flex-direction: column; justify-content: center; height: 100%; text-align: center;">
+                              ${dayBookings.length > 0 ? `
+                                <span style="font-size: 10.5px; font-weight: 700; color: #94a3b8;">✓ ${dayBookings.length} completed</span>
+                              ` : `
+                                <span style="font-size: 11px; color: #cbd5e1;">—</span>
+                              `}
+                            </div>
                           </td>
                         `;
                       }
 
                       return `
-                        <td style="background: var(--bg-surface); border: 1.5px solid ${wd.isSelected ? 'rgba(37, 99, 235, 0.4)' : 'var(--border-subtle)'}; border-radius: 10px; padding: 8px; vertical-align: top;">
-                          <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <td class="cal-cell-available"
+                            onclick="MeetingRoomsModule.setDate('${wd.dateStr}'); MeetingRoomsModule.openBookModal('${room.id}', null, '${myStartup.id}')"
+                            title="Click to reserve ${room.name} on ${wd.shortDay}, ${wd.dayNum} ${wd.monthShort}">
+                          <div style="display: flex; flex-direction: column; gap: 4px; height: 100%;">
+                            
+                            <!-- Available Slots Indicator with Clean Hover Prompt -->
                             ${st.availableSlotsCount > 0 ? `
-                              <span style="font-size: 10px; font-weight: 800; color: #15803d; background: rgba(34, 197, 94, 0.12); padding: 2px 6px; border-radius: 5px; display: inline-flex; align-items: center; justify-content: space-between;">
-                                <span>🟢 ${st.availableSlotsCount} Open</span>
-                              </span>
+                              <div class="cal-avail-badge">
+                                <span style="display: inline-flex; align-items: center; gap: 5px;">
+                                  <span style="width: 6px; height: 6px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
+                                  <span>${st.availableSlotsCount} Open</span>
+                                </span>
+                                <span class="cal-hover-btn" style="margin: 0; padding: 1px 7px;">+ Book</span>
+                              </div>
                             ` : `
-                              <span style="font-size: 10px; font-weight: 700; color: #64748b; background: rgba(148, 163, 184, 0.14); padding: 2px 6px; border-radius: 5px;">
-                                ${st.status}
-                              </span>
+                              <div style="font-size: 10px; font-weight: 700; color: #64748b; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; text-align: center;">
+                                Fully Booked
+                              </div>
                             `}
+
+                            <!-- User's Active Bookings (Rendered as Sleek Event Cards) -->
                             ${myDayBookings.map(mb => `
-                              <div onclick="MeetingRoomsModule.openReservationDetailsModal('${room.id}', '${mb.id}')"
-                                   title="Click to view or reschedule your booking (${mb.startTime}–${mb.endTime})"
-                                   style="font-size: 9.5px; font-weight: 700; color: #1d4ed8; background: rgba(37, 99, 235, 0.14); border: 1px solid rgba(37, 99, 235, 0.35); padding: 2px 5px; border-radius: 5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                🔵 ${mb.startTime} ${mb.title || 'Mine'}
+                              <div onclick="event.stopPropagation(); MeetingRoomsModule.openReservationDetailsModal('${room.id}', '${mb.id}')"
+                                   class="cal-event-card mine"
+                                   title="Your Booking: ${mb.startTime}–${mb.endTime} • ${mb.title || 'Session'} (Click to view or reschedule)">
+                                <div class="cal-event-time">⏰ ${mb.startTime} – ${mb.endTime}</div>
+                                <div class="cal-event-title">${mb.title || 'Team Session'}</div>
                               </div>
                             `).join('')}
+
+                            <!-- Other Bookings -->
                             ${otherDayBookings > 0 ? `
-                              <span style="font-size: 9.5px; font-weight: 700; color: #b91c1c; background: rgba(239, 68, 68, 0.12); padding: 2px 5px; border-radius: 5px;">
-                                🔴 ${otherDayBookings} Booked
-                              </span>
+                              <div class="cal-event-card other" title="${otherDayBookings} slot(s) reserved by other members">
+                                <span>🔒 ${otherDayBookings} Session${otherDayBookings > 1 ? 's' : ''} Reserved</span>
+                              </div>
                             ` : ''}
-                            ${st.availableSlotsCount > 0 ? `
-                              <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.setDate('${wd.dateStr}'); MeetingRoomsModule.openBookModal('${room.id}', null, '${myStartup.id}')" style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 5px; margin-top: 2px;">
-                                + Book Slot
-                              </button>
-                            ` : ''}
+
                           </div>
                         </td>
                       `;
