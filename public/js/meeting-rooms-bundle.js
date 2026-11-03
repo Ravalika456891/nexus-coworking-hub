@@ -968,6 +968,20 @@ function MeetingRoomsApp() {
       disabled: false
     };
   };
+  var handleSelectDuration = function handleSelectDuration(newDur) {
+    setBookingDuration(newDur);
+    if (!bookingModalRoom) return;
+    var slotInfo = getSlotState(bookingStartTime, bookingModalRoom, bookingDate, bookingStartTime, newDur);
+    if (slotInfo.disabled || slotInfo.status === "unavailable" || slotInfo.status === "booked" || slotInfo.status === "past") {
+      var firstOpen = TIME_SLOTS_12H.find(function(s) {
+        var st = getSlotState(s, bookingModalRoom, bookingDate, s, newDur);
+        return !st.disabled && st.status === "available";
+      });
+      if (firstOpen) {
+        setBookingStartTime(firstOpen);
+      }
+    }
+  };
   var getGCalUrl = function getGCalUrl(booking) {
     var dStr = (booking.fullDate || booking.date || "2026-10-31").replace(/-/g, "").replace("Today", "20261031");
     var startMin = timeStrToMinutes(booking.startTime);
@@ -4720,25 +4734,38 @@ function MeetingRoomsApp() {
       value: slot,
       disabled: slotInfo.disabled && slotInfo.status !== 'selected'
     }, slot, " ", slotInfo.status === 'past' ? '(Past)' : slotInfo.status === 'booked' ? '(Booked)' : slotInfo.status === 'unavailable' ? '(Overlap)' : '(Available)');
-  }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
-    className: "block text-xs font-bold text-[#374151] mb-1 flex items-center gap-1.5"
+  }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between mb-1.5"
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "text-xs font-black uppercase tracking-wider text-[#111827] flex items-center gap-1.5"
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "clock",
     className: "w-3.5 h-3.5 text-[#4F3FE0]"
-  }), /*#__PURE__*/React.createElement("span", null, "Duration & End Time")), /*#__PURE__*/React.createElement("select", {
-    value: bookingDuration,
-    onChange: function onChange(e) {
-      return setBookingDuration(parseFloat(e.target.value));
-    },
-    className: "w-full bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl px-3 py-2 text-xs font-bold text-[#111827] focus:outline-none focus:border-[#4F3FE0] cursor-pointer"
-  }, [0.5, 1.0, 1.5, 2.0, 3.0, 4.0].map(function (dur) {
+  }), /*#__PURE__*/React.createElement("span", null, "Booking Duration")), /*#__PURE__*/React.createElement("span", {
+    className: "text-[11.5px] font-bold text-[#4F3FE0]"
+  }, (function () {
     var sMin = timeStrToMinutes(bookingStartTime);
-    var eMin = sMin + Math.round(dur * 60);
+    var eMin = sMin + Math.round(bookingDuration * 60);
     var endStr = minutesToTimeStr(eMin);
-    return /*#__PURE__*/React.createElement("option", {
-      key: dur,
-      value: dur
-    }, dur === 0.5 ? "30 mins" : "".concat(dur, " hrs"), " (Ends at ", endStr, ")");
+    return endStr ? "Ends at ".concat(endStr) : "";
+  })())), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-5 gap-1.5"
+  }, [
+    { label: "30m", val: 0.5 },
+    { label: "1hr", val: 1.0 },
+    { label: "1.5hrs", val: 1.5 },
+    { label: "2hrs", val: 2.0 },
+    { label: "3hrs", val: 3.0 }
+  ].map(function (d) {
+    var isSelected = bookingDuration === d.val;
+    return /*#__PURE__*/React.createElement("button", {
+      key: d.label,
+      type: "button",
+      onClick: function onClick() {
+        return handleSelectDuration(d.val);
+      },
+      className: "py-2 px-1 rounded-xl text-xs font-bold border transition-all text-center ".concat(isSelected ? "bg-[#4F3FE0] text-white border-[#4F3FE0] shadow-sm ring-1 ring-[#4F3FE0]" : "bg-[#F8FAFC] border-[#ECEEF4] text-[#374151] hover:bg-[#F1F3F9] hover:border-[#CBD5E1]")
+    }, d.label);
   })))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center justify-between mb-2"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {

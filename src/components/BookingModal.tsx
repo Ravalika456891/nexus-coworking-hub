@@ -97,7 +97,16 @@ export default function BookingModal({
     return { available: true, label: 'Available' };
   };
 
-  const currentSlotStatus = getSlotAvailability(startTime);
+  const handleSelectDuration = (newDur: number) => {
+    setDuration(newDur);
+    const availability = getSlotAvailability(startTime, newDur);
+    if (!availability.available) {
+      const firstAvailable = TIME_SLOTS_30MIN.find((s) => getSlotAvailability(s, newDur).available);
+      if (firstAvailable) {
+        setStartTime(firstAvailable);
+      }
+    }
+  };
 
   const getGoogleCalendarUrl = () => {
     const dStr = (date === 'Today' ? '2026-10-31' : date === 'Tomorrow' ? '2026-11-01' : date).replace(/-/g, '');
@@ -300,23 +309,22 @@ export default function BookingModal({
                     {duration} hrs selected
                   </span>
                 </div>
-                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                <div className="grid grid-cols-5 gap-2">
                   {[
-                    { label: '30 min', val: 0.5 },
-                    { label: '1.0 hr', val: 1.0 },
-                    { label: '1.5 hrs', val: 1.5 },
-                    { label: '2.0 hrs', val: 2.0 },
-                    { label: '3.0 hrs', val: 3.0 },
-                    { label: '4.0 hrs', val: 4.0 }
+                    { label: '30m', val: 0.5 },
+                    { label: '1hr', val: 1.0 },
+                    { label: '1.5hrs', val: 1.5 },
+                    { label: '2hrs', val: 2.0 },
+                    { label: '3hrs', val: 3.0 }
                   ].map((dur) => (
                     <button
-                      key={dur.val}
+                      key={dur.label}
                       type="button"
-                      onClick={() => setDuration(dur.val)}
+                      onClick={() => handleSelectDuration(dur.val)}
                       className={`py-2 rounded-xl text-xs font-bold border transition-all text-center ${
                         duration === dur.val
-                          ? 'bg-[#4F3FE0] text-white border-[#4F3FE0] shadow-xs'
-                          : 'bg-[#F8FAFC] border-[#ECEEF4] text-[#374151] hover:bg-white'
+                          ? 'bg-[#4F3FE0] text-white border-[#4F3FE0] shadow-xs ring-1 ring-[#4F3FE0]'
+                          : 'bg-[#F8FAFC] border-[#ECEEF4] text-[#374151] hover:bg-white hover:border-[#CBD5E1]'
                       }`}
                     >
                       {dur.label}

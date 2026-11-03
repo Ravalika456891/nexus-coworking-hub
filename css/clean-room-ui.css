@@ -240,10 +240,10 @@
 }
 
 .hub-cat-chip.active {
-  background: #4f46e5;
-  color: #ffffff;
-  border-color: #4338ca;
-  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
+  background: #4f46e5 !important;
+  color: #ffffff !important;
+  border-color: #4338ca !important;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25) !important;
 }
 
 .hub-btn-more-filters {
@@ -1235,15 +1235,17 @@ body.rg-no-scroll {
 }
 
 /* Booked / Unavailable slot (Gray) */
-.rg-slot.booked {
+.rg-slot.booked,
+.rg-slot.unavailable {
   background: #F1F5F9 !important;
   border-color: #E2E8F0 !important;
   color: #94A3B8 !important;
   cursor: not-allowed !important;
-  opacity: 0.8 !important;
+  opacity: 0.75 !important;
 }
 
-.rg-slot.booked small {
+.rg-slot.booked small,
+.rg-slot.unavailable small {
   font-size: 9px !important;
   color: #94A3B8 !important;
   margin-top: 2px !important;

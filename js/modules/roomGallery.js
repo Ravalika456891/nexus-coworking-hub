@@ -348,65 +348,116 @@ window.RoomGallery = {
     return str;
   },
 
+  getISTClock() {
+    const now = new Date();
+    try {
+      const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Kolkata',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      }).formatToParts(now);
+      const getP = type => (parts.find(p => p.type === type) || {}).value || '';
+      const todayStr = `${getP('year')}-${getP('month')}-${getP('day')}`;
+      const hours = parseInt(getP('hour'), 10) || 0;
+      const minutes = parseInt(getP('minute'), 10) || 0;
+      return { todayStr, clockMinutes: hours * 60 + minutes };
+    } catch (e) {
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      return { todayStr, clockMinutes: now.getHours() * 60 + now.getMinutes() };
+    }
+  },
+
   getSlotsForDate(room, dateStr, durationMins = null) {
     const M = window.MeetingRoomsModule;
-    const durMins = durationMins || this.selectedDurationMins || 60;
+    const durMins = Number(durationMins || this.selectedDurationMins || 60);
     
-    // 30-minute intervals within Hub operating hours (08:00 - 11:00 & 15:00 - 19:00 IST)
+    // 30-minute intervals within Hub operating hours:
+    // Morning session: 08:00 - 11:00 AM (closes at 11:00 = 660 mins)
+    // Afternoon session: 03:00 - 07:00 PM (closes at 19:00 = 1140 mins)
     const candidateSlots = [
       '08:00', '08:30', '09:00', '09:30', '10:00', '10:30',
       '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30'
     ];
-    const ist = (M && M.getISTNow) ? M.getISTNow() : null;
-    const now = new Date();
-    const today = ist ? ist.todayStr : `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-    const targetDate = this.normalizeDate(dateStr) || today;
+    const istClock = this.getISTClock();
+    const targetDate = this.normalizeDate(dateStr) || istClock.todayStr;
     
     const toMin = (t) => {
       const [h, m] = String(t || '00:00').split(':').map(Number);
       return (h || 0) * 60 + (m || 0);
     };
 
-    const bookings = (room && room.bookings ? room.bookings : []).filter(b => this.normalizeDate(b.date) === targetDate && b.status !== 'Cancelled' && b.status !== 'Rejected');
+    const bookings = (room && room.bookings ? room.bookings : []).filter(b => 
+      this.normalizeDate(b.date) === targetDate && b.status !== 'Cancelled' && b.status !== 'Rejected'
+    );
     const maint = M && M.isRoomUnderMaintenance ? M.isRoomUnderMaintenance(room) : false;
 
-    // Only mark past if the date is strictly before today (yesterday or earlier)
-    // NEVER mark today's slots as past so buttons are always enabled and testable
-    const isPastDate = (targetDate < today);
+    const isPastDate = (targetDate < istClock.todayStr);
+    const isToday = (targetDate === istClock.todayStr);
 
     return candidateSlots.map(s => {
       const start = toMin(s);
+      const end = start + durMins;
 
-      // Session closing time: Morning closes at 11:00 (660 min), Evening closes at 19:00 (1140 min)
+      // Operating session closing time boundary:
+      // Morning session closes at 11:00 (660 mins); Evening session closes at 19:00 (1140 mins)
       const sessionClose = (start < 660) ? 660 : 1140;
-      const sessionRemainingMins = Math.max(30, sessionClose - start);
+      const exceedsOperatingHours = (end > sessionClose);
 
-      // Check if this slot overlaps an existing confirmed booking
-      const isBooked = bookings.some(b => toMin(b.startTime) < (start + 30) && toMin(b.endTime) > start);
+      // Past slot check using incubator center's IST timezone
+      const isPastSlot = isPastDate || (isToday && (start < istClock.clockMinutes));
 
-      // Max continuous minutes available starting from this slot before a booking or session close
-      let maxAvailableMins = sessionRemainingMins;
-      const upcomingBooking = bookings
-        .filter(b => toMin(b.startTime) >= start && toMin(b.startTime) < sessionClose)
-        .sort((a, b) => toMin(a.startTime) - toMin(b.startTime))[0];
-      if (upcomingBooking) {
-        maxAvailableMins = Math.min(maxAvailableMins, toMin(upcomingBooking.startTime) - start);
-      }
+      // Direct booking check: does this slot start inside an existing confirmed reservation?
+      const isDirectlyBooked = bookings.some(b => {
+        const bStart = toMin(b.startTime);
+        const bEnd = toMin(b.endTime);
+        return start >= bStart && start < bEnd;
+      });
+
+      // Full-Duration conflict validation:
+      // Conflict rule: newStart < existingEnd AND newEnd > existingStart
+      const hasConflict = bookings.some(b => {
+        const bStart = toMin(b.startTime);
+        const bEnd = toMin(b.endTime);
+        return start < bEnd && end > bStart;
+      });
 
       let state = 'open';
+      let label = 'Available';
+      let disabled = false;
+
       if (maint) {
         state = 'closed';
-      } else if (isPastDate) {
+        label = 'Maintenance';
+        disabled = true;
+      } else if (isPastSlot) {
         state = 'past';
-      } else if (isBooked) {
+        label = 'Past';
+        disabled = true;
+      } else if (isDirectlyBooked) {
         state = 'booked';
+        label = 'Booked';
+        disabled = true;
+      } else if (exceedsOperatingHours || hasConflict) {
+        state = 'unavailable';
+        label = exceedsOperatingHours ? 'Closed' : 'Unavailable';
+        disabled = true;
+      } else {
+        state = 'open';
+        label = 'Available';
+        disabled = false;
       }
 
       return {
         start: s,
-        maxAvailableMins: Math.max(30, maxAvailableMins),
-        fitsRequestedDuration: maxAvailableMins >= durMins,
-        state
+        endMin: end,
+        durationMins: durMins,
+        state,
+        label,
+        disabled
       };
     });
   },
@@ -419,16 +470,15 @@ window.RoomGallery = {
   },
 
   renderBookingSection(room, dateStr) {
-    const M = window.MeetingRoomsModule;
-    const ist = (M && M.getISTNow) ? M.getISTNow() : null;
-    const now = new Date();
-    const todayStr = ist ? ist.todayStr : `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-    const nextDayStr = ist ? ist.tomorrowStr : (() => {
-      const tom = new Date(now.getTime() + 86400000);
-      return `${tom.getFullYear()}-${String(tom.getMonth()+1).padStart(2,'0')}-${String(tom.getDate()).padStart(2,'0')}`;
+    const istClock = this.getISTClock();
+    const todayStr = istClock.todayStr;
+    const nextDayStr = (() => {
+      const parts = todayStr.split('-').map(Number);
+      const d = new Date(parts[0], parts[1] - 1, parts[2] + 1);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     })();
 
-    const effectiveDate = dateStr || todayStr;
+    const effectiveDate = this.normalizeDate(dateStr) || todayStr;
     const isToday = effectiveDate === todayStr;
     const isNextDay = effectiveDate === nextDayStr;
     const dateParts = effectiveDate.split('-').map(Number);
@@ -438,16 +488,24 @@ window.RoomGallery = {
     const slots = this.getSlotsForDate(room, effectiveDate, this.selectedDurationMins || 60);
     const openCount = slots.filter(s => s.state === 'open').length;
 
-    const myStartup = (M && M.getMyStartup) ? M.getMyStartup() : null;
+    const M = window.MeetingRoomsModule;
+    const myStartup = (M && M.getMyStartup) ? M.getMyStartup() : ((window.store && window.store.getStartups) ? window.store.getStartups()[0] : null);
     const remainingCredits = myStartup ? Math.max(0, (myStartup.includedMeetingHours || 12) - (myStartup.usedMeetingHours || 0)) : 0;
 
-    if (!this.selectedSlot || !slots.some(s => s.start === this.selectedSlot && s.state === 'open')) {
+    // Check if current selected slot is valid and fits the full duration
+    if (this.selectedSlot) {
+      const sel = slots.find(s => s.start === this.selectedSlot);
+      if (!sel || sel.state !== 'open') {
+        const firstOpen = slots.find(s => s.state === 'open');
+        this.selectedSlot = firstOpen ? firstOpen.start : null;
+      }
+    } else {
       const firstOpen = slots.find(s => s.state === 'open');
-      this.selectedSlot = firstOpen ? firstOpen.start : null;
+      if (firstOpen) this.selectedSlot = firstOpen.start;
     }
 
     const durationHours = (this.selectedDurationMins || 60) / 60;
-    const durationLabel = this.selectedDurationMins === 30 ? '30 mins' : `${durationHours} hr${durationHours > 1 ? 's' : ''}`;
+    const durationLabel = this.selectedDurationMins === 30 ? '30m' : this.selectedDurationMins === 90 ? '1.5 hrs' : `${durationHours} hr${durationHours > 1 ? 's' : ''}`;
     
     let endTime12 = '';
     if (this.selectedSlot) {
@@ -489,12 +547,15 @@ window.RoomGallery = {
             { mins: 90, label: '1.5 hrs' },
             { mins: 120, label: '2 hrs' },
             { mins: 180, label: '3 hrs' }
-          ].map(d => `
-            <button type="button" class="rg-quick-pill ${this.selectedDurationMins === d.mins ? 'active' : ''}"
-              onclick="RoomGallery.selectDuration(${d.mins})" style="flex: 1; min-width: 60px; text-align: center;">
-              ${d.label}
-            </button>
-          `).join('')}
+          ].map(d => {
+            const isSelected = this.selectedDurationMins === d.mins;
+            return `
+              <button type="button" class="rg-quick-pill ${isSelected ? 'active' : ''}"
+                onclick="RoomGallery.selectDuration(${d.mins})" style="flex: 1; min-width: 60px; text-align: center;">
+                ${d.label}
+              </button>
+            `;
+          }).join('')}
         </div>
       </section>
 
@@ -505,15 +566,16 @@ window.RoomGallery = {
         </h4>
         <div class="rg-slots">
           ${slots.map(s => {
-            const isSelected = this.selectedSlot === s.start;
+            const isSelected = (this.selectedSlot === s.start && s.state === 'open');
             const cls = isSelected ? 'rg-slot selected' : `rg-slot ${s.state}`;
-            const label = isSelected ? 'Selected' : s.state === 'open' ? 'Available' : s.state === 'booked' ? 'Booked' : s.state === 'closed' ? 'Closed' : 'Past';
+            const displayLabel = isSelected ? 'Selected' : s.label;
             return `
               <button type="button" class="${cls}"
+                ${s.disabled && !isSelected ? 'disabled' : ''}
                 onclick="RoomGallery.selectSlot('${s.start}')"
-                title="${isSelected ? 'Selected slot' : s.state === 'open' ? `Click to select ${this.fmt12(s.start)}` : label}">
+                title="${isSelected ? 'Selected start time' : s.label}">
                 ${this.fmt12(s.start)}
-                <small>${label}</small>
+                <small>${displayLabel}</small>
               </button>
             `;
           }).join('')}
@@ -524,7 +586,7 @@ window.RoomGallery = {
       <div class="rg-summary-card">
         <div class="rg-summary-row">
           <span>Selected Reservation:</span>
-          <strong>${this.selectedSlot ? `${this.fmt12(this.selectedSlot)} – ${endTime12} (${durationLabel})` : 'Select a time slot above'}</strong>
+          <strong>${this.selectedSlot ? `${this.fmt12(this.selectedSlot)} – ${endTime12} (${durationLabel})` : '<span style="color: #64748B; font-weight: normal;">Select a time slot above</span>'}</strong>
         </div>
         <div class="rg-summary-row">
           <span>Room Rate:</span>
@@ -537,14 +599,16 @@ window.RoomGallery = {
         <div class="rg-summary-divider"></div>
         <div class="rg-summary-total">
           <span>Estimated Total:</span>
-          ${isCovered ? `
+          ${!this.selectedSlot ? `
+            <span style="color: #8A90A2; font-size: 13px;">—</span>
+          ` : isCovered ? `
             <span class="rg-summary-covered">Covered by Plan (₹0)</span>
           ` : `
             <span style="color: #4F3FE0; font-size: 15px;">₹${billableAmount.toLocaleString('en-IN')}</span>
           `}
         </div>
         <div style="font-size: 10.5px; color: #8A90A2; text-align: right; margin-top: -2px;">
-          ${isCovered ? `⚡ ${creditsUsed} hr credit will be deducted upon confirmation` : `⚡ Partial credit used (${creditsUsed} hr). Balance billed at checkout.`}
+          ${!this.selectedSlot ? '' : isCovered ? `⚡ ${creditsUsed} hr credit will be deducted upon confirmation` : `⚡ Partial credit used (${creditsUsed} hr). Balance billed at checkout.`}
         </div>
         <div style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700; color: #15803D; background: #DCFCE7; padding: 7px 12px; border-radius: 8px; border: 1px solid #BBF7D0; margin-top: 4px;">
           <span>🛡️</span>
@@ -560,37 +624,15 @@ window.RoomGallery = {
     const slots = this.getSlotsForDate(room, this.activeDate, this.selectedDurationMins || 60);
     const targetSlot = slots.find(s => s.start === slotTime);
 
-    if (!targetSlot) return;
-
-    if (targetSlot.state === 'booked') {
-      if (typeof App !== 'undefined' && App.showToast) {
-        App.showToast(`⚠️ ${this.fmt12(slotTime)} is already booked by another startup. Please pick an available slot.`, 'info');
-      }
+    if (!targetSlot || targetSlot.disabled || targetSlot.state !== 'open') {
+      // Non-selectable slot per rule 4
       return;
     }
 
-    if (targetSlot.state === 'closed') {
-      if (typeof App !== 'undefined' && App.showToast) {
-        App.showToast(`⚠️ ${this.fmt12(slotTime)} is currently under maintenance.`, 'warning');
-      }
-      return;
-    }
-
-    // Set selected slot immediately!
+    // Set selected start time and highlight in purple
     this.selectedSlot = slotTime;
-
-    // Check if the current selectedDurationMins fits
-    const curDur = this.selectedDurationMins || 60;
-    if (targetSlot.maxAvailableMins < curDur) {
-      const adjustedDur = Math.max(30, targetSlot.maxAvailableMins);
-      this.selectedDurationMins = adjustedDur;
-      const durLabel = adjustedDur >= 60 ? `${adjustedDur / 60} hr${adjustedDur > 60 ? 's' : ''}` : `${adjustedDur} mins`;
-      if (typeof App !== 'undefined' && App.showToast) {
-        App.showToast(`Selected ${this.fmt12(slotTime)}. Duration adjusted to ${durLabel} to fit session hours.`, 'info');
-      }
-    }
-
     this.refreshBookingMount();
+    this.updateFooterButtonState();
   },
 
   selectDuration(mins) {
@@ -602,24 +644,14 @@ window.RoomGallery = {
     
     // Check if the currently selected slot can fit this new duration
     const current = slots.find(s => s.start === this.selectedSlot);
-    if (!current || current.state !== 'open' || current.maxAvailableMins < this.selectedDurationMins) {
-      // Find the first open slot that can fit this full duration
-      const suitableSlot = slots.find(s => s.state === 'open' && s.maxAvailableMins >= this.selectedDurationMins);
-      if (suitableSlot) {
-        this.selectedSlot = suitableSlot.start;
-        const durLabel = mins === 30 ? '30 mins' : `${mins / 60} hr${mins > 60 ? 's' : ''}`;
-        if (typeof App !== 'undefined' && App.showToast) {
-          App.showToast(`Set duration to ${durLabel}. Moved slot to ${this.fmt12(suitableSlot.start)} to fit session hours.`, 'info');
-        }
-      } else {
-        const firstOpen = slots.find(s => s.state === 'open');
-        if (firstOpen) {
-          this.selectedSlot = firstOpen.start;
-        }
-      }
+    if (!current || current.state !== 'open') {
+      // Clear or find first open slot that fits the new full duration
+      const suitableSlot = slots.find(s => s.state === 'open');
+      this.selectedSlot = suitableSlot ? suitableSlot.start : null;
     }
 
     this.refreshBookingMount();
+    this.updateFooterButtonState();
   },
 
   changeDate(newDate) {
@@ -628,16 +660,51 @@ window.RoomGallery = {
     const M = window.MeetingRoomsModule;
     if (M) M.selectedDate = this.activeDate;
 
-    // Auto-select first open slot for this date
+    // Refresh slots and clear or select valid start time
     const room = this.getRoom(this.activeRoomId);
     if (room) {
       const slots = this.getSlotsForDate(room, this.activeDate, this.selectedDurationMins || 60);
-      const openSlot = slots.find(s => s.state === 'open');
-      if (openSlot) {
-        this.selectedSlot = openSlot.start;
+      const current = slots.find(s => s.start === this.selectedSlot);
+      if (!current || current.state !== 'open') {
+        const firstOpen = slots.find(s => s.state === 'open');
+        this.selectedSlot = firstOpen ? firstOpen.start : null;
       }
     }
     this.refreshBookingMount();
+    this.updateFooterButtonState();
+  },
+
+  updateFooterButtonState() {
+    const bookBtn = document.getElementById('rg-foot-book-btn');
+    if (!bookBtn) return;
+    const room = this.getRoom(this.activeRoomId);
+    const maint = room ? (window.MeetingRoomsModule && window.MeetingRoomsModule.isRoomUnderMaintenance ? window.MeetingRoomsModule.isRoomUnderMaintenance(room) : false) : false;
+
+    if (maint) {
+      bookBtn.disabled = true;
+      bookBtn.innerHTML = '🔧 Under Maintenance';
+      bookBtn.classList.remove('btn-primary');
+      bookBtn.classList.add('btn-secondary');
+      bookBtn.style.opacity = '0.6';
+      bookBtn.style.cursor = 'not-allowed';
+      return;
+    }
+
+    if (!this.selectedSlot) {
+      bookBtn.disabled = true;
+      bookBtn.innerHTML = 'Select an Available Slot';
+      bookBtn.classList.remove('btn-primary');
+      bookBtn.classList.add('btn-secondary');
+      bookBtn.style.opacity = '0.65';
+      bookBtn.style.cursor = 'not-allowed';
+    } else {
+      bookBtn.disabled = false;
+      bookBtn.innerHTML = '⚡ Confirm & Book Now';
+      bookBtn.classList.add('btn-primary');
+      bookBtn.classList.remove('btn-secondary');
+      bookBtn.style.opacity = '1';
+      bookBtn.style.cursor = 'pointer';
+    }
   },
 
   refreshBookingMount() {
