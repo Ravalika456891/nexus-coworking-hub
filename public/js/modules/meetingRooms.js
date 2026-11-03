@@ -5200,22 +5200,17 @@ const MeetingRoomsModule = {
               </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-              <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 8px 12px;">
-                <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">
-                  🎯 Meeting Title / Purpose
-                </div>
-                <div style="font-size: 12px; font-weight: 800; color: var(--text-primary); margin-top: 2px;">
-                  ${booking.title || 'Meeting Reservation'}${booking.purpose && booking.purpose !== booking.title ? ` • ${booking.purpose}` : ''}
-                </div>
-              </div>
-              <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 8px 12px;">
-                <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">
+            <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.04em;">
                   💳 Billing / Plan
                 </div>
-                <div style="font-size: 12px; font-weight: 800; color: #16a34a; margin-top: 2px;">
-                  ${booking.cost === 0 ? 'Covered by Plan (₹0)' : `₹${booking.cost}`} • 👥 ${booking.attendees || 4} Pax
+                <div style="font-size: 13px; font-weight: 800; color: #16a34a; margin-top: 2px;">
+                  ${booking.cost === 0 ? 'Covered by Plan (₹0)' : `₹${booking.cost}`}
                 </div>
+              </div>
+              <div style="font-size: 12px; font-weight: 700; color: var(--text-primary); background: var(--bg-surface); padding: 5px 12px; border-radius: 8px; border: 1px solid var(--border-subtle);">
+                👥 ${booking.attendees || 4} Pax Expected
               </div>
             </div>
 
