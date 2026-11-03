@@ -270,7 +270,7 @@ export default function BookingModal({
                 <div className="grid grid-cols-3 gap-2 mb-2">
                   {[
                     { label: 'Today (31 Oct)', val: '2026-10-31' },
-                    { label: 'Tomorrow (01 Nov)', val: '2026-11-01' },
+                    { label: 'Next Day (01 Nov)', val: '2026-11-01' },
                     { label: 'Monday (03 Nov)', val: '2026-11-03' }
                   ].map((d) => (
                     <button

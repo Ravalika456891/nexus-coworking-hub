@@ -723,10 +723,14 @@ const MeetingRoomsModule = {
           <div class="hub-search-panel">
             <!-- Row 1: Date, Time Window, People / Capacity, Search CTA -->
             <div class="hub-search-row-1">
-              <label class="hub-input-select" title="Select meeting date">
-                <span>📅</span>
-                <input type="date" value="${this.selectedDate}" onchange="MeetingRoomsModule.setDate(this.value)" style="font-family: inherit; font-size: 13px;">
-              </label>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <label class="hub-input-select" title="Select meeting date" style="flex: 1; margin: 0; min-width: 0;">
+                  <span>📅</span>
+                  <input type="date" value="${this.selectedDate}" onchange="MeetingRoomsModule.setDate(this.value)" style="font-family: inherit; font-size: 13px; width: 100%;">
+                </label>
+                <button type="button" class="hub-cat-chip ${isToday ? 'active' : ''}" onclick="MeetingRoomsModule.setDate('${todayStr}')" style="height: 42px; padding: 0 10px; margin: 0; white-space: nowrap; font-size: 11px; font-weight: 700; border-radius: 10px; display: inline-flex; align-items: center;">Today</button>
+                <button type="button" class="hub-cat-chip ${isTomorrow ? 'active' : ''}" onclick="MeetingRoomsModule.setDate('${tomorrowStr}')" style="height: 42px; padding: 0 10px; margin: 0; white-space: nowrap; font-size: 11px; font-weight: 700; border-radius: 10px; display: inline-flex; align-items: center;">Next Day</button>
+              </div>
 
               <div class="hub-input-select" title="Select time window">
                 <span>⏰</span>
@@ -6937,7 +6941,7 @@ const MeetingRoomsModule = {
             <label class="room-cal-date-picker" title="Click to open calendar and pick any date for ${room.name}">
               <span class="room-cal-icon">📅</span>
               <span class="room-cal-date-text">${formattedDateStr}</span>
-              ${isToday ? `<span class="room-cal-badge today">Today</span>` : isTomorrow ? `<span class="room-cal-badge tomorrow">Tomorrow</span>` : isPastDay ? `<span class="room-cal-badge" style="background: #e2e8f0; color: #64748b;">Past</span>` : ''}
+              ${isToday ? `<span class="room-cal-badge today">Today</span>` : isTomorrow ? `<span class="room-cal-badge tomorrow">Next Day</span>` : isPastDay ? `<span class="room-cal-badge" style="background: #e2e8f0; color: #64748b;">Past</span>` : ''}
               <span class="room-cal-arrow">▾</span>
               <input type="date" value="${this.selectedDate}" onchange="MeetingRoomsModule.setDate(this.value)" onclick="try{this.showPicker?.()}catch(e){}" class="room-cal-native-input" title="Pick date for ${room.name}">
             </label>
@@ -6946,7 +6950,7 @@ const MeetingRoomsModule = {
 
           <div class="room-cal-right">
             <button type="button" class="room-cal-chip ${isToday ? 'active' : ''}" onclick="MeetingRoomsModule.setDate('${todayStr}')">Today</button>
-            <button type="button" class="room-cal-chip ${isTomorrow ? 'active' : ''}" onclick="MeetingRoomsModule.setDate('${tomorrowStr}')">Tomorrow</button>
+            <button type="button" class="room-cal-chip ${isTomorrow ? 'active' : ''}" onclick="MeetingRoomsModule.setDate('${tomorrowStr}')">Next Day</button>
             <button type="button" class="room-cal-month-trigger" onclick="MeetingRoomsModule.openCalendarModal(null, '${room.id}')" title="Open ${room.name} full month calendar">
               <span>🗓️</span> <span>Calendar</span>
             </button>
@@ -7420,6 +7424,22 @@ const MeetingRoomsModule = {
     const durMins = Math.round(duration * 60);
     const durText = durMins < 60 ? `${durMins} min` : (durMins % 60 === 0 ? `${duration} hr${duration > 1 ? 's' : ''}` : `${Math.floor(duration)}h ${durMins % 60}m`);
 
+    const durContainer = document.getElementById('book-modal-duration-group');
+    if (durContainer) {
+      durContainer.querySelectorAll('.duration-pill').forEach(btn => {
+        const bm = parseInt(btn.getAttribute('data-mins'), 10);
+        if (bm === durMins) {
+          btn.style.background = '#4F3FE0';
+          btn.style.color = '#ffffff';
+          btn.style.borderColor = '#4F3FE0';
+        } else {
+          btn.style.background = 'transparent';
+          btn.style.color = 'inherit';
+          btn.style.borderColor = '';
+        }
+      });
+    }
+
     const remainingCredits = Math.max(0, (startup.includedMeetingHours || 12) - (startup.usedMeetingHours || 0));
     const isCovered = remainingCredits >= duration;
     const billableHours = Math.max(0, duration - remainingCredits);
@@ -7547,11 +7567,12 @@ const MeetingRoomsModule = {
                   <label class="form-label" style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin: 0;">
                     ⏰ Operating Session &amp; Duration <span style="color: #ef4444;">*</span>
                   </label>
-                  <div style="display: flex; gap: 4px;">
-                    <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.setBookModalDuration(30)" style="font-size: 10px; padding: 2px 7px; border-radius: 5px; font-weight: 700;">30m</button>
-                    <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.setBookModalDuration(60)" style="font-size: 10px; padding: 2px 7px; border-radius: 5px; font-weight: 700;">60m</button>
-                    <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.setBookModalDuration(90)" style="font-size: 10px; padding: 2px 7px; border-radius: 5px; font-weight: 700;">90m</button>
-                    <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.setBookModalDuration(120)" style="font-size: 10px; padding: 2px 7px; border-radius: 5px; font-weight: 700;">2h</button>
+                  <div style="display: flex; gap: 4px;" id="book-modal-duration-group">
+                    <button type="button" class="btn btn-outline btn-sm duration-pill" data-mins="30" onclick="MeetingRoomsModule.setBookModalDuration(30)" style="font-size: 10px; padding: 2px 7px; border-radius: 5px; font-weight: 700;">30m</button>
+                    <button type="button" class="btn btn-outline btn-sm duration-pill" data-mins="60" onclick="MeetingRoomsModule.setBookModalDuration(60)" style="font-size: 10px; padding: 2px 7px; border-radius: 5px; font-weight: 700;">1hr</button>
+                    <button type="button" class="btn btn-outline btn-sm duration-pill" data-mins="90" onclick="MeetingRoomsModule.setBookModalDuration(90)" style="font-size: 10px; padding: 2px 7px; border-radius: 5px; font-weight: 700;">1.5hrs</button>
+                    <button type="button" class="btn btn-outline btn-sm duration-pill" data-mins="120" onclick="MeetingRoomsModule.setBookModalDuration(120)" style="font-size: 10px; padding: 2px 7px; border-radius: 5px; font-weight: 700;">2hrs</button>
+                    <button type="button" class="btn btn-outline btn-sm duration-pill" data-mins="180" onclick="MeetingRoomsModule.setBookModalDuration(180)" style="font-size: 10px; padding: 2px 7px; border-radius: 5px; font-weight: 700;">3hrs</button>
                   </div>
                 </div>
 

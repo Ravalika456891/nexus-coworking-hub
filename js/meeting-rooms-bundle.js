@@ -268,6 +268,20 @@ var Icon = function Icon(_ref) {
       d: "M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z"
     })
   };
+  var handleSelectDuration = function handleSelectDuration(newDur) {
+    setBookingDuration(newDur);
+    if (!bookingModalRoom) return;
+    var slotInfo = getSlotState(bookingStartTime, bookingModalRoom, bookingDate, bookingStartTime, newDur);
+    if (slotInfo.disabled || slotInfo.status === 'unavailable' || slotInfo.status === 'booked' || slotInfo.status === 'past') {
+      var firstOpen = TIME_SLOTS_12H.find(function(s) {
+        var st = getSlotState(s, bookingModalRoom, bookingDate, s, newDur);
+        return !st.disabled && st.status === 'available';
+      });
+      if (firstOpen) {
+        setBookingStartTime(firstOpen);
+      }
+    }
+  };
   return /*#__PURE__*/React.createElement("svg", {
     xmlns: "http://www.w3.org/2000/svg",
     fill: "none",
@@ -788,16 +802,72 @@ function MeetingRoomsApp() {
   var getTodayDateIso = function getTodayDateIso() {
     return "2026-10-31";
   };
+  var handleSelectDuration = function handleSelectDuration(newDur) {
+    setBookingDuration(newDur);
+    if (!bookingModalRoom) return;
+    var slotInfo = getSlotState(bookingStartTime, bookingModalRoom, bookingDate, bookingStartTime, newDur);
+    if (slotInfo.disabled || slotInfo.status === 'unavailable' || slotInfo.status === 'booked' || slotInfo.status === 'past') {
+      var firstOpen = TIME_SLOTS_12H.find(function(s) {
+        var st = getSlotState(s, bookingModalRoom, bookingDate, s, newDur);
+        return !st.disabled && st.status === 'available';
+      });
+      if (firstOpen) {
+        setBookingStartTime(firstOpen);
+      }
+    }
+  };
   var getTomorrowDateIso = function getTomorrowDateIso() {
     return "2026-11-01";
+  };
+  var handleSelectDuration = function handleSelectDuration(newDur) {
+    setBookingDuration(newDur);
+    if (!bookingModalRoom) return;
+    var slotInfo = getSlotState(bookingStartTime, bookingModalRoom, bookingDate, bookingStartTime, newDur);
+    if (slotInfo.disabled || slotInfo.status === 'unavailable' || slotInfo.status === 'booked' || slotInfo.status === 'past') {
+      var firstOpen = TIME_SLOTS_12H.find(function(s) {
+        var st = getSlotState(s, bookingModalRoom, bookingDate, s, newDur);
+        return !st.disabled && st.status === 'available';
+      });
+      if (firstOpen) {
+        setBookingStartTime(firstOpen);
+      }
+    }
   };
   var handleSetToday = function handleSetToday() {
     setBookingDate(getTodayDateIso());
     showToast("📅 Switched to Today's availability (31 Oct)");
   };
+  var handleSelectDuration = function handleSelectDuration(newDur) {
+    setBookingDuration(newDur);
+    if (!bookingModalRoom) return;
+    var slotInfo = getSlotState(bookingStartTime, bookingModalRoom, bookingDate, bookingStartTime, newDur);
+    if (slotInfo.disabled || slotInfo.status === 'unavailable' || slotInfo.status === 'booked' || slotInfo.status === 'past') {
+      var firstOpen = TIME_SLOTS_12H.find(function(s) {
+        var st = getSlotState(s, bookingModalRoom, bookingDate, s, newDur);
+        return !st.disabled && st.status === 'available';
+      });
+      if (firstOpen) {
+        setBookingStartTime(firstOpen);
+      }
+    }
+  };
   var handleSetNextDay = function handleSetNextDay() {
     setBookingDate(getTomorrowDateIso());
     showToast("📅 Switched to Next Day's availability (01 Nov)");
+  };
+  var handleSelectDuration = function handleSelectDuration(newDur) {
+    setBookingDuration(newDur);
+    if (!bookingModalRoom) return;
+    var slotInfo = getSlotState(bookingStartTime, bookingModalRoom, bookingDate, bookingStartTime, newDur);
+    if (slotInfo.disabled || slotInfo.status === 'unavailable' || slotInfo.status === 'booked' || slotInfo.status === 'past') {
+      var firstOpen = TIME_SLOTS_12H.find(function(s) {
+        var st = getSlotState(s, bookingModalRoom, bookingDate, s, newDur);
+        return !st.disabled && st.status === 'available';
+      });
+      if (firstOpen) {
+        setBookingStartTime(firstOpen);
+      }
+    }
   };
   var openBookingDrawer = function openBookingDrawer(room) {
     if (!room) return;
@@ -810,6 +880,20 @@ function MeetingRoomsApp() {
     setBookingNotes("");
     setBookingSyncGCal(true);
     setBookingSuccessData(null);
+  };
+  var handleSelectDuration = function handleSelectDuration(newDur) {
+    setBookingDuration(newDur);
+    if (!bookingModalRoom) return;
+    var slotInfo = getSlotState(bookingStartTime, bookingModalRoom, bookingDate, bookingStartTime, newDur);
+    if (slotInfo.disabled || slotInfo.status === 'unavailable' || slotInfo.status === 'booked' || slotInfo.status === 'past') {
+      var firstOpen = TIME_SLOTS_12H.find(function(s) {
+        var st = getSlotState(s, bookingModalRoom, bookingDate, s, newDur);
+        return !st.disabled && st.status === 'available';
+      });
+      if (firstOpen) {
+        setBookingStartTime(firstOpen);
+      }
+    }
   };
   var TIME_SLOTS_12H = ["08:00 AM", "08:30 AM", "09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM", "12:00 PM", "12:30 PM", "01:00 PM", "01:30 PM", "02:00 PM", "02:30 PM", "03:00 PM", "03:30 PM", "04:00 PM", "04:30 PM", "05:00 PM", "05:30 PM", "06:00 PM", "06:30 PM", "07:00 PM", "07:30 PM"];
   var timeStrToMinutes = function timeStrToMinutes(str) {
@@ -827,6 +911,20 @@ function MeetingRoomsApp() {
     if (ampm === "AM" && h === 12) h = 0;
     return h * 60 + m;
   };
+  var handleSelectDuration = function handleSelectDuration(newDur) {
+    setBookingDuration(newDur);
+    if (!bookingModalRoom) return;
+    var slotInfo = getSlotState(bookingStartTime, bookingModalRoom, bookingDate, bookingStartTime, newDur);
+    if (slotInfo.disabled || slotInfo.status === 'unavailable' || slotInfo.status === 'booked' || slotInfo.status === 'past') {
+      var firstOpen = TIME_SLOTS_12H.find(function(s) {
+        var st = getSlotState(s, bookingModalRoom, bookingDate, s, newDur);
+        return !st.disabled && st.status === 'available';
+      });
+      if (firstOpen) {
+        setBookingStartTime(firstOpen);
+      }
+    }
+  };
   var minutesToTimeStr = function minutesToTimeStr(totalMins) {
     var h = Math.floor(totalMins / 60);
     var m = totalMins % 60;
@@ -835,11 +933,39 @@ function MeetingRoomsApp() {
     if (h === 0) h = 12;
     return "".concat(String(h).padStart(2, "0"), ":").concat(String(m).padStart(2, "0"), " ").concat(ampm);
   };
+  var handleSelectDuration = function handleSelectDuration(newDur) {
+    setBookingDuration(newDur);
+    if (!bookingModalRoom) return;
+    var slotInfo = getSlotState(bookingStartTime, bookingModalRoom, bookingDate, bookingStartTime, newDur);
+    if (slotInfo.disabled || slotInfo.status === 'unavailable' || slotInfo.status === 'booked' || slotInfo.status === 'past') {
+      var firstOpen = TIME_SLOTS_12H.find(function(s) {
+        var st = getSlotState(s, bookingModalRoom, bookingDate, s, newDur);
+        return !st.disabled && st.status === 'available';
+      });
+      if (firstOpen) {
+        setBookingStartTime(firstOpen);
+      }
+    }
+  };
   var getSlotState = function getSlotState(slotTime, room, date, startTime, duration) {
     if (!room) return {
       status: "available",
       label: "Available"
     };
+  var handleSelectDuration = function handleSelectDuration(newDur) {
+    setBookingDuration(newDur);
+    if (!bookingModalRoom) return;
+    var slotInfo = getSlotState(bookingStartTime, bookingModalRoom, bookingDate, bookingStartTime, newDur);
+    if (slotInfo.disabled || slotInfo.status === 'unavailable' || slotInfo.status === 'booked' || slotInfo.status === 'past') {
+      var firstOpen = TIME_SLOTS_12H.find(function(s) {
+        var st = getSlotState(s, bookingModalRoom, bookingDate, s, newDur);
+        return !st.disabled && st.status === 'available';
+      });
+      if (firstOpen) {
+        setBookingStartTime(firstOpen);
+      }
+    }
+  };
     var slotMins = timeStrToMinutes(slotTime);
     var selectedStartMins = timeStrToMinutes(startTime);
     var selectedEndMins = selectedStartMins + Math.round(duration * 60);
@@ -864,6 +990,20 @@ function MeetingRoomsApp() {
         isPast: true,
         disabled: true
       };
+  var handleSelectDuration = function handleSelectDuration(newDur) {
+    setBookingDuration(newDur);
+    if (!bookingModalRoom) return;
+    var slotInfo = getSlotState(bookingStartTime, bookingModalRoom, bookingDate, bookingStartTime, newDur);
+    if (slotInfo.disabled || slotInfo.status === 'unavailable' || slotInfo.status === 'booked' || slotInfo.status === 'past') {
+      var firstOpen = TIME_SLOTS_12H.find(function(s) {
+        var st = getSlotState(s, bookingModalRoom, bookingDate, s, newDur);
+        return !st.disabled && st.status === 'available';
+      });
+      if (firstOpen) {
+        setBookingStartTime(firstOpen);
+      }
+    }
+  };
     }
     var allBookings = [].concat(_toConsumableArray(upcomingBookings.filter(function (b) {
       return b.status !== "Cancelled" && (b.room === room.name || b.roomId === room.id);
@@ -900,6 +1040,20 @@ function MeetingRoomsApp() {
             isBooked: true,
             disabled: true
           };
+  var handleSelectDuration = function handleSelectDuration(newDur) {
+    setBookingDuration(newDur);
+    if (!bookingModalRoom) return;
+    var slotInfo = getSlotState(bookingStartTime, bookingModalRoom, bookingDate, bookingStartTime, newDur);
+    if (slotInfo.disabled || slotInfo.status === 'unavailable' || slotInfo.status === 'booked' || slotInfo.status === 'past') {
+      var firstOpen = TIME_SLOTS_12H.find(function(s) {
+        var st = getSlotState(s, bookingModalRoom, bookingDate, s, newDur);
+        return !st.disabled && st.status === 'available';
+      });
+      if (firstOpen) {
+        setBookingStartTime(firstOpen);
+      }
+    }
+  };
         }
       }
     } catch (err) {
@@ -914,6 +1068,20 @@ function MeetingRoomsApp() {
         isSelected: true,
         disabled: false
       };
+  var handleSelectDuration = function handleSelectDuration(newDur) {
+    setBookingDuration(newDur);
+    if (!bookingModalRoom) return;
+    var slotInfo = getSlotState(bookingStartTime, bookingModalRoom, bookingDate, bookingStartTime, newDur);
+    if (slotInfo.disabled || slotInfo.status === 'unavailable' || slotInfo.status === 'booked' || slotInfo.status === 'past') {
+      var firstOpen = TIME_SLOTS_12H.find(function(s) {
+        var st = getSlotState(s, bookingModalRoom, bookingDate, s, newDur);
+        return !st.disabled && st.status === 'available';
+      });
+      if (firstOpen) {
+        setBookingStartTime(firstOpen);
+      }
+    }
+  };
     }
     var reqEndMins = slotMins + Math.round(duration * 60);
     if (reqEndMins > 1200) {
@@ -923,6 +1091,20 @@ function MeetingRoomsApp() {
         isConflict: true,
         disabled: true
       };
+  var handleSelectDuration = function handleSelectDuration(newDur) {
+    setBookingDuration(newDur);
+    if (!bookingModalRoom) return;
+    var slotInfo = getSlotState(bookingStartTime, bookingModalRoom, bookingDate, bookingStartTime, newDur);
+    if (slotInfo.disabled || slotInfo.status === 'unavailable' || slotInfo.status === 'booked' || slotInfo.status === 'past') {
+      var firstOpen = TIME_SLOTS_12H.find(function(s) {
+        var st = getSlotState(s, bookingModalRoom, bookingDate, s, newDur);
+        return !st.disabled && st.status === 'available';
+      });
+      if (firstOpen) {
+        setBookingStartTime(firstOpen);
+      }
+    }
+  };
     }
     var _iterator2 = _createForOfIteratorHelper(allBookings),
       _step2;
@@ -954,6 +1136,20 @@ function MeetingRoomsApp() {
             isConflict: true,
             disabled: true
           };
+  var handleSelectDuration = function handleSelectDuration(newDur) {
+    setBookingDuration(newDur);
+    if (!bookingModalRoom) return;
+    var slotInfo = getSlotState(bookingStartTime, bookingModalRoom, bookingDate, bookingStartTime, newDur);
+    if (slotInfo.disabled || slotInfo.status === 'unavailable' || slotInfo.status === 'booked' || slotInfo.status === 'past') {
+      var firstOpen = TIME_SLOTS_12H.find(function(s) {
+        var st = getSlotState(s, bookingModalRoom, bookingDate, s, newDur);
+        return !st.disabled && st.status === 'available';
+      });
+      if (firstOpen) {
+        setBookingStartTime(firstOpen);
+      }
+    }
+  };
         }
       }
     } catch (err) {
@@ -967,6 +1163,19 @@ function MeetingRoomsApp() {
       isAvailable: true,
       disabled: false
     };
+  var handleSelectDuration = function handleSelectDuration(newDur) {
+    setBookingDuration(newDur);
+    if (!bookingModalRoom) return;
+    var slotInfo = getSlotState(bookingStartTime, bookingModalRoom, bookingDate, bookingStartTime, newDur);
+    if (slotInfo.disabled || slotInfo.status === 'unavailable' || slotInfo.status === 'booked' || slotInfo.status === 'past') {
+      var firstOpen = TIME_SLOTS_12H.find(function(s) {
+        var st = getSlotState(s, bookingModalRoom, bookingDate, s, newDur);
+        return !st.disabled && st.status === 'available';
+      });
+      if (firstOpen) {
+        setBookingStartTime(firstOpen);
+      }
+    }
   };
   var handleSelectDuration = function handleSelectDuration(newDur) {
     setBookingDuration(newDur);
@@ -976,6 +1185,21 @@ function MeetingRoomsApp() {
       var firstOpen = TIME_SLOTS_12H.find(function(s) {
         var st = getSlotState(s, bookingModalRoom, bookingDate, s, newDur);
         return !st.disabled && st.status === "available";
+      });
+      if (firstOpen) {
+        setBookingStartTime(firstOpen);
+      }
+    }
+  };
+  };
+  var handleSelectDuration = function handleSelectDuration(newDur) {
+    setBookingDuration(newDur);
+    if (!bookingModalRoom) return;
+    var slotInfo = getSlotState(bookingStartTime, bookingModalRoom, bookingDate, bookingStartTime, newDur);
+    if (slotInfo.disabled || slotInfo.status === 'unavailable' || slotInfo.status === 'booked' || slotInfo.status === 'past') {
+      var firstOpen = TIME_SLOTS_12H.find(function(s) {
+        var st = getSlotState(s, bookingModalRoom, bookingDate, s, newDur);
+        return !st.disabled && st.status === 'available';
       });
       if (firstOpen) {
         setBookingStartTime(firstOpen);
@@ -997,6 +1221,20 @@ function MeetingRoomsApp() {
     var loc = encodeURIComponent("".concat(booking.room, ", NEXUS HUB Innovation Campus"));
     return "https://calendar.google.com/calendar/render?action=TEMPLATE&text=".concat(text, "&dates=").concat(startIso, "/").concat(endIso, "&details=").concat(details, "&location=").concat(loc);
   };
+  var handleSelectDuration = function handleSelectDuration(newDur) {
+    setBookingDuration(newDur);
+    if (!bookingModalRoom) return;
+    var slotInfo = getSlotState(bookingStartTime, bookingModalRoom, bookingDate, bookingStartTime, newDur);
+    if (slotInfo.disabled || slotInfo.status === 'unavailable' || slotInfo.status === 'booked' || slotInfo.status === 'past') {
+      var firstOpen = TIME_SLOTS_12H.find(function(s) {
+        var st = getSlotState(s, bookingModalRoom, bookingDate, s, newDur);
+        return !st.disabled && st.status === 'available';
+      });
+      if (firstOpen) {
+        setBookingStartTime(firstOpen);
+      }
+    }
+  };
   var downloadIcsFile = function downloadIcsFile(booking) {
     var dStr = (booking.fullDate || booking.date || "2026-10-31").replace(/-/g, "").replace("Today", "20261031");
     var startMin = timeStrToMinutes(booking.startTime);
@@ -1017,6 +1255,20 @@ function MeetingRoomsApp() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+  var handleSelectDuration = function handleSelectDuration(newDur) {
+    setBookingDuration(newDur);
+    if (!bookingModalRoom) return;
+    var slotInfo = getSlotState(bookingStartTime, bookingModalRoom, bookingDate, bookingStartTime, newDur);
+    if (slotInfo.disabled || slotInfo.status === 'unavailable' || slotInfo.status === 'booked' || slotInfo.status === 'past') {
+      var firstOpen = TIME_SLOTS_12H.find(function(s) {
+        var st = getSlotState(s, bookingModalRoom, bookingDate, s, newDur);
+        return !st.disabled && st.status === 'available';
+      });
+      if (firstOpen) {
+        setBookingStartTime(firstOpen);
+      }
+    }
   };
   var handleConfirmBookingModal = function handleConfirmBookingModal(e) {
     if (e) e.preventDefault();
@@ -1059,6 +1311,20 @@ function MeetingRoomsApp() {
       barColor: "bg-emerald-500",
       createdAt: new Date().toISOString()
     };
+  var handleSelectDuration = function handleSelectDuration(newDur) {
+    setBookingDuration(newDur);
+    if (!bookingModalRoom) return;
+    var slotInfo = getSlotState(bookingStartTime, bookingModalRoom, bookingDate, bookingStartTime, newDur);
+    if (slotInfo.disabled || slotInfo.status === 'unavailable' || slotInfo.status === 'booked' || slotInfo.status === 'past') {
+      var firstOpen = TIME_SLOTS_12H.find(function(s) {
+        var st = getSlotState(s, bookingModalRoom, bookingDate, s, newDur);
+        return !st.disabled && st.status === 'available';
+      });
+      if (firstOpen) {
+        setBookingStartTime(firstOpen);
+      }
+    }
+  };
     setUpcomingBookings(function (prev) {
       return [newBooking].concat(_toConsumableArray(prev));
     });
@@ -1097,6 +1363,20 @@ function MeetingRoomsApp() {
         return console.log('Backend sync offline:', err);
       });
     } catch (e) {}
+  };
+  var handleSelectDuration = function handleSelectDuration(newDur) {
+    setBookingDuration(newDur);
+    if (!bookingModalRoom) return;
+    var slotInfo = getSlotState(bookingStartTime, bookingModalRoom, bookingDate, bookingStartTime, newDur);
+    if (slotInfo.disabled || slotInfo.status === 'unavailable' || slotInfo.status === 'booked' || slotInfo.status === 'past') {
+      var firstOpen = TIME_SLOTS_12H.find(function(s) {
+        var st = getSlotState(s, bookingModalRoom, bookingDate, s, newDur);
+        return !st.disabled && st.status === 'available';
+      });
+      if (firstOpen) {
+        setBookingStartTime(firstOpen);
+      }
+    }
   };
   useEffect(function () {
     if (!bookingModalRoom || !bookingDate) return;
@@ -1162,6 +1442,20 @@ function MeetingRoomsApp() {
                 status: inq.status || "Pass Issued",
                 avatar: (inq.name ? inq.name[0] : "G")
               };
+  var handleSelectDuration = function handleSelectDuration(newDur) {
+    setBookingDuration(newDur);
+    if (!bookingModalRoom) return;
+    var slotInfo = getSlotState(bookingStartTime, bookingModalRoom, bookingDate, bookingStartTime, newDur);
+    if (slotInfo.disabled || slotInfo.status === 'unavailable' || slotInfo.status === 'booked' || slotInfo.status === 'past') {
+      var firstOpen = TIME_SLOTS_12H.find(function(s) {
+        var st = getSlotState(s, bookingModalRoom, bookingDate, s, newDur);
+        return !st.disabled && st.status === 'available';
+      });
+      if (firstOpen) {
+        setBookingStartTime(firstOpen);
+      }
+    }
+  };
             });
           });
         }
@@ -1185,6 +1479,20 @@ function MeetingRoomsApp() {
                   status: "Active",
                   avatar: f.name ? f.name[0] : "M"
                 };
+  var handleSelectDuration = function handleSelectDuration(newDur) {
+    setBookingDuration(newDur);
+    if (!bookingModalRoom) return;
+    var slotInfo = getSlotState(bookingStartTime, bookingModalRoom, bookingDate, bookingStartTime, newDur);
+    if (slotInfo.disabled || slotInfo.status === 'unavailable' || slotInfo.status === 'booked' || slotInfo.status === 'past') {
+      var firstOpen = TIME_SLOTS_12H.find(function(s) {
+        var st = getSlotState(s, bookingModalRoom, bookingDate, s, newDur);
+        return !st.disabled && st.status === 'available';
+      });
+      if (firstOpen) {
+        setBookingStartTime(firstOpen);
+      }
+    }
+  };
               });
             }
             return prev;
@@ -1192,6 +1500,20 @@ function MeetingRoomsApp() {
         }
       })["catch"](function () {});
     };
+  var handleSelectDuration = function handleSelectDuration(newDur) {
+    setBookingDuration(newDur);
+    if (!bookingModalRoom) return;
+    var slotInfo = getSlotState(bookingStartTime, bookingModalRoom, bookingDate, bookingStartTime, newDur);
+    if (slotInfo.disabled || slotInfo.status === 'unavailable' || slotInfo.status === 'booked' || slotInfo.status === 'past') {
+      var firstOpen = TIME_SLOTS_12H.find(function(s) {
+        var st = getSlotState(s, bookingModalRoom, bookingDate, s, newDur);
+        return !st.disabled && st.status === 'available';
+      });
+      if (firstOpen) {
+        setBookingStartTime(firstOpen);
+      }
+    }
+  };
 
     syncAllSectionsFromDatabase();
     var timer = setInterval(syncAllSectionsFromDatabase, 12000);
@@ -1502,11 +1824,39 @@ function MeetingRoomsApp() {
       status: "Active"
     }]
   };
+  var handleSelectDuration = function handleSelectDuration(newDur) {
+    setBookingDuration(newDur);
+    if (!bookingModalRoom) return;
+    var slotInfo = getSlotState(bookingStartTime, bookingModalRoom, bookingDate, bookingStartTime, newDur);
+    if (slotInfo.disabled || slotInfo.status === 'unavailable' || slotInfo.status === 'booked' || slotInfo.status === 'past') {
+      var firstOpen = TIME_SLOTS_12H.find(function(s) {
+        var st = getSlotState(s, bookingModalRoom, bookingDate, s, newDur);
+        return !st.disabled && st.status === 'available';
+      });
+      if (firstOpen) {
+        setBookingStartTime(firstOpen);
+      }
+    }
+  };
 
   // Hash Sync
   var navigateTo = function navigateTo(navName) {
     setActiveNav(navName);
     window.location.hash = navName.toLowerCase().replace(/\s+/g, "-");
+  };
+  var handleSelectDuration = function handleSelectDuration(newDur) {
+    setBookingDuration(newDur);
+    if (!bookingModalRoom) return;
+    var slotInfo = getSlotState(bookingStartTime, bookingModalRoom, bookingDate, bookingStartTime, newDur);
+    if (slotInfo.disabled || slotInfo.status === 'unavailable' || slotInfo.status === 'booked' || slotInfo.status === 'past') {
+      var firstOpen = TIME_SLOTS_12H.find(function(s) {
+        var st = getSlotState(s, bookingModalRoom, bookingDate, s, newDur);
+        return !st.disabled && st.status === 'available';
+      });
+      if (firstOpen) {
+        setBookingStartTime(firstOpen);
+      }
+    }
   };
   useEffect(function () {
     var handleHashChange = function handleHashChange() {
@@ -1529,16 +1879,58 @@ function MeetingRoomsApp() {
       });
       if (found) setActiveNav(found);
     };
+  var handleSelectDuration = function handleSelectDuration(newDur) {
+    setBookingDuration(newDur);
+    if (!bookingModalRoom) return;
+    var slotInfo = getSlotState(bookingStartTime, bookingModalRoom, bookingDate, bookingStartTime, newDur);
+    if (slotInfo.disabled || slotInfo.status === 'unavailable' || slotInfo.status === 'booked' || slotInfo.status === 'past') {
+      var firstOpen = TIME_SLOTS_12H.find(function(s) {
+        var st = getSlotState(s, bookingModalRoom, bookingDate, s, newDur);
+        return !st.disabled && st.status === 'available';
+      });
+      if (firstOpen) {
+        setBookingStartTime(firstOpen);
+      }
+    }
+  };
     window.addEventListener("hashchange", handleHashChange);
     return function () {
       return window.removeEventListener("hashchange", handleHashChange);
     };
+  var handleSelectDuration = function handleSelectDuration(newDur) {
+    setBookingDuration(newDur);
+    if (!bookingModalRoom) return;
+    var slotInfo = getSlotState(bookingStartTime, bookingModalRoom, bookingDate, bookingStartTime, newDur);
+    if (slotInfo.disabled || slotInfo.status === 'unavailable' || slotInfo.status === 'booked' || slotInfo.status === 'past') {
+      var firstOpen = TIME_SLOTS_12H.find(function(s) {
+        var st = getSlotState(s, bookingModalRoom, bookingDate, s, newDur);
+        return !st.disabled && st.status === 'available';
+      });
+      if (firstOpen) {
+        setBookingStartTime(firstOpen);
+      }
+    }
+  };
   }, []);
   var showToast = function showToast(msg) {
     setToastMessage(msg);
     setTimeout(function () {
       return setToastMessage(null);
     }, 3500);
+  };
+  var handleSelectDuration = function handleSelectDuration(newDur) {
+    setBookingDuration(newDur);
+    if (!bookingModalRoom) return;
+    var slotInfo = getSlotState(bookingStartTime, bookingModalRoom, bookingDate, bookingStartTime, newDur);
+    if (slotInfo.disabled || slotInfo.status === 'unavailable' || slotInfo.status === 'booked' || slotInfo.status === 'past') {
+      var firstOpen = TIME_SLOTS_12H.find(function(s) {
+        var st = getSlotState(s, bookingModalRoom, bookingDate, s, newDur);
+        return !st.disabled && st.status === 'available';
+      });
+      if (firstOpen) {
+        setBookingStartTime(firstOpen);
+      }
+    }
   };
   var toggleFavorite = function toggleFavorite(id, e) {
     e.stopPropagation();
@@ -1554,12 +1946,40 @@ function MeetingRoomsApp() {
       return next;
     });
   };
+  var handleSelectDuration = function handleSelectDuration(newDur) {
+    setBookingDuration(newDur);
+    if (!bookingModalRoom) return;
+    var slotInfo = getSlotState(bookingStartTime, bookingModalRoom, bookingDate, bookingStartTime, newDur);
+    if (slotInfo.disabled || slotInfo.status === 'unavailable' || slotInfo.status === 'booked' || slotInfo.status === 'past') {
+      var firstOpen = TIME_SLOTS_12H.find(function(s) {
+        var st = getSlotState(s, bookingModalRoom, bookingDate, s, newDur);
+        return !st.disabled && st.status === 'available';
+      });
+      if (firstOpen) {
+        setBookingStartTime(firstOpen);
+      }
+    }
+  };
   var toggleAmenity = function toggleAmenity(name) {
     setSelectedAmenities(function (prev) {
       return prev.includes(name) ? prev.filter(function (a) {
         return a !== name;
       }) : [].concat(_toConsumableArray(prev), [name]);
     });
+  };
+  var handleSelectDuration = function handleSelectDuration(newDur) {
+    setBookingDuration(newDur);
+    if (!bookingModalRoom) return;
+    var slotInfo = getSlotState(bookingStartTime, bookingModalRoom, bookingDate, bookingStartTime, newDur);
+    if (slotInfo.disabled || slotInfo.status === 'unavailable' || slotInfo.status === 'booked' || slotInfo.status === 'past') {
+      var firstOpen = TIME_SLOTS_12H.find(function(s) {
+        var st = getSlotState(s, bookingModalRoom, bookingDate, s, newDur);
+        return !st.disabled && st.status === 'available';
+      });
+      if (firstOpen) {
+        setBookingStartTime(firstOpen);
+      }
+    }
   };
   var filteredRooms = useMemo(function () {
     return rooms.filter(function (room) {
@@ -1601,6 +2021,20 @@ function MeetingRoomsApp() {
       statusColor: "bg-emerald-50 text-emerald-600 border border-emerald-200",
       barColor: "bg-emerald-500"
     };
+  var handleSelectDuration = function handleSelectDuration(newDur) {
+    setBookingDuration(newDur);
+    if (!bookingModalRoom) return;
+    var slotInfo = getSlotState(bookingStartTime, bookingModalRoom, bookingDate, bookingStartTime, newDur);
+    if (slotInfo.disabled || slotInfo.status === 'unavailable' || slotInfo.status === 'booked' || slotInfo.status === 'past') {
+      var firstOpen = TIME_SLOTS_12H.find(function(s) {
+        var st = getSlotState(s, bookingModalRoom, bookingDate, s, newDur);
+        return !st.disabled && st.status === 'available';
+      });
+      if (firstOpen) {
+        setBookingStartTime(firstOpen);
+      }
+    }
+  };
     setUpcomingBookings(function (prev) {
       return [newBooking].concat(_toConsumableArray(prev));
     });
@@ -1617,6 +2051,20 @@ function MeetingRoomsApp() {
     showToast("\uD83C\uDF89 Room booked! ".concat(bookingModalRoom.name, " confirmed."));
     setBookingModalRoom(null);
     setMeetingTitleInput("");
+  };
+  var handleSelectDuration = function handleSelectDuration(newDur) {
+    setBookingDuration(newDur);
+    if (!bookingModalRoom) return;
+    var slotInfo = getSlotState(bookingStartTime, bookingModalRoom, bookingDate, bookingStartTime, newDur);
+    if (slotInfo.disabled || slotInfo.status === 'unavailable' || slotInfo.status === 'booked' || slotInfo.status === 'past') {
+      var firstOpen = TIME_SLOTS_12H.find(function(s) {
+        var st = getSlotState(s, bookingModalRoom, bookingDate, s, newDur);
+        return !st.disabled && st.status === 'available';
+      });
+      if (firstOpen) {
+        setBookingStartTime(firstOpen);
+      }
+    }
   };
   return /*#__PURE__*/React.createElement("div", {
     className: "flex min-h-screen bg-[#F6F7FB] text-[#374151] antialiased"
@@ -4109,6 +4557,20 @@ function MeetingRoomsApp() {
         time: newVisitorData.time,
         status: "Pass Issued"
       };
+  var handleSelectDuration = function handleSelectDuration(newDur) {
+    setBookingDuration(newDur);
+    if (!bookingModalRoom) return;
+    var slotInfo = getSlotState(bookingStartTime, bookingModalRoom, bookingDate, bookingStartTime, newDur);
+    if (slotInfo.disabled || slotInfo.status === 'unavailable' || slotInfo.status === 'booked' || slotInfo.status === 'past') {
+      var firstOpen = TIME_SLOTS_12H.find(function(s) {
+        var st = getSlotState(s, bookingModalRoom, bookingDate, s, newDur);
+        return !st.disabled && st.status === 'available';
+      });
+      if (firstOpen) {
+        setBookingStartTime(firstOpen);
+      }
+    }
+  };
       setVisitorsList(function (prev) {
         return [newV].concat(prev);
       });
@@ -4286,6 +4748,20 @@ function MeetingRoomsApp() {
         hoursBooked: 0,
         access: "Member Access"
       };
+  var handleSelectDuration = function handleSelectDuration(newDur) {
+    setBookingDuration(newDur);
+    if (!bookingModalRoom) return;
+    var slotInfo = getSlotState(bookingStartTime, bookingModalRoom, bookingDate, bookingStartTime, newDur);
+    if (slotInfo.disabled || slotInfo.status === 'unavailable' || slotInfo.status === 'booked' || slotInfo.status === 'past') {
+      var firstOpen = TIME_SLOTS_12H.find(function(s) {
+        var st = getSlotState(s, bookingModalRoom, bookingDate, s, newDur);
+        return !st.disabled && st.status === 'available';
+      });
+      if (firstOpen) {
+        setBookingStartTime(firstOpen);
+      }
+    }
+  };
       setMembersList(function (prev) {
         return [newM].concat(prev);
       });
@@ -4714,7 +5190,7 @@ function MeetingRoomsApp() {
     className: "bg-transparent text-xs font-bold text-[#111827] outline-none cursor-pointer flex-1"
   }), /*#__PURE__*/React.createElement("span", {
     className: "text-[11px] text-[#8A90A2] font-medium"
-  }, bookingDate === getTodayDateIso() ? "(Today)" : bookingDate === getTomorrowDateIso() ? "(Tomorrow)" : ""))), /*#__PURE__*/React.createElement("div", {
+  }, bookingDate === getTodayDateIso() ? "(Today)" : bookingDate === getTomorrowDateIso() ? "(Next Day)" : ""))), /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-1 sm:grid-cols-2 gap-3"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
     className: "block text-xs font-bold text-[#374151] mb-1 flex items-center gap-1.5"

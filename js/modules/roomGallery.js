@@ -505,7 +505,7 @@ window.RoomGallery = {
     }
 
     const durationHours = (this.selectedDurationMins || 60) / 60;
-    const durationLabel = this.selectedDurationMins === 30 ? '30m' : this.selectedDurationMins === 90 ? '1.5 hrs' : `${durationHours} hr${durationHours > 1 ? 's' : ''}`;
+    const durationLabel = this.selectedDurationMins === 30 ? '30m' : this.selectedDurationMins === 60 ? '1hr' : this.selectedDurationMins === 90 ? '1.5hrs' : this.selectedDurationMins === 120 ? '2hrs' : '3hrs';
     
     let endTime12 = '';
     if (this.selectedSlot) {
@@ -543,10 +543,10 @@ window.RoomGallery = {
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
           ${[
             { mins: 30, label: '30m' },
-            { mins: 60, label: '1 hr' },
-            { mins: 90, label: '1.5 hrs' },
-            { mins: 120, label: '2 hrs' },
-            { mins: 180, label: '3 hrs' }
+            { mins: 60, label: '1hr' },
+            { mins: 90, label: '1.5hrs' },
+            { mins: 120, label: '2hrs' },
+            { mins: 180, label: '3hrs' }
           ].map(d => {
             const isSelected = this.selectedDurationMins === d.mins;
             return `

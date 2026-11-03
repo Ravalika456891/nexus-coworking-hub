@@ -76,3 +76,4 @@ if (pStart !== -1 && pEnd !== -1) {
 
 fs.writeFileSync('js/meeting-rooms-bundle.js', bundle, 'utf8');
 console.log('Updated js/meeting-rooms-bundle.js successfully');
+
