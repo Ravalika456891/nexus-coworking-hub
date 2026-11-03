@@ -400,8 +400,12 @@ window.RoomGallery = {
 
     return candidateSlots.map(s => {
       const start = toMin(s);
+      const end = start + durMins;
+
+      // Operating session closing time boundary:
+      // Morning session closes at 11:00 (660 mins); Evening session closes at 19:00 (1140 mins)
       const sessionClose = (start < 660) ? 660 : 1140;
-      const sessionRemainingMins = Math.max(0, sessionClose - start);
+      const exceedsOperatingHours = (end > sessionClose);
 
       // Past slot check using incubator center's IST timezone
       const isPastSlot = isPastDate || (isToday && (start < istClock.clockMinutes));
@@ -413,14 +417,13 @@ window.RoomGallery = {
         return start >= bStart && start < bEnd;
       });
 
-      // Max continuous minutes available starting from this slot before a booking or session close
-      let maxAvailableMins = sessionRemainingMins;
-      const upcomingBooking = bookings
-        .filter(b => toMin(b.startTime) >= start && toMin(b.startTime) < sessionClose)
-        .sort((a, b) => toMin(a.startTime) - toMin(b.startTime))[0];
-      if (upcomingBooking) {
-        maxAvailableMins = Math.min(maxAvailableMins, toMin(upcomingBooking.startTime) - start);
-      }
+      // Full-Duration conflict validation:
+      // Conflict rule: newStart < existingEnd AND newEnd > existingStart
+      const hasConflict = bookings.some(b => {
+        const bStart = toMin(b.startTime);
+        const bEnd = toMin(b.endTime);
+        return start < bEnd && end > bStart;
+      });
 
       let state = 'open';
       let label = 'Available';
@@ -434,9 +437,13 @@ window.RoomGallery = {
         state = 'past';
         label = 'Past';
         disabled = true;
-      } else if (isDirectlyBooked || maxAvailableMins < 30) {
+      } else if (isDirectlyBooked) {
         state = 'booked';
-        label = isDirectlyBooked ? 'Booked' : 'Closed';
+        label = 'Booked';
+        disabled = true;
+      } else if (exceedsOperatingHours || hasConflict) {
+        state = 'unavailable';
+        label = exceedsOperatingHours ? 'Closed' : 'Unavailable';
         disabled = true;
       } else {
         state = 'open';
@@ -446,8 +453,8 @@ window.RoomGallery = {
 
       return {
         start: s,
-        maxAvailableMins,
-        fitsRequestedDuration: maxAvailableMins >= durMins,
+        endMin: end,
+        durationMins: durMins,
         state,
         label,
         disabled
@@ -640,24 +647,16 @@ window.RoomGallery = {
       return;
     }
 
-    // Set selected start time and highlight in purple
-    this.selectedSlot = slotTime;
-
-    // Check if the current selectedDurationMins fits within operating session
-    const curDur = this.selectedDurationMins || 60;
-    const maxAvail = targetSlot.maxAvailableMins || 180;
-    
-    if (curDur > maxAvail) {
-      // Pick highest supported duration that fits: 180, 120, 90, 60, 30
-      const supportedDurations = [180, 120, 90, 60, 30];
-      const newDur = supportedDurations.find(d => d <= maxAvail) || 30;
-      this.selectedDurationMins = newDur;
-      const durLabel = newDur === 30 ? '30m' : newDur === 60 ? '1hr' : newDur === 90 ? '1.5hrs' : newDur === 120 ? '2hrs' : '3hrs';
+    if (targetSlot.state === 'unavailable' || targetSlot.disabled) {
       if (typeof App !== 'undefined' && App.showToast) {
-        App.showToast(`Selected ${this.fmt12(slotTime)}. Duration set to ${durLabel} to fit operating session hours.`, 'info');
+        const durLabel = this.selectedDurationMins === 30 ? '30m' : this.selectedDurationMins === 60 ? '1hr' : this.selectedDurationMins === 90 ? '1.5hrs' : this.selectedDurationMins === 120 ? '2hrs' : '3hrs';
+        App.showToast(`⚠️ ${this.fmt12(slotTime)} cannot accommodate a ${durLabel} booking. Please choose an available green slot.`, 'warning');
       }
+      return;
     }
 
+    // Set selected start time and highlight in purple
+    this.selectedSlot = slotTime;
     this.refreshBookingMount();
     this.updateFooterButtonState();
   },
@@ -669,21 +668,12 @@ window.RoomGallery = {
 
     const slots = this.getSlotsForDate(room, this.activeDate, this.selectedDurationMins);
     
-    // Check if the currently selected slot can fit this new duration
+    // Check if the currently selected slot is valid and open for this new duration
     const current = slots.find(s => s.start === this.selectedSlot);
-    if (!current || current.state !== 'open' || (current.maxAvailableMins && current.maxAvailableMins < this.selectedDurationMins)) {
-      // Auto-relocate to an open slot that fits the new full duration
-      const suitableSlot = slots.find(s => s.state === 'open' && s.maxAvailableMins >= this.selectedDurationMins);
-      if (suitableSlot) {
-        this.selectedSlot = suitableSlot.start;
-        const durLabel = mins === 30 ? '30m' : mins === 60 ? '1hr' : mins === 90 ? '1.5hrs' : mins === 120 ? '2hrs' : '3hrs';
-        if (typeof App !== 'undefined' && App.showToast) {
-          App.showToast(`Switched to ${durLabel} duration. Selected ${this.fmt12(suitableSlot.start)} to fit session hours.`, 'info');
-        }
-      } else {
-        const firstOpen = slots.find(s => s.state === 'open');
-        this.selectedSlot = firstOpen ? firstOpen.start : null;
-      }
+    if (!current || current.state !== 'open') {
+      // Requirement 1.8: Clear any previously selected start time that becomes invalid
+      const suitableSlot = slots.find(s => s.state === 'open');
+      this.selectedSlot = suitableSlot ? suitableSlot.start : null;
     }
 
     this.refreshBookingMount();
@@ -696,14 +686,14 @@ window.RoomGallery = {
     const M = window.MeetingRoomsModule;
     if (M) M.selectedDate = this.activeDate;
 
-    // Refresh slots and select valid open start time
+    // Refresh slots and clear or select valid start time
     const room = this.getRoom(this.activeRoomId);
     if (room) {
       const slots = this.getSlotsForDate(room, this.activeDate, this.selectedDurationMins || 60);
       const current = slots.find(s => s.start === this.selectedSlot);
-      if (!current || current.state !== 'open' || (current.maxAvailableMins && current.maxAvailableMins < (this.selectedDurationMins || 60))) {
-        const suitable = slots.find(s => s.state === 'open' && s.maxAvailableMins >= (this.selectedDurationMins || 60));
-        this.selectedSlot = suitable ? suitable.start : (slots.find(s => s.state === 'open') || {}).start || null;
+      if (!current || current.state !== 'open') {
+        const firstOpen = slots.find(s => s.state === 'open');
+        this.selectedSlot = firstOpen ? firstOpen.start : null;
       }
     }
     this.refreshBookingMount();
@@ -726,7 +716,11 @@ window.RoomGallery = {
       return;
     }
 
-    if (!this.selectedSlot) {
+    const slots = room ? this.getSlotsForDate(room, this.activeDate, this.selectedDurationMins || 60) : [];
+    const current = this.selectedSlot ? slots.find(s => s.start === this.selectedSlot) : null;
+    const isValid = current && current.state === 'open' && !current.disabled;
+
+    if (!isValid) {
       bookBtn.disabled = true;
       bookBtn.innerHTML = 'Select an Available Slot';
       bookBtn.classList.remove('btn-primary');
@@ -876,8 +870,8 @@ window.RoomGallery = {
 
     // Auto-select a valid open slot that fits the duration
     const slots = this.getSlotsForDate(room, this.activeDate, this.selectedDurationMins);
-    const suitable = slots.find(s => s.state === 'open' && s.maxAvailableMins >= this.selectedDurationMins);
-    this.selectedSlot = suitable ? suitable.start : ((slots.find(s => s.state === 'open') || {}).start || '08:00');
+    const suitable = slots.find(s => s.state === 'open');
+    this.selectedSlot = suitable ? suitable.start : null;
 
     const status = M && M.computeRoomStatus ? M.computeRoomStatus(room, dateStr) : { status: 'Available', statusType: 'available' };
     const isMaint = M && M.isRoomUnderMaintenance ? M.isRoomUnderMaintenance(room) : false;
@@ -967,6 +961,7 @@ window.RoomGallery = {
     const mount = document.getElementById('modal-mount') || document.body;
     mount.insertAdjacentHTML('beforeend', html);
     this.updateFooterSummary();
+    this.updateFooterButtonState();
     document.body.classList.add('rg-no-scroll');
     this._onDetailsKey = (e) => { if (e.key === 'Escape' && !this.lightbox) this.closeDetails(); };
     document.addEventListener('keydown', this._onDetailsKey);

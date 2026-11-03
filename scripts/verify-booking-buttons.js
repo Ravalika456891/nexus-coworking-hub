@@ -1,7 +1,7 @@
 const fs = require('fs');
 const assert = require('assert');
 
-// Setup mock browser environment
+// Setup mock browser DOM environment
 const elements = {};
 const getEl = (id) => {
   if (!elements[id]) {
@@ -98,100 +98,185 @@ for (const k of Object.keys(global.window)) {
 
 global.fetch = (url, opts) => Promise.resolve({ ok: true, json: () => Promise.resolve({ data: {} }) });
 
-console.log('=== VERIFYING BOOKING SYSTEM & BUTTONS ===\n');
+console.log('=== VERIFYING ALL 16 REQUIREMENTS & FUNCTIONALITY ===\n');
 
-// 1. Initialize store and App
+// Initialize store and App
 window.store.init();
 window.App.init();
 
 const rooms = window.store.getMeetingRooms();
-console.log(`✓ Meeting Rooms loaded: ${rooms.length} active rooms.`);
+console.log(`✓ 9. Room Configuration: ${rooms.length} active rooms loaded.`);
 assert.strictEqual(rooms.length, 10, 'Must have exactly 10 meeting rooms');
 
-// 2. Test RoomGallery Date and Duration Logic
+// Verify floor distribution
+const floorMap = {};
+rooms.forEach(r => { floorMap[r.floor] = (floorMap[r.floor] || 0) + 1; });
+assert.strictEqual(floorMap['1F'], 2, '1F must have 2 rooms');
+assert.strictEqual(floorMap['2F'], 1, '2F must have 1 room');
+assert.strictEqual(floorMap['3F'], 2, '3F must have 2 rooms');
+assert.strictEqual(floorMap['4F'], 1, '4F must have 1 room');
+assert.strictEqual(floorMap['5F'] || 0, 0, '5F must have NO rooms');
+assert.strictEqual(floorMap['6F'], 2, '6F must have 2 rooms');
+assert.strictEqual(floorMap['7F'], 2, '7F must have 2 rooms');
+console.log('✓ Floor distribution strictly verified (5F empty).');
+
 const gallery = window.RoomGallery;
 const testRoom = rooms[0]; // 1F-R01
 console.log(`Testing with room: ${testRoom.name} (${testRoom.label || testRoom.id})`);
 
-// Mock IST clock for deterministic testing
+// Deterministic IST clock mock
 gallery.getISTClock = () => ({
   todayStr: '2026-11-03',
-  clockMinutes: 7 * 60, // 07:00 AM (before morning session opens at 08:00 AM)
+  clockMinutes: 7 * 60, // 07:00 AM (prior to morning session)
   liveTime12: '07:00 AM'
 });
 
-// A. Test Duration options: 30m, 1hr, 1.5hrs, 2hrs, 3hrs
-console.log('\n--- Test 1: Slots generation and availability ---');
-const slots = gallery.getSlotsForDate(testRoom, '2026-11-03', 60);
-const openSlots = slots.filter(s => s.state === 'open');
-console.log(`Total slots: ${slots.length}, Open slots: ${openSlots.length}`);
-assert(slots.length === 14, 'Must have 14 operating slots');
-assert(openSlots.length > 0, 'Must have open slots');
-
-// B. Test Clicking Any Slot and Adaptive Duration
-console.log('\n--- Test 2: Click handling & Duration Adaptation ---');
 gallery.activeRoomId = testRoom.id;
-gallery.activeDate = '2026-11-04'; // Pick date without conflicts
-gallery.selectedDurationMins = 180; // 3 hrs
+gallery.activeDate = '2026-11-04';
 
-// Click 08:30 AM
-gallery.selectSlot('08:30');
-console.log(`Clicked 08:30 AM -> Slot: ${gallery.selectedSlot}, Duration: ${gallery.selectedDurationMins}m`);
-assert.strictEqual(gallery.selectedSlot, '08:30', '08:30 must be selected');
-assert.strictEqual(gallery.selectedDurationMins, 120, 'Duration should adapt to 120m to fit morning close at 11:00 AM');
+// Test 1-5: Duration buttons (30m, 1hr, 1.5hrs, 2hrs, 3hrs) & Open counts
+console.log('\n--- Tests 1-5: Duration selection, full-duration availability & open count ---');
+const testDurations = [
+  { mins: 30, expectedOpen: 14, label: '30m' },
+  { mins: 60, expectedOpen: 12, label: '1hr' },
+  { mins: 90, expectedOpen: 10, label: '1.5hrs' },
+  { mins: 120, expectedOpen: 8, label: '2hrs' },
+  { mins: 180, expectedOpen: 4, label: '3hrs' }
+];
 
-// Click 10:00 AM
-gallery.selectSlot('10:00');
-console.log(`Clicked 10:00 AM -> Slot: ${gallery.selectedSlot}, Duration: ${gallery.selectedDurationMins}m`);
-assert.strictEqual(gallery.selectedSlot, '10:00', '10:00 must be selected');
-assert.strictEqual(gallery.selectedDurationMins, 60, 'Duration should adapt to 60m');
-
-// Click 10:30 AM
-gallery.selectSlot('10:30');
-console.log(`Clicked 10:30 AM -> Slot: ${gallery.selectedSlot}, Duration: ${gallery.selectedDurationMins}m`);
-assert.strictEqual(gallery.selectedSlot, '10:30', '10:30 must be selected');
-assert.strictEqual(gallery.selectedDurationMins, 30, 'Duration should adapt to 30m');
-
-// Click 3 hrs duration button
-gallery.selectDuration(180);
-console.log(`Clicked 3 hrs -> Duration: ${gallery.selectedDurationMins}m, Relocated slot to: ${gallery.selectedSlot}`);
-assert.strictEqual(gallery.selectedDurationMins, 180);
-assert.strictEqual(gallery.selectedSlot, '08:00', 'Must relocate to 08:00 AM which fits 3 hrs');
-
-// Click 05:00 PM (17:00)
-gallery.selectSlot('17:00');
-console.log(`Clicked 05:00 PM -> Slot: ${gallery.selectedSlot}, Duration: ${gallery.selectedDurationMins}m`);
-assert.strictEqual(gallery.selectedSlot, '17:00');
-assert.strictEqual(gallery.selectedDurationMins, 120, '17:00 to 19:00 is 120m (2hrs)');
-
-// C. Test HTML Rendering in renderBookingSection
-console.log('\n--- Test 3: HTML Rendering & Labels ---');
-const bookingHtml = gallery.renderBookingSection(testRoom, '2026-11-04');
-assert(bookingHtml.includes('30m'), 'Must render 30m button');
-assert(bookingHtml.includes('1hr'), 'Must render 1hr button');
-assert(bookingHtml.includes('1.5hrs'), 'Must render 1.5hrs button');
-assert(bookingHtml.includes('2hrs'), 'Must render 2hrs button');
-assert(bookingHtml.includes('3hrs'), 'Must render 3hrs button');
-assert(bookingHtml.includes('Today'), 'Must render Today button');
-assert(bookingHtml.includes('Next Day'), 'Must render Next Day button');
-console.log('✓ All 5 duration button labels and Today/Next Day present in rendered output.');
-
-// D. Test MeetingRoomsModule Date and Duration buttons
-console.log('\n--- Test 4: MeetingRoomsModule Card UI & Search Panel ---');
-const MR = window.MeetingRoomsModule;
-MR.setDate('2026-11-04');
-assert.strictEqual(MR.selectedDate, '2026-11-04', 'Date must update when setDate is called');
-
-const renderedCardsHtml = MR.renderSchedulerView({
-  rooms,
-  myStartup: MR.getMyStartup(),
-  myBookingsToday: [],
-  availableSlotsCount: 10,
-  mySlotsCount: 0,
-  otherSlotsCount: 0
+testDurations.forEach(({ mins, expectedOpen, label }) => {
+  gallery.selectDuration(mins);
+  const slots = gallery.getSlotsForDate(testRoom, '2026-11-04', mins);
+  const openCount = slots.filter(s => s.state === 'open').length;
+  console.log(`Duration: ${label} (${mins}m) -> Open slots count: ${openCount} (Expected: ${expectedOpen})`);
+  assert.strictEqual(gallery.selectedDurationMins, mins, `Duration must update to ${mins}`);
+  assert.strictEqual(openCount, expectedOpen, `Open count for ${label} must be ${expectedOpen}`);
+  
+  // Verify interval overlap rule and operating hours closing boundary
+  slots.forEach(s => {
+    const [sh, sm] = s.start.split(':').map(Number);
+    const startMin = sh * 60 + sm;
+    const endMin = startMin + mins;
+    const sessionClose = startMin < 660 ? 660 : 1140;
+    if (s.state === 'open') {
+      assert(endMin <= sessionClose, `Open slot ${s.start} (${endMin}m) must not exceed session close (${sessionClose}m)`);
+      assert.strictEqual(s.disabled, false, `Open slot ${s.start} must be enabled`);
+    } else if (s.state === 'unavailable') {
+      assert(endMin > sessionClose || s.hasConflict, `Unavailable slot ${s.start} must exceed hours or overlap`);
+      assert.strictEqual(s.disabled, true, `Unavailable slot ${s.start} must be disabled`);
+    }
+  });
 });
-assert(renderedCardsHtml.includes('Next Day'), 'Must render Next Day button in cards and search panel');
-assert(renderedCardsHtml.includes('Today'), 'Must render Today button');
-console.log('✓ MeetingRoomsModule rendered scheduler cards with Today and Next Day buttons.');
+console.log('✓ All 5 durations correctly calculate availability and open counts.');
 
-console.log('\n=== ALL BOOKING BUTTON TESTS PASSED SUCCESSFULLY! ===');
+// Test 6: Selecting an available start time
+console.log('\n--- Test 6: Selecting an available start time ---');
+gallery.selectDuration(60); // 1hr
+gallery.selectSlot('09:00');
+assert.strictEqual(gallery.selectedSlot, '09:00', '09:00 AM must be selected');
+console.log('✓ Available slot 09:00 AM selected successfully.');
+
+// Test 7: Preventing selection of booked/unavailable slots
+console.log('\n--- Test 7: Preventing selection of unavailable/booked slots ---');
+// For 1hr, 10:30 AM is unavailable because it exceeds 11:00 AM closing
+const prevSlot = gallery.selectedSlot;
+gallery.selectSlot('10:30');
+assert.strictEqual(gallery.selectedSlot, prevSlot, '10:30 AM exceeds session close for 1hr and must not be selected');
+console.log('✓ Unavailable slot selection correctly prevented.');
+
+// Test 8: Changing duration after selecting a start time (invalidation rule)
+console.log('\n--- Test 8: Duration change invalidating selected slot ---');
+gallery.selectDuration(60); // 1hr
+gallery.selectSlot('10:00'); // 10:00 - 11:00 AM (fits 1hr)
+assert.strictEqual(gallery.selectedSlot, '10:00');
+// Now change duration to 3hrs (180m) -> 10:00 AM cannot fit 3hrs!
+gallery.selectDuration(180);
+console.log(`Switched to 3hrs; slot invalidated & relocated to: ${gallery.selectedSlot}`);
+assert.strictEqual(gallery.selectedSlot, '08:00', 'Must relocate to earliest valid slot for 3hrs (08:00 AM)');
+console.log('✓ Slot invalidation & auto-relocation upon duration change works properly.');
+
+// Test 9: Changing date after selecting a time
+console.log('\n--- Test 9: Changing date ---');
+gallery.changeDate('2026-11-05');
+assert.strictEqual(gallery.activeDate, '2026-11-05', 'Date must be updated to 2026-11-05');
+assert(gallery.selectedSlot !== null, 'Should have valid slot on new date');
+console.log('✓ Date change works correctly.');
+
+// Test 10-11: Reservation summary & credit calculations
+console.log('\n--- Tests 10-11: Reservation summary and credit calculations ---');
+gallery.activeDate = '2026-11-04';
+gallery.selectDuration(90); // 1.5hrs
+gallery.selectSlot('15:00'); // 3:00 PM
+const html = gallery.renderBookingSection(testRoom, '2026-11-04');
+assert(html.includes('3:00 PM – 4:30 PM (1.5hrs)'), 'Summary must show 3:00 PM – 4:30 PM (1.5hrs)');
+assert(html.includes('10 open'), 'Must show 10 open slots for 1.5hrs');
+assert(html.includes('1.5hrs'), 'Must highlight 1.5hrs duration');
+console.log('✓ Reservation summary correctly formats 12h AM/PM time and calculations.');
+
+// Test 12-13: Overlapping & Past booking prevention
+console.log('\n--- Tests 12-13: Overlapping & Past booking prevention ---');
+// For today's date:
+gallery.getISTClock = () => ({
+  todayStr: '2026-11-03',
+  clockMinutes: 9 * 60 + 15, // 09:15 AM
+  liveTime12: '09:15 AM'
+});
+const todaySlots = gallery.getSlotsForDate(testRoom, '2026-11-03', 60);
+const slot0800 = todaySlots.find(s => s.start === '08:00');
+const slot0830 = todaySlots.find(s => s.start === '08:30');
+const slot1500 = todaySlots.find(s => s.start === '15:00');
+const slot1700 = todaySlots.find(s => s.start === '17:00');
+assert.strictEqual(slot0800.state, 'past', '08:00 AM must be past at 09:15 AM');
+assert.strictEqual(slot0830.state, 'past', '08:30 AM must be past at 09:15 AM');
+assert.strictEqual(slot1500.state, 'booked', '15:00 (3:00 PM) must be booked');
+assert.strictEqual(slot1700.state, 'open', '17:00 (5:00 PM) must be open');
+console.log('✓ Past booking and booked conflict prevention for current date verified.');
+
+// Test 14-16: Confirmation, Transactional Booking & My Bookings
+console.log('\n--- Tests 14-16: Transactional reservation & My Bookings ---');
+async function testBookingFlow() {
+  const myStartup = window.MeetingRoomsModule.getMyStartup();
+  const initialBookingsCount = window.MeetingRoomsModule.getMyBookings().length;
+  
+  const bookRes = await window.store.bookMeetingRoom({
+    roomId: testRoom.id,
+    startupId: myStartup.id,
+    startupName: myStartup.name,
+    title: 'Executive Architecture Review',
+    purpose: 'System Design',
+    date: '2026-11-06',
+    startTime: '15:00',
+    endTime: '16:30',
+    attendees: 4
+  });
+
+  assert(bookRes.success, 'Reservation should succeed');
+  console.log('✓ Reservation confirmed on backend.');
+
+  const updatedBookings = window.MeetingRoomsModule.getMyBookings();
+  assert.strictEqual(updatedBookings.length, initialBookingsCount + 1, 'My Bookings must be incremented');
+  
+  // Verify double booking rejection
+  const doubleBookRes = await window.store.bookMeetingRoom({
+    roomId: testRoom.id,
+    startupId: myStartup.id,
+    startupName: myStartup.name,
+    title: 'Duplicate Attempt',
+    purpose: 'Test Conflict',
+    date: '2026-11-06',
+    startTime: '15:30', // Overlaps 15:00 - 16:30
+    endTime: '17:00',
+    attendees: 4
+  });
+
+  assert.strictEqual(doubleBookRes.success, false, 'Overlapping reservation must be rejected');
+  assert.strictEqual(doubleBookRes.code, 'SLOT_TAKEN');
+  console.log('✓ Overlapping conflict rejection verified.');
+}
+
+testBookingFlow().then(() => {
+  console.log('\n=== ALL 16 REQUIREMENTS VERIFIED & PASSED! ===');
+}).catch(err => {
+  console.error('Test failed:', err);
+  process.exit(1);
+});
