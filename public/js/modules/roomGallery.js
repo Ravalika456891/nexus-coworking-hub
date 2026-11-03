@@ -619,7 +619,7 @@ window.RoomGallery = {
   },
 
   selectSlot(slotTime) {
-    const room = this.getRoom(this.activeRoomId);
+    const room = this.getRoom(this.activeRoomId || this.rawRoomId);
     if (!room) return;
     const slots = this.getSlotsForDate(room, this.activeDate, this.selectedDurationMins || 60);
     const targetSlot = slots.find(s => s.start === slotTime);
@@ -663,7 +663,7 @@ window.RoomGallery = {
 
   selectDuration(mins) {
     this.selectedDurationMins = Number(mins);
-    const room = this.getRoom(this.activeRoomId);
+    const room = this.getRoom(this.activeRoomId || this.rawRoomId);
     if (!room) return;
 
     const slots = this.getSlotsForDate(room, this.activeDate, this.selectedDurationMins);
@@ -687,7 +687,7 @@ window.RoomGallery = {
     if (M) M.selectedDate = this.activeDate;
 
     // Refresh slots and clear or select valid start time
-    const room = this.getRoom(this.activeRoomId);
+    const room = this.getRoom(this.activeRoomId || this.rawRoomId);
     if (room) {
       const slots = this.getSlotsForDate(room, this.activeDate, this.selectedDurationMins || 60);
       const current = slots.find(s => s.start === this.selectedSlot);
@@ -703,7 +703,7 @@ window.RoomGallery = {
   updateFooterButtonState() {
     const bookBtn = document.getElementById('rg-foot-book-btn');
     if (!bookBtn) return;
-    const room = this.getRoom(this.activeRoomId);
+    const room = this.getRoom(this.activeRoomId || this.rawRoomId);
     const maint = room ? (window.MeetingRoomsModule && window.MeetingRoomsModule.isRoomUnderMaintenance ? window.MeetingRoomsModule.isRoomUnderMaintenance(room) : false) : false;
 
     if (maint) {
@@ -739,8 +739,8 @@ window.RoomGallery = {
 
   refreshBookingMount() {
     const container = document.getElementById('rg-interactive-booking-mount');
-    if (!container || !this.activeRoomId) return;
-    const room = this.getRoom(this.activeRoomId);
+    if (!container) return;
+    const room = this.getRoom(this.activeRoomId || this.rawRoomId);
     if (!room) return;
     container.innerHTML = this.renderBookingSection(room, this.activeDate);
   },
@@ -752,7 +752,7 @@ window.RoomGallery = {
   },
 
   async proceedToBooking(roomId) {
-    const room = this.getRoom(roomId);
+    const room = this.getRoom(roomId || this.activeRoomId || this.rawRoomId);
     if (!room) return;
     const M = window.MeetingRoomsModule;
     const myStartup = (M && M.getMyStartup) ? M.getMyStartup() : ((window.store && window.store.getStartups) ? window.store.getStartups()[0] : null);
@@ -825,6 +825,9 @@ window.RoomGallery = {
           try { App.playSuccessSound(); } catch (e) {}
         }
         this.closeDetails();
+        if (M && M.showBookingSuccessModal) {
+          M.showBookingSuccessModal(room, res.booking, myStartup);
+        }
         if (M && M.render) M.render();
         if (M && M.refreshDashboardSummary) M.refreshDashboardSummary();
         if (typeof DashboardModule !== 'undefined' && DashboardModule.render) DashboardModule.render();
@@ -851,6 +854,7 @@ window.RoomGallery = {
   },
 
   openDetails(roomId) {
+    this.closeDetails();
     const room = this.getRoom(roomId);
     if (!room) return;
     const M = window.MeetingRoomsModule;
@@ -957,7 +961,6 @@ window.RoomGallery = {
         </aside>
       </div>
     `;
-    this.closeDetails();
     const mount = document.getElementById('modal-mount') || document.body;
     mount.insertAdjacentHTML('beforeend', html);
     this.updateFooterSummary();
