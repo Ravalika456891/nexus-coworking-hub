@@ -1932,68 +1932,6 @@ const MeetingRoomsModule = {
       </tr>
     `;
   },
-                            </div>
-                            <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">
-                              Floor: <strong style="color: #1e293b;">${bRoom ? (bRoom.floor || '1F') : '1F'}</strong> · Room: <strong style="color: #4f3fe0; font-family: monospace;">${bRoom ? (bRoom.roomNumber || '1F-R01') : '1F-R01'}</strong>
-                            </div>
-                          </div>
-                        </div>
-                        <span class="badge ${b.status === 'Cancelled' ? 'badge-subtle' : 'badge-success'}" style="font-size: 11px; padding: 3px 9px;">
-                          ${b.status === 'Cancelled' ? '🚫 Cancelled' : '● Confirmed'}
-                        </span>
-                      </div>
-
-                      <div style="background: var(--bg-surface-elevated); padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border-subtle); margin: 12px 0;">
-                        <div style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">
-                          🎯 ${b.title || 'Executive Review Session'}
-                        </div>
-                        <div style="display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; color: var(--text-secondary);">
-                          <span>📅 <strong>${b.date}</strong></span>
-                          <span>•</span>
-                          <span style="font-family: var(--font-mono); font-weight: 700; color: #2563eb;">⏰ ${this.formatTimeTo12Hour(b.startTime)} – ${this.formatTimeTo12Hour(b.endTime)}</span>
-                          <span>•</span>
-                          <span>👥 <strong>${b.attendees} Pax</strong></span>
-                        </div>
-                      </div>
-
-                      <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-muted);">
-                        <div>
-                          Fee: <strong style="color: ${b.status === 'Cancelled' ? '#64748b' : '#16a34a'};">${b.status === 'Cancelled' ? 'Released' : b.cost === 0 ? 'Plan Credit (₹0)' : `₹${Number(b.cost).toLocaleString('en-IN')}`}</strong>
-                        </div>
-                        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-                          <button class="btn btn-sm btn-primary" onclick="MeetingRoomsModule.openReservationDetailsModal('${b.roomId}', '${b.id}')" style="font-size: 11.5px; padding: 5px 12px; border-radius: 6px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;">
-                            <span>📋</span> Details
-                          </button>
-                          ${b.status !== 'Cancelled' ? `
-                            <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.downloadBookingIcs('${b.id}')" style="font-size: 11.5px; padding: 5px 9px; border-radius: 6px; color: #2563eb; border-color: rgba(37,99,235,0.4);" title="Download calendar invite">
-                              📅 .ics
-                            </button>
-                            ${this.isBookingCompleted(b) ? `
-                              <button class="btn btn-outline btn-sm" disabled style="font-size: 11.5px; padding: 5px 10px; border-radius: 6px; color: #64748b; border-color: rgba(100, 116, 139, 0.3); opacity: 0.65; cursor: not-allowed;" title="Completed meetings cannot be cancelled">
-                                ✓ Completed
-                              </button>
-                            ` : `
-                              <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openEditTimeWindowModal('${b.roomId}', '${b.id}')" style="font-size: 11.5px; padding: 5px 9px; border-radius: 6px; color: #2563eb; border-color: rgba(37,99,235,0.4);" title="Change booking time">
-                                ⏰ Time
-                              </button>
-                              <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openCancellationModal('${b.roomId}', '${b.id}')" style="font-size: 11.5px; padding: 5px 10px; border-radius: 6px; color: #dc2626; border-color: rgba(239, 68, 68, 0.4);" title="Cancel this reservation">
-                                Cancel
-                              </button>
-                            `}
-                          ` : ''}
-                        </div>
-                      </div>
-                    </div>
-                    `;
-                  }).join('')}
-                </div>
-              `}
-            </div>
-          `}
-        </div>
-      </div>
-    `;
-  },
 
   formatTimeTo12Hour(time24) {
     if (!time24) return '';
