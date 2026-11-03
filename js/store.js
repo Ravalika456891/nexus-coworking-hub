@@ -1965,7 +1965,7 @@ class NexusStore {
       });
     });
     return `${prefix}${String(maxSeq + 1).padStart(4, '0')}`;
-  },
+  }
 
   async bookMeetingRoom({ roomId, startupId, startupName, title, purpose, date, startTime, endTime, attendees, requestedAmenities, specialRequests, recurrence = null, idempotencyKey = null, bookedBy = null }) {
     const room = this.getMeetingRoomById(roomId);
