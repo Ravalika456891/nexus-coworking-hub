@@ -7175,17 +7175,7 @@ const MeetingRoomsModule = {
               </div>
             </div>
 
-            <!-- Agenda & Purpose -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-              <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 10px 14px;">
-                <div style="font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Meeting Title</div>
-                <div style="font-size: 13px; font-weight: 800; color: var(--text-primary); margin-top: 2px;">${booking.title || 'Meeting Reservation'}</div>
-              </div>
-              <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 10px 14px;">
-                <div style="font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Meeting Purpose</div>
-                <div style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin-top: 2px;">${booking.purpose || booking.title || 'Team Sync'}</div>
-              </div>
-            </div>
+
 
             <!-- Billing & Amenities -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
