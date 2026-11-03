@@ -433,7 +433,7 @@
           <span class="nav-item-text">Members</span>
         </a>
 
-        <a class="nav-item" data-tab="database">
+        <a class="nav-item admin-only-nav" data-tab="database" id="nav-item-database" style="display: none;">
           <span class="nav-item-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
               <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>
@@ -443,7 +443,7 @@
         </a>
       </nav>
 
-      <!-- Sidebar Plan Card -->
+      <!-- Sidebar Plan Card (Unified to hours) -->
       <div class="sidebar-plan-card" style="margin: 8px 10px 14px 10px; background: #F8F7FF; border: 1px solid #E4DEFF; border-radius: 16px; padding: 14px; box-shadow: 0 2px 10px rgba(79, 63, 224, 0.04); flex-shrink: 0;">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
           <span style="font-size: 11px; font-weight: 800; color: #4F3FE0; display: flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
@@ -453,14 +453,14 @@
             STARTUP PLAN
           </span>
         </div>
-        <div style="font-size: 20px; font-weight: 900; color: #111827; margin-top: 4px; line-height: 1.2;">
-          120 credits
+        <div style="font-size: 18px; font-weight: 900; color: #111827; margin-top: 4px; line-height: 1.2;" id="sidebar-plan-allowance">
+          15 hrs allowance
         </div>
         <div style="margin: 8px 0 6px 0; background: #ECEEF4; height: 6px; border-radius: 999px; overflow: hidden;">
-          <div style="background: #4F3FE0; width: 66%; height: 100%; border-radius: 999px;"></div>
+          <div id="sidebar-plan-progress" style="background: #4F3FE0; width: 66%; height: 100%; border-radius: 999px; transition: width 0.3s ease;"></div>
         </div>
-        <div style="font-size: 11px; color: #8A90A2; font-weight: 500; margin-bottom: 10px;">
-          80 credits left
+        <div style="font-size: 11px; color: #8A90A2; font-weight: 600; margin-bottom: 10px;" id="sidebar-plan-remaining">
+          8.0 hrs free balance
         </div>
         <button type="button" onclick="App.switchTab('billingCredits')" style="width: 100%; background: #4F3FE0; color: #ffffff; border: none; padding: 8px; border-radius: 12px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; display: block; text-align: center;" onmouseover="this.style.background='#4335C9'" onmouseout="this.style.background='#4F3FE0'">
           Upgrade Plan &rarr;

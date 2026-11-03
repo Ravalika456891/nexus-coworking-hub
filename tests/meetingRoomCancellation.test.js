@@ -230,7 +230,7 @@ async function runTests() {
       date,
       startTime,
       endTime,
-      attendees: 6,
+      attendees: 4,
       cost: 1500
     });
     assert.strictEqual(bookRes.ok, true);
@@ -284,7 +284,7 @@ async function runTests() {
       endTime,
       startupId: 'STP-01',
       startupName: 'NeuroPulse AI',
-      attendees: 5,
+      attendees: 4,
       cost: 1500
     });
     assert.strictEqual(initialRes.ok, true, 'Initial reservation must succeed');
@@ -298,7 +298,7 @@ async function runTests() {
       endTime,
       startupId: 'STP-02',
       startupName: 'AeroKite Dynamics',
-      attendees: 5
+      attendees: 4
     });
     assert.strictEqual(conflictRes.ok, false, 'Overlap before cancel must be rejected');
     assert.strictEqual(conflictRes.code, 'SLOT_TAKEN');
@@ -322,7 +322,7 @@ async function runTests() {
       endTime,
       startupId: 'STP-02',
       startupName: 'AeroKite Dynamics',
-      attendees: 5,
+      attendees: 4,
       cost: 1500
     });
     assert.strictEqual(rebookRes.ok, true, 'Rebooking freed slot must succeed immediately');
@@ -346,12 +346,12 @@ async function runTests() {
   // --- Test 6: Refund Appears in Payments Ledger and Subtracts from Dashboard Summary ---
   await testAsync('Test 6: Refund appears in payments ledger and subtracts from dashboard totals', async () => {
     const roomId = 'MR-01';
-    const date = '2026-10-30';
-    const startTime = '17:00';
-    const endTime = '18:00';
+    const date = '2026-11-26';
+    const startTime = '10:00';
+    const endTime = '11:00';
 
     // Baseline dashboard summary
-    const summaryBefore = await db.getDashboardSummary('2026-10');
+    const summaryBefore = await db.getDashboardSummary('2026-11');
     const collectedBefore = summaryBefore.collected.value;
 
     // Create a confirmed paid booking (₹1500)
@@ -368,9 +368,9 @@ async function runTests() {
     assert.strictEqual(bookRes.ok, true);
     const bookingId = bookRes.booking.id;
 
-    // Clock set to 5 hours before start: 100% full refund
+    // Clock set to 2 hours before start: 100% full refund
     // Refund = 100% of ₹1500 = ₹1500.00
-    const clock5h = new Date('2026-10-30T12:00:00+05:30');
+    const clock5h = new Date('2026-11-26T08:00:00+05:30');
     const cancelRes = await db.cancelBooking({
       roomId,
       bookingId,
@@ -393,7 +393,7 @@ async function runTests() {
     assert.strictEqual(refundPayment.transactionRef, cancelRes.refundId);
 
     // Check dashboard summary reflects deduction
-    const summaryAfter = await db.getDashboardSummary('2026-10');
+    const summaryAfter = await db.getDashboardSummary('2026-11');
     assert.strictEqual(summaryAfter.collected.value, collectedBefore - 1500, 'Dashboard collected total must subtract refund (-₹1500)');
 
     // Clean up test booking & ledger

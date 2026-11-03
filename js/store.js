@@ -189,6 +189,7 @@ class NexusStore {
     const todayStr = new Date().toISOString().split('T')[0];
     const testDates = [todayStr, '2026-10-25'];
     testDates.forEach(d => {
+      const dClean = d.replace(/[^0-9]/g, '');
       const hasBookingsForDate = (this.state.meetingRooms || []).some(r => 
         (r.bookings || []).some(b => b.date === d && b.status !== 'Cancelled')
       );
@@ -197,26 +198,36 @@ class NexusStore {
         if (r1) {
           if (!r1.bookings) r1.bookings = [];
           r1.bookings.push({
-            id: `BKG-${d}-01`,
+            id: `BKG-${dClean}-0001`,
             startupId: 'STP-01',
             startupName: 'NeuroPulse AI',
+            bookedBy: 'Dr. Arjun Mehta',
             title: 'Medical Board & Advisory Review',
+            purpose: 'Medical Board & Advisory Review',
             date: d,
             startTime: '09:00',
             endTime: '11:00',
-            attendees: 10,
+            duration: 2,
+            creditHoursUsed: 2,
+            overageHours: 0,
+            attendees: Math.min(4, r1.capacity || 4),
             cost: 0,
             status: 'Confirmed'
           });
           r1.bookings.push({
-            id: `BKG-${d}-02`,
+            id: `BKG-${dClean}-0002`,
             startupId: 'STP-03',
             startupName: 'FinEdge Protocol',
+            bookedBy: 'Vikram Sethi',
             title: 'Pre-Series A VC Due Diligence',
+            purpose: 'Pre-Series A VC Due Diligence',
             date: d,
             startTime: '15:00',
             endTime: '17:00',
-            attendees: 12,
+            duration: 2,
+            creditHoursUsed: 2,
+            overageHours: 0,
+            attendees: Math.min(4, r1.capacity || 4),
             cost: 0,
             status: 'Confirmed'
           });
@@ -225,14 +236,21 @@ class NexusStore {
         if (r2) {
           if (!r2.bookings) r2.bookings = [];
           r2.bookings.push({
-            id: `BKG-${d}-03`,
+            id: `BKG-${dClean}-0003`,
+            seriesId: 'series-client-demo',
+            recurrence: { frequency: 'daily', title: 'Enterprise Architecture & Client Demo' },
             startupId: 'STP-XYZ',
             startupName: 'XYZ Technologies',
+            bookedBy: 'Alex Morgan',
             title: 'Enterprise Architecture & Client Demo',
+            purpose: 'Enterprise Architecture & Client Demo',
             date: d,
             startTime: '16:00',
             endTime: '18:00',
-            attendees: 18,
+            duration: 2,
+            creditHoursUsed: 2,
+            overageHours: 0,
+            attendees: Math.min(4, r2.capacity || 4),
             cost: 0,
             status: 'Confirmed'
           });
@@ -240,9 +258,12 @@ class NexusStore {
       }
     });
 
-    // Sanitize any existing cached bookings to respect allowed 08:00-11:00 or 15:00-19:00 operating windows
+    // Sanitize any existing cached bookings: clamp attendees to capacity, fix operating hours, ensure valid refs
     (this.state.meetingRooms || []).forEach(r => {
       (r.bookings || []).forEach(b => {
+        if (b.attendees && r.capacity && b.attendees > r.capacity) {
+          b.attendees = r.capacity;
+        }
         if (b.startTime === '10:00' && b.endTime === '12:00') {
           b.startTime = '09:00';
           b.endTime = '11:00';
@@ -1931,7 +1952,22 @@ class NexusStore {
     return null;
   }
 
-  async bookMeetingRoom({ roomId, startupId, startupName, title, purpose, date, startTime, endTime, attendees, requestedAmenities, specialRequests, recurrence = null, idempotencyKey = null }) {
+  generateBookingRef(date) {
+    const dClean = String(date || '').replace(/[^0-9]/g, '');
+    const prefix = `BKG-${dClean}-`;
+    let maxSeq = 0;
+    (this.state.meetingRooms || []).forEach(r => {
+      (r.bookings || []).forEach(b => {
+        if (b && b.id && String(b.id).startsWith(prefix)) {
+          const seq = parseInt(String(b.id).substring(prefix.length), 10);
+          if (!isNaN(seq) && seq > maxSeq) maxSeq = seq;
+        }
+      });
+    });
+    return `${prefix}${String(maxSeq + 1).padStart(4, '0')}`;
+  },
+
+  async bookMeetingRoom({ roomId, startupId, startupName, title, purpose, date, startTime, endTime, attendees, requestedAmenities, specialRequests, recurrence = null, idempotencyKey = null, bookedBy = null }) {
     const room = this.getMeetingRoomById(roomId);
     const startup = this.getStartupById(startupId);
     if (!room || !startup) return { success: false, message: 'Room or Startup not found' };
@@ -2029,6 +2065,7 @@ class NexusStore {
       roomId,
       startupId: startup.id,
       startupName: startupName || startup.name,
+      bookedBy: bookedBy || 'Alex Morgan',
       title: title || purpose || 'Meeting Room Reservation',
       purpose: purpose || title || 'General Sync',
       date,
@@ -2146,12 +2183,13 @@ class NexusStore {
       const occCost = ovgHrs > 0 ? Math.round(ovgHrs * room.hourlyRate) : 0;
       startup.usedMeetingHours = Number(((startup.usedMeetingHours || 0) + credUsed).toFixed(2));
 
-      const bookingId = `BKG-${Math.floor(100 + Math.random() * 900)}${isRecurringReq ? `-${idx + 1}` : ''}`;
+      const bookingId = this.generateBookingRef(occDate);
       const newBooking = {
         id: bookingId,
         roomId,
         startupId: startup.id,
         startupName: startup.name,
+        bookedBy: bookedBy || 'Alex Morgan',
         title: title || purpose || 'Meeting Room Reservation',
         purpose: purpose || title || 'General Sync',
         date: occDate,

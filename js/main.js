@@ -502,24 +502,17 @@ const App = {
       if (opt) opt.classList.toggle('active', role === rk);
     });
 
-    // Requirement 5: Hide unauthorized administrative navigation, remove locks
+    // Hide unauthorized administrative navigation & dev tools
     const isSuper = role === 'super_admin';
     const isIncubator = role === 'incubator_admin';
     const isAdmin = isSuper || isIncubator;
     document.querySelectorAll('.nav-item').forEach(item => {
       const tabId = item.getAttribute('data-tab');
       if (tabId) {
-        const allowed = window.store.isTabAllowed(tabId);
-        const adminTabs = ['adminRooms'];
-        const isEmployee = false; // Always keep billing & analytics visible
         if (tabId === 'adminRooms') {
           item.style.display = isAdmin ? 'flex' : 'none';
-        } else if (tabId === 'billingCredits' && isEmployee) {
-          item.style.display = 'none';
-        } else if (tabId === 'roomAnalytics' && isEmployee) {
-          item.style.display = 'none';
-        } else if (adminTabs.includes(tabId) && !isAdmin) {
-          item.style.display = 'none';
+        } else if (tabId === 'database') {
+          item.style.display = isSuper ? 'flex' : 'none';
         } else {
           item.style.display = 'flex';
         }
@@ -529,35 +522,35 @@ const App = {
       }
     });
 
+    // Hide Dev tools outside super_admin role
+    const devWrapper = document.getElementById('header-dev-tools-wrapper');
+    if (devWrapper) {
+      devWrapper.style.display = isSuper ? 'inline-block' : 'none';
+    }
 
-    // Update Dynamic Persona Banner (Clear & Spacious Single Row)
+    // Remove redundant user banner under header
     const banner = document.getElementById('dynamic-persona-banner');
     if (banner) {
-      banner.style.borderColor = `${roleInfo.accentColor}35`;
-      banner.style.background = `linear-gradient(90deg, ${roleInfo.accentColor}10 0%, var(--bg-surface-elevated) 100%)`;
-
-      banner.innerHTML = `
-        <div class="persona-banner-left" style="display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; overflow: hidden;">
-          <div class="persona-banner-avatar" style="border-color: ${roleInfo.accentColor}; width: 34px; height: 34px; min-width: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; background: var(--bg-surface); border: 1.5px solid ${roleInfo.accentColor}; box-shadow: var(--shadow-sm); flex-shrink: 0;">${roleInfo.user.avatar || roleInfo.icon}</div>
-          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: nowrap; overflow: hidden; white-space: nowrap; min-width: 0; flex: 1;">
-            <strong style="color: var(--text-primary); font-size: 13.5px; font-weight: 700; flex-shrink: 0;">${roleInfo.user.name}</strong>
-            <span class="persona-role-badge" style="background: ${roleInfo.accentColor}18; color: ${roleInfo.accentColor}; border: 1px solid ${roleInfo.accentColor}38; padding: 4px 10px; border-radius: 9999px; font-weight: 700; font-size: 11.5px; display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0;">
-              ${roleInfo.icon} ${roleInfo.name}
-            </span>
-            <span style="color: var(--text-muted); font-size: 12px; flex-shrink: 0;">• ${roleInfo.user.roleTitle}</span>
-          </div>
-        </div>
-
-        <div style="display: flex; align-items: center; gap: 12px; flex-shrink: 0;">
-          <button class="btn btn-outline btn-sm" onclick="App.openRbacMatrixModal()" style="font-size: 12px; padding: 6px 14px; gap: 6px; white-space: nowrap; border-radius: var(--radius-md);">
-            🛡️ Permissions
-          </button>
-          <button class="btn-icon btn-sm" onclick="App.togglePersonaBanner(false)" title="Dismiss banner" style="width: 28px; height: 28px; font-size: 12px; border: 1px solid var(--border-subtle); background: var(--bg-surface); border-radius: var(--radius-md); color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center;">
-            ✕
-          </button>
-        </div>
-      `;
+      banner.style.display = 'none';
     }
+
+    this.updateSidebarPlanAllowance();
+  },
+
+  updateSidebarPlanAllowance() {
+    const startup = (window.store && window.store.getActiveStartup) ? window.store.getActiveStartup() : null;
+    const included = startup ? (Number(startup.includedMeetingHours) || 15) : 15;
+    const used = startup ? (Number(startup.usedMeetingHours) || 0) : 0;
+    const rem = Math.max(0, Number((included - used).toFixed(1)));
+    const pct = Math.min(100, Math.round((rem / included) * 100));
+
+    const allwEl = document.getElementById('sidebar-plan-allowance');
+    const progEl = document.getElementById('sidebar-plan-progress');
+    const remEl = document.getElementById('sidebar-plan-remaining');
+
+    if (allwEl) allwEl.innerText = `${included} hrs allowance`;
+    if (progEl) progEl.style.width = `${pct}%`;
+    if (remEl) remEl.innerText = `${rem.toFixed(1)} hrs free balance`;
   },
 
   openRbacMatrixModal() {

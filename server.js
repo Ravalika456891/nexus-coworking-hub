@@ -147,8 +147,16 @@ async function handleApi(req, res, parsedUrl) {
     }
 
     // -----------------------------------------------------------
-    // Database Tables Explorer Endpoints
+    // Database Tables Explorer Endpoints (Restricted to super_admin / admin)
     // -----------------------------------------------------------
+    if (pathname.startsWith('/api/database/')) {
+      const userRole = req.headers['x-user-role'] || searchParams.get('userRole') || 'founder';
+      const isAdmin = userRole === 'super_admin' || userRole === 'admin';
+      if (!isAdmin) {
+        return sendJson(res, 403, { ok: false, error: 'Access denied: Database Tables Explorer requires administrator privileges.' });
+      }
+    }
+
     if (pathname === '/api/database/tables') {
       const tables = await db.getTableStats();
       const status = db.getStatus();
@@ -453,44 +461,55 @@ async function handleApi(req, res, parsedUrl) {
       }
     }
 
-    // Admin: All Reservations (with filters)
+    // Role-Scoped Reservations Ledger Endpoint (Server-side pagination, search, status tabs)
     if (pathname === '/api/meeting-rooms/reservations' && req.method === 'GET') {
-      const userRole = req.headers['x-user-role'] || searchParams.get('userRole') || 'super_admin';
+      const userRole = req.headers['x-user-role'] || searchParams.get('userRole') || 'founder';
+      const requestingStartupId = req.headers['x-startup-id'] || searchParams.get('requestingStartupId') || searchParams.get('startupId') || undefined;
       const result = await db.getMeetingRoomReservations({
         userRole,
+        requestingStartupId,
         startupId: searchParams.get('startupId') || undefined,
         roomId: searchParams.get('roomId') || undefined,
         status: searchParams.get('status') || undefined,
         paymentStatus: searchParams.get('paymentStatus') || undefined,
         dateFrom: searchParams.get('dateFrom') || undefined,
         dateTo: searchParams.get('dateTo') || undefined,
+        search: searchParams.get('search') || undefined,
+        sortBy: searchParams.get('sortBy') || 'default',
+        sortDir: searchParams.get('sortDir') || 'asc',
         page: searchParams.get('page') || 1,
-        limit: searchParams.get('limit') || 50
+        limit: searchParams.get('limit') || 25
       });
       return sendJson(res, result.status || (result.ok ? 200 : 403), result);
     }
 
-    // Admin: Export Reservations as CSV
+    // Export Reservations as CSV (Respects active filters & permissions)
     if (pathname === '/api/meeting-rooms/export-csv' && req.method === 'GET') {
-      const userRole = req.headers['x-user-role'] || searchParams.get('userRole') || 'super_admin';
+      const userRole = req.headers['x-user-role'] || searchParams.get('userRole') || 'founder';
+      const requestingStartupId = req.headers['x-startup-id'] || searchParams.get('requestingStartupId') || searchParams.get('startupId') || undefined;
       const result = await db.getMeetingRoomReservations({
         userRole,
+        requestingStartupId,
         startupId: searchParams.get('startupId') || undefined,
         roomId: searchParams.get('roomId') || undefined,
         status: searchParams.get('status') || undefined,
+        paymentStatus: searchParams.get('paymentStatus') || undefined,
         dateFrom: searchParams.get('dateFrom') || undefined,
         dateTo: searchParams.get('dateTo') || undefined,
+        search: searchParams.get('search') || undefined,
+        sortBy: searchParams.get('sortBy') || 'default',
+        sortDir: searchParams.get('sortDir') || 'asc',
         page: 1,
         limit: 5000
       });
       if (!result.ok) return sendJson(res, 403, result);
       const rows = result.reservations || [];
-      const headers = ['Booking ID','Startup','Room','Date','Start Time','End Time','Duration (hrs)','Attendees','Purpose','Status','Cost (INR)','Invoice ID','Created At'];
+      const headers = ['Booking Ref','Startup','Room','Floor','Date','Start Time','End Time','Duration (hrs)','Attendees','Purpose','Booked By','Credits Deducted (hrs)','Fees (INR)','Status','Created At'];
       const csv = [headers.join(','), ...rows.map(r => [
-        r.id, `"${(r.startupName || '').replace(/"/g, '""')}"`, `"${(r.roomName || '').replace(/"/g, '""')}"`,
-        r.date, r.startTime, r.endTime, r.duration || '', r.attendees || '',
-        `"${(r.purpose || r.title || '').replace(/"/g, '""')}"`, r.status || '',
-        r.cost || 0, r.invoiceId || '', r.createdAt || ''
+        `"${r.id}"`, `"${(r.startupName || '').replace(/"/g, '""')}"`, `"${(r.roomName || '').replace(/"/g, '""')}"`,
+        `"${r.floor || ''}"`, r.date, r.startTime, r.endTime, r.duration || '', r.attendees || '',
+        `"${(r.purpose || r.title || '').replace(/"/g, '""')}"`, `"${(r.bookedBy || '').replace(/"/g, '""')}"`,
+        r.creditHoursUsed || 0, r.cost || 0, `"${r.status || ''}"`, `"${r.createdAt || ''}"`
       ].join(','))].join('\n');
       res.writeHead(200, {
         'Content-Type': 'text/csv; charset=utf-8',

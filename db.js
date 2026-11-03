@@ -627,6 +627,45 @@ function toMinutes(t) {
 // Two bookings conflict if they are for the same room and same date and:
 // existing.startTime < new.endTime AND existing.endTime > new.startTime.
 // Cancelled bookings do not count as conflicts.
+// Canonical Sequential Booking Reference Generator: BKG-YYYYMMDD-NNNN (Generated server-side)
+function generateBookingRef(date, allRooms) {
+  const dClean = String(date || '').replace(/[^0-9]/g, '');
+  const prefix = `BKG-${dClean}-`;
+  let maxSeq = 0;
+  (allRooms || []).forEach(r => {
+    (r.bookings || []).forEach(b => {
+      if (b && b.id && String(b.id).startsWith(prefix)) {
+        const seqPart = parseInt(String(b.id).substring(prefix.length), 10);
+        if (!isNaN(seqPart) && seqPart > maxSeq) {
+          maxSeq = seqPart;
+        }
+      }
+    });
+  });
+  return `${prefix}${String(maxSeq + 1).padStart(4, '0')}`;
+}
+
+// Calculate cumulative confirmed meeting hours used by startup in a specific calendar month (YYYY-MM)
+function calculateStartupMonthlyUsage(allRooms, startupId, yearMonth, excludeBookingId = null) {
+  let totalHours = 0;
+  (allRooms || []).forEach(r => {
+    (r.bookings || []).forEach(b => {
+      if (b && b.startupId === startupId && b.status !== 'Cancelled') {
+        if (excludeBookingId && b.id === excludeBookingId) return;
+        const bMonth = (b.date || '').substring(0, 7);
+        if (bMonth === yearMonth) {
+          const [sh, sm] = (b.startTime || '00:00').split(':').map(Number);
+          const [eh, em] = (b.endTime || '00:00').split(':').map(Number);
+          const computedDur = Math.max(0.25, ((eh * 60 + em) - (sh * 60 + sm)) / 60);
+          const dur = (b.duration !== undefined && Number(b.duration) > 0) ? Number(b.duration) : computedDur;
+          totalHours += dur;
+        }
+      }
+    });
+  });
+  return Number(totalHours.toFixed(2));
+}
+
 function hasBookingConflict(existing, newB) {
   if (!existing || !newB) return false;
   if (existing.roomId !== newB.roomId) return false;
@@ -1092,17 +1131,25 @@ async function reserveMeetingRoomSlotsAtomic(bookingReq) {
 
     let creditHoursUsed = 0;
     let overageHours = 0;
+    const bookingMonth = (date || '').substring(0, 7);
+    const priorMonthlyHours = calculateStartupMonthlyUsage(rooms, startupId, bookingMonth);
+
     if (startupRecord) {
-      const includedHrs = startupRecord.includedMeetingHours !== undefined ? Number(startupRecord.includedMeetingHours) : 12;
-      const usedHrs = Number(startupRecord.usedMeetingHours || 0);
-      const remainingCredits = Math.max(0, includedHrs - usedHrs);
-      creditHoursUsed = Math.min(remainingCredits, durationHrs);
+      const includedHrs = startupRecord.includedMeetingHours !== undefined ? Number(startupRecord.includedMeetingHours) : 15;
+      const availableAllowance = Math.max(0, Number((includedHrs - priorMonthlyHours).toFixed(2)));
+      creditHoursUsed = Math.min(availableAllowance, durationHrs);
       overageHours = Math.max(0, Number((durationHrs - creditHoursUsed).toFixed(2)));
       if (cost === undefined) {
         const rate = Number(startupRecord.additionalHourRate || room.hourlyRate || 1000);
         finalCost = overageHours > 0 ? Math.round(overageHours * rate) : 0;
       }
-      startupRecord.usedMeetingHours = Number((usedHrs + creditHoursUsed).toFixed(2));
+      startupRecord.usedMeetingHours = Number((priorMonthlyHours + creditHoursUsed).toFixed(2));
+    } else {
+      creditHoursUsed = 0;
+      overageHours = durationHrs;
+      if (cost === undefined) {
+        finalCost = Math.round(durationHrs * (room.hourlyRate || 1000));
+      }
     }
 
     // Check if booking policy requires admin approval for long durations or premium rooms
@@ -1120,8 +1167,8 @@ async function reserveMeetingRoomSlotsAtomic(bookingReq) {
       ? 'Pending Approval'
       : (bookingReq.status || 'Confirmed');
 
-    // 5. Construct Confirmed Booking Object:
-    const bookingId = `BKG-${Math.floor(100 + Math.random() * 900)}`;
+    // 5. Construct Confirmed Booking Object (Server-side generated canonical ref BKG-YYYYMMDD-NNNN)
+    const bookingId = generateBookingRef(date, rooms);
     const normalizedAmenities = Array.isArray(requestedAmenities)
       ? requestedAmenities
       : (typeof requestedAmenities === 'string' && requestedAmenities.trim()
@@ -1133,6 +1180,7 @@ async function reserveMeetingRoomSlotsAtomic(bookingReq) {
       roomId,
       startupId,
       startupName: startupName || (startupRecord && startupRecord.name) || 'Partner Venture',
+      bookedBy: bookingReq.bookedBy || bookingReq.founderName || 'Alex Morgan',
       title: title || purpose || 'Meeting Room Reservation',
       purpose: purpose || title || 'General Sync',
       date,
@@ -3331,23 +3379,30 @@ async function reserveRecurringMeetingRoomAtomic(bookingReq) {
       let overageHours = 0;
       let occCost = 0;
 
+      const occMonth = (occDate || '').substring(0, 7);
+      const priorMonthUsage = calculateStartupMonthlyUsage(rooms, startupId, occMonth);
+
       if (startupRecord) {
-        const includedHrs = startupRecord.includedMeetingHours !== undefined ? Number(startupRecord.includedMeetingHours) : 12;
-        const usedHrs = Number(startupRecord.usedMeetingHours || 0);
-        const remainingCredits = Math.max(0, includedHrs - usedHrs);
-        creditHoursUsed = Math.min(remainingCredits, durationHrs);
+        const includedHrs = startupRecord.includedMeetingHours !== undefined ? Number(startupRecord.includedMeetingHours) : 15;
+        const availableAllowance = Math.max(0, Number((includedHrs - priorMonthUsage).toFixed(2)));
+        creditHoursUsed = Math.min(availableAllowance, durationHrs);
         overageHours = Math.max(0, Number((durationHrs - creditHoursUsed).toFixed(2)));
         const rate = Number(startupRecord.additionalHourRate || room.hourlyRate || 1000);
         occCost = overageHours > 0 ? Math.round(overageHours * rate) : 0;
-        startupRecord.usedMeetingHours = Number((usedHrs + creditHoursUsed).toFixed(2));
+        startupRecord.usedMeetingHours = Number((priorMonthUsage + creditHoursUsed).toFixed(2));
+      } else {
+        creditHoursUsed = 0;
+        overageHours = durationHrs;
+        occCost = Math.round(durationHrs * (room.hourlyRate || 1000));
       }
 
-      const bookingId = `BKG-${Math.floor(100 + Math.random() * 900)}-${idx + 1}`;
+      const bookingId = generateBookingRef(occDate, rooms);
       const occBooking = {
         id: bookingId,
         roomId,
         startupId,
         startupName: startupName || (startupRecord && startupRecord.name) || 'Partner Venture',
+        bookedBy: bookingReq.bookedBy || bookingReq.founderName || 'Alex Morgan',
         title: title || purpose || 'Meeting Room Reservation',
         purpose: purpose || title || 'General Sync',
         date: occDate,
@@ -3565,48 +3620,163 @@ async function manageMeetingRoomMaintenanceAtomic(req = {}) {
   }
 }
 
-// 3c. Admin Reservations List (all bookings across all rooms, with filters)
-async function getMeetingRoomReservations({ userRole = 'super_admin', startupId, roomId, status, paymentStatus, dateFrom, dateTo, page = 1, limit = 50 } = {}) {
-  const perm = checkMeetingRoomPermission(userRole, 'admin_manage_room');
-  if (!perm.allowed) return { ok: false, status: 403, message: perm.message };
+// 3c. Reservations List & Ledger Engine (Role-scoped, Paginated, Multi-filter & Sorted)
+async function getMeetingRoomReservations({
+  userRole = 'founder',
+  requestingStartupId,
+  startupId,
+  roomId,
+  status = 'all',
+  paymentStatus,
+  dateFrom,
+  dateTo,
+  search,
+  sortBy = 'default',
+  sortDir = 'asc',
+  page = 1,
+  limit = 25
+} = {}) {
+  const isAdmin = userRole === 'super_admin' || userRole === 'admin' || userRole === 'incubator_admin' || userRole === 'finance_admin';
+  
+  // Non-admins can strictly see only their own company/startup's bookings
+  const effectiveStartupId = isAdmin ? (startupId || undefined) : (requestingStartupId || startupId || 'STP-XYZ');
 
   const appState = await getAppState();
   const rooms = (appState && appState.meetingRooms) ? appState.meetingRooms : [];
+  const ist = getISTClock();
+  const todayStr = ist.date;
+  const liveTimeStr = ist.time;
 
   const all = [];
   rooms.forEach(r => {
     (r.bookings || []).forEach(b => {
+      const [sh, sm] = (b.startTime || '00:00').split(':').map(Number);
+      const [eh, em] = (b.endTime || '00:00').split(':').map(Number);
+      const dur = b.duration !== undefined ? Number(b.duration) : Math.max(0.25, ((eh * 60 + em) - (sh * 60 + sm)) / 60);
+
       all.push({
         ...b,
+        duration: dur,
         roomId: r.id,
         roomName: r.name,
         roomIcon: r.icon || '🏢',
-        hourlyRate: r.hourlyRate
+        hourlyRate: r.hourlyRate,
+        capacity: r.capacity,
+        floor: r.floor || '1F',
+        roomNumber: r.roomNumber || r.id
       });
     });
   });
 
+  // Base startup scope filter for non-admin
+  const scopedList = effectiveStartupId ? all.filter(b => b.startupId === effectiveStartupId) : all;
+
+  // Compute live tab counts before status filter
+  const counts = {
+    all: scopedList.length,
+    today: scopedList.filter(b => b.date === todayStr && b.status !== 'Cancelled').length,
+    upcoming: scopedList.filter(b => (b.date > todayStr || (b.date === todayStr && b.startTime > liveTimeStr)) && b.status !== 'Cancelled').length,
+    completed: scopedList.filter(b => (b.date < todayStr || (b.date === todayStr && b.endTime <= liveTimeStr)) && b.status !== 'Cancelled').length,
+    cancelled: scopedList.filter(b => b.status === 'Cancelled').length
+  };
+
   // Apply filters
-  let filtered = all.filter(b => {
-    if (startupId && b.startupId !== startupId) return false;
-    if (roomId && b.roomId !== roomId) return false;
-    if (status && b.status !== status) return false;
+  let filtered = scopedList.filter(b => {
+    if (roomId && roomId !== 'all' && b.roomId !== roomId) return false;
     if (dateFrom && b.date < dateFrom) return false;
     if (dateTo && b.date > dateTo) return false;
-    if (paymentStatus === 'paid' && !(b.cost > 0 && b.invoiceId)) return false;
+
+    // Status filter
+    if (status && status !== 'all') {
+      if (status === 'today') {
+        if (!(b.date === todayStr && b.status !== 'Cancelled')) return false;
+      } else if (status === 'upcoming') {
+        if (!((b.date > todayStr || (b.date === todayStr && b.startTime > liveTimeStr)) && b.status !== 'Cancelled')) return false;
+      } else if (status === 'completed') {
+        if (!((b.date < todayStr || (b.date === todayStr && b.endTime <= liveTimeStr)) && b.status !== 'Cancelled')) return false;
+      } else if (status === 'cancelled') {
+        if (b.status !== 'Cancelled') return false;
+      } else if (b.status !== status) {
+        return false;
+      }
+    }
+
+    if (paymentStatus === 'paid' && !(b.cost > 0)) return false;
     if (paymentStatus === 'free' && b.cost > 0) return false;
+
+    // Search filter across ref, title, purpose, room, bookedBy, date
+    if (search && search.trim()) {
+      const q = search.trim().toLowerCase();
+      const match = (b.id && b.id.toLowerCase().includes(q)) ||
+        (b.title && b.title.toLowerCase().includes(q)) ||
+        (b.purpose && b.purpose.toLowerCase().includes(q)) ||
+        (b.roomName && b.roomName.toLowerCase().includes(q)) ||
+        (b.bookedBy && b.bookedBy.toLowerCase().includes(q)) ||
+        (b.date && b.date.includes(q)) ||
+        (b.startTime && b.startTime.includes(q)) ||
+        (b.endTime && b.endTime.includes(q));
+      if (!match) return false;
+    }
+
     return true;
   });
 
-  // Sort by date descending
-  filtered.sort((a, b) => {
-    if (b.date !== a.date) return b.date > a.date ? 1 : -1;
-    return b.startTime > a.startTime ? 1 : -1;
-  });
+  // Default sorting: Upcoming & in-progress first (soonest first), then past bookings (newest first)
+  if (sortBy === 'default') {
+    filtered.sort((a, b) => {
+      const aIsActive = a.status !== 'Cancelled' && (a.date > todayStr || (a.date === todayStr && a.endTime > liveTimeStr));
+      const bIsActive = b.status !== 'Cancelled' && (b.date > todayStr || (b.date === todayStr && b.endTime > liveTimeStr));
+
+      if (aIsActive && !bIsActive) return -1;
+      if (!aIsActive && bIsActive) return 1;
+
+      if (aIsActive && bIsActive) {
+        // Soonest first (date ASC, startTime ASC)
+        if (a.date !== b.date) return a.date > b.date ? 1 : -1;
+        return a.startTime > b.startTime ? 1 : -1;
+      }
+
+      // Past / Completed / Cancelled bookings: newest first (date DESC, startTime DESC)
+      if (a.status === 'Cancelled' && b.status !== 'Cancelled') return 1;
+      if (a.status !== 'Cancelled' && b.status === 'Cancelled') return -1;
+      if (a.date !== b.date) return a.date < b.date ? 1 : -1;
+      return a.startTime < b.startTime ? 1 : -1;
+    });
+  } else {
+    // Column header sorting
+    const modifier = sortDir === 'desc' ? -1 : 1;
+    filtered.sort((a, b) => {
+      let vA = a[sortBy] || '';
+      let vB = b[sortBy] || '';
+      if (sortBy === 'duration' || sortBy === 'cost' || sortBy === 'attendees') {
+        vA = Number(vA) || 0;
+        vB = Number(vB) || 0;
+      }
+      if (vA < vB) return -1 * modifier;
+      if (vA > vB) return 1 * modifier;
+      return 0;
+    });
+  }
+
+  // Calculate summary metrics for active filter set
+  const activeBookings = filtered.filter(b => b.status !== 'Cancelled');
+  const totalHours = activeBookings.reduce((sum, b) => sum + (Number(b.duration) || 0), 0);
+  const totalFeesBilled = activeBookings.reduce((sum, b) => sum + (Number(b.cost) || 0), 0);
+
+  // Startup credit info
+  const startup = (appState && Array.isArray(appState.startups) && effectiveStartupId)
+    ? appState.startups.find(s => s.id === effectiveStartupId)
+    : null;
+  const includedHours = startup ? (Number(startup.includedMeetingHours) || 15) : 15;
+  const usedHours = startup ? (Number(startup.usedMeetingHours) || 0) : 0;
+  const remainingHours = Math.max(0, Number((includedHours - usedHours).toFixed(2)));
+
+  const activeReservationsCount = scopedList.filter(b => b.status !== 'Cancelled' && (b.date > todayStr || (b.date === todayStr && b.endTime > liveTimeStr))).length;
+  const scheduledTodayCount = scopedList.filter(b => b.date === todayStr && b.status !== 'Cancelled' && b.endTime > liveTimeStr).length;
 
   const total = filtered.length;
-  const pageNum = Math.max(1, parseInt(page));
-  const pageSize = Math.max(1, Math.min(200, parseInt(limit)));
+  const pageNum = Math.max(1, parseInt(page) || 1);
+  const pageSize = Math.max(1, Math.min(200, parseInt(limit) || 25));
   const skip = (pageNum - 1) * pageSize;
   const paginated = filtered.slice(skip, skip + pageSize);
 
@@ -3616,7 +3786,17 @@ async function getMeetingRoomReservations({ userRole = 'super_admin', startupId,
     page: pageNum,
     limit: pageSize,
     totalPages: Math.ceil(total / pageSize) || 1,
-    reservations: paginated
+    reservations: paginated,
+    counts,
+    stats: {
+      totalHours: Number(totalHours.toFixed(1)),
+      totalFeesBilled,
+      includedHours,
+      usedHours,
+      remainingHours,
+      activeReservationsCount,
+      scheduledTodayCount
+    }
   };
 }
 
@@ -4448,6 +4628,8 @@ module.exports = {
   hasStartupConcurrentConflict,
   findBookingAlternatives,
   initMeetingRoomIndexes,
+  generateBookingRef,
+  calculateStartupMonthlyUsage,
   reserveMeetingRoomSlotsAtomic,
   reserveRecurringMeetingRoomAtomic,
   cancelRecurringSeriesAtomic,
