@@ -7934,8 +7934,8 @@ const MeetingRoomsModule = {
                 </div>
               </div>
 
-              <!-- Date & Attendees Row -->
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+              <!-- Date, Attendees & Booked By Row -->
+              <div style="display: grid; grid-template-columns: 1.2fr 0.9fr 1.1fr; gap: 10px; margin-bottom: 12px;">
                 <div class="form-group" style="margin: 0;">
                   <label class="form-label" style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">
                     📅 Reservation Date <span style="color: #ef4444;">*</span>
@@ -7945,19 +7945,9 @@ const MeetingRoomsModule = {
                 <div class="form-group" style="margin: 0;">
                   <label class="form-label" style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; display: flex; justify-content: space-between;">
                     <span>👥 Attendees <span style="color: #ef4444;">*</span></span>
-                    <span id="book-modal-capacity-hint" style="font-size: 10.5px; color: #16a34a;">Max: ${initialRoom.capacity} Pax</span>
+                    <span id="book-modal-capacity-hint" style="font-size: 10.5px; color: #16a34a;">Max: ${initialRoom.capacity}</span>
                   </label>
                   <input type="number" name="attendees" id="book-modal-attendees" class="form-control" style="font-weight: 700; font-size: 12px; border-radius: 8px; padding: 7px 10px;" value="${Math.min(6, initialRoom.capacity)}" min="1" max="${initialRoom.capacity}" oninput="MeetingRoomsModule.updateModalCostPreview()" required>
-                </div>
-              </div>
-
-              <!-- Meeting Purpose & Booked By Row -->
-              <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 10px; margin-bottom: 12px;">
-                <div class="form-group" style="margin: 0;">
-                  <label class="form-label" style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; display: flex; justify-content: space-between;">
-                    <span>🎯 Meeting Purpose &amp; Agenda <span style="color: #ef4444;">*</span></span>
-                  </label>
-                  <input type="text" name="purpose" id="book-modal-purpose" class="form-control" placeholder="e.g. Investor Demo, Architecture Review" value="Enterprise Architecture &amp; Investor Demo" style="font-weight: 700; font-size: 12px; border-radius: 8px; padding: 7px 10px;" required>
                 </div>
                 <div class="form-group" style="margin: 0;">
                   <label class="form-label" style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">
@@ -8113,7 +8103,10 @@ const MeetingRoomsModule = {
     const startups = window.store.getStartups();
     const selectedStartup = startups.find(s => s.id === data.startupId) || this.getMyStartup();
     data.startupName = selectedStartup.name;
-    if (!data.purpose) data.purpose = data.title || 'Executive Working Session';
+    if (!data.purpose) {
+      const roomObj = window.store.getMeetingRoomById(data.roomId);
+      data.purpose = roomObj ? `Team Session in ${roomObj.name}` : 'Executive Working Session';
+    }
     if (!data.title) data.title = data.purpose;
     data.bookedBy = (data.bookedBy && data.bookedBy.trim()) || ((window.store && window.store.currentUser && window.store.currentUser.name) || 'Alex Morgan');
 

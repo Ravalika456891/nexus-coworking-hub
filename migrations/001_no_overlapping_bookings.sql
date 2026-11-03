@@ -58,3 +58,4 @@ EXCLUDE USING gist (
 CREATE INDEX IF NOT EXISTS idx_bookings_startup_month 
 ON bookings (startup_id, date) 
 WHERE (status != 'Cancelled');
+
