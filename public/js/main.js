@@ -49,6 +49,7 @@ const App = {
 
     this.switchTab(initialTab);
     this.updateHeaderStats();
+    this.updateNotificationBadge();
   },
 
   bindEvents() {
@@ -94,6 +95,14 @@ const App = {
         }
       }
 
+      const notifPanel = document.getElementById('notification-dropdown-panel');
+      const notifBtn = document.getElementById('header-notification-btn');
+      if (notifPanel && notifPanel.style.display === 'block') {
+        if (!notifPanel.contains(e.target) && (!notifBtn || !notifBtn.contains(e.target))) {
+          notifPanel.style.display = 'none';
+        }
+      }
+
       if (typeof BillingModule !== 'undefined' && BillingModule.closeAllRowMenus) {
         if (!e.target.closest('.row-menu-wrapper')) {
           BillingModule.closeAllRowMenus();
@@ -101,10 +110,14 @@ const App = {
       }
     });
 
-    // Close mobile sidebar on Escape key
+    // Close mobile sidebar and dropdowns on Escape key
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         this.toggleMobileSidebar(false);
+        const notifPanel = document.getElementById('notification-dropdown-panel');
+        if (notifPanel) notifPanel.style.display = 'none';
+        const devPanel = document.getElementById('dev-tools-dropdown-panel');
+        if (devPanel) devPanel.style.display = 'none';
       }
     });
   },
@@ -539,6 +552,312 @@ const App = {
   closeDevToolsMenu() {
     const panel = document.getElementById('dev-tools-dropdown-panel');
     if (panel) panel.style.display = 'none';
+  },
+
+  // --- Notification Center ---
+  activeNotificationFilter: 'all',
+
+  toggleNotificationMenu(e) {
+    if (e) e.stopPropagation();
+    const panel = document.getElementById('notification-dropdown-panel');
+    if (panel) {
+      const isVisible = panel.style.display === 'block';
+      if (!isVisible) {
+        this.renderNotificationsPanel();
+        panel.style.display = 'block';
+      } else {
+        panel.style.display = 'none';
+      }
+    }
+  },
+
+  closeNotificationMenu() {
+    const panel = document.getElementById('notification-dropdown-panel');
+    if (panel) panel.style.display = 'none';
+  },
+
+  getReadNotificationIds() {
+    try {
+      const stored = localStorage.getItem('nexus_read_notifications');
+      return stored ? JSON.parse(stored) : [];
+    } catch (e) {
+      return [];
+    }
+  },
+
+  setReadNotificationIds(ids) {
+    try {
+      localStorage.setItem('nexus_read_notifications', JSON.stringify(ids));
+    } catch (e) {}
+  },
+
+  getNotifications() {
+    const readIds = new Set(this.getReadNotificationIds());
+    const clearedIds = new Set();
+    try {
+      const cleared = localStorage.getItem('nexus_cleared_notifications');
+      if (cleared) JSON.parse(cleared).forEach(id => clearedIds.add(id));
+    } catch (e) {}
+
+    const notifications = [];
+    const nowIST = (window.MeetingRoomsModule && window.MeetingRoomsModule.getISTNow)
+      ? window.MeetingRoomsModule.getISTNow()
+      : { todayStr: new Date().toISOString().slice(0, 10), liveTimeStr: '12:00' };
+
+    // 1. Meeting Room Booking Notifications
+    const rooms = (window.store && window.store.getMeetingRooms) ? window.store.getMeetingRooms() : [];
+    const startupId = (window.store && (window.store.activeFounderId || (window.store.getActiveStartup ? window.store.getActiveStartup()?.id : null))) || 'STP-XYZ';
+    
+    rooms.forEach(r => {
+      (r.bookings || []).forEach(b => {
+        if (!b || b.status === 'Cancelled') return;
+        const isMine = (b.startupId === startupId || b.startupName === 'XYZ Technologies' || b.startupName === 'NeuroPulse AI');
+        if (!isMine) return;
+
+        const notifId = `NOTIF-BKG-${b.id}`;
+        if (clearedIds.has(notifId)) return;
+
+        const isToday = b.date === nowIST.todayStr;
+        const isUpcoming = b.date > nowIST.todayStr || (isToday && b.endTime > nowIST.liveTimeStr);
+        const timeFormatted = (window.MeetingRoomsModule && window.MeetingRoomsModule.formatTimeTo12Hour)
+          ? `${window.MeetingRoomsModule.formatTimeTo12Hour(b.startTime)} – ${window.MeetingRoomsModule.formatTimeTo12Hour(b.endTime)}`
+          : `${b.startTime} – ${b.endTime}`;
+
+        notifications.push({
+          id: notifId,
+          type: 'booking',
+          category: 'Meeting Rooms',
+          icon: '📅',
+          iconBg: 'rgba(37, 99, 235, 0.1)',
+          iconColor: '#2563eb',
+          title: isUpcoming ? `Upcoming: ${r.name}` : `Session: ${r.name}`,
+          message: `${b.title || 'Meeting Session'} scheduled for ${isToday ? 'Today' : b.date} (${timeFormatted}).`,
+          time: isToday ? 'Today' : b.date,
+          targetTab: 'bookings',
+          isRead: readIds.has(notifId)
+        });
+      });
+    });
+
+    // 2. Billing & Credit Quota Notifications
+    if (window.store && window.store.getMonthlyAllowance) {
+      const allowance = window.store.getMonthlyAllowance(startupId);
+      const allowNotifId = `NOTIF-CREDIT-${allowance.month || '2026-11'}`;
+      if (!clearedIds.has(allowNotifId)) {
+        notifications.push({
+          id: allowNotifId,
+          type: 'billing',
+          category: 'Credits',
+          icon: '💳',
+          iconBg: 'rgba(34, 197, 94, 0.1)',
+          iconColor: '#16a34a',
+          title: `${allowance.monthLabel || 'Nov 2026'} Credit Quota Active`,
+          message: `${allowance.remainingHours.toFixed(1)} hrs (${allowance.remainingCredits || Math.round(allowance.remainingHours * 10)} credits) available in your incubator plan.`,
+          time: 'Active Quota',
+          targetTab: 'billingCredits',
+          isRead: readIds.has(allowNotifId)
+        });
+      }
+    }
+
+    // 3. Invoices & Payments Notifications
+    const invoices = (window.store && window.store.getInvoices) ? window.store.getInvoices() : [];
+    invoices.slice(0, 3).forEach(inv => {
+      const notifId = `NOTIF-INV-${inv.id}`;
+      if (clearedIds.has(notifId)) return;
+      const isPaid = inv.status === 'Paid';
+      notifications.push({
+        id: notifId,
+        type: 'billing',
+        category: 'Invoices',
+        icon: isPaid ? '✅' : '🧾',
+        iconBg: isPaid ? 'rgba(34, 197, 94, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+        iconColor: isPaid ? '#16a34a' : '#d97706',
+        title: isPaid ? `Invoice ${inv.id} Paid` : `Invoice ${inv.id} Due`,
+        message: `${inv.description || 'Monthly Incubation & Space Fee'} • ₹${Number(inv.totalAmount || inv.amount || 0).toLocaleString('en-IN')}`,
+        time: inv.date || 'Recent',
+        targetTab: 'billingCredits',
+        isRead: readIds.has(notifId)
+      });
+    });
+
+    // 4. Live System Activity Log entries
+    const activities = (window.store && window.store.state && window.store.state.activityLog) || [];
+    activities.slice(0, 6).forEach(act => {
+      const notifId = `NOTIF-ACT-${act.id}`;
+      if (clearedIds.has(notifId)) return;
+      notifications.push({
+        id: notifId,
+        type: 'activity',
+        category: act.category || 'System',
+        icon: act.icon || '📌',
+        iconBg: 'rgba(100, 116, 139, 0.1)',
+        iconColor: '#475569',
+        title: act.category || 'Activity Update',
+        message: act.description,
+        time: act.timestamp || 'Recent',
+        targetTab: act.category === 'Meeting Rooms' ? 'bookings' : (act.category === 'Payments' || act.category === 'Billing') ? 'billingCredits' : 'dashboard',
+        isRead: readIds.has(notifId)
+      });
+    });
+
+    // Unread count
+    const unreadCount = notifications.filter(n => !n.isRead).length;
+    return { notifications, unreadCount };
+  },
+
+  renderNotificationsPanel(filter = null) {
+    if (filter) this.activeNotificationFilter = filter;
+    const currentFilter = this.activeNotificationFilter || 'all';
+    const panel = document.getElementById('notification-dropdown-panel');
+    if (!panel) return;
+
+    const { notifications, unreadCount } = this.getNotifications();
+    this.updateNotificationBadge(unreadCount);
+
+    let filtered = notifications;
+    if (currentFilter === 'unread') {
+      filtered = notifications.filter(n => !n.isRead);
+    } else if (currentFilter === 'bookings') {
+      filtered = notifications.filter(n => n.type === 'booking');
+    } else if (currentFilter === 'billing') {
+      filtered = notifications.filter(n => n.type === 'billing');
+    }
+
+    panel.innerHTML = `
+      <div style="padding: 14px 16px 10px; background: var(--bg-surface-elevated, #f8fafc); border-bottom: 1px solid var(--border-subtle, #e2e8f0); display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 15px;">🔔</span>
+          <strong style="font-size: 13.5px; color: var(--text-primary, #0f172a); font-weight: 800;">Notifications</strong>
+          ${unreadCount > 0 ? `
+            <span class="badge" style="background: rgba(79, 70, 229, 0.1); color: #4f46e5; font-size: 10.5px; font-weight: 800; padding: 2px 7px; border-radius: 999px;">
+              ${unreadCount} New
+            </span>
+          ` : `
+            <span class="badge" style="background: rgba(34, 197, 94, 0.1); color: #16a34a; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 999px;">
+              Caught up
+            </span>
+          `}
+        </div>
+        ${unreadCount > 0 ? `
+          <button type="button" onclick="App.markAllNotificationsAsRead(event)" style="border: none; background: transparent; color: #4f46e5; font-size: 11px; font-weight: 700; cursor: pointer; padding: 3px 6px; border-radius: 4px; transition: background 0.15s ease;">
+            ✓ Mark all read
+          </button>
+        ` : ''}
+      </div>
+
+      <!-- Filter Tabs -->
+      <div style="padding: 8px 12px; background: var(--bg-surface, #ffffff); border-bottom: 1px solid var(--border-subtle, #f1f5f9); display: flex; gap: 6px; overflow-x: auto;">
+        <button type="button" onclick="App.renderNotificationsPanel('all')" style="border: none; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; cursor: pointer; transition: all 0.15s ease; ${currentFilter === 'all' ? 'background: #4f46e5; color: #ffffff;' : 'background: #f1f5f9; color: #64748b;'}">
+          All (${notifications.length})
+        </button>
+        <button type="button" onclick="App.renderNotificationsPanel('unread')" style="border: none; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; cursor: pointer; transition: all 0.15s ease; ${currentFilter === 'unread' ? 'background: #4f46e5; color: #ffffff;' : 'background: #f1f5f9; color: #64748b;'}">
+          Unread (${unreadCount})
+        </button>
+        <button type="button" onclick="App.renderNotificationsPanel('bookings')" style="border: none; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; cursor: pointer; transition: all 0.15s ease; ${currentFilter === 'bookings' ? 'background: #4f46e5; color: #ffffff;' : 'background: #f1f5f9; color: #64748b;'}">
+          Bookings
+        </button>
+        <button type="button" onclick="App.renderNotificationsPanel('billing')" style="border: none; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; cursor: pointer; transition: all 0.15s ease; ${currentFilter === 'billing' ? 'background: #4f46e5; color: #ffffff;' : 'background: #f1f5f9; color: #64748b;'}">
+          Billing
+        </button>
+      </div>
+
+      <!-- Notifications List -->
+      <div style="max-height: 380px; overflow-y: auto; overscroll-behavior: contain;">
+        ${filtered.length === 0 ? `
+          <div style="padding: 36px 20px; text-align: center; color: var(--text-muted, #8a90a2);">
+            <div style="font-size: 32px; margin-bottom: 8px;">🎉</div>
+            <div style="font-size: 13px; font-weight: 700; color: var(--text-primary, #0f172a);">All caught up!</div>
+            <div style="font-size: 11.5px; margin-top: 4px;">No ${currentFilter === 'unread' ? 'unread' : ''} notifications right now.</div>
+          </div>
+        ` : filtered.map(item => `
+          <div 
+            onclick="App.handleNotificationClick('${item.id}', '${item.targetTab}', event)"
+            style="padding: 12px 14px; border-bottom: 1px solid var(--border-subtle, #f1f5f9); display: flex; gap: 12px; align-items: flex-start; cursor: pointer; transition: background 0.15s ease; position: relative; ${!item.isRead ? 'background: rgba(79, 70, 229, 0.03);' : ''}"
+            onmouseenter="this.style.background='rgba(0,0,0,0.025)'"
+            onmouseleave="this.style.background='${!item.isRead ? 'rgba(79, 70, 229, 0.03)' : 'transparent'}'"
+          >
+            <div style="width: 32px; height: 32px; border-radius: 50%; background: ${item.iconBg}; color: ${item.iconColor}; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; margin-top: 1px;">
+              ${item.icon}
+            </div>
+            <div style="flex: 1; min-width: 0;">
+              <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px;">
+                <span style="font-size: 12px; font-weight: 800; color: var(--text-primary, #0f172a);">${item.title}</span>
+                <span style="font-size: 10px; color: var(--text-muted, #94a3b8); font-weight: 600; white-space: nowrap;">${item.time}</span>
+              </div>
+              <p style="font-size: 11.5px; color: var(--text-secondary, #475569); margin: 3px 0 0; line-height: 1.35;">
+                ${item.message}
+              </p>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 5px;">
+                <span style="font-size: 10px; font-weight: 700; color: #4f46e5; text-transform: uppercase; letter-spacing: 0.3px;">
+                  ${item.category} ➔
+                </span>
+                ${!item.isRead ? `
+                  <span style="width: 6px; height: 6px; border-radius: 50%; background: #4f46e5; display: inline-block;"></span>
+                ` : ''}
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+
+      <!-- Footer -->
+      <div style="padding: 10px 14px; background: var(--bg-surface-elevated, #f8fafc); border-top: 1px solid var(--border-subtle, #e2e8f0); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted, #64748b);">
+        <span>⚡ Real-time updates active</span>
+        <button type="button" onclick="App.clearAllNotifications(event)" style="border: none; background: transparent; color: #dc2626; font-size: 11px; font-weight: 700; cursor: pointer;">
+          Clear all
+        </button>
+      </div>
+    `;
+  },
+
+  handleNotificationClick(id, targetTab, e) {
+    if (e) e.stopPropagation();
+    this.markNotificationAsRead(id);
+    this.closeNotificationMenu();
+    if (targetTab) {
+      this.switchTab(targetTab);
+    }
+  },
+
+  markNotificationAsRead(id) {
+    const readIds = this.getReadNotificationIds();
+    if (!readIds.includes(id)) {
+      readIds.push(id);
+      this.setReadNotificationIds(readIds);
+    }
+    const { unreadCount } = this.getNotifications();
+    this.updateNotificationBadge(unreadCount);
+  },
+
+  markAllNotificationsAsRead(e) {
+    if (e) e.stopPropagation();
+    const { notifications } = this.getNotifications();
+    const allIds = notifications.map(n => n.id);
+    this.setReadNotificationIds(allIds);
+    this.updateNotificationBadge(0);
+    this.renderNotificationsPanel();
+  },
+
+  clearAllNotifications(e) {
+    if (e) e.stopPropagation();
+    const { notifications } = this.getNotifications();
+    const cleared = notifications.map(n => n.id);
+    try {
+      localStorage.setItem('nexus_cleared_notifications', JSON.stringify(cleared));
+    } catch (err) {}
+    this.updateNotificationBadge(0);
+    this.renderNotificationsPanel();
+  },
+
+  updateNotificationBadge(count = null) {
+    const badge = document.getElementById('notification-badge-dot');
+    if (!badge) return;
+    if (count === null) {
+      const { unreadCount } = this.getNotifications();
+      count = unreadCount;
+    }
+    badge.style.display = count > 0 ? 'block' : 'none';
   },
 
   togglePersonaBanner(show) {

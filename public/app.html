@@ -501,11 +501,29 @@
             </div>
           </div>
 
-          <!-- Notification Bell -->
-          <button class="btn-icon" style="position: relative; background: #f8fafc; border: 1px solid #e2e8f0; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;" title="Notifications">
-            <span style="font-size: 15px;">🔔</span>
-            <span style="position: absolute; top: 7px; right: 8px; width: 7px; height: 7px; background: #ef4444; border-radius: 50%; border: 1.5px solid #fff;"></span>
-          </button>
+          <!-- Notification Bell with Interactive Dropdown Panel -->
+          <div class="notification-dropdown-wrapper" id="header-notification-wrapper" style="position: relative; display: inline-block;">
+            <button 
+              type="button"
+              class="btn-icon" 
+              id="header-notification-btn" 
+              onclick="App.toggleNotificationMenu(event)" 
+              style="position: relative; background: #f8fafc; border: 1px solid #e2e8f0; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s ease;" 
+              title="Notifications &amp; Activity Feed"
+              aria-label="View notifications"
+            >
+              <span style="font-size: 15px;">🔔</span>
+              <span id="notification-badge-dot" style="position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; background: #ef4444; border-radius: 50%; border: 1.5px solid #fff; box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.4);"></span>
+            </button>
+
+            <!-- Dropdown Panel -->
+            <div 
+              class="notification-panel" 
+              id="notification-dropdown-panel" 
+              style="display: none; position: absolute; right: 0; top: 100%; margin-top: 8px; width: 380px; max-width: calc(100vw - 32px); background: var(--bg-surface, #ffffff); border: 1px solid var(--border-medium, #cbd5e1); border-radius: 14px; box-shadow: 0 18px 45px rgba(0,0,0,0.18); z-index: 1050; overflow: hidden; text-align: left; animation: fadeIn 0.15s ease;"
+            >
+            </div>
+          </div>
 
           <!-- User Profile Avatar Pill -->
           <div style="display: flex; align-items: center; gap: 8px; padding-left: 4px;">
@@ -623,28 +641,28 @@
   <div class="toast-container" id="toast-container"></div>
 
   <!-- Scripts -->
-  <script src="js/initialData.js?v=20261104_36"></script>
-  <script src="creditService.js?v=20261104_36"></script>
-  <script src="billingService.js?v=20261104_36"></script>
-  <script src="js/store.js?v=20261104_36"></script>
-  <script src="js/modules/dashboard.js?v=20261104_36"></script>
-  <script src="js/modules/onboarding.js?v=20261104_36"></script>
-  <script src="js/modules/startupTables.js?v=20261104_36"></script>
-  <script src="cancellation.js?v=20261104_36"></script>
-  <script src="js/modules/workspace.js?v=20261104_36"></script>
-  <script src="js/modules/roomGallery.js?v=20261104_36"></script>
-  <script src="js/modules/meetingRooms.js?v=20261104_36"></script>
-  <script src="js/modules/invoice.js?v=20261104_36"></script>
-  <script src="js/modules/billing.js?v=20261104_36"></script>
-  <script src="js/modules/payments.js?v=20261104_36"></script>
-  <script src="js/modules/incubation.js?v=20261104_36"></script>
-  <script src="js/modules/milestones.js?v=20261104_36"></script>
-  <script src="js/modules/reports.js?v=20261104_36"></script>
-  <script src="js/modules/contact.js?v=20261104_36"></script>
-  <script src="js/modules/leads.js?v=20261104_36"></script>
-  <script src="js/modules/database.js?v=20261104_36"></script>
-  <script src="js/authGate.js?v=20261104_36"></script>
-  <script src="js/main.js?v=20261104_36"></script>
-  <script src="js/liveReload.js?v=20261104_36"></script>
+  <script src="js/initialData.js?v=20261104_37"></script>
+  <script src="creditService.js?v=20261104_37"></script>
+  <script src="billingService.js?v=20261104_37"></script>
+  <script src="js/store.js?v=20261104_37"></script>
+  <script src="js/modules/dashboard.js?v=20261104_37"></script>
+  <script src="js/modules/onboarding.js?v=20261104_37"></script>
+  <script src="js/modules/startupTables.js?v=20261104_37"></script>
+  <script src="cancellation.js?v=20261104_37"></script>
+  <script src="js/modules/workspace.js?v=20261104_37"></script>
+  <script src="js/modules/roomGallery.js?v=20261104_37"></script>
+  <script src="js/modules/meetingRooms.js?v=20261104_37"></script>
+  <script src="js/modules/invoice.js?v=20261104_37"></script>
+  <script src="js/modules/billing.js?v=20261104_37"></script>
+  <script src="js/modules/payments.js?v=20261104_37"></script>
+  <script src="js/modules/incubation.js?v=20261104_37"></script>
+  <script src="js/modules/milestones.js?v=20261104_37"></script>
+  <script src="js/modules/reports.js?v=20261104_37"></script>
+  <script src="js/modules/contact.js?v=20261104_37"></script>
+  <script src="js/modules/leads.js?v=20261104_37"></script>
+  <script src="js/modules/database.js?v=20261104_37"></script>
+  <script src="js/authGate.js?v=20261104_37"></script>
+  <script src="js/main.js?v=20261104_37"></script>
+  <script src="js/liveReload.js?v=20261104_37"></script>
 </body>
 </html>
