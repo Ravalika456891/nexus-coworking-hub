@@ -1052,37 +1052,37 @@ window.INITIAL_DATA = {
 
   spaces: [
     // Zone A: Hot Desks (₹7,500/month)
-    { id: "HD-01", label: "Desk H-01", zone: "Zone A: Open Coworking", type: "Hot Desk", capacity: 1, monthlyRate: 7500, status: "available", allocatedStartupId: null, allocatedStartupName: null, allocatedSince: null },
-    { id: "HD-02", label: "Desk H-02", zone: "Zone A: Open Coworking", type: "Hot Desk", capacity: 1, monthlyRate: 7500, status: "available", allocatedStartupId: null, allocatedStartupName: null, allocatedSince: null },
-    { id: "HD-03", label: "Desk H-03", zone: "Zone A: Open Coworking", type: "Hot Desk", capacity: 1, monthlyRate: 7500, status: "available", allocatedStartupId: null, allocatedStartupName: null, allocatedSince: null },
-    { id: "HD-04", label: "Desk H-04", zone: "Zone A: Open Coworking", type: "Hot Desk", capacity: 1, monthlyRate: 7500, status: "available", allocatedStartupId: null, allocatedStartupName: null, allocatedSince: null },
-    { id: "HD-05", label: "Desk H-05", zone: "Zone A: Open Coworking", type: "Hot Desk", capacity: 1, monthlyRate: 7500, status: "reserved", allocatedStartupId: null, allocatedStartupName: "Kredo (Pending)", allocatedSince: null },
-    { id: "HD-06", label: "Desk H-06", zone: "Zone A: Open Coworking", type: "Hot Desk", capacity: 1, monthlyRate: 7500, status: "available", allocatedStartupId: null, allocatedStartupName: null, allocatedSince: null },
-    { id: "HD-07", label: "Desk H-07", zone: "Zone A: Open Coworking", type: "Hot Desk", capacity: 1, monthlyRate: 7500, status: "available", allocatedStartupId: null, allocatedStartupName: null, allocatedSince: null },
-    { id: "HD-08", label: "Desk H-08", zone: "Zone A: Open Coworking", type: "Hot Desk", capacity: 1, monthlyRate: 7500, status: "maintenance", allocatedStartupId: null, allocatedStartupName: null, allocatedSince: null },
+    { id: "HD-01", label: "Desk HD-01", zone: "Zone A: Open Coworking", type: "Hot Desk", capacity: 1, monthlyRate: 7500, status: "available", allocatedStartupId: null, allocatedStartupName: null, allocatedSince: null },
+    { id: "HD-02", label: "Desk HD-02", zone: "Zone A: Open Coworking", type: "Hot Desk", capacity: 1, monthlyRate: 7500, status: "available", allocatedStartupId: null, allocatedStartupName: null, allocatedSince: null },
+    { id: "HD-03", label: "Desk HD-03", zone: "Zone A: Open Coworking", type: "Hot Desk", capacity: 1, monthlyRate: 7500, status: "available", allocatedStartupId: null, allocatedStartupName: null, allocatedSince: null },
+    { id: "HD-04", label: "Desk HD-04", zone: "Zone A: Open Coworking", type: "Hot Desk", capacity: 1, monthlyRate: 7500, status: "available", allocatedStartupId: null, allocatedStartupName: null, allocatedSince: null },
+    { id: "HD-05", label: "Desk HD-05", code: "HD-05", name: "Desk HD-05", zone: "Zone A: Open Coworking", type: "Hot Desk", capacity: 1, monthlyRate: 7500, rate: 7500, rateDisplay: "₹7,500/month", status: "reserved", isHeld: true, allocatedStartupId: "STP-05", allocatedStartupName: "Kredo Logistics (Pending Approval)", allocatedSince: "2026-10-28" },
+    { id: "HD-06", label: "Desk HD-06", zone: "Zone A: Open Coworking", type: "Hot Desk", capacity: 1, monthlyRate: 7500, status: "available", allocatedStartupId: null, allocatedStartupName: null, allocatedSince: null },
+    { id: "HD-07", label: "Desk HD-07", zone: "Zone A: Open Coworking", type: "Hot Desk", capacity: 1, monthlyRate: 7500, status: "available", allocatedStartupId: null, allocatedStartupName: null, allocatedSince: null },
+    { id: "HD-08", label: "Desk HD-08", zone: "Zone A: Open Coworking", type: "Hot Desk", capacity: 1, monthlyRate: 7500, status: "maintenance", allocatedStartupId: null, allocatedStartupName: null, allocatedSince: null },
 
     // Zone B: Dedicated Desks (₹12,000/month)
-    { id: "DD-01", label: "Dedicated D-01", zone: "Zone B: Reserved Bays", type: "Dedicated Desk", capacity: 1, monthlyRate: 12000, status: "occupied", allocatedStartupId: "STP-03", allocatedStartupName: "FinEdge Protocol", allocatedSince: "2025-11-10" },
-    { id: "DD-02", label: "Dedicated D-02", zone: "Zone B: Reserved Bays", type: "Dedicated Desk", capacity: 1, monthlyRate: 12000, status: "occupied", allocatedStartupId: "STP-03", allocatedStartupName: "FinEdge Protocol", allocatedSince: "2025-11-10" },
-    { id: "DD-03", label: "Dedicated D-03", zone: "Zone B: Reserved Bays", type: "Dedicated Desk", capacity: 1, monthlyRate: 12000, status: "available", allocatedStartupId: null, allocatedStartupName: null, allocatedSince: null },
-    { id: "DD-04", label: "Dedicated D-04", zone: "Zone B: Reserved Bays", type: "Dedicated Desk", capacity: 1, monthlyRate: 12000, status: "available", allocatedStartupId: null, allocatedStartupName: null, allocatedSince: null },
-    { id: "DD-05", label: "Dedicated D-05", zone: "Zone B: Reserved Bays", type: "Dedicated Desk", capacity: 1, monthlyRate: 12000, status: "occupied", allocatedStartupId: "STP-01", allocatedStartupName: "NeuroPulse AI", allocatedSince: "2026-01-15" },
-    { id: "DD-06", label: "Dedicated D-06", zone: "Zone B: Reserved Bays", type: "Dedicated Desk", capacity: 1, monthlyRate: 12000, status: "available", allocatedStartupId: null, allocatedStartupName: null, allocatedSince: null },
-    { id: "DD-07", label: "Dedicated D-07", zone: "Zone B: Reserved Bays", type: "Dedicated Desk", capacity: 1, monthlyRate: 12000, status: "available", allocatedStartupId: null, allocatedStartupName: null, allocatedSince: null },
-    { id: "DD-08", label: "Dedicated D-08", zone: "Zone B: Reserved Bays", type: "Dedicated Desk", capacity: 1, monthlyRate: 12000, status: "available", allocatedStartupId: null, allocatedStartupName: null, allocatedSince: null },
-    { id: "DD-09", label: "Dedicated D-09", zone: "Zone B: Reserved Bays", type: "Dedicated Desk", capacity: 1, monthlyRate: 12000, status: "available", allocatedStartupId: null, allocatedStartupName: null, allocatedSince: null },
-    { id: "DD-10", label: "Dedicated D-10", zone: "Zone B: Reserved Bays", type: "Dedicated Desk", capacity: 1, monthlyRate: 12000, status: "available", allocatedStartupId: null, allocatedStartupName: null, allocatedSince: null },
+    { id: "DD-01", label: "Dedicated DD-01", zone: "Zone B: Reserved Bays", type: "Dedicated Desk", capacity: 1, monthlyRate: 12000, status: "occupied", allocatedStartupId: "STP-03", allocatedStartupName: "FinEdge Protocol", allocatedSince: "2025-11-10" },
+    { id: "DD-02", label: "Dedicated DD-02", zone: "Zone B: Reserved Bays", type: "Dedicated Desk", capacity: 1, monthlyRate: 12000, status: "occupied", allocatedStartupId: "STP-03", allocatedStartupName: "FinEdge Protocol", allocatedSince: "2025-11-10" },
+    { id: "DD-03", label: "Dedicated DD-03", zone: "Zone B: Reserved Bays", type: "Dedicated Desk", capacity: 1, monthlyRate: 12000, status: "available", allocatedStartupId: null, allocatedStartupName: null, allocatedSince: null },
+    { id: "DD-04", label: "Dedicated DD-04", zone: "Zone B: Reserved Bays", type: "Dedicated Desk", capacity: 1, monthlyRate: 12000, status: "available", allocatedStartupId: null, allocatedStartupName: null, allocatedSince: null },
+    { id: "DD-05", label: "Dedicated DD-05", zone: "Zone B: Reserved Bays", type: "Dedicated Desk", capacity: 1, monthlyRate: 12000, status: "occupied", allocatedStartupId: "STP-01", allocatedStartupName: "NeuroPulse AI", allocatedSince: "2026-01-15" },
+    { id: "DD-06", label: "Dedicated DD-06", zone: "Zone B: Reserved Bays", type: "Dedicated Desk", capacity: 1, monthlyRate: 12000, status: "available", allocatedStartupId: null, allocatedStartupName: null, allocatedSince: null },
+    { id: "DD-07", label: "Dedicated DD-07", zone: "Zone B: Reserved Bays", type: "Dedicated Desk", capacity: 1, monthlyRate: 12000, status: "available", allocatedStartupId: null, allocatedStartupName: null, allocatedSince: null },
+    { id: "DD-08", label: "Dedicated DD-08", zone: "Zone B: Reserved Bays", type: "Dedicated Desk", capacity: 1, monthlyRate: 12000, status: "available", allocatedStartupId: null, allocatedStartupName: null, allocatedSince: null },
+    { id: "DD-09", label: "Dedicated DD-09", zone: "Zone B: Reserved Bays", type: "Dedicated Desk", capacity: 1, monthlyRate: 12000, status: "available", allocatedStartupId: null, allocatedStartupName: null, allocatedSince: null },
+    { id: "DD-10", label: "Dedicated DD-10", zone: "Zone B: Reserved Bays", type: "Dedicated Desk", capacity: 1, monthlyRate: 12000, status: "available", allocatedStartupId: null, allocatedStartupName: null, allocatedSince: null },
 
     // Zone C: Private Cabins & Suites
     { id: "PC-101", label: "Cabin 101 (4-Seater)", zone: "Zone C: Private Suites", type: "Private Cabin", capacity: 4, monthlyRate: 42000, status: "occupied", allocatedStartupId: "STP-02", allocatedStartupName: "BioGenic Health", allocatedSince: "2026-02-01" },
     { id: "PC-102", label: "Cabin 102 (6-Seater)", zone: "Zone C: Private Suites", type: "Private Cabin", capacity: 6, monthlyRate: 58000, status: "occupied", allocatedStartupId: "STP-01", allocatedStartupName: "NeuroPulse AI", allocatedSince: "2026-01-15" },
-    { id: "PC-103", label: "Cabin 103 (6-Seater)", zone: "Zone C: Private Suites", type: "Private Cabin", capacity: 6, monthlyRate: 58000, status: "available", allocatedStartupId: null, allocatedStartupName: null, allocatedSince: null },
+    { id: "PC-103", label: "Cabin 103 (6-Seater)", code: "Cabin 103", name: "Cabin 103", zone: "Zone C: Private Suites", type: "Private Cabin", capacity: 6, monthlyRate: 47600, rate: 47600, rateDisplay: "₹47,600/month", status: "occupied", allocatedStartupId: "STP-XYZ", allocatedStartupName: "XYZ Technologies", allocatedSince: "2026-01-01" },
     { id: "PC-104", label: "Cabin 104 (8-Seater)", zone: "Zone C: Private Suites", type: "Private Cabin", capacity: 8, monthlyRate: 74000, status: "occupied", allocatedStartupId: "STP-03", allocatedStartupName: "FinEdge Protocol", allocatedSince: "2025-11-10" },
     { id: "PC-105", label: "Cabin 105 (10-Seater)", zone: "Zone C: Private Suites", type: "Private Cabin", capacity: 10, monthlyRate: 90000, status: "available", allocatedStartupId: null, allocatedStartupName: null, allocatedSince: null },
 
     // Zone D: Phone / Focus Pods
     { id: "PB-01", label: "Focus Pod Zen-1", zone: "Zone D: Acoustic Pods", type: "Focus Booth", capacity: 1, monthlyRate: 0, status: "available", allocatedStartupId: null, allocatedStartupName: null, allocatedSince: null },
-    { id: "PB-02", label: "Focus Pod Zen-2", zone: "Zone D: Acoustic Pods", type: "Focus Booth", capacity: 1, monthlyRate: 0, status: "occupied", allocatedStartupId: null, allocatedStartupName: "In Use (Call)", allocatedSince: null },
+    { id: "PB-02", label: "Focus Pod Zen-2", code: "PB-02", name: "Focus Pod Zen-2", zone: "Zone D: Acoustic Pods", type: "Focus Booth", capacity: 1, monthlyRate: 0, rate: 0, rateDisplay: "Included with Pass", status: "occupied", allocatedStartupId: "STP-04", allocatedStartupName: "Solarix CleanTech", allocatedSince: "2026-10-15" },
     { id: "PB-03", label: "Phone Booth Echo-1", zone: "Zone D: Acoustic Pods", type: "Phone Booth", capacity: 1, monthlyRate: 0, status: "available", allocatedStartupId: null, allocatedStartupName: null, allocatedSince: null }
   ],
 

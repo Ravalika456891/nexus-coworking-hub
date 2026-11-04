@@ -19,6 +19,7 @@ const App = {
     window.store.subscribe(() => {
       this.refreshCurrentView();
       this.updateHeaderStats();
+      this.updateNotificationBadge();
     });
 
     // Production check for dev tools & demo reset (Requirement E.17)
@@ -604,21 +605,24 @@ const App = {
       ? window.MeetingRoomsModule.getISTNow()
       : { todayStr: new Date().toISOString().slice(0, 10), liveTimeStr: '12:00' };
 
-    // 1. Meeting Room Booking Notifications
+    // 1. Meeting Room Booking Notifications (Upcoming or Today only)
     const rooms = (window.store && window.store.getMeetingRooms) ? window.store.getMeetingRooms() : [];
     const startupId = (window.store && (window.store.activeFounderId || (window.store.getActiveStartup ? window.store.getActiveStartup()?.id : null))) || 'STP-XYZ';
     
     rooms.forEach(r => {
       (r.bookings || []).forEach(b => {
         if (!b || b.status === 'Cancelled') return;
-        const isMine = (b.startupId === startupId || b.startupName === 'XYZ Technologies' || b.startupName === 'NeuroPulse AI');
+        const isMine = (b.startupId === startupId || b.startupName === 'XYZ Technologies');
         if (!isMine) return;
+
+        const isToday = b.date === nowIST.todayStr;
+        const isUpcoming = b.date > nowIST.todayStr || (isToday && b.endTime > nowIST.liveTimeStr);
+        // Do not spam with stale historical bookings; only notify for active upcoming or today's sessions
+        if (!isUpcoming && !isToday) return;
 
         const notifId = `NOTIF-BKG-${b.id}`;
         if (clearedIds.has(notifId)) return;
 
-        const isToday = b.date === nowIST.todayStr;
-        const isUpcoming = b.date > nowIST.todayStr || (isToday && b.endTime > nowIST.liveTimeStr);
         const timeFormatted = (window.MeetingRoomsModule && window.MeetingRoomsModule.formatTimeTo12Hour)
           ? `${window.MeetingRoomsModule.formatTimeTo12Hour(b.startTime)} – ${window.MeetingRoomsModule.formatTimeTo12Hour(b.endTime)}`
           : `${b.startTime} – ${b.endTime}`;
@@ -630,39 +634,46 @@ const App = {
           icon: '📅',
           iconBg: 'rgba(37, 99, 235, 0.1)',
           iconColor: '#2563eb',
-          title: isUpcoming ? `Upcoming: ${r.name}` : `Session: ${r.name}`,
+          title: isToday ? `Today: ${r.name}` : `Upcoming: ${r.name}`,
           message: `${b.title || 'Meeting Session'} scheduled for ${isToday ? 'Today' : b.date} (${timeFormatted}).`,
           time: isToday ? 'Today' : b.date,
           targetTab: 'bookings',
-          isRead: readIds.has(notifId)
+          isRead: readIds.has(notifId),
+          timestamp: new Date(`${b.date}T${b.startTime || '00:00'}`).getTime() || Date.now()
         });
       });
     });
 
     // 2. Billing & Credit Quota Notifications
     if (window.store && window.store.getMonthlyAllowance) {
-      const allowance = window.store.getMonthlyAllowance(startupId);
-      const allowNotifId = `NOTIF-CREDIT-${allowance.month || '2026-11'}`;
-      if (!clearedIds.has(allowNotifId)) {
-        notifications.push({
-          id: allowNotifId,
-          type: 'billing',
-          category: 'Credits',
-          icon: '💳',
-          iconBg: 'rgba(34, 197, 94, 0.1)',
-          iconColor: '#16a34a',
-          title: `${allowance.monthLabel || 'Nov 2026'} Credit Quota Active`,
-          message: `${allowance.remainingHours.toFixed(1)} hrs (${allowance.remainingCredits || Math.round(allowance.remainingHours * 10)} credits) available in your incubator plan.`,
-          time: 'Active Quota',
-          targetTab: 'billingCredits',
-          isRead: readIds.has(allowNotifId)
-        });
-      }
+      try {
+        const allowance = window.store.getMonthlyAllowance(startupId);
+        if (allowance) {
+          const allowNotifId = `NOTIF-CREDIT-${allowance.month || '2026-11'}`;
+          if (!clearedIds.has(allowNotifId)) {
+            notifications.push({
+              id: allowNotifId,
+              type: 'billing',
+              category: 'Credits',
+              icon: '💳',
+              iconBg: 'rgba(34, 197, 94, 0.1)',
+              iconColor: '#16a34a',
+              title: `${allowance.monthLabel || 'Nov 2026'} Credit Quota Active`,
+              message: `${allowance.remainingHours.toFixed(1)} hrs (${allowance.remainingCredits || Math.round(allowance.remainingHours * 10)} credits) available in your incubator plan.`,
+              time: 'Active Quota',
+              targetTab: 'billingCredits',
+              isRead: readIds.has(allowNotifId),
+              timestamp: Date.now() - 3600000
+            });
+          }
+        }
+      } catch (err) {}
     }
 
-    // 3. Invoices & Payments Notifications
-    const invoices = (window.store && window.store.getInvoices) ? window.store.getInvoices() : [];
-    invoices.slice(0, 3).forEach(inv => {
+    // 3. Invoices & Payments Notifications (Prioritize unpaid/due, scoped to company)
+    const allInvoices = (window.store && window.store.getInvoices) ? window.store.getInvoices() : [];
+    const tenantInvoices = allInvoices.filter(inv => !inv.startupId || inv.startupId === startupId || inv.startupName === 'XYZ Technologies');
+    tenantInvoices.slice(0, 3).forEach(inv => {
       const notifId = `NOTIF-INV-${inv.id}`;
       if (clearedIds.has(notifId)) return;
       const isPaid = inv.status === 'Paid';
@@ -673,17 +684,18 @@ const App = {
         icon: isPaid ? '✅' : '🧾',
         iconBg: isPaid ? 'rgba(34, 197, 94, 0.1)' : 'rgba(245, 158, 11, 0.1)',
         iconColor: isPaid ? '#16a34a' : '#d97706',
-        title: isPaid ? `Invoice ${inv.id} Paid` : `Invoice ${inv.id} Due`,
+        title: isPaid ? `Invoice ${inv.id} Paid` : `Invoice ${inv.id} Due (${inv.status})`,
         message: `${inv.description || 'Monthly Incubation & Space Fee'} • ₹${Number(inv.totalAmount || inv.amount || 0).toLocaleString('en-IN')}`,
         time: inv.date || 'Recent',
         targetTab: 'billingCredits',
-        isRead: readIds.has(notifId)
+        isRead: readIds.has(notifId),
+        timestamp: Date.now() - 7200000
       });
     });
 
     // 4. Live System Activity Log entries
     const activities = (window.store && window.store.state && window.store.state.activityLog) || [];
-    activities.slice(0, 6).forEach(act => {
+    activities.slice(0, 4).forEach(act => {
       const notifId = `NOTIF-ACT-${act.id}`;
       if (clearedIds.has(notifId)) return;
       notifications.push({
@@ -697,7 +709,8 @@ const App = {
         message: act.description,
         time: act.timestamp || 'Recent',
         targetTab: act.category === 'Meeting Rooms' ? 'bookings' : (act.category === 'Payments' || act.category === 'Billing') ? 'billingCredits' : 'dashboard',
-        isRead: readIds.has(notifId)
+        isRead: readIds.has(notifId),
+        timestamp: Date.now() - 10800000
       });
     });
 

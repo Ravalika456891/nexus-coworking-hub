@@ -499,19 +499,24 @@
               class="btn-icon" 
               id="header-notification-btn" 
               onclick="App.toggleNotificationMenu(event)" 
-              style="position: relative; background: #f8fafc; border: 1px solid #e2e8f0; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s ease;" 
+              style="position: relative; background: #ffffff; border: 1.5px solid #e2e8f0; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 1px 3px rgba(0,0,0,0.04);" 
               title="Notifications &amp; Activity Feed"
               aria-label="View notifications"
+              onmouseenter="this.style.borderColor='#6366f1'; this.style.boxShadow='0 2px 8px rgba(99,102,241,0.15)';"
+              onmouseleave="this.style.borderColor='#e2e8f0'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.04)';"
             >
-              <span style="font-size: 15px;">🔔</span>
-              <span id="notification-badge-dot" style="position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; background: #ef4444; border-radius: 50%; border: 1.5px solid #fff; box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.4);"></span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+              </svg>
+              <span id="notification-badge-dot" style="position: absolute; top: 6px; right: 6px; width: 8.5px; height: 8.5px; background: #ef4444; border-radius: 50%; border: 2px solid #ffffff; box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.35);"></span>
             </button>
 
             <!-- Dropdown Panel -->
             <div 
               class="notification-panel" 
               id="notification-dropdown-panel" 
-              style="display: none; position: absolute; right: 0; top: 100%; margin-top: 8px; width: 380px; max-width: calc(100vw - 32px); background: var(--bg-surface, #ffffff); border: 1px solid var(--border-medium, #cbd5e1); border-radius: 14px; box-shadow: 0 18px 45px rgba(0,0,0,0.18); z-index: 1050; overflow: hidden; text-align: left; animation: fadeIn 0.15s ease;"
+              style="display: none; position: absolute; right: 0; top: 100%; margin-top: 10px; width: 390px; max-width: calc(100vw - 32px); background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.22), 0 0 1px 1px rgba(15, 23, 42, 0.05); z-index: 2000; overflow: hidden; text-align: left; animation: fadeIn 0.15s ease;"
             >
             </div>
           </div>

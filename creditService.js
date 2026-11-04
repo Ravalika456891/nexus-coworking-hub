@@ -11,10 +11,10 @@
  * - Ledger reconciliation: opening + top-ups + refunds - debits - expiries = balance
  */
 
-let FormatHelper = (typeof require !== 'undefined') 
+let FormatHelper = (typeof require !== 'undefined')
   ? (() => { try { return require('./js/formatters'); } catch (e) { return (typeof window !== 'undefined' ? window.FormatHelper : null); } })()
   : (typeof window !== 'undefined' ? window.FormatHelper : null);
-let PlanCatalog = (typeof require !== 'undefined') 
+let PlanCatalog = (typeof require !== 'undefined')
   ? (() => { try { return require('./js/planCatalog'); } catch (e) { return (typeof window !== 'undefined' ? window.PlanCatalog : null); } })()
   : (typeof window !== 'undefined' ? window.PlanCatalog : null);
 
@@ -501,6 +501,7 @@ function buildReconciledLedger({
         displayDateTime: `${FormatHelper.formatDate(b.date)}, ${timeRange}`,
         type: 'debit',
         typeLabel: 'Room Reservation',
+        description: `Session in ${b.roomName || 'Meeting Room'} (${b.purpose || b.title || 'Team Session'})`,
         description: b.purpose || b.title || `Team Session in ${b.roomName || 'Meeting Room'}`,
         bookingRef: b.id,
         roomId: b.roomId,
