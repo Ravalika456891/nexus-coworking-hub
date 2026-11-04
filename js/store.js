@@ -999,7 +999,7 @@ class NexusStore {
   }
 
   isTabAllowed(tabId, role = null) {
-    if (['dashboard', 'meetingRooms', 'bookings', 'myReservations', 'calendar', 'billingCredits', 'roomAnalytics', 'workspace', 'contact', 'leads', 'database', 'startupTables'].includes(tabId)) {
+    if (['dashboard', 'meetingRooms', 'bookings', 'myReservations', 'calendar', 'billingCredits', 'roomAnalytics', 'workspace', 'contact', 'leads', 'database', 'startupTables', 'settings', 'help'].includes(tabId)) {
       return true;
     }
     const r = role ? this.normalizeRole(role) : this.normalizeRole(this.currentRole);

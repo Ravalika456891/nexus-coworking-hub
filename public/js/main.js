@@ -164,6 +164,8 @@ const App = {
       contact: '👥 Visitor Gate Passes',
       startupTables: '👥 Community Members & Startups',
       database: '🗄️ Database Tables (10 Collections)',
+      settings: '⚙️ Settings & System Preferences',
+      help: '❓ Help & Support Center',
       onboarding: '🚀 Startup Onboarding',
       billing: '🧾 Invoices & Rent',
       payments: '💳 Payments Ledger',
@@ -355,6 +357,81 @@ const App = {
       case 'database':
         if (typeof DatabaseModule !== 'undefined' && DatabaseModule.render) {
           DatabaseModule.render();
+        }
+        break;
+      case 'settings':
+        const settingsContainer = document.getElementById('view-settings');
+        if (settingsContainer) {
+          settingsContainer.innerHTML = `
+            <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.04);">
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(99,102,241,0.12); color: #4f3fe0; display: flex; align-items: center; justify-content: center; font-size: 18px;">⚙️</div>
+                <div>
+                  <h3 style="font-size: 18px; font-weight: 800; margin: 0; color: #1e293b;">Settings &amp; System Preferences</h3>
+                  <div style="font-size: 12px; color: #64748b; margin-top: 1px;">Manage workspace defaults, company profile, notification preferences, and portal security.</div>
+                </div>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-top: 20px;">
+                <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 16px;">
+                  <div style="font-weight: 800; font-size: 13.5px; margin-bottom: 4px; color: #1e293b;">🏢 Company Billing Profile</div>
+                  <div style="font-size: 12px; color: #64748b; line-height: 1.4; margin-bottom: 12px;">Update legal venture name, GSTIN validation, registered state, and finance email recipients.</div>
+                  <button type="button" class="btn btn-outline btn-sm" onclick="App.switchTab('billingCredits'); setTimeout(() => { if (window.MeetingRoomsModule) window.MeetingRoomsModule.switchCreditsBillingSubTab('profile'); }, 100);" style="font-size: 11.5px; font-weight: 700; border-radius: 8px;">Edit Billing Profile ➔</button>
+                </div>
+                <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 16px;">
+                  <div style="font-weight: 800; font-size: 13.5px; margin-bottom: 4px; color: #1e293b;">🔔 Alert Preferences</div>
+                  <div style="font-size: 12px; color: #64748b; line-height: 1.4; margin-bottom: 12px;">Configure quota thresholds (80% &amp; 100%), 7-day credit expiration reminders, and upcoming renewal notices.</div>
+                  <button type="button" class="btn btn-outline btn-sm" onclick="App.switchTab('billingCredits'); setTimeout(() => { if (window.MeetingRoomsModule) window.MeetingRoomsModule.switchCreditsBillingSubTab('profile'); }, 100);" style="font-size: 11.5px; font-weight: 700; border-radius: 8px;">Configure Alerts ➔</button>
+                </div>
+                <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 16px;">
+                  <div style="font-weight: 800; font-size: 13.5px; margin-bottom: 4px; color: #1e293b;">🛡️ Security &amp; Access Controls</div>
+                  <div style="font-size: 12px; color: #64748b; line-height: 1.4; margin-bottom: 12px;">Role-based access matrix, active login tokens, founder credentials, and super admin governance.</div>
+                  <button type="button" class="btn btn-outline btn-sm" onclick="App.openRbacMatrixModal()" style="font-size: 11.5px; font-weight: 700; border-radius: 8px;">View RBAC Matrix ➔</button>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+        break;
+      case 'help':
+        const helpContainer = document.getElementById('view-help');
+        if (helpContainer) {
+          helpContainer.innerHTML = `
+            <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.04);">
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(34,197,94,0.12); color: #15803d; display: flex; align-items: center; justify-content: center; font-size: 18px;">❓</div>
+                <div>
+                  <h3 style="font-size: 18px; font-weight: 800; margin: 0; color: #1e293b;">Help &amp; Support Center</h3>
+                  <div style="font-size: 12px; color: #64748b; margin-top: 1px;">24/7 round-the-clock support for conference rooms, hot desks, billing statements, and facility operations.</div>
+                </div>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-top: 20px;">
+                <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 16px;">
+                  <div style="font-weight: 800; font-size: 13.5px; margin-bottom: 4px; color: #1e293b;">📞 Concierge &amp; Front Desk</div>
+                  <div style="font-size: 12px; color: #64748b; line-height: 1.5;">
+                    <div>• <strong>Email:</strong> support@nexushub.io</div>
+                    <div>• <strong>Direct Hotline:</strong> +91 80 4567 8900</div>
+                    <div>• <strong>Hours:</strong> 24/7 Round-the-Clock Facility Access</div>
+                  </div>
+                </div>
+                <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 16px;">
+                  <div style="font-weight: 800; font-size: 13.5px; margin-bottom: 4px; color: #1e293b;">📖 Quick Reference Guides</div>
+                  <div style="font-size: 12px; color: #64748b; line-height: 1.5;">
+                    <div>• <strong>Meeting Rooms:</strong> 24/7 slot booking &amp; instant calendar sync</div>
+                    <div>• <strong>Credits:</strong> Plan allowance vs top-up balance rules</div>
+                    <div>• <strong>Invoices:</strong> GSTR-1 compliant tax invoices &amp; TDS approval</div>
+                  </div>
+                </div>
+                <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 16px;">
+                  <div style="font-weight: 800; font-size: 13.5px; margin-bottom: 4px; color: #1e293b;">⚡ Emergency Facility Assistance</div>
+                  <div style="font-size: 12px; color: #64748b; line-height: 1.5;">
+                    <div>• High-speed Wi-Fi SSID: <code>NEXUS-MEMBER-5G</code></div>
+                    <div>• Display/AV adapters available at Floor 1 &amp; Floor 2 Hub</div>
+                    <div>• Security &amp; Access Control: Extension <strong>#101</strong></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
         }
         break;
     }
