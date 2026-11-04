@@ -2336,6 +2336,16 @@ const MeetingRoomsModule = {
     }
   },
 
+  setPaymentStatusFilter(status) {
+    this.paymentStatusFilter = status;
+    this.render();
+  },
+
+  setPaymentMethodFilter(method) {
+    this.paymentMethodFilter = method;
+    this.render();
+  },
+
   exportLedgerCSV() {
     const startup = this.getMyStartup();
     const istNow = this.getISTNow();
@@ -2841,6 +2851,15 @@ const MeetingRoomsModule = {
               </div>
 
               <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <!-- Type Filter -->
+                <select onchange="MeetingRoomsModule.setLedgerTypeFilter(this.value)" style="padding: 6px 10px; font-size: 12px; border-radius: 8px; border: 1px solid var(--border-subtle, #E2E8F0); background: var(--bg-surface, #ffffff); font-weight: 700;" aria-label="Filter ledger by type">
+                  <option value="all" ${(!this.ledgerTypeFilter || this.ledgerTypeFilter === 'all') ? 'selected' : ''}>All Transaction Types</option>
+                  <option value="credit" ${this.ledgerTypeFilter === 'credit' ? 'selected' : ''}>Monthly Plan Quota (+Credits)</option>
+                  <option value="top-up" ${this.ledgerTypeFilter === 'top-up' ? 'selected' : ''}>Top-Up Purchases (+Credits)</option>
+                  <option value="debit" ${this.ledgerTypeFilter === 'debit' ? 'selected' : ''}>Room Bookings (-Credits)</option>
+                  <option value="refund" ${this.ledgerTypeFilter === 'refund' ? 'selected' : ''}>Cancellations (+Refunds)</option>
+                </select>
+
                 <!-- Search Input -->
                 <input
                   type="text"
@@ -2850,6 +2869,17 @@ const MeetingRoomsModule = {
                   oninput="MeetingRoomsModule.setLedgerSearch(this.value)"
                   style="padding: 6px 12px; font-size: 12px; border-radius: 8px; border: 1px solid var(--border-subtle, #E2E8F0); background: var(--bg-surface, #ffffff);"
                 />
+
+                <!-- Print Statement Button -->
+                <button
+                  type="button"
+                  onclick="window.print()"
+                  class="btn btn-outline btn-sm"
+                  style="font-size: 12px; font-weight: 800; border-radius: 8px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px; color: #059669; border-color: rgba(16, 185, 129, 0.35);"
+                  title="Print or Save PDF Statement"
+                >
+                  <span>🖨️ Statement</span>
+                </button>
 
                 <!-- Export CSV Button (Formula injection safe) -->
                 <button
@@ -2881,6 +2911,9 @@ const MeetingRoomsModule = {
                 <tbody>
                   ${allowance.ledger
                     .filter(e => {
+                      if (this.ledgerTypeFilter && this.ledgerTypeFilter !== 'all') {
+                        if (e.type !== this.ledgerTypeFilter) return false;
+                      }
                       if (!this.ledgerSearch) return true;
                       const q = this.ledgerSearch.toLowerCase();
                       return e.description.toLowerCase().includes(q) || (e.bookingRef && e.bookingRef.toLowerCase().includes(q));
@@ -3188,136 +3221,185 @@ const MeetingRoomsModule = {
         ` : ''}
 
         <!-- TAB 4: PAYMENT HISTORY & RECEIPTS (SEPARATE FROM INVOICES) -->
-        ${subTab === 'payments' ? `
-          <div class="nexus-billing-panel">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
-              <div>
-                <h3 style="font-size: 16px; font-weight: 900; color: var(--text-primary, #111827); margin: 0; display: flex; align-items: center; gap: 8px;">
-                  <span>💳</span>
-                  <span>Payment History &amp; Transaction Receipts</span>
-                </h3>
-                <p style="font-size: 12px; color: var(--text-muted, #64748B); margin: 4px 0 0 0;">
-                  Live payment transactions, gateway confirmation references, and instant downloadable receipts.
-                </p>
+        ${subTab === 'payments' ? (() => {
+          const rawPayments = [
+            {
+              id: 'PAY-2026-NOV-9982',
+              date: '2026-11-01',
+              displayDate: '01 Nov 2026, 10:15 AM',
+              method: '💳 HDFC Corporate Visa •••• 4821',
+              methodCategory: 'card',
+              desc: 'Monthly Dedicated Workspace & Meeting Quota',
+              invoiceRef: 'INV-2026-080',
+              amount: 29500,
+              status: 'Successful',
+              statusColor: '#059669',
+              statusBg: 'rgba(16, 185, 129, 0.12)'
+            },
+            {
+              id: 'PAY-2026-OCT-8814',
+              date: '2026-10-15',
+              displayDate: '15 Oct 2026, 04:30 PM',
+              method: '⚡ Axis UPI AutoPay (alex@okaxis)',
+              methodCategory: 'upi',
+              desc: 'Growth Pack (+100 Credits) Top-Up',
+              invoiceRef: 'INV/2026-27/0002',
+              amount: 5310,
+              status: 'Successful',
+              statusColor: '#059669',
+              statusBg: 'rgba(16, 185, 129, 0.12)'
+            },
+            {
+              id: 'PAY-2026-OCT-7712',
+              date: '2026-10-01',
+              displayDate: '01 Oct 2026, 09:45 AM',
+              method: '💳 HDFC Corporate Visa •••• 4821',
+              methodCategory: 'card',
+              desc: 'Monthly Dedicated Workspace & Meeting Quota',
+              invoiceRef: 'INV-2026-072',
+              amount: 29500,
+              status: 'Successful',
+              statusColor: '#059669',
+              statusBg: 'rgba(16, 185, 129, 0.12)'
+            },
+            {
+              id: 'PAY-2026-OCT-6610',
+              date: '2026-10-02',
+              displayDate: '02 Oct 2026, 11:20 AM',
+              method: '🏦 ICICI Net Banking Corporate',
+              methodCategory: 'netbanking',
+              desc: 'AV Maintenance Downtime Settlement (2.0 hrs)',
+              invoiceRef: 'CN/2026-27/0001',
+              amount: 2360,
+              status: 'Refunded',
+              statusColor: '#2563EB',
+              statusBg: 'rgba(37, 99, 235, 0.12)'
+            },
+            {
+              id: 'PAY-2026-SEP-5501',
+              date: '2026-09-01',
+              displayDate: '01 Sep 2026, 10:00 AM',
+              method: '💳 HDFC Corporate Visa •••• 4821',
+              methodCategory: 'card',
+              desc: 'Monthly Dedicated Workspace & Meeting Quota',
+              invoiceRef: 'INV-2026-064',
+              amount: 29500,
+              status: 'Successful',
+              statusColor: '#059669',
+              statusBg: 'rgba(16, 185, 129, 0.12)'
+            }
+          ];
+
+          const filteredPayments = rawPayments.filter(p => {
+            // Respect selected month filter strictly
+            if (targetMonth && targetMonth !== 'all' && !p.date.startsWith(targetMonth)) {
+              return false;
+            }
+            if (this.paymentStatusFilter && this.paymentStatusFilter !== 'all' && p.status !== this.paymentStatusFilter) {
+              return false;
+            }
+            if (this.paymentMethodFilter && this.paymentMethodFilter !== 'all' && p.methodCategory !== this.paymentMethodFilter) {
+              return false;
+            }
+            return true;
+          });
+
+          return `
+            <div class="nexus-billing-panel">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+                <div>
+                  <h3 style="font-size: 16px; font-weight: 900; color: var(--text-primary, #111827); margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <span>💳</span>
+                    <span>Payment History &amp; Transaction Receipts</span>
+                  </h3>
+                  <p style="font-size: 12px; color: var(--text-muted, #64748B); margin: 4px 0 0 0;">
+                    ${targetMonth === 'all' ? 'All recorded transactions across all billing cycles.' : `Filtered strictly for billing cycle: ${allowance.monthLabel}.`}
+                  </p>
+                </div>
+
+                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                  <!-- Status Filter -->
+                  <select onchange="MeetingRoomsModule.setPaymentStatusFilter(this.value)" style="padding: 6px 10px; font-size: 12px; border-radius: 8px; border: 1px solid var(--border-subtle, #E2E8F0); background: var(--bg-surface, #ffffff); font-weight: 700;">
+                    <option value="all" ${(!this.paymentStatusFilter || this.paymentStatusFilter === 'all') ? 'selected' : ''}>All Statuses</option>
+                    <option value="Successful" ${this.paymentStatusFilter === 'Successful' ? 'selected' : ''}>Successful</option>
+                    <option value="Refunded" ${this.paymentStatusFilter === 'Refunded' ? 'selected' : ''}>Refunded</option>
+                    <option value="Failed" ${this.paymentStatusFilter === 'Failed' ? 'selected' : ''}>Failed</option>
+                  </select>
+
+                  <!-- Method Filter -->
+                  <select onchange="MeetingRoomsModule.setPaymentMethodFilter(this.value)" style="padding: 6px 10px; font-size: 12px; border-radius: 8px; border: 1px solid var(--border-subtle, #E2E8F0); background: var(--bg-surface, #ffffff); font-weight: 700;">
+                    <option value="all" ${(!this.paymentMethodFilter || this.paymentMethodFilter === 'all') ? 'selected' : ''}>All Payment Methods</option>
+                    <option value="card" ${this.paymentMethodFilter === 'card' ? 'selected' : ''}>Corporate Card</option>
+                    <option value="upi" ${this.paymentMethodFilter === 'upi' ? 'selected' : ''}>UPI AutoPay</option>
+                    <option value="netbanking" ${this.paymentMethodFilter === 'netbanking' ? 'selected' : ''}>Net Banking</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Payments Table -->
+              <div style="overflow-x: auto; border: 1px solid var(--border-subtle, #E2E8F0); border-radius: 12px;">
+                <table class="nexus-billing-table">
+                  <thead>
+                    <tr>
+                      <th>Payment Date &amp; Time (IST)</th>
+                      <th>Transaction Reference</th>
+                      <th>Payment Method</th>
+                      <th>Invoice / Document Ref</th>
+                      <th>Amount Paid</th>
+                      <th>Status</th>
+                      <th style="text-align: right;">Receipt</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${filteredPayments.length === 0 ? `
+                      <tr>
+                        <td colspan="7" style="text-align: center; padding: 24px; color: var(--text-muted, #64748B); font-size: 12.5px;">
+                          No transactions found matching the selected filters for ${targetMonth === 'all' ? 'this period' : allowance.monthLabel}.
+                        </td>
+                      </tr>
+                    ` : filteredPayments.map(p => `
+                      <tr>
+                        <td style="font-size: 12px; font-weight: 700; color: var(--text-primary, #111827); white-space: nowrap;">
+                          ${p.displayDate}
+                        </td>
+                        <td style="font-family: monospace; font-size: 12px; font-weight: 800; color: #4F3FE0; white-space: nowrap;">
+                          ${p.id}
+                        </td>
+                        <td style="font-size: 12px; color: var(--text-primary, #374151); white-space: nowrap;">
+                          ${p.method}
+                        </td>
+                        <td style="font-size: 12px; white-space: nowrap;">
+                          <a href="javascript:void(0)" onclick="MeetingRoomsModule.openInvoiceDetailsModal('${p.invoiceRef}')" style="font-weight: 800; color: #2563EB; text-decoration: none;">
+                            ${p.invoiceRef}
+                          </a>
+                          <span style="color: var(--text-muted, #64748B); margin-left: 4px;">• ${p.desc}</span>
+                        </td>
+                        <td style="font-weight: 900; font-size: 13px; color: var(--text-primary, #111827); white-space: nowrap;">
+                          ₹${Number(p.amount).toLocaleString('en-IN')}
+                        </td>
+                        <td>
+                          <span class="badge" style="background: ${p.statusBg}; color: ${p.statusColor}; font-weight: 800; font-size: 11px; padding: 2px 7px; border-radius: 4px;">
+                            ${p.status === 'Successful' ? '✓ Successful' : p.status === 'Refunded' ? '↩ Refunded' : '✕ Failed'}
+                          </span>
+                        </td>
+                        <td style="text-align: right; white-space: nowrap;">
+                          <button
+                            type="button"
+                            class="btn btn-outline btn-sm"
+                            onclick="MeetingRoomsModule.downloadPaymentReceipt('${p.id}', ${p.amount}, '${p.displayDate}', '${p.method}')"
+                            style="font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; color: #2563EB; border-color: rgba(37,99,235,0.3);"
+                          >
+                            📥 Receipt
+                          </button>
+                        </td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
               </div>
             </div>
-
-            <!-- Payments Table -->
-            <div style="overflow-x: auto; border: 1px solid var(--border-subtle, #E2E8F0); border-radius: 12px;">
-              <table class="nexus-billing-table">
-                <thead>
-                  <tr>
-                    <th>Payment Date &amp; Time (IST)</th>
-                    <th>Transaction Reference</th>
-                    <th>Payment Method</th>
-                    <th>Invoice / Service</th>
-                    <th>Amount Paid</th>
-                    <th>Status</th>
-                    <th style="text-align: right;">Receipt</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td style="font-size: 12px; font-weight: 700; color: var(--text-primary, #111827); white-space: nowrap;">
-                      01 Nov 2026, 10:15 AM
-                    </td>
-                    <td style="font-family: monospace; font-size: 12px; font-weight: 800; color: #4F3FE0;">
-                      PAY-2026-NOV-9982
-                    </td>
-                    <td style="font-size: 12px; color: var(--text-primary, #374151);">
-                      💳 HDFC Corporate Visa •••• 4821
-                    </td>
-                    <td style="font-size: 12px; color: var(--text-muted, #64748B);">
-                      INV-2026-080 • Monthly Membership &amp; Quota
-                    </td>
-                    <td style="font-weight: 900; font-size: 13px; color: var(--text-primary, #111827);">
-                      ₹29,500
-                    </td>
-                    <td>
-                      <span class="badge" style="background: rgba(16, 185, 129, 0.12); color: #059669; font-weight: 800; font-size: 11px; padding: 2px 7px; border-radius: 4px;">
-                        ✓ Successful
-                      </span>
-                    </td>
-                    <td style="text-align: right;">
-                      <button
-                        type="button"
-                        class="btn btn-outline btn-sm"
-                        onclick="MeetingRoomsModule.downloadPaymentReceipt('PAY-2026-NOV-9982', 29500, '01 Nov 2026', 'HDFC Corporate Visa')"
-                        style="font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; color: #2563EB; border-color: rgba(37,99,235,0.3);"
-                      >
-                        📥 Receipt
-                      </button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style="font-size: 12px; font-weight: 700; color: var(--text-primary, #111827); white-space: nowrap;">
-                      15 Oct 2026, 04:30 PM
-                    </td>
-                    <td style="font-family: monospace; font-size: 12px; font-weight: 800; color: #4F3FE0;">
-                      PAY-2026-OCT-8814
-                    </td>
-                    <td style="font-size: 12px; color: var(--text-primary, #374151);">
-                      ⚡ Instant UPI AutoPay (HDFC Bank)
-                    </td>
-                    <td style="font-size: 12px; color: var(--text-muted, #64748B);">
-                      Growth Pack (+100 Credits) Top-Up
-                    </td>
-                    <td style="font-weight: 900; font-size: 13px; color: var(--text-primary, #111827);">
-                      ₹5,310
-                    </td>
-                    <td>
-                      <span class="badge" style="background: rgba(16, 185, 129, 0.12); color: #059669; font-weight: 800; font-size: 11px; padding: 2px 7px; border-radius: 4px;">
-                        ✓ Successful
-                      </span>
-                    </td>
-                    <td style="text-align: right;">
-                      <button
-                        type="button"
-                        class="btn btn-outline btn-sm"
-                        onclick="MeetingRoomsModule.downloadPaymentReceipt('PAY-2026-OCT-8814', 5310, '15 Oct 2026', 'Instant UPI AutoPay')"
-                        style="font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; color: #2563EB; border-color: rgba(37,99,235,0.3);"
-                      >
-                        📥 Receipt
-                      </button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style="font-size: 12px; font-weight: 700; color: var(--text-primary, #111827); white-space: nowrap;">
-                      01 Oct 2026, 09:45 AM
-                    </td>
-                    <td style="font-family: monospace; font-size: 12px; font-weight: 800; color: #4F3FE0;">
-                      PAY-2026-OCT-7712
-                    </td>
-                    <td style="font-size: 12px; color: var(--text-primary, #374151);">
-                      💳 HDFC Corporate Visa •••• 4821
-                    </td>
-                    <td style="font-size: 12px; color: var(--text-muted, #64748B);">
-                      INV-2026-072 • Monthly Membership &amp; Quota
-                    </td>
-                    <td style="font-weight: 900; font-size: 13px; color: var(--text-primary, #111827);">
-                      ₹29,500
-                    </td>
-                    <td>
-                      <span class="badge" style="background: rgba(16, 185, 129, 0.12); color: #059669; font-weight: 800; font-size: 11px; padding: 2px 7px; border-radius: 4px;">
-                        ✓ Successful
-                      </span>
-                    </td>
-                    <td style="text-align: right;">
-                      <button
-                        type="button"
-                        class="btn btn-outline btn-sm"
-                        onclick="MeetingRoomsModule.downloadPaymentReceipt('PAY-2026-OCT-7712', 29500, '01 Oct 2026', 'HDFC Corporate Visa')"
-                        style="font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; color: #2563EB; border-color: rgba(37,99,235,0.3);"
-                      >
-                        📥 Receipt
-                      </button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        ` : ''}
+          `;
+        })() : ''}
 
         <!-- TAB 5: BILLING PROFILE, PLAN MANAGEMENT & AUTO-RENEW -->
         ${subTab === 'profile' ? `
@@ -3574,6 +3656,41 @@ const MeetingRoomsModule = {
                       </button>
                     </div>
                   </div>
+
+                  <!-- Proactive Notification Alerts Preferences Card -->
+                  <div style="border: 1px solid var(--border-subtle, #E2E8F0); border-radius: 12px; padding: 14px; background: var(--bg-surface-elevated, #F8FAFC);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                      <div style="font-weight: 800; color: var(--text-primary, #111827); font-size: 12.5px; display: flex; align-items: center; gap: 6px;">
+                        <span>🔔</span>
+                        <span>Proactive Billing &amp; Quota Alerts</span>
+                      </div>
+                      <span style="font-size: 10px; font-weight: 800; background: rgba(79, 63, 224, 0.1); color: #4F3FE0; padding: 2px 7px; border-radius: 4px;">
+                        Active
+                      </span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: var(--text-secondary, #475569);">
+                      <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+                        <span>⚡ 80% Quota warning &amp; 100% overage alert</span>
+                        <input type="checkbox" checked onchange="if(typeof App !== 'undefined') App.showToast('Alert preferences saved.', 'success');" style="accent-color: #4F3FE0;" />
+                      </label>
+                      <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+                        <span>⏳ Credit expiry alert (7 days before top-up validity ends)</span>
+                        <input type="checkbox" checked onchange="if(typeof App !== 'undefined') App.showToast('Alert preferences saved.', 'success');" style="accent-color: #4F3FE0;" />
+                      </label>
+                      <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+                        <span>📅 Monthly auto-renew advance notice (3 days before charge)</span>
+                        <input type="checkbox" checked onchange="if(typeof App !== 'undefined') App.showToast('Alert preferences saved.', 'success');" style="accent-color: #4F3FE0;" />
+                      </label>
+                      <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+                        <span>💳 Corporate card expiry notification (30 days prior)</span>
+                        <input type="checkbox" checked onchange="if(typeof App !== 'undefined') App.showToast('Alert preferences saved.', 'success');" style="accent-color: #4F3FE0;" />
+                      </label>
+                      <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+                        <span>⚠️ Failed payment retry &amp; grace period alerts</span>
+                        <input type="checkbox" checked onchange="if(typeof App !== 'undefined') App.showToast('Alert preferences saved.', 'success');" style="accent-color: #4F3FE0;" />
+                      </label>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -3584,6 +3701,17 @@ const MeetingRoomsModule = {
   },
 
   openPlanActionModal(action) {
+    const rawRole = (window.store && window.store.currentRole) || 'founder';
+    const currentRole = (window.store && window.store.normalizeRole) ? window.store.normalizeRole(rawRole) : rawRole;
+    const isCompanyAdmin = this.isAdminUser() || currentRole === 'founder' || currentRole === 'startup';
+
+    if (!isCompanyAdmin) {
+      if (typeof App !== 'undefined' && App.showToast) {
+        App.showToast('🛡️ Subscription modifications are restricted to Company Founders & Admins.', 'warning');
+      }
+      return;
+    }
+
     const startup = (window.store && window.store.getActiveStartup) ? window.store.getActiveStartup() : { name: 'XYZ Technologies' };
     let title = '';
     let icon = '👑';
@@ -3646,6 +3774,34 @@ const MeetingRoomsModule = {
           <div>📅 <strong>Effective Date:</strong> End of current cycle (<strong>30 November 2026</strong>).</div>
           <div>🪙 <strong>Plan Credits:</strong> Plan credits will expire on 30 Nov 2026.</div>
           <div>🪙 <strong>Top-up Credits:</strong> Any purchased extra top-up credits will remain valid for <strong>90 days</strong> from their purchase date.</div>
+        </div>
+
+        <!-- Cancellation Reason Picker -->
+        <div style="margin-top: 14px; border-top: 1px solid #E2E8F0; padding-top: 12px;">
+          <label style="display: block; font-weight: 800; font-size: 11px; color: var(--text-muted, #64748B); text-transform: uppercase; margin-bottom: 4px;">
+            Reason for Cancellation <span style="color: #DC2626;">*</span>
+          </label>
+          <select id="cancel-reason-select" class="form-control" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 12px;">
+            <option value="downsizing">Downsizing team / Reducing workspace requirement</option>
+            <option value="relocating">Relocating to another city / Moving 100% remote</option>
+            <option value="budget">Budget optimization / Cash-flow constraints</option>
+            <option value="expansion">Upgrading / Moving into independent dedicated office</option>
+            <option value="other">Other business reasons</option>
+          </select>
+        </div>
+
+        <!-- Credit Note & Downtime Settlement Option -->
+        <div style="margin-top: 12px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 12px;">
+          <div style="font-weight: 800; font-size: 11.5px; color: #111827; margin-bottom: 4px;">Outstanding Credit Note Settlement</div>
+          <div style="font-size: 11px; color: #64748B; margin-bottom: 8px;">You have Credit Note CN/2026-27/0001 (₹2,360). Choose your settlement preference:</div>
+          <label style="display: flex; align-items: center; gap: 8px; font-size: 11.5px; margin-bottom: 6px; cursor: pointer;">
+            <input type="radio" name="cn_settlement" value="refund" checked style="accent-color: #4F3FE0;" />
+            <span>Direct refund to original corporate card / bank account</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 8px; font-size: 11.5px; cursor: pointer;">
+            <input type="radio" name="cn_settlement" value="credits" style="accent-color: #4F3FE0;" />
+            <span>Convert to meeting room credits (approx. 47 credits preserved)</span>
+          </label>
         </div>
       `;
     }

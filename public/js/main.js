@@ -34,8 +34,20 @@ const App = {
       })
       .catch(() => {});
 
-    // Render initial view
-    this.switchTab('dashboard');
+    // Render initial view (supports URL query param ?tab=billingCredits and liveReload state)
+    let initialTab = 'dashboard';
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlTab = urlParams.get('tab');
+      const savedTab = sessionStorage.getItem('nexus_last_tab');
+      if (urlTab) {
+        initialTab = urlTab;
+      } else if (savedTab && savedTab !== 'dashboard') {
+        initialTab = savedTab;
+      }
+    } catch (e) {}
+
+    this.switchTab(initialTab);
     this.updateHeaderStats();
   },
 
