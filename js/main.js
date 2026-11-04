@@ -1199,6 +1199,13 @@ const App = {
   },
 
   handleGlobalSearch(query) {
+    if (this.currentTab === 'meetingRooms' && typeof MeetingRoomsModule !== 'undefined' && MeetingRoomsModule.activeTab === 'creditsBilling') {
+      MeetingRoomsModule.setLedgerSearch(query);
+      MeetingRoomsModule.setInvoiceSearch(query);
+      MeetingRoomsModule.render();
+      return;
+    }
+
     if (!query) return;
 
     // Search across startups

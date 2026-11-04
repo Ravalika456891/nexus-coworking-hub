@@ -2340,7 +2340,7 @@ const MeetingRoomsModule = {
     const startup = this.getMyStartup();
     const istNow = this.getISTNow();
     const targetMonth = this.creditsBillingMonth || istNow.todayStr.substring(0, 7);
-    const rooms = this.getRooms();
+    const rooms = (data && data.rooms) || (window.store && window.store.getMeetingRooms ? window.store.getMeetingRooms() : []);
     const cs = (typeof window !== 'undefined' && window.creditService) ? window.creditService : require('../../creditService');
     const bs = (typeof window !== 'undefined' && window.billingService) ? window.billingService : require('../../billingService');
 
@@ -2390,7 +2390,7 @@ const MeetingRoomsModule = {
     const istNow = this.getISTNow();
     const currentMonth = istNow.todayStr.substring(0, 7);
     const targetMonth = this.creditsBillingMonth || currentMonth;
-    const rooms = this.getRooms();
+    const rooms = (data && data.rooms) || (window.store && window.store.getMeetingRooms ? window.store.getMeetingRooms() : []);
 
     // Use unified server-side creditService (Single Source of Truth)
     const cs = (typeof window !== 'undefined' && window.creditService) ? window.creditService : require('../../creditService');
@@ -2412,6 +2412,14 @@ const MeetingRoomsModule = {
     const allInvoices = (window.store && window.store.getInvoices) ? window.store.getInvoices() : [];
     let startupInvoices = allInvoices.filter(inv => !inv.startupId || inv.startupId === startup.id || inv.startupName === startup.name);
     if (startupInvoices.length === 0) startupInvoices = allInvoices.slice(0, 5);
+
+    // Latest or Next Due Invoice
+    const nextDueInvoice = startupInvoices.find(inv => {
+      const s = bs.evaluateInvoiceStatus(inv, istNow.todayStr);
+      return s === 'Overdue' || s === 'Pending';
+    }) || startupInvoices[0];
+    const nextDueStatus = nextDueInvoice ? bs.evaluateInvoiceStatus(nextDueInvoice, istNow.todayStr) : 'Paid';
+    const isNextDuePendingOrOverdue = nextDueStatus === 'Pending' || nextDueStatus === 'Overdue';
 
     return `
       <div style="display: flex; flex-direction: column; gap: 20px; animation: fadeIn 0.25s ease;">
@@ -2503,10 +2511,17 @@ const MeetingRoomsModule = {
           </button>
           <button
             type="button"
+            onclick="MeetingRoomsModule.setCreditsBillingSubTab('payments')"
+            style="border: none; background: ${subTab === 'payments' ? '#4F3FE0' : 'transparent'}; color: ${subTab === 'payments' ? '#ffffff' : 'var(--text-muted, #64748B)'}; font-size: 12.5px; font-weight: 800; padding: 8px 18px; border-radius: 10px; cursor: pointer; transition: all 0.15s ease;"
+          >
+            💳 Payment History &amp; Receipts
+          </button>
+          <button
+            type="button"
             onclick="MeetingRoomsModule.setCreditsBillingSubTab('profile')"
             style="border: none; background: ${subTab === 'profile' ? '#4F3FE0' : 'transparent'}; color: ${subTab === 'profile' ? '#ffffff' : 'var(--text-muted, #64748B)'}; font-size: 12.5px; font-weight: 800; padding: 8px 18px; border-radius: 10px; cursor: pointer; transition: all 0.15s ease;"
           >
-            ⚙️ Billing Profile &amp; Plan
+            ⚙️ Plan &amp; Billing Profile
           </button>
         </div>
 
@@ -2628,6 +2643,62 @@ const MeetingRoomsModule = {
               </div>
             </div>
           </div>
+
+          <!-- Section: Recent / Next Due Tax Invoice -->
+          ${nextDueInvoice ? `
+            <div style="background: var(--bg-surface, #ffffff); border: 1.5px solid ${isNextDuePendingOrOverdue ? (nextDueStatus === 'Overdue' ? '#EF4444' : '#F59E0B') : 'var(--border-subtle, #ECEEF4)'}; border-radius: 14px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+              <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="width: 42px; height: 42px; border-radius: 10px; background: ${isNextDuePendingOrOverdue ? (nextDueStatus === 'Overdue' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(245, 158, 11, 0.1)') : 'rgba(79, 63, 224, 0.08)'}; color: ${isNextDuePendingOrOverdue ? (nextDueStatus === 'Overdue' ? '#DC2626' : '#D97706') : '#4F3FE0'}; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                  🧾
+                </div>
+                <div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-muted, #8A90A2);">
+                      ${isNextDuePendingOrOverdue ? (nextDueStatus === 'Overdue' ? '⚠️ Overdue Tax Invoice' : '⏳ Next Invoice Due') : '✓ Latest Tax Invoice'}
+                    </span>
+                    <span class="badge" style="background: ${nextDueStatus === 'Paid' ? 'rgba(16, 185, 129, 0.12)' : nextDueStatus === 'Overdue' ? 'rgba(239, 68, 68, 0.12)' : 'rgba(245, 158, 11, 0.12)'}; color: ${nextDueStatus === 'Paid' ? '#059669' : nextDueStatus === 'Overdue' ? '#DC2626' : '#D97706'}; font-weight: 800; font-size: 10.5px; padding: 2px 7px; border-radius: 4px;">
+                      ${nextDueStatus === 'Paid' ? 'Paid' : nextDueStatus}
+                    </span>
+                  </div>
+                  <div style="font-size: 14px; font-weight: 900; color: var(--text-primary, #111827); margin-top: 2px;">
+                    ${nextDueInvoice.id} • ${nextDueInvoice.billingPeriod || 'November 2026'} (₹${Number(nextDueInvoice.total || 0).toLocaleString('en-IN')})
+                  </div>
+                  <div style="font-size: 11px; color: var(--text-muted, #64748B); margin-top: 1px;">
+                    Issued: ${cs.formatDateIndian(nextDueInvoice.issueDate || '2026-11-01')} • Due: <strong>${cs.formatDateIndian(nextDueInvoice.dueDate || '2026-11-05')}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <button
+                  type="button"
+                  class="btn btn-outline btn-sm"
+                  onclick="MeetingRoomsModule.openInvoiceDetailsModal('${nextDueInvoice.id}')"
+                  style="font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: 8px; color: #2563EB; border-color: rgba(37,99,235,0.35);"
+                >
+                  👁️ View Invoice
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-outline btn-sm"
+                  onclick="window.print()"
+                  style="font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 8px; color: #059669; border-color: rgba(16,185,129,0.35);"
+                >
+                  🖨️ Print
+                </button>
+                ${isNextDuePendingOrOverdue ? `
+                  <button
+                    type="button"
+                    class="btn btn-primary btn-sm"
+                    onclick="App.showToast('Redirecting to payment gateway for ${nextDueInvoice.id}...', 'info')"
+                    style="font-size: 12px; font-weight: 800; padding: 6px 16px; border-radius: 8px; background: #4F3FE0; border-color: #4338CA; color: #ffffff;"
+                  >
+                    Pay Now
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+          ` : ''}
 
           <!-- Main 2-Column: Dynamic Donut + Room Breakdown & Quick Ledger -->
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; align-items: start;">
@@ -3001,87 +3072,387 @@ const MeetingRoomsModule = {
                 </tbody>
               </table>
             </div>
+
+            <!-- Credit Notes Section (Linked to Original Invoice) -->
+            <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-subtle, #ECEEF4);">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <div>
+                  <h4 style="font-size: 14px; font-weight: 900; color: var(--text-primary, #111827); margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <span>🔖</span>
+                    <span>GST Credit Notes &amp; Adjustments</span>
+                  </h4>
+                  <p style="font-size: 11.5px; color: var(--text-muted, #64748B); margin: 2px 0 0 0;">
+                    Tax credit adjustments and downtime refunds linked directly to parent tax invoices.
+                  </p>
+                </div>
+              </div>
+
+              <div style="overflow-x: auto; border: 1px solid var(--border-subtle, #E2E8F0); border-radius: 12px;">
+                <table class="nexus-billing-table">
+                  <thead>
+                    <tr>
+                      <th>Credit Note No</th>
+                      <th>Issued Date</th>
+                      <th>Original Invoice</th>
+                      <th>Reason / Adjustment</th>
+                      <th>Base (₹)</th>
+                      <th>GST (₹)</th>
+                      <th>Total Adjusted</th>
+                      <th>Status</th>
+                      <th style="text-align: right;">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td style="font-weight: 800; font-family: monospace; font-size: 12.5px; color: #059669;">
+                        CN/2026-27/0001
+                      </td>
+                      <td style="color: var(--text-muted, #64748B); font-size: 12px;">
+                        10 Oct 2026
+                      </td>
+                      <td style="font-family: monospace; font-size: 12px; font-weight: 700; color: #2563EB;">
+                        <a href="javascript:void(0)" onclick="MeetingRoomsModule.openInvoiceDetailsModal('${startupInvoices[0] ? startupInvoices[0].id : 'INV-2026-080'}')">
+                          ${startupInvoices[0] ? startupInvoices[0].id : 'INV-2026-080'}
+                        </a>
+                      </td>
+                      <td style="font-size: 12px; color: var(--text-primary, #374151);">
+                        AV maintenance downtime credit (2.0 hrs)
+                      </td>
+                      <td style="font-size: 12px; font-weight: 700; color: var(--text-muted, #64748B);">
+                        ₹2,000
+                      </td>
+                      <td style="font-size: 12px; font-weight: 700; color: var(--text-muted, #64748B);">
+                        ₹360
+                      </td>
+                      <td style="font-weight: 900; color: #059669; font-size: 13px;">
+                        ₹2,360
+                      </td>
+                      <td>
+                        <span class="badge" style="background: rgba(16, 185, 129, 0.12); color: #059669; font-weight: 800; font-size: 11px; padding: 2px 7px; border-radius: 4px;">
+                          ✓ Applied
+                        </span>
+                      </td>
+                      <td style="text-align: right;">
+                        <button
+                          type="button"
+                          class="btn btn-outline btn-sm"
+                          onclick="App.showToast('Credit Note CN/2026-27/0001 details downloaded', 'success')"
+                          style="font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; color: #059669; border-color: rgba(16,185,129,0.3);"
+                        >
+                          📥 Receipt
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         ` : ''}
 
-        <!-- TAB 4: BILLING PROFILE, PAYMENT METHODS & PLANS -->
-        ${subTab === 'profile' ? `
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
-            <!-- Profile Card -->
-            <div class="nexus-billing-panel">
-              <h4 style="font-size: 14px; font-weight: 900; color: var(--text-primary, #111827); margin: 0 0 14px 0; display: flex; align-items: center; gap: 8px;">
-                <span>🏢</span>
-                <span>GST Legal Billing Profile</span>
-              </h4>
-              <form onsubmit="MeetingRoomsModule.updateBillingProfile('${startup.id}', event)">
-                <div style="display: flex; flex-direction: column; gap: 12px; font-size: 12px;">
-                  <div>
-                    <label style="display: block; font-weight: 800; color: var(--text-muted, #64748B); text-transform: uppercase; font-size: 10.5px; margin-bottom: 4px;">
-                      Company Legal Name
-                    </label>
-                    <input type="text" id="billing-legal-name" value="${startup.name || 'XYZ Technologies Private Limited'}" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-subtle, #E2E8F0); background: var(--bg-surface, #ffffff); font-size: 12.5px; font-weight: 700;" required />
-                  </div>
-                  <div>
-                    <label style="display: block; font-weight: 800; color: var(--text-muted, #64748B); text-transform: uppercase; font-size: 10.5px; margin-bottom: 4px;">
-                      GSTIN (15 Characters)
-                    </label>
-                    <input type="text" id="billing-gstin" value="${startup.gstin || '29AAACX9920M1Z4'}" maxlength="15" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-subtle, #E2E8F0); background: var(--bg-surface, #ffffff); font-size: 12.5px; font-weight: 700; font-family: monospace;" required />
-                  </div>
-                  <div>
-                    <label style="display: block; font-weight: 800; color: var(--text-muted, #64748B); text-transform: uppercase; font-size: 10.5px; margin-bottom: 4px;">
-                      Registered Billing Address
-                    </label>
-                    <textarea id="billing-address" rows="2" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-subtle, #E2E8F0); background: var(--bg-surface, #ffffff); font-size: 12px;">Cabin PC-103, Nexus Hub, Indiranagar, Bengaluru, Karnataka 560038</textarea>
-                  </div>
-                  <button type="submit" class="btn btn-primary btn-sm" style="background: #4F3FE0; border-color: #4338CA; font-weight: 800; font-size: 12px; padding: 8px 16px; border-radius: 8px; align-self: flex-start;">
-                    Save Profile Changes
-                  </button>
-                </div>
-              </form>
+        <!-- TAB 4: PAYMENT HISTORY & RECEIPTS (SEPARATE FROM INVOICES) -->
+        ${subTab === 'payments' ? `
+          <div class="nexus-billing-panel">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+              <div>
+                <h3 style="font-size: 16px; font-weight: 900; color: var(--text-primary, #111827); margin: 0; display: flex; align-items: center; gap: 8px;">
+                  <span>💳</span>
+                  <span>Payment History &amp; Transaction Receipts</span>
+                </h3>
+                <p style="font-size: 12px; color: var(--text-muted, #64748B); margin: 4px 0 0 0;">
+                  Live payment transactions, gateway confirmation references, and instant downloadable receipts.
+                </p>
+              </div>
             </div>
 
-            <!-- Payment Methods & Auto-Renew Card -->
+            <!-- Payments Table -->
+            <div style="overflow-x: auto; border: 1px solid var(--border-subtle, #E2E8F0); border-radius: 12px;">
+              <table class="nexus-billing-table">
+                <thead>
+                  <tr>
+                    <th>Payment Date &amp; Time (IST)</th>
+                    <th>Transaction Reference</th>
+                    <th>Payment Method</th>
+                    <th>Invoice / Service</th>
+                    <th>Amount Paid</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Receipt</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style="font-size: 12px; font-weight: 700; color: var(--text-primary, #111827); white-space: nowrap;">
+                      01 Nov 2026, 10:15 AM
+                    </td>
+                    <td style="font-family: monospace; font-size: 12px; font-weight: 800; color: #4F3FE0;">
+                      PAY-2026-NOV-9982
+                    </td>
+                    <td style="font-size: 12px; color: var(--text-primary, #374151);">
+                      💳 HDFC Corporate Visa •••• 4821
+                    </td>
+                    <td style="font-size: 12px; color: var(--text-muted, #64748B);">
+                      INV-2026-080 • Monthly Membership &amp; Quota
+                    </td>
+                    <td style="font-weight: 900; font-size: 13px; color: var(--text-primary, #111827);">
+                      ₹29,500
+                    </td>
+                    <td>
+                      <span class="badge" style="background: rgba(16, 185, 129, 0.12); color: #059669; font-weight: 800; font-size: 11px; padding: 2px 7px; border-radius: 4px;">
+                        ✓ Successful
+                      </span>
+                    </td>
+                    <td style="text-align: right;">
+                      <button
+                        type="button"
+                        class="btn btn-outline btn-sm"
+                        onclick="MeetingRoomsModule.downloadPaymentReceipt('PAY-2026-NOV-9982', 29500, '01 Nov 2026', 'HDFC Corporate Visa')"
+                        style="font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; color: #2563EB; border-color: rgba(37,99,235,0.3);"
+                      >
+                        📥 Receipt
+                      </button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="font-size: 12px; font-weight: 700; color: var(--text-primary, #111827); white-space: nowrap;">
+                      15 Oct 2026, 04:30 PM
+                    </td>
+                    <td style="font-family: monospace; font-size: 12px; font-weight: 800; color: #4F3FE0;">
+                      PAY-2026-OCT-8814
+                    </td>
+                    <td style="font-size: 12px; color: var(--text-primary, #374151);">
+                      ⚡ Instant UPI AutoPay (HDFC Bank)
+                    </td>
+                    <td style="font-size: 12px; color: var(--text-muted, #64748B);">
+                      Growth Pack (+100 Credits) Top-Up
+                    </td>
+                    <td style="font-weight: 900; font-size: 13px; color: var(--text-primary, #111827);">
+                      ₹5,310
+                    </td>
+                    <td>
+                      <span class="badge" style="background: rgba(16, 185, 129, 0.12); color: #059669; font-weight: 800; font-size: 11px; padding: 2px 7px; border-radius: 4px;">
+                        ✓ Successful
+                      </span>
+                    </td>
+                    <td style="text-align: right;">
+                      <button
+                        type="button"
+                        class="btn btn-outline btn-sm"
+                        onclick="MeetingRoomsModule.downloadPaymentReceipt('PAY-2026-OCT-8814', 5310, '15 Oct 2026', 'Instant UPI AutoPay')"
+                        style="font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; color: #2563EB; border-color: rgba(37,99,235,0.3);"
+                      >
+                        📥 Receipt
+                      </button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="font-size: 12px; font-weight: 700; color: var(--text-primary, #111827); white-space: nowrap;">
+                      01 Oct 2026, 09:45 AM
+                    </td>
+                    <td style="font-family: monospace; font-size: 12px; font-weight: 800; color: #4F3FE0;">
+                      PAY-2026-OCT-7712
+                    </td>
+                    <td style="font-size: 12px; color: var(--text-primary, #374151);">
+                      💳 HDFC Corporate Visa •••• 4821
+                    </td>
+                    <td style="font-size: 12px; color: var(--text-muted, #64748B);">
+                      INV-2026-072 • Monthly Membership &amp; Quota
+                    </td>
+                    <td style="font-weight: 900; font-size: 13px; color: var(--text-primary, #111827);">
+                      ₹29,500
+                    </td>
+                    <td>
+                      <span class="badge" style="background: rgba(16, 185, 129, 0.12); color: #059669; font-weight: 800; font-size: 11px; padding: 2px 7px; border-radius: 4px;">
+                        ✓ Successful
+                      </span>
+                    </td>
+                    <td style="text-align: right;">
+                      <button
+                        type="button"
+                        class="btn btn-outline btn-sm"
+                        onclick="MeetingRoomsModule.downloadPaymentReceipt('PAY-2026-OCT-7712', 29500, '01 Oct 2026', 'HDFC Corporate Visa')"
+                        style="font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; color: #2563EB; border-color: rgba(37,99,235,0.3);"
+                      >
+                        📥 Receipt
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ` : ''}
+
+        <!-- TAB 5: BILLING PROFILE, PLAN MANAGEMENT & AUTO-RENEW -->
+        ${subTab === 'profile' ? `
+          <div style="display: flex; flex-direction: column; gap: 20px;">
+            <!-- Plan Management Card (Upgrade, Downgrade, Pause, Cancel with Unused Credits Policies) -->
             <div class="nexus-billing-panel">
-              <h4 style="font-size: 14px; font-weight: 900; color: var(--text-primary, #111827); margin: 0 0 14px 0; display: flex; align-items: center; gap: 8px;">
-                <span>💳</span>
-                <span>Payment Methods &amp; Auto-Renew</span>
-              </h4>
-              <div style="display: flex; flex-direction: column; gap: 14px; font-size: 12px;">
-                <!-- Saved Card -->
-                <div style="border: 1px solid var(--border-subtle, #E2E8F0); border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center;">
-                  <div style="display: flex; align-items: center; gap: 10px;">
-                    <span style="font-size: 20px;">💳</span>
-                    <div>
-                      <div style="font-weight: 800; color: var(--text-primary, #111827);">HDFC Corporate Visa •••• 4821</div>
-                      <div style="font-size: 10.5px; color: var(--text-muted, #8A90A2); margin-top: 2px;">Expires 08/29 • Primary method</div>
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+                <div>
+                  <h4 style="font-size: 15px; font-weight: 900; color: var(--text-primary, #111827); margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <span>👑</span>
+                    <span>Subscription Plan Lifecycle &amp; Credit Policies</span>
+                  </h4>
+                  <p style="font-size: 12px; color: var(--text-muted, #64748B); margin: 3px 0 0 0;">
+                    Manage your tier with full transparency on effective dates and unused quota rollover rules.
+                  </p>
+                </div>
+                <span style="background: rgba(16, 185, 129, 0.12); color: #059669; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 999px; border: 1px solid rgba(16, 185, 129, 0.25);">
+                  ● CURRENT: ${allowance.planName}
+                </span>
+              </div>
+
+              <!-- 4 Action Bento Grid -->
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+                <!-- Upgrade -->
+                <div style="background: var(--bg-surface-elevated, #F8FAFC); border: 1.5px solid var(--border-subtle, #E2E8F0); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between;">
+                  <div>
+                    <div style="font-size: 11px; font-weight: 800; color: #4F3FE0; text-transform: uppercase;">Growth Upgrade</div>
+                    <div style="font-size: 14px; font-weight: 900; color: var(--text-primary, #111827); margin: 4px 0;">Growth Plan (30 hrs)</div>
+                    <div style="font-size: 11.5px; color: var(--text-muted, #64748B);">
+                      • Effective: <strong>Immediately</strong><br/>
+                      • Unused credits: <strong>All rollover</strong><br/>
+                      • Rate: ₹49,500/mo (prorated)
                     </div>
                   </div>
-                  <span style="font-size: 10.5px; font-weight: 800; background: rgba(16, 185, 129, 0.12); color: #059669; padding: 3px 8px; border-radius: 6px;">
-                    ✓ Default
-                  </span>
-                </div>
-
-                <!-- Auto Renew Toggle -->
-                <div style="background: var(--bg-surface-elevated, #F8FAFC); border: 1px solid var(--border-subtle, #E2E8F0); border-radius: 12px; padding: 14px; display: flex; justify-content: space-between; align-items: center;">
-                  <div>
-                    <div style="font-weight: 800; color: var(--text-primary, #111827);">Auto-Renew Membership</div>
-                    <div style="font-size: 11px; color: var(--text-muted, #64748B); margin-top: 2px;">Next cycle: <strong>1 Dec 2026</strong> (₹29,500 via HDFC Corporate)</div>
-                  </div>
-                  <label style="position: relative; display: inline-block; width: 44px; height: 24px; cursor: pointer;">
-                    <input type="checkbox" checked onchange="MeetingRoomsModule.toggleAutoRenew('${startup.id}', this.checked)" style="opacity: 0; width: 0; height: 0;" />
-                    <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #4F3FE0; transition: .3s; border-radius: 24px;"></span>
-                  </label>
-                </div>
-
-                <!-- TDS Deduction Option -->
-                <div style="border: 1px dashed var(--border-subtle, #CBD5E1); border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center;">
-                  <div>
-                    <div style="font-weight: 800; color: var(--text-primary, #111827);">Pay Net of TDS (Section 194-I)</div>
-                    <div style="font-size: 10.5px; color: var(--text-muted, #64748B); margin-top: 2px;">Upload Form 16A TDS certificate for 10% tax credit.</div>
-                  </div>
-                  <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openTDSModal('${startupInvoices[0] ? startupInvoices[0].id : 'INV-2026-080'}')" style="font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px;">
-                    Upload TDS
+                  <button type="button" class="btn btn-sm btn-primary" onclick="MeetingRoomsModule.openPlanActionModal('upgrade')" style="margin-top: 12px; background: #4F3FE0; border-color: #4338CA; font-weight: 800; font-size: 11.5px; padding: 6px 12px; border-radius: 8px;">
+                    Upgrade Tier →
                   </button>
+                </div>
+
+                <!-- Downgrade -->
+                <div style="background: var(--bg-surface-elevated, #F8FAFC); border: 1.5px solid var(--border-subtle, #E2E8F0); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between;">
+                  <div>
+                    <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase;">Starter Tier</div>
+                    <div style="font-size: 14px; font-weight: 900; color: var(--text-primary, #111827); margin: 4px 0;">Starter Plan (8 hrs)</div>
+                    <div style="font-size: 11.5px; color: var(--text-muted, #64748B);">
+                      • Effective: <strong>Next cycle (1 Dec)</strong><br/>
+                      • Unused credits: <strong>Active till Nov 30</strong><br/>
+                      • Rate: ₹18,000/mo
+                    </div>
+                  </div>
+                  <button type="button" class="btn btn-sm btn-outline" onclick="MeetingRoomsModule.openPlanActionModal('downgrade')" style="margin-top: 12px; font-weight: 800; font-size: 11.5px; padding: 6px 12px; border-radius: 8px; color: var(--text-primary, #111827);">
+                    Downgrade Tier
+                  </button>
+                </div>
+
+                <!-- Pause -->
+                <div style="background: var(--bg-surface-elevated, #F8FAFC); border: 1.5px solid var(--border-subtle, #E2E8F0); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between;">
+                  <div>
+                    <div style="font-size: 11px; font-weight: 800; color: #D97706; text-transform: uppercase;">Temporary Hold</div>
+                    <div style="font-size: 14px; font-weight: 900; color: var(--text-primary, #111827); margin: 4px 0;">Pause (1–3 Months)</div>
+                    <div style="font-size: 11.5px; color: var(--text-muted, #64748B);">
+                      • Effective: <strong>Next billing cycle</strong><br/>
+                      • Unused credits: <strong>Frozen &amp; preserved</strong><br/>
+                      • Maintenance fee: ₹0/mo
+                    </div>
+                  </div>
+                  <button type="button" class="btn btn-sm btn-outline" onclick="MeetingRoomsModule.openPlanActionModal('pause')" style="margin-top: 12px; font-weight: 800; font-size: 11.5px; padding: 6px 12px; border-radius: 8px; color: #D97706; border-color: rgba(217,119,6,0.35);">
+                    Pause Membership
+                  </button>
+                </div>
+
+                <!-- Cancel -->
+                <div style="background: var(--bg-surface-elevated, #F8FAFC); border: 1.5px solid var(--border-subtle, #E2E8F0); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between;">
+                  <div>
+                    <div style="font-size: 11px; font-weight: 800; color: #DC2626; text-transform: uppercase;">Termination</div>
+                    <div style="font-size: 14px; font-weight: 900; color: var(--text-primary, #111827); margin: 4px 0;">Cancel Subscription</div>
+                    <div style="font-size: 11.5px; color: var(--text-muted, #64748B);">
+                      • Effective: <strong>Cycle end (Nov 30)</strong><br/>
+                      • Plan credits: <strong>Expire on Nov 30</strong><br/>
+                      • Top-up credits: <strong>Valid for 90 days</strong>
+                    </div>
+                  </div>
+                  <button type="button" class="btn btn-sm btn-outline" onclick="MeetingRoomsModule.openPlanActionModal('cancel')" style="margin-top: 12px; font-weight: 800; font-size: 11.5px; padding: 6px 12px; border-radius: 8px; color: #DC2626; border-color: rgba(220,38,38,0.35);">
+                    Cancel Subscription
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Profile & Payment Methods 2-Column Bento -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+              <!-- Profile Card -->
+              <div class="nexus-billing-panel">
+                <h4 style="font-size: 14px; font-weight: 900; color: var(--text-primary, #111827); margin: 0 0 14px 0; display: flex; align-items: center; gap: 8px;">
+                  <span>🏢</span>
+                  <span>GST Legal Billing Profile</span>
+                </h4>
+                <form onsubmit="MeetingRoomsModule.updateBillingProfile('${startup.id}', event)">
+                  <div style="display: flex; flex-direction: column; gap: 12px; font-size: 12px;">
+                    <div>
+                      <label style="display: block; font-weight: 800; color: var(--text-muted, #64748B); text-transform: uppercase; font-size: 10.5px; margin-bottom: 4px;">
+                        Company Legal Name
+                      </label>
+                      <input type="text" id="billing-legal-name" value="${startup.name || 'XYZ Technologies Private Limited'}" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-subtle, #E2E8F0); background: var(--bg-surface, #ffffff); font-size: 12.5px; font-weight: 700;" required />
+                    </div>
+                    <div>
+                      <label style="display: block; font-weight: 800; color: var(--text-muted, #64748B); text-transform: uppercase; font-size: 10.5px; margin-bottom: 4px;">
+                        GSTIN (15 Characters)
+                      </label>
+                      <input type="text" id="billing-gstin" value="${startup.gstin || '29AAACX9920M1Z4'}" maxlength="15" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-subtle, #E2E8F0); background: var(--bg-surface, #ffffff); font-size: 12.5px; font-weight: 700; font-family: monospace;" required />
+                    </div>
+                    <div>
+                      <label style="display: block; font-weight: 800; color: var(--text-muted, #64748B); text-transform: uppercase; font-size: 10.5px; margin-bottom: 4px;">
+                        Registered Billing Address
+                      </label>
+                      <textarea id="billing-address" rows="2" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-subtle, #E2E8F0); background: var(--bg-surface, #ffffff); font-size: 12px;">Cabin PC-103, Nexus Hub, Indiranagar, Bengaluru, Karnataka 560038</textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm" style="background: #4F3FE0; border-color: #4338CA; font-weight: 800; font-size: 12px; padding: 8px 16px; border-radius: 8px; align-self: flex-start;">
+                      Save Profile Changes
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              <!-- Payment Methods & Auto-Renew Card -->
+              <div class="nexus-billing-panel">
+                <h4 style="font-size: 14px; font-weight: 900; color: var(--text-primary, #111827); margin: 0 0 14px 0; display: flex; align-items: center; gap: 8px;">
+                  <span>💳</span>
+                  <span>Payment Methods &amp; Auto-Renew</span>
+                </h4>
+                <div style="display: flex; flex-direction: column; gap: 14px; font-size: 12px;">
+                  <!-- Saved Card -->
+                  <div style="border: 1px solid var(--border-subtle, #E2E8F0); border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                      <span style="font-size: 20px;">💳</span>
+                      <div>
+                        <div style="font-weight: 800; color: var(--text-primary, #111827);">HDFC Corporate Visa •••• 4821</div>
+                        <div style="font-size: 10.5px; color: var(--text-muted, #8A90A2); margin-top: 2px;">Expires 08/29 • Primary method</div>
+                      </div>
+                    </div>
+                    <span style="font-size: 10.5px; font-weight: 800; background: rgba(16, 185, 129, 0.12); color: #059669; padding: 3px 8px; border-radius: 6px;">
+                      ✓ Default
+                    </span>
+                  </div>
+
+                  <!-- Auto Renew Toggle -->
+                  <div style="background: var(--bg-surface-elevated, #F8FAFC); border: 1px solid var(--border-subtle, #E2E8F0); border-radius: 12px; padding: 14px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                      <div style="font-weight: 800; color: var(--text-primary, #111827);">Auto-Renew Membership</div>
+                      <div style="font-size: 11px; color: var(--text-muted, #64748B); margin-top: 2px;">Next charge: <strong>1 Dec 2026</strong> (₹29,500 via HDFC Corporate)</div>
+                    </div>
+                    <label style="position: relative; display: inline-block; width: 44px; height: 24px; cursor: pointer;">
+                      <input type="checkbox" checked onchange="MeetingRoomsModule.toggleAutoRenew('${startup.id}', this.checked)" style="opacity: 0; width: 0; height: 0;" />
+                      <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #4F3FE0; transition: .3s; border-radius: 24px;"></span>
+                    </label>
+                  </div>
+
+                  <!-- Failed Payment Policy Note -->
+                  <div style="font-size: 11px; color: var(--text-muted, #64748B); background: rgba(79, 63, 224, 0.05); padding: 8px 12px; border-radius: 8px; line-height: 1.4;">
+                    ℹ️ <strong>Retry &amp; Grace Period:</strong> Failed auto-renewals retry automatically on Day 2, 4, and 7. Your account enjoys a 7-day grace period with unhindered room bookings.
+                  </div>
+
+                  <!-- TDS Deduction Option -->
+                  <div style="border: 1px dashed var(--border-subtle, #CBD5E1); border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                      <div style="font-weight: 800; color: var(--text-primary, #111827);">Pay Net of TDS (Section 194-I)</div>
+                      <div style="font-size: 10.5px; color: var(--text-muted, #64748B); margin-top: 2px;">Upload Form 16A TDS certificate for 10% tax credit.</div>
+                    </div>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openTDSModal('${startupInvoices[0] ? startupInvoices[0].id : 'INV-2026-080'}')" style="font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px;">
+                      Upload TDS
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -3089,6 +3460,149 @@ const MeetingRoomsModule = {
         ` : ''}
       </div>
     `;
+  },
+
+  openPlanActionModal(action) {
+    const startup = (window.store && window.store.getActiveStartup) ? window.store.getActiveStartup() : { name: 'XYZ Technologies' };
+    let title = '';
+    let icon = '👑';
+    let detailsHtml = '';
+
+    if (action === 'upgrade') {
+      title = 'Upgrade to Growth Plan';
+      icon = '🚀';
+      detailsHtml = `
+        <div style="background: rgba(79, 63, 224, 0.08); border: 1.5px solid #4F3FE0; border-radius: 12px; padding: 14px; margin-bottom: 16px;">
+          <div style="font-size: 11px; font-weight: 800; color: #4F3FE0; text-transform: uppercase;">Selected Tier</div>
+          <div style="font-size: 16px; font-weight: 900; color: #111827; margin: 2px 0;">Growth Plan • 30 hrs (300 credits) / month</div>
+          <div style="font-size: 13px; font-weight: 800; color: #4F3FE0; margin-top: 4px;">₹49,500 / month + GST (Prorated for current cycle)</div>
+        </div>
+        <div style="font-size: 12.5px; line-height: 1.6; color: var(--text-primary, #374151); display: flex; flex-direction: column; gap: 8px;">
+          <div>⚡ <strong>Effective Date:</strong> Immediate. Your meeting allowance will increase by +15 hours immediately.</div>
+          <div>🪙 <strong>Unused Credits:</strong> All your current unused plan credits carry over and combine with the new quota.</div>
+          <div>💳 <strong>Billing:</strong> The prorated difference will be charged to your default corporate payment method.</div>
+        </div>
+      `;
+    } else if (action === 'downgrade') {
+      title = 'Downgrade to Starter Plan';
+      icon = '📉';
+      detailsHtml = `
+        <div style="background: #F8FAFC; border: 1.5px solid #CBD5E1; border-radius: 12px; padding: 14px; margin-bottom: 16px;">
+          <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase;">Selected Tier</div>
+          <div style="font-size: 16px; font-weight: 900; color: #111827; margin: 2px 0;">Starter Plan • 8 hrs (80 credits) / month</div>
+          <div style="font-size: 13px; font-weight: 800; color: #111827; margin-top: 4px;">₹18,000 / month + GST</div>
+        </div>
+        <div style="font-size: 12.5px; line-height: 1.6; color: var(--text-primary, #374151); display: flex; flex-direction: column; gap: 8px;">
+          <div>📅 <strong>Effective Date:</strong> Next billing cycle (<strong>1 December 2026</strong>).</div>
+          <div>🪙 <strong>Unused Credits:</strong> You continue to enjoy your full 15.0 hrs allowance through 30 November 2026 without interruption.</div>
+          <div>💳 <strong>Next Charge:</strong> On 1 Dec 2026, you will be billed ₹18,000 + GST.</div>
+        </div>
+      `;
+    } else if (action === 'pause') {
+      title = 'Pause Membership';
+      icon = '⏸️';
+      detailsHtml = `
+        <div style="background: rgba(245, 158, 11, 0.08); border: 1.5px solid #F59E0B; border-radius: 12px; padding: 14px; margin-bottom: 16px;">
+          <div style="font-size: 11px; font-weight: 800; color: #D97706; text-transform: uppercase;">Temporary Account Hold</div>
+          <div style="font-size: 16px; font-weight: 900; color: #111827; margin: 2px 0;">Select Pause Duration: 1 to 3 Months</div>
+          <div style="font-size: 12.5px; color: #92400E; margin-top: 4px;">Desk reservations &amp; auto-renewals paused. Monthly maintenance fee: ₹0.</div>
+        </div>
+        <div style="font-size: 12.5px; line-height: 1.6; color: var(--text-primary, #374151); display: flex; flex-direction: column; gap: 8px;">
+          <div>📅 <strong>Effective Date:</strong> Starts from <strong>1 December 2026</strong>.</div>
+          <div>🪙 <strong>Unused Credits:</strong> Your remaining plan credits will be <strong>frozen</strong> and restored when your membership reactivates.</div>
+        </div>
+      `;
+    } else {
+      title = 'Cancel Subscription';
+      icon = '⚠️';
+      detailsHtml = `
+        <div style="background: rgba(239, 68, 68, 0.08); border: 1.5px solid #EF4444; border-radius: 12px; padding: 14px; margin-bottom: 16px;">
+          <div style="font-size: 11px; font-weight: 800; color: #DC2626; text-transform: uppercase;">Membership Termination</div>
+          <div style="font-size: 16px; font-weight: 900; color: #111827; margin: 2px 0;">Cancellation of Startup Plan</div>
+          <div style="font-size: 12.5px; color: #991B1B; margin-top: 4px;">Auto-renewal will be turned off immediately.</div>
+        </div>
+        <div style="font-size: 12.5px; line-height: 1.6; color: var(--text-primary, #374151); display: flex; flex-direction: column; gap: 8px;">
+          <div>📅 <strong>Effective Date:</strong> End of current cycle (<strong>30 November 2026</strong>).</div>
+          <div>🪙 <strong>Plan Credits:</strong> Plan credits will expire on 30 Nov 2026.</div>
+          <div>🪙 <strong>Top-up Credits:</strong> Any purchased extra top-up credits will remain valid for <strong>90 days</strong> from their purchase date.</div>
+        </div>
+      `;
+    }
+
+    const html = `
+      <div class="modal-overlay active" id="modal-plan-action" onclick="if(event.target === this) MeetingRoomsModule.closeModal('modal-plan-action')" style="display: flex; align-items: center; justify-content: center; z-index: 1060; padding: 16px; background: rgba(15, 23, 42, 0.78); backdrop-filter: blur(8px);">
+        <div style="background: #ffffff; border-radius: 18px; max-width: 520px; width: 100%; overflow: hidden; box-shadow: 0 25px 60px rgba(0,0,0,0.35); border: 1px solid #E2E8F0;">
+          <div style="background: #0F172A; color: #ffffff; padding: 18px 24px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 20px;">${icon}</span>
+              <h3 style="font-size: 17px; font-weight: 800; margin: 0; color: #ffffff;">${title}</h3>
+            </div>
+            <button type="button" onclick="MeetingRoomsModule.closeModal('modal-plan-action')" style="color: #ffffff; background: rgba(255,255,255,0.15); border: none; border-radius: 50%; width: 28px; height: 28px; font-size: 15px; cursor: pointer;">✕</button>
+          </div>
+          <div style="padding: 22px;">
+            ${detailsHtml}
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; padding-top: 16px; border-top: 1px solid #E2E8F0;">
+              <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.closeModal('modal-plan-action')" style="padding: 7px 16px; border-radius: 8px; font-weight: 700;">
+                Back
+              </button>
+              <button type="button" class="btn btn-sm ${action === 'cancel' ? 'btn-danger' : 'btn-primary'}" onclick="MeetingRoomsModule.closeModal('modal-plan-action'); if(typeof App !== 'undefined') App.showToast('Plan request recorded successfully.', 'success');" style="padding: 7px 20px; border-radius: 8px; font-weight: 800; ${action !== 'cancel' ? 'background: #4F3FE0; border-color: #4338CA;' : ''}">
+                Confirm Change
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    const mount = document.getElementById('modal-mount');
+    if (mount) mount.innerHTML = html;
+  },
+
+  downloadPaymentReceipt(paymentRef, amount, date, method) {
+    const html = `
+      <div class="modal-overlay active" id="modal-receipt-view" onclick="if(event.target === this) MeetingRoomsModule.closeModal('modal-receipt-view')" style="display: flex; align-items: center; justify-content: center; z-index: 1060; padding: 16px; background: rgba(15, 23, 42, 0.78); backdrop-filter: blur(8px);">
+        <div style="background: #ffffff; border-radius: 18px; max-width: 500px; width: 100%; overflow: hidden; box-shadow: 0 25px 60px rgba(0,0,0,0.35); border: 1px solid #E2E8F0;">
+          <div style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: #ffffff; padding: 20px 24px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.85;">Official Payment Confirmation</div>
+              <h3 style="font-size: 19px; font-weight: 900; margin: 4px 0 0 0; color: #ffffff;">Payment Receipt</h3>
+            </div>
+            <button type="button" onclick="MeetingRoomsModule.closeModal('modal-receipt-view')" style="color: #ffffff; background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 28px; height: 28px; font-size: 15px; cursor: pointer;">✕</button>
+          </div>
+          <div style="padding: 24px; font-size: 12.5px; display: flex; flex-direction: column; gap: 14px;">
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #F1F5F9; padding-bottom: 8px;">
+              <span style="color: #64748B;">Transaction Ref:</span>
+              <strong style="font-family: monospace; color: #4F3FE0;">${paymentRef}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #F1F5F9; padding-bottom: 8px;">
+              <span style="color: #64748B;">Date &amp; Time:</span>
+              <strong>${date}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #F1F5F9; padding-bottom: 8px;">
+              <span style="color: #64748B;">Payment Mode:</span>
+              <strong>${method}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #F1F5F9; padding-bottom: 8px;">
+              <span style="color: #64748B;">Payment Gateway:</span>
+              <strong>Razorpay Verified (Idempotent)</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 15px; font-weight: 900; color: #10B981; padding-top: 6px;">
+              <span>Amount Paid:</span>
+              <span>₹${Number(amount).toLocaleString('en-IN')}</span>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px;">
+              <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.closeModal('modal-receipt-view')" style="font-weight: 700; border-radius: 8px;">
+                Close
+              </button>
+              <button type="button" class="btn btn-primary btn-sm" onclick="window.print()" style="background: #10B981; border-color: #059669; font-weight: 800; border-radius: 8px;">
+                🖨️ Print Receipt
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    const mount = document.getElementById('modal-mount');
+    if (mount) mount.innerHTML = html;
   },
 
   openCreditTopUpModal(startupId) {
