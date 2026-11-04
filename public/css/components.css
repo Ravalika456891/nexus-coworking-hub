@@ -3466,6 +3466,13 @@ input[type="date"].form-control {
 }
 
 /* Dynamic Persona Banner */
+.persona-banner-bar:empty {
+  display: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  min-height: 0 !important;
+  border: none !important;
+}
 .persona-banner-bar {
   display: flex !important;
   flex-direction: row !important;
