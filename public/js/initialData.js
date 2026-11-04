@@ -545,7 +545,7 @@ window.INITIAL_DATA = {
         {
           id: "TOPUP-2026-10-001",
           paymentRef: "PAY-2026-OCT-8814",
-          invoiceNumber: "INV/2026-27/0002",
+          invoiceNumber: "INV/2026-27/0086",
           date: "2026-10-15",
           time: "14:30",
           packName: "Growth Pack (+100 Credits)",
@@ -1166,7 +1166,24 @@ window.INITIAL_DATA = {
           cost: 0,
           status: "Confirmed"
         }
-      ]
+      ,
+        {
+          id: "BKG-20261104-0002",
+          startupId: "STP-XYZ",
+          startupName: "XYZ Technologies",
+          bookedBy: "Alex Morgan",
+          title: "Investor Update & Governance",
+          purpose: "Investor Update & Governance",
+          date: "2026-11-04",
+          startTime: "19:00",
+          endTime: "20:00",
+          duration: 1,
+          creditHoursUsed: 1,
+          overageHours: 0,
+          attendees: 8,
+          cost: 0,
+          status: "Confirmed"
+        }]
     },
     {
       id: "MR-03",
@@ -1186,7 +1203,25 @@ window.INITIAL_DATA = {
         { id: "MR-03-IMG-2", url: "/assets/rooms/mr-03-whiteboard.jpg", thumbUrl: "/assets/rooms/thumbs/mr-03-whiteboard.jpg", width: 1376, alt: "Brainstorm Pod Beta – floor-to-ceiling whiteboard and sticky-note collaboration wall", caption: "Whiteboard & collaboration area" },
         { id: "MR-03-IMG-3", url: "/assets/rooms/mr-03-table.jpg", thumbUrl: "/assets/rooms/thumbs/mr-03-table.jpg", width: 1376, alt: "Brainstorm Pod Beta – collaborative table with ergonomic mesh chairs", caption: "Table & seating" }
       ],
-      bookings: []
+      bookings: [
+        {
+          id: "BKG-20261105-0002",
+          startupId: "STP-XYZ",
+          startupName: "XYZ Technologies",
+          bookedBy: "Alex Morgan",
+          title: "Late Night Hackathon Sync",
+          purpose: "Late Night Hackathon Sync",
+          date: "2026-11-05",
+          startTime: "22:30",
+          endTime: "23:30",
+          duration: 1,
+          creditHoursUsed: 1,
+          overageHours: 0,
+          attendees: 4,
+          cost: 0,
+          status: "Confirmed"
+        }
+      ]
     },
     {
       id: "MR-04",
@@ -1241,7 +1276,25 @@ window.INITIAL_DATA = {
       images: [
         { id: "MR-07-IMG-1", url: "/assets/rooms/mr-03-table.jpg", thumbUrl: "/assets/rooms/thumbs/mr-03-table.jpg", width: 1376, alt: "Synergy Lab – collaborative work area", caption: "Lab workspace" }
       ],
-      bookings: []
+      bookings: [
+        {
+          id: "BKG-20261104-0003",
+          startupId: "STP-XYZ",
+          startupName: "XYZ Technologies",
+          bookedBy: "Alex Morgan",
+          title: "Sprint Alignment & Architecture Review",
+          purpose: "Sprint Alignment & Architecture Review",
+          date: "2026-11-04",
+          startTime: "20:30",
+          endTime: "21:30",
+          duration: 1,
+          creditHoursUsed: 1,
+          overageHours: 0,
+          attendees: 6,
+          cost: 0,
+          status: "Confirmed"
+        }
+      ]
     },
     {
       id: "MR-06",
@@ -1381,23 +1434,6 @@ window.INITIAL_DATA = {
           endTime: "16:00",
           duration: 1,
           creditHoursUsed: 1,
-          overageHours: 0,
-          attendees: 4,
-          cost: 0,
-          status: "Confirmed"
-        },
-        {
-          id: "BKG-20261104-0001",
-          startupId: "STP-XYZ",
-          startupName: "XYZ Technologies",
-          bookedBy: "Alex Morgan",
-          title: "Sprint Planning & Tech Architecture Review",
-          purpose: "Sprint Planning & Tech Architecture Review",
-          date: "2026-11-04",
-          startTime: "10:00",
-          endTime: "12:30",
-          duration: 2.5,
-          creditHoursUsed: 2.5,
           overageHours: 0,
           attendees: 4,
           cost: 0,
@@ -1637,7 +1673,7 @@ window.INITIAL_DATA = {
   invoices: [
     {
       id: "INV-2026-TOPUP-01",
-      invoiceNumber: "INV/2026-27/0002",
+      invoiceNumber: "INV/2026-27/0086",
       financialYear: "2026-27",
       startupId: "STP-XYZ",
       startupName: "XYZ Technologies",
@@ -1647,7 +1683,7 @@ window.INITIAL_DATA = {
       issueDate: "2026-10-15",
       dueDate: "2026-10-15",
       paidDate: "2026-10-15",
-      description: "Meeting Room Credits Top-Up (Growth Pack: 100 Credits · 10.0 hrs)",
+      description: "Credit top-up, Growth Pack",
       sacCode: "997212",
       currency: "INR",
       baseAmount: 4500,

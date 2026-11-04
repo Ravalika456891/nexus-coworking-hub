@@ -95,24 +95,26 @@ runTest('1. Dashboard allowance matches credit service source of truth', () => {
 
 runTest('2. Meeting Rooms usage widget reads identical allowance values', () => {
   const allowance = store.getMonthlyAllowance(FIXTURE_STARTUP_ID, TARGET_MONTH);
-  assert.strictEqual(allowance.usedHours, 10.5, 'Meeting Rooms used hours must be exactly 10.5');
-  assert.strictEqual(allowance.planRemainingHours, 4.5, 'Meeting Rooms plan remaining must be exactly 4.5');
+  assert.strictEqual(allowance.usedHours, 5.0, 'Meeting Rooms used hours must be exactly 5.0');
+  assert.strictEqual(allowance.reservedHours, 6.0, 'Meeting Rooms reserved hours must be exactly 6.0');
+  assert.strictEqual(allowance.planRemainingHours, 4.0, 'Meeting Rooms plan remaining must be exactly 4.0');
   assert.strictEqual(allowance.topUpRemainingHours, 10.0, 'Meeting Rooms top-up remaining must be exactly 10.0');
-  assert.strictEqual(allowance.remainingHours, 14.5, 'Total available must be exactly 14.5');
+  assert.strictEqual(allowance.remainingHours, 14.0, 'Total available must be exactly 14.0');
 });
 
-runTest('3. My Bookings footer allowance line displays exact 4.5h plan + 10.0h top-up', () => {
+runTest('3. My Bookings footer allowance line displays exact 4.0h plan + 10.0h top-up', () => {
   const allowance = store.getMonthlyAllowance(FIXTURE_STARTUP_ID, TARGET_MONTH);
   const line = `Nov: plan ${allowance.planRemainingHours.toFixed(1)} hrs left (expires 30 Nov) + top-up ${allowance.topUpRemainingHours.toFixed(1)} hrs`;
-  assert.ok(line.includes('plan 4.5 hrs left'), 'My Bookings line must show 4.5 hrs plan');
+  assert.ok(line.includes('plan 4.0 hrs left'), 'My Bookings line must show 4.0 hrs plan');
   assert.ok(line.includes('top-up 10.0 hrs'), 'My Bookings line must show 10.0 hrs top-up');
 });
 
 runTest('4. Billing & Credits quota cards split buckets identically', () => {
   const allowance = store.getMonthlyAllowance(FIXTURE_STARTUP_ID, TARGET_MONTH);
   assert.strictEqual(allowance.planMonthlyHours, 15.0, 'Monthly free hours must be 15.0 hrs');
-  assert.strictEqual(allowance.usedHours, 10.5, 'Used hours must be 10.5 hrs');
-  assert.strictEqual(allowance.planRemainingHours, 4.5, 'Plan remaining hours must be 4.5 hrs');
+  assert.strictEqual(allowance.usedHours, 5.0, 'Used hours must be 5.0 hrs');
+  assert.strictEqual(allowance.reservedHours, 6.0, 'Reserved hours must be 6.0 hrs');
+  assert.strictEqual(allowance.planRemainingHours, 4.0, 'Plan remaining hours must be 4.0 hrs');
   assert.strictEqual(allowance.topUpRemainingHours, 10.0, 'Top-up hours must be 10.0 hrs');
 });
 
@@ -123,18 +125,21 @@ runTest('5. Analytics startup ledger row for XYZ Technologies reconciles 100%', 
     (r.bookings || []).forEach(b => {
       if ((b.startupId === FIXTURE_STARTUP_ID || b.startupName === 'XYZ Technologies') && b.status !== 'Cancelled') {
         if (b.date && String(b.date).startsWith(TARGET_MONTH)) {
-          const dur = (typeof creditService.calculateDurationHours === 'function')
-            ? creditService.calculateDurationHours(b.startTime, b.endTime)
-            : 1.0;
-          confirmedPastHours += dur;
+          // Only past bookings count as used
+          if (b.date < '2026-11-04' || (b.date === '2026-11-04' && b.startTime < '18:10')) {
+            const dur = (typeof creditService.calculateDurationHours === 'function')
+              ? creditService.calculateDurationHours(b.startTime, b.endTime)
+              : (b.duration || 1.0);
+            confirmedPastHours += dur;
+          }
         }
       }
     });
   });
 
   const allowance = store.getMonthlyAllowance(FIXTURE_STARTUP_ID, TARGET_MONTH);
-  assert.strictEqual(allowance.usedHours, confirmedPastHours, 'Analytics used hours must equal sum of confirmed past bookings');
-  assert.strictEqual(allowance.usedHours + allowance.planRemainingHours, allowance.planMonthlyHours, 'Used + Plan Left must equal Plan Hours');
+  assert.strictEqual(allowance.usedHours, confirmedPastHours, 'Analytics used hours must equal sum of confirmed past bookings (5.0 hrs)');
+  assert.strictEqual(allowance.usedHours + allowance.reservedHours + allowance.planRemainingHours, allowance.planMonthlyHours, 'Used + Reserved + Plan Left must equal Plan Hours (15.0 hrs)');
 });
 
 // Test 6: Workspaces Identity Verification

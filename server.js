@@ -21,6 +21,18 @@ const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.avif', '.s
 const db = require('./db');
 const creditService = require('./creditService');
 const billingService = require('./billingService');
+const UnifiedSummaryService = require('./services/unifiedSummaryService');
+
+let unifiedSummaryService = null;
+async function getSummaryService() {
+  if (!unifiedSummaryService) {
+    const database = await db.connectDB();
+    if (database) {
+      unifiedSummaryService = new UnifiedSummaryService(database);
+    }
+  }
+  return unifiedSummaryService;
+}
 
 // In-memory Idempotency Store for Top-up & Payment transactions
 const IDEMPOTENCY_CACHE = new Map();
@@ -228,6 +240,65 @@ async function handleApi(req, res, parsedUrl) {
     const userRole = (rawRole === 'founder' || rawRole === 'startup' || rawRole === 'startup_member') ? 'member' : rawRole;
     const companyId = req.headers['x-company-id'] || req.headers['x-startup-id'] || searchParams.get('companyId') || searchParams.get('startupId') || 'STP-XYZ';
     const isOperator = userRole === 'operator' || userRole === 'super_admin' || userRole === 'admin' || userRole === 'incubator_admin';
+
+    // -----------------------------------------------------------
+    // Part 5.2 Unified Endpoints (No Stored Copies of Derived Values)
+    // -----------------------------------------------------------
+    if (pathname === '/company/summary' || pathname === '/api/company/summary') {
+      const summaryMonth = searchParams.get('month') || '2026-11';
+      const summaryService = await getSummaryService();
+      if (summaryService) {
+        const summary = await summaryService.getCompanySummary(companyId, summaryMonth);
+        return sendJson(res, 200, { ok: true, ...summary });
+      } else {
+        const appState = await db.getAppState();
+        const startup = (appState.startups || []).find(s => s.id === companyId) || { id: companyId, name: 'XYZ Technologies' };
+        const allowance = creditService.getMonthlyAllowance(startup, appState.meetingRooms || [], summaryMonth, startup.topUps || []);
+        return sendJson(res, 200, { ok: true, companyId, allowance });
+      }
+    }
+
+    if (pathname === '/company/ledger' || pathname === '/api/company/ledger') {
+      const ledgerMonth = searchParams.get('month') || '2026-11';
+      const summaryService = await getSummaryService();
+      if (summaryService) {
+        const ledger = await summaryService.getCompanyLedger(companyId, ledgerMonth);
+        return sendJson(res, 200, { ok: true, ledger });
+      }
+      return sendJson(res, 200, { ok: true, ledger: [] });
+    }
+
+    if (pathname === '/bookings' || pathname === '/api/bookings') {
+      const appState = await db.getAppState();
+      let allBookings = [];
+      (appState.meetingRooms || []).forEach(r => {
+        (r.bookings || []).forEach(b => {
+          if (isOperator || b.startupId === companyId || b.startupName === 'XYZ Technologies') {
+            allBookings.push({ ...b, roomId: r.id, roomName: r.name });
+          }
+        });
+      });
+      return sendJson(res, 200, { ok: true, bookings: allBookings });
+    }
+
+    if (pathname === '/workspaces/summary' || pathname === '/api/workspaces/summary') {
+      const summaryService = await getSummaryService();
+      if (summaryService) {
+        const wsSummary = await summaryService.getWorkspacesSummary(companyId);
+        return sendJson(res, 200, { ok: true, ...wsSummary });
+      }
+      return sendJson(res, 200, { ok: true, totalUnits: 26, totalSeats: 55 });
+    }
+
+    if (pathname === '/analytics' || pathname === '/api/analytics') {
+      const summaryService = await getSummaryService();
+      const scopeRole = isOperator ? 'operator' : 'member';
+      if (summaryService) {
+        const analytics = await summaryService.getAnalytics(companyId, scopeRole);
+        return sendJson(res, 200, { ok: true, ...analytics });
+      }
+      return sendJson(res, 200, { ok: true, scope: scopeRole });
+    }
 
     // Dedicated Direct Entity Endpoints
     // -----------------------------------------------------------
@@ -820,7 +891,7 @@ async function handleApi(req, res, parsedUrl) {
       });
       if (!result.ok) return sendJson(res, 403, result);
       const rows = result.reservations || [];
-      const headers = ['Booking Ref','Startup','Room','Floor','Date','Start Time','End Time','Duration (hrs)','Attendees','Purpose','Booked By','Credits Deducted (hrs)','Fees (INR)','Status','Created At'];
+      const headers = ['Booking Ref', 'Startup', 'Room', 'Floor', 'Date', 'Start Time', 'End Time', 'Duration (hrs)', 'Attendees', 'Purpose', 'Booked By', 'Credits Deducted (hrs)', 'Fees (INR)', 'Status', 'Created At'];
       const csv = [headers.join(','), ...rows.map(r => [
         `"${r.id}"`, `"${(r.startupName || '').replace(/"/g, '""')}"`, `"${(r.roomName || '').replace(/"/g, '""')}"`,
         `"${r.floor || ''}"`, r.date, r.startTime, r.endTime, r.duration || '', r.attendees || '',
@@ -928,7 +999,7 @@ async function handleApi(req, res, parsedUrl) {
 async function handler(req, res) {
   const matchedHeader = req.headers['x-matched-path'] || req.headers['x-invoke-path'];
   const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-  
+
   if (parsedUrl.searchParams.has('__route')) {
     parsedUrl.pathname = '/api/' + parsedUrl.searchParams.get('__route');
   } else if (matchedHeader) {
@@ -942,7 +1013,13 @@ async function handler(req, res) {
 
   let reqUrl = parsedUrl.pathname;
 
-  if (reqUrl.startsWith('/api/') || reqUrl === '/api') {
+  if (
+    reqUrl.startsWith('/api/') || reqUrl === '/api' ||
+    reqUrl.startsWith('/company/') ||
+    reqUrl === '/bookings' || reqUrl.startsWith('/bookings/') ||
+    reqUrl.startsWith('/workspaces/') ||
+    reqUrl === '/analytics' || reqUrl.startsWith('/analytics/')
+  ) {
     return handleApi(req, res, parsedUrl);
   }
 
@@ -975,10 +1052,10 @@ async function handler(req, res) {
       const cacheHeaders = IMAGE_EXTENSIONS.has(ext)
         ? { 'Cache-Control': 'public, max-age=86400' }
         : {
-            'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
-            'Pragma': 'no-cache',
-            'Expires': '0'
-          };
+          'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        };
       res.writeHead(200, {
         'Content-Type': contentType,
         ...cacheHeaders

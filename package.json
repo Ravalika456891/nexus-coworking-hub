@@ -11,7 +11,7 @@
     "next:dev": "next dev",
     "next:build": "next build",
     "next:start": "next start",
-    "test": "node tests/dashboardSummary.test.js && node tests/startupDashboard.test.js && node tests/billingConflictsAndPolish.test.js && node tests/billingAndCredits.test.js && node tests/meetingRoomPhase2.test.js && node tests/meetingRoomPhase4Admin.test.js && node tests/meetingRoomCompleteIntegration.test.js && node tests/singleAllowanceConsistency.test.js"
+    "test": "node tests/dashboardSummary.test.js && node tests/startupDashboard.test.js && node tests/billingConflictsAndPolish.test.js && node tests/billingAndCredits.test.js && node tests/meetingRoomPhase2.test.js && node tests/meetingRoomPhase4Admin.test.js && node tests/meetingRoomCompleteIntegration.test.js && node tests/singleAllowanceConsistency.test.js && node tests/unifiedContract.test.js && node tests/unifiedTransaction.test.js"
   },
   "keywords": [
     "coworking",

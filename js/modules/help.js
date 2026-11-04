@@ -769,3 +769,4 @@ const HelpModule = {
 };
 
 window.HelpModule = HelpModule;
+

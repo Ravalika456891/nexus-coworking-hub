@@ -629,3 +629,4 @@ const SettingsModule = {
 };
 
 window.SettingsModule = SettingsModule;
+

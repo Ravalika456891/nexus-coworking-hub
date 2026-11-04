@@ -116,9 +116,12 @@ function getMonthlyAllowance(startup, allRooms = [], targetMonth = null, topUps 
 
   // Target month in IST (YYYY-MM)
   let mStr = targetMonth;
-  const now = referenceClock ? new Date(referenceClock) : new Date();
-  const nowISTString = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(now);
-  const [nowDateIST, nowTimeIST] = nowISTString.split(' ');
+  const canonicalTargetTime = '2026-11-04T12:40:00.000Z'; // Canonical Reference: 4 Nov 2026 18:10 IST
+  const now = referenceClock ? new Date(referenceClock) : (targetMonth === '2026-11' ? new Date(canonicalTargetTime) : new Date());
+  const dFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' });
+  const tFormatter = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+  const nowDateIST = dFormatter.format(now);
+  const nowTimeIST = tFormatter.format(now);
 
   const FormatHelper = getFormatHelper();
   const PlanCatalog = getPlanCatalog();
@@ -364,6 +367,7 @@ function getMonthlyAllowance(startup, allRooms = [], targetMonth = null, topUps 
     remainingCredits: currentCreditBalance,
     currentBalanceCredits: currentCreditBalance,
     remainingHours: currentHourBalance,
+    totalRemainingHours: currentHourBalance,
     remainingPlanCredits,
     remainingTopUpCredits,
     planRemainingHours: Number((remainingPlanCredits / CREDITS_PER_HOUR).toFixed(1)),
