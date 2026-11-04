@@ -279,6 +279,42 @@ test('GSTIN validation requires 15 alphanumeric characters matching state code',
   assert.strictEqual(billingService.validateGSTIN('INVALID_GSTIN'), false);
 });
 
+// -------------------------------------------------------------
+// AREA 9: GSTR-1 Export, Number In Words & Formula Injection Guard
+// -------------------------------------------------------------
+console.log('\n--- Area 9: GSTR-1 Export & Accounting Helpers ---');
+
+test('GSTR-1 CSV export generates GST-compliant CSV with sanitized cells', () => {
+  const invoices = [
+    {
+      id: 'INV/2026-27/0001',
+      issueDate: '2026-10-01',
+      billingPeriod: '2026-10',
+      startupName: 'XYZ Technologies Private Limited',
+      taxableAmount: 25000,
+      taxGst: 4500,
+      total: 29500
+    }
+  ];
+  const csv = billingService.generateGSTR1CSV(invoices, '2026-10');
+  assert.ok(csv.includes('Invoice Number'), 'CSV must contain headers');
+  assert.ok(csv.includes('INV/2026-27/0001'), 'CSV must contain invoice number');
+  assert.ok(csv.includes('29AAACX9920M1Z4'), 'CSV must contain buyer GSTIN');
+});
+
+test('Number in words produces Indian currency phrasing', () => {
+  const words = billingService.numberToWordsIndian(29500);
+  assert.strictEqual(words, 'Rupees Twenty Nine Thousand Five Hundred Only');
+  const wordsLakh = billingService.numberToWordsIndian(125000);
+  assert.strictEqual(wordsLakh, 'Rupees One Lakh Twenty Five Thousand Only');
+});
+
+test('Sanitize CSV cell prevents spreadsheet formula injection', () => {
+  assert.strictEqual(billingService.sanitizeCSVCell('=SUM(A1:A10)'), '"\'=SUM(A1:A10)"');
+  assert.strictEqual(billingService.sanitizeCSVCell('+12345'), '"\'+12345"');
+  assert.strictEqual(billingService.sanitizeCSVCell('@executive'), '"\'@executive"');
+});
+
 console.log('\n============================================================');
 console.log(`TEST SUMMARY: ${passedTests} PASSED, ${failedTests} FAILED`);
 console.log('============================================================\n');

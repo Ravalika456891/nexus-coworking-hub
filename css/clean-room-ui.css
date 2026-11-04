@@ -2230,6 +2230,7 @@ body.rg-no-scroll {
 
 .nexus-billing-table {
   width: 100%;
+  min-width: 850px;
   border-collapse: separate;
   border-spacing: 0;
   font-size: 13px;
@@ -2244,15 +2245,25 @@ body.rg-no-scroll {
   padding: 12px 16px;
   border-bottom: 1px solid var(--border-subtle, #e2e8f0);
   text-align: left;
+  white-space: nowrap;
 }
 .nexus-billing-table td {
-  padding: 14px 16px;
+  padding: 13px 16px;
   border-bottom: 1px solid var(--border-subtle, #f1f5f9);
   color: var(--text-primary, #1e293b);
   vertical-align: middle;
 }
 .nexus-billing-table tr:hover td {
   background: var(--bg-surface-elevated, #f8fafc);
+}
+.nexus-billing-table .cell-num {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.nexus-billing-table .cell-mono {
+  font-family: var(--font-mono, monospace);
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .nexus-topup-card {

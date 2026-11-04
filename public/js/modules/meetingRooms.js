@@ -3108,11 +3108,20 @@ const MeetingRoomsModule = {
                             <button
                               type="button"
                               class="btn btn-outline btn-sm"
-                              onclick="window.print()"
+                              onclick="MeetingRoomsModule.downloadInvoicePDF('${inv.id}')"
                               style="font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 6px; margin-right: 4px; color: #059669; border-color: rgba(16,185,129,0.3);"
-                              title="Print Invoice"
+                              title="Download & Print PDF"
                             >
-                              🖨️ Print
+                              ⬇️ PDF
+                            </button>
+                            <button
+                              type="button"
+                              class="btn btn-outline btn-sm"
+                              onclick="MeetingRoomsModule.emailInvoice('${inv.id}')"
+                              style="font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 6px; margin-right: 4px; color: #4F3FE0; border-color: rgba(79,63,224,0.3);"
+                              title="Email Tax Invoice to Finance Team"
+                            >
+                              ✉️ Email
                             </button>
                             ${!isPaid && !isVoid ? `
                               <button
@@ -3502,10 +3511,15 @@ const MeetingRoomsModule = {
                     Future Invoices
                   </span>
                 </div>
-                <div style="font-size: 11px; color: var(--text-muted, #64748B); background: rgba(148, 163, 184, 0.08); padding: 8px 12px; border-radius: 8px; margin-bottom: 14px; line-height: 1.4;">
-                  ℹ️ <strong>Immutable Snapshot:</strong> Issued invoices preserve legal buyer details at issue time. Edits apply strictly to future invoices.
+                <div style="font-size: 11px; color: var(--text-muted, #64748B); background: rgba(148, 163, 184, 0.08); padding: 8px 12px; border-radius: 8px; margin-bottom: 14px; line-height: 1.4; display: flex; justify-content: space-between; align-items: center;">
+                  <div>
+                    ℹ️ <strong>Immutable Snapshot:</strong> Issued invoices preserve legal buyer details at issue time. Edits apply strictly to future invoices.
+                  </div>
+                  <span id="billing-profile-unsaved-pill" style="display: none; font-size: 10px; font-weight: 800; background: rgba(245, 158, 11, 0.2); color: #B45309; padding: 2px 8px; border-radius: 999px; white-space: nowrap;">
+                    ● Unsaved Changes
+                  </span>
                 </div>
-                <form onsubmit="MeetingRoomsModule.updateBillingProfile('${startup.id}', event)">
+                <form id="form-billing-profile" onsubmit="MeetingRoomsModule.updateBillingProfile('${startup.id}', event)" oninput="MeetingRoomsModule.markBillingProfileDirty()">
                   <div style="display: flex; flex-direction: column; gap: 12px; font-size: 12px;">
                     <div>
                       <label style="display: block; font-weight: 800; color: var(--text-muted, #64748B); text-transform: uppercase; font-size: 10.5px; margin-bottom: 4px;">
@@ -3556,9 +3570,24 @@ const MeetingRoomsModule = {
                         Registered Billing Address (Structured)
                       </label>
                       <input type="text" id="billing-address-line1" value="Cabin PC-103, 3rd Floor, Nexus Hub" placeholder="Address Line 1" style="width: 100%; padding: 7px 12px; border-radius: 8px; border: 1px solid var(--border-subtle, #E2E8F0); background: var(--bg-surface, #ffffff); font-size: 12px; margin-bottom: 6px;" required />
+                      <input type="text" id="billing-address-line2" value="Outer Ring Road, Bellandur" placeholder="Address Line 2 (Optional)" style="width: 100%; padding: 7px 12px; border-radius: 8px; border: 1px solid var(--border-subtle, #E2E8F0); background: var(--bg-surface, #ffffff); font-size: 12px; margin-bottom: 6px;" />
                       <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 8px;">
                         <input type="text" id="billing-city" value="Bengaluru" placeholder="City" style="width: 100%; padding: 7px 12px; border-radius: 8px; border: 1px solid var(--border-subtle, #E2E8F0); background: var(--bg-surface, #ffffff); font-size: 12px;" required />
                         <input type="text" id="billing-pin" value="560034" placeholder="PIN Code" style="width: 100%; padding: 7px 12px; border-radius: 8px; border: 1px solid var(--border-subtle, #E2E8F0); background: var(--bg-surface, #ffffff); font-size: 12px;" required />
+                      </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                      <div>
+                        <label style="display: block; font-weight: 800; color: var(--text-muted, #64748B); text-transform: uppercase; font-size: 10.5px; margin-bottom: 4px;">
+                          Finance Contact Person
+                        </label>
+                        <input type="text" id="billing-contact-name" value="Alex Morgan" placeholder="Contact Person" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-subtle, #E2E8F0); background: var(--bg-surface, #ffffff); font-size: 12px; font-weight: 700;" required />
+                      </div>
+                      <div>
+                        <label style="display: block; font-weight: 800; color: var(--text-muted, #64748B); text-transform: uppercase; font-size: 10.5px; margin-bottom: 4px;">
+                          Contact Phone (10 Digits)
+                        </label>
+                        <input type="tel" id="billing-contact-phone" value="9880012345" maxlength="10" placeholder="e.g. 9880012345" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-subtle, #E2E8F0); background: var(--bg-surface, #ffffff); font-size: 12px; font-weight: 700;" required />
                       </div>
                     </div>
                     <div>
@@ -3596,9 +3625,14 @@ const MeetingRoomsModule = {
                         <div style="font-size: 10.5px; color: var(--text-muted, #8A90A2); margin-top: 2px;">Expires 08/29 • Primary Auto-Renew Method</div>
                       </div>
                     </div>
-                    <span style="font-size: 10.5px; font-weight: 800; background: rgba(16, 185, 129, 0.12); color: #059669; padding: 3px 8px; border-radius: 6px;">
-                      ✓ Default
-                    </span>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <span style="font-size: 10.5px; font-weight: 800; background: rgba(16, 185, 129, 0.12); color: #059669; padding: 3px 8px; border-radius: 6px;">
+                        ✓ Default
+                      </span>
+                      <button type="button" onclick="MeetingRoomsModule.removePaymentMethod('pm_card_4821', true)" class="btn btn-outline btn-sm" style="font-size: 10.5px; font-weight: 700; padding: 3px 8px; border-radius: 6px; color: #DC2626; border-color: rgba(220,38,38,0.3);" title="Remove payment method">
+                        Remove
+                      </button>
+                    </div>
                   </div>
 
                   <!-- Method 2: UPI AutoPay Mandate (Used for Oct 15 Top-Up) -->
@@ -3610,9 +3644,14 @@ const MeetingRoomsModule = {
                         <div style="font-size: 10.5px; color: var(--text-muted, #8A90A2); margin-top: 2px;">Mandate UMN: HUB20261015AXIS • Used for Oct 15 Top-Up</div>
                       </div>
                     </div>
-                    <button type="button" onclick="if(typeof App !== 'undefined') App.showToast('UPI AutoPay mandate set as default.', 'info');" class="btn btn-outline btn-sm" style="font-size: 10.5px; font-weight: 700; padding: 3px 8px; border-radius: 6px;">
-                      Set Default
-                    </button>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <button type="button" onclick="if(typeof App !== 'undefined') App.showToast('UPI AutoPay mandate set as default.', 'info');" class="btn btn-outline btn-sm" style="font-size: 10.5px; font-weight: 700; padding: 3px 8px; border-radius: 6px;">
+                        Set Default
+                      </button>
+                      <button type="button" onclick="MeetingRoomsModule.removePaymentMethod('pm_upi_axis', false)" class="btn btn-outline btn-sm" style="font-size: 10.5px; font-weight: 700; padding: 3px 8px; border-radius: 6px; color: #DC2626; border-color: rgba(220,38,38,0.3);" title="Remove mandate">
+                        Remove
+                      </button>
+                    </div>
                   </div>
 
                   <!-- 30-Day Card Expiry Reminder Banner -->
@@ -4301,6 +4340,11 @@ const MeetingRoomsModule = {
     }
   },
 
+  markBillingProfileDirty() {
+    const pill = document.getElementById('billing-profile-unsaved-pill');
+    if (pill) pill.style.display = 'inline-block';
+  },
+
   updateBillingProfile(startupId, event) {
     if (event) event.preventDefault();
     const legalName = document.getElementById('billing-legal-name')?.value;
@@ -4309,8 +4353,11 @@ const MeetingRoomsModule = {
     const pan = document.getElementById('billing-pan')?.value;
     const state = document.getElementById('billing-state')?.value;
     const line1 = document.getElementById('billing-address-line1')?.value;
+    const line2 = document.getElementById('billing-address-line2')?.value;
     const city = document.getElementById('billing-city')?.value;
     const pin = document.getElementById('billing-pin')?.value;
+    const contactName = document.getElementById('billing-contact-name')?.value;
+    const contactPhone = document.getElementById('billing-contact-phone')?.value;
     const emails = document.getElementById('billing-emails')?.value;
 
     const bs = (typeof window !== 'undefined' && window.billingService) ? window.billingService : ((typeof require === 'function') ? require('./billingService') : null);
@@ -4328,7 +4375,15 @@ const MeetingRoomsModule = {
       }
     }
 
-    const fullAddress = `${line1 || ''}, ${city || ''}, ${state || ''} - ${pin || ''}`.replace(/^,\s*|,\s*$/g, '');
+    if (contactPhone) {
+      const cleanPhone = contactPhone.replace(/[^0-9]/g, '');
+      if (cleanPhone.length !== 10) {
+        if (typeof App !== 'undefined') App.showToast('Contact phone must be strictly 10 digits.', 'danger');
+        return;
+      }
+    }
+
+    const fullAddress = `${line1 || ''}, ${line2 ? line2 + ', ' : ''}${city || ''}, ${state || ''} - ${pin || ''}`.replace(/^,\s*|,\s*$/g, '');
 
     const startup = window.store.getStartupById(startupId);
     if (startup) {
@@ -4338,12 +4393,48 @@ const MeetingRoomsModule = {
       startup.pan = pan ? pan.trim().toUpperCase() : startup.pan;
       startup.billingAddress = fullAddress;
       startup.billingEmails = emails;
+      startup.contactPerson = contactName || startup.contactPerson;
+      startup.contactPhone = contactPhone || startup.contactPhone;
       if (window.store.save) window.store.save();
     }
+
+    const pill = document.getElementById('billing-profile-unsaved-pill');
+    if (pill) pill.style.display = 'none';
 
     if (typeof App !== 'undefined') {
       App.showToast('✅ Billing profile saved. Updates will apply to future invoices.', 'success');
     }
+  },
+
+  removePaymentMethod(methodId, isDefault) {
+    const sw = document.getElementById('auto-renew-switch');
+    const isAutoRenewOn = !sw || sw.getAttribute('aria-checked') === 'true';
+
+    if (isDefault && isAutoRenewOn) {
+      if (typeof App !== 'undefined') {
+        App.showToast('⚠️ Cannot remove the primary payment method while Auto-Renew is active. Please add another method or disable auto-renew first.', 'danger');
+      }
+      return;
+    }
+
+    if (typeof App !== 'undefined') {
+      App.showToast('Payment method removed successfully.', 'info');
+    }
+  },
+
+  emailInvoice(invoiceId) {
+    const startup = this.getMyStartup();
+    const emails = startup.billingEmails || 'finance@xyztechnologies.io, accounts@xyztechnologies.io';
+    if (typeof App !== 'undefined') {
+      App.showToast(`✉️ GST Tax Invoice ${invoiceId} emailed to: ${emails}`, 'success');
+    }
+  },
+
+  downloadInvoicePDF(invoiceId) {
+    this.openInvoiceDetailsModal(invoiceId);
+    setTimeout(() => {
+      window.print();
+    }, 400);
   },
 
   toggleAutoRenewSwitch(startupId) {
