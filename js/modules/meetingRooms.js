@@ -7639,18 +7639,27 @@ const MeetingRoomsModule = {
     const dParts = booking.date.split('-').map(Number);
     const dObj = new Date(dParts[0], dParts[1] - 1, dParts[2]);
     const dayName = dObj.toLocaleDateString('en-US', { weekday: 'long' });
+    const dayShort = dObj.toLocaleDateString('en-US', { weekday: 'short' });
     const dayNum = dObj.getDate();
+    const monthShort = dObj.toLocaleDateString('en-US', { month: 'short' });
     const monthName = dObj.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
     const formattedDate = `${dayName}, ${dayNum} ${monthName}`;
+    const formattedDateShort = `${dayShort}, ${dayNum} ${monthShort} ${dParts[0]}`;
+
+    const [sh, sm] = (booking.startTime || '09:00').split(':').map(Number);
+    const [eh, em] = (booking.endTime || '10:00').split(':').map(Number);
+    const durMins = Math.max(30, (eh * 60 + (em || 0)) - (sh * 60 + (sm || 0)));
+    const durHours = durMins / 60;
+    const durText = durMins < 60 ? `${durMins} min` : (durMins % 60 === 0 ? `${durHours} hr${durHours > 1 ? 's' : ''}` : `${Math.floor(durHours)}h ${durMins % 60}m`);
 
     // Deterministic 4-digit PIN based on booking ID
     const pinDigits = String(Math.abs((booking.id || 'BKG100').split('').reduce((acc, c) => acc + c.charCodeAt(0), 1234)) % 9000 + 1000);
 
     const html = `
       <div class="modal-overlay active" id="modal-booking-success" onclick="if(event.target === this) MeetingRoomsModule.closeModal('modal-booking-success')" style="z-index: 100050; display: flex; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.78); backdrop-filter: blur(8px); padding: 16px; animation: fadeIn 0.2s ease;">
-        <div class="modal-content" style="max-width: 520px; width: 100%; max-height: min(92vh, 660px); border-radius: 20px; background: var(--bg-surface); border: 1.5px solid rgba(34, 197, 94, 0.4); display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6); animation: scaleUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);">
+        <div class="modal-content" style="max-width: 550px; width: 100%; max-height: min(92vh, 680px); border-radius: 20px; background: var(--bg-surface); border: 1.5px solid rgba(34, 197, 94, 0.4); display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6); animation: scaleUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);">
           
-          <!-- Celebratory Header Banner (Fixed) -->
+          <!-- Celebratory Header Banner (Fixed & Clean) -->
           <div style="background: linear-gradient(135deg, #064e3b 0%, #065f46 50%, #047857 100%); color: #ffffff; padding: 18px 20px 14px 20px; text-align: center; position: relative; flex-shrink: 0;">
             <button class="modal-close-btn" onclick="MeetingRoomsModule.closeModal('modal-booking-success')" style="position: absolute; right: 14px; top: 14px; color: #ffffff; background: rgba(255,255,255,0.18); border: none; border-radius: 50%; width: 28px; height: 28px; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s;">&times;</button>
             
@@ -7664,17 +7673,12 @@ const MeetingRoomsModule = {
             <p style="font-size: 12px; color: #a7f3d0; margin: 0;">
               Your reservation is confirmed &amp; synced across schedules.
             </p>
-              Room Successfully Booked!
-            </h2>
-            <p style="font-size: 12px; color: #a7f3d0; margin: 0;">
-              Your reservation is confirmed &amp; synced across schedules.
-            </p>
           </div>
 
           <!-- Scrollable Body Container -->
           <div style="padding: 16px 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 11px;">
             <!-- Room Info Card -->
-            <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+            <div style="background: var(--bg-surface-elevated); border: 1.5px solid var(--border-subtle); border-radius: 12px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
               <div style="display: flex; align-items: center; gap: 10px;">
                 <div style="width: 38px; height: 38px; border-radius: 8px; background: rgba(34, 197, 94, 0.12); border: 1.5px solid rgba(34, 197, 94, 0.35); display: flex; align-items: center; justify-content: center; font-size: 20px;">
                   ${room.icon || '🏢'}
@@ -7691,43 +7695,47 @@ const MeetingRoomsModule = {
               </span>
             </div>
 
-            <!-- Bento Details Grid -->
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
-              <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 9px 12px;">
-                <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.04em;">
-                  🆔 Reservation ID
+            <!-- Bento Details Grid (Harmonized, Clean Proportions, Zero Text-Wrap Glitches) -->
+            <div style="display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1.25fr) minmax(0, 1.45fr); gap: 8px;">
+              <!-- 1. Reservation ID Card -->
+              <div style="background: var(--bg-surface-elevated); border: 1.5px solid var(--border-subtle); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; justify-content: center; min-width: 0;">
+                <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em; display: flex; align-items: center; gap: 4px; margin-bottom: 3px;">
+                  <span>🆔</span> <span>Reservation ID</span>
                 </div>
-                <div style="font-size: 12px; font-weight: 800; color: #2563eb; margin-top: 2px; font-family: var(--font-mono);">
+                <div style="font-size: 12px; font-weight: 800; color: #2563eb; font-family: var(--font-mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${booking.id || 'BKG-CONFIRMED'}">
                   ${booking.id || 'BKG-CONFIRMED'}
                 </div>
               </div>
 
-              <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 9px 12px;">
-                <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.04em;">
-                  📅 Date
+              <!-- 2. Date Card -->
+              <div style="background: var(--bg-surface-elevated); border: 1.5px solid var(--border-subtle); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; justify-content: center; min-width: 0;">
+                <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em; display: flex; align-items: center; gap: 4px; margin-bottom: 3px;">
+                  <span>📅</span> <span>Date</span>
                 </div>
-                <div style="font-size: 12.5px; font-weight: 800; color: var(--text-primary); margin-top: 2px;">
-                  ${formattedDate}
+                <div style="font-size: 12px; font-weight: 800; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${formattedDate}">
+                  ${formattedDateShort}
                 </div>
               </div>
 
-              <div style="background: var(--bg-surface-elevated); border: 1.5px solid rgba(37, 99, 235, 0.35); border-radius: 10px; padding: 9px 12px; position: relative;">
-                <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.04em;">
-                  ⏰ Time
+              <!-- 3. Time Card -->
+              <div style="background: var(--bg-surface-elevated); border: 1.5px solid var(--border-subtle); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; justify-content: center; min-width: 0;">
+                <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em; display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px;">
+                  <span style="display: flex; align-items: center; gap: 4px;"><span>⏰</span> <span>Time</span></span>
+                  <span style="font-size: 9.5px; font-weight: 800; color: #16a34a; background: rgba(34,197,94,0.12); padding: 1px 5px; border-radius: 4px;">${durText}</span>
                 </div>
-                <div style="font-size: 12.5px; font-weight: 800; color: #2563eb; margin-top: 2px; font-family: var(--font-mono);">
+                <div style="font-size: 11.5px; font-weight: 800; color: #2563eb; font-family: var(--font-mono); white-space: nowrap; letter-spacing: -0.01em;">
                   ${formatSlot12h(booking.startTime)} – ${formatSlot12h(booking.endTime)}
                 </div>
               </div>
             </div>
 
-            <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="background: var(--bg-surface-elevated); border: 1.5px solid var(--border-subtle); border-radius: 12px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;">
               <div>
-                <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.04em;">
+                <div style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.04em;">
                   💳 Billing / Plan
                 </div>
                 <div style="font-size: 13px; font-weight: 800; color: #16a34a; margin-top: 2px;">
-                  ${booking.cost === 0 ? 'Covered by Plan (₹0)' : `₹${booking.cost}`}
+                  ${booking.cost === 0 ? 'Covered by Plan (₹0)' : `₹${(booking.cost || 0).toLocaleString('en-IN')}`}
                 </div>
               </div>
               <div style="font-size: 12px; font-weight: 700; color: var(--text-primary); background: var(--bg-surface); padding: 5px 12px; border-radius: 8px; border: 1px solid var(--border-subtle);">
