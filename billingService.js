@@ -200,11 +200,20 @@ function checkDuplicateInvoice(existingInvoices, startupId, serviceDesc, billing
     return invDesc === targetKey || invDesc.includes(targetKey) || targetKey.includes(invDesc);
   });
 
-  return {
-    isDuplicate: !!found,
-    existingInvoice: found || null,
-    existingInvoiceId: found ? (found.invoiceNumber || found.id) : null
-  };
+  if (!found) {
+    return {
+      isDuplicate: false,
+      existingInvoice: null,
+      existingInvoiceId: null
+    };
+  }
+
+  const result = Object.assign(found, {
+    isDuplicate: true,
+    existingInvoice: found,
+    existingInvoiceId: found.invoiceNumber || found.id
+  });
+  return result;
 }
 
 /**

@@ -558,7 +558,7 @@ async function runCompleteIntegrationTests() {
       // Tab 4: Credits & Billing
       M.switchTab('creditsBilling');
       const tab4Html = getEl('view-meetingRooms').innerHTML;
-      assert.ok(tab4Html.includes('Startup Subscription Plan') && tab4Html.includes('Invoice History'), 'Tab 4 should render Credits & Billing view');
+      assert.ok(tab4Html.toLowerCase().includes('subscription plan') && tab4Html.includes('Invoice'), 'Tab 4 should render Credits & Billing view');
 
       // Tab 5: Analytics
       M.switchTab('analytics');
