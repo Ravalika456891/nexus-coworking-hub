@@ -136,7 +136,8 @@ const MeetingRoomsModule = {
       .filter(b => b.date === selectedDate && b.status !== 'Cancelled')
       .sort((a, b) => this.parseTimeToMinutes(a.startTime) - this.parseTimeToMinutes(b.startTime));
 
-    const timeSlots = ['08:00', '09:00', '10:00', '15:00', '16:00', '17:00', '18:00'];
+    // 24 operating 1-hour slots (00:00 to 23:00) for 24/7 round-the-clock access
+    const timeSlots = Array.from({ length: 24 }, (_, h) => `${h < 10 ? '0' : ''}${h}:00`);
     let mySlotsCount = 0;
     let otherSlotsCount = 0;
     let availableSlotsCount = 0;
@@ -180,7 +181,7 @@ const MeetingRoomsModule = {
       }
     });
 
-    if (isPastDay || (isToday && curTotalMin >= 19 * 60)) {
+    if (isPastDay) {
       return makeResult('Closed for Today', 'closed', 0, mySlotsCount, otherSlotsCount, null);
     }
 
@@ -198,9 +199,8 @@ const MeetingRoomsModule = {
     }
 
     if (isToday) {
-      const inMorningHours = (curTotalMin >= 8 * 60 && curTotalMin < 11 * 60);
-      const inAfternoonHours = (curTotalMin >= 15 * 60 && curTotalMin < 19 * 60);
-      const inOperatingHours = inMorningHours || inAfternoonHours;
+      // 24/7 Round-the-Clock availability: inOperatingHours is true all 24 hours
+      const inOperatingHours = true;
 
       if (inOperatingHours && !activeBookingNow) {
         return makeResult('Available Now', 'available', availableSlotsCount, mySlotsCount, otherSlotsCount, null);
@@ -756,9 +756,11 @@ const MeetingRoomsModule = {
               <div class="hub-input-select" title="Select time window">
                 <span>⏰</span>
                 <select onchange="MeetingRoomsModule.filterSession = this.value; MeetingRoomsModule.render();">
-                  <option value="all" ${this.filterSession === 'all' ? 'selected' : ''}>09:00 AM – 11:00 AM (Morning)</option>
-                  <option value="morning" ${this.filterSession === 'morning' ? 'selected' : ''}>08:00 AM – 11:00 AM (Full Morning)</option>
-                  <option value="afternoon" ${this.filterSession === 'afternoon' ? 'selected' : ''}>03:00 PM – 07:00 PM (Afternoon)</option>
+                  <option value="all" ${this.filterSession === 'all' ? 'selected' : ''}>All 24 Hours (Round-the-Clock)</option>
+                  <option value="morning" ${this.filterSession === 'morning' ? 'selected' : ''}>06:00 AM – 12:00 PM (Morning)</option>
+                  <option value="afternoon" ${this.filterSession === 'afternoon' ? 'selected' : ''}>12:00 PM – 06:00 PM (Afternoon)</option>
+                  <option value="evening" ${this.filterSession === 'evening' ? 'selected' : ''}>06:00 PM – 12:00 AM (Evening)</option>
+                  <option value="night" ${this.filterSession === 'night' ? 'selected' : ''}>12:00 AM – 06:00 AM (Night)</option>
                 </select>
                 <span>▾</span>
               </div>
@@ -4938,7 +4940,7 @@ const MeetingRoomsModule = {
       allowRecurring: true,
       maxRecurringOccurrences: 12,
       requireApprovalAboveHours: 0,
-      operatingHoursLabel: '08:00 AM – 11:00 AM & 03:00 PM – 07:00 PM IST'
+      operatingHoursLabel: '24/7 Round-the-Clock Access'
     };
     const auditLogs = (window.store && window.store.getAdminAuditLog) ? window.store.getAdminAuditLog() : [];
     const editingRoom = this.editingAdminRoomId ? (rooms || []).find(r => r.id === this.editingAdminRoomId) : null;
@@ -5773,40 +5775,34 @@ const MeetingRoomsModule = {
 
   renderDayCalendarView(filteredRooms, myStartup) {
     const ist = this.getISTNow();
-    const morningHalfSlots = [
-      { start: '08:00', end: '08:30', label: '08:00 AM' },
-      { start: '08:30', end: '09:00', label: '08:30 AM' },
-      { start: '09:00', end: '09:30', label: '09:00 AM' },
-      { start: '09:30', end: '10:00', label: '09:30 AM' },
-      { start: '10:00', end: '10:30', label: '10:00 AM' },
-      { start: '10:30', end: '11:00', label: '10:30 AM' },
-      { start: '11:00', end: '11:30', label: '11:00 AM' },
-      { start: '11:30', end: '12:00', label: '11:30 AM' },
-      { start: '12:00', end: '12:30', label: '12:00 PM' },
-      { start: '12:30', end: '13:00', label: '12:30 PM' }
-    ];
-    const afternoonHalfSlots = [
-      { start: '13:00', end: '13:30', label: '01:00 PM' },
-      { start: '13:30', end: '14:00', label: '01:30 PM' },
-      { start: '14:00', end: '14:30', label: '02:00 PM' },
-      { start: '14:30', end: '15:00', label: '02:30 PM' },
-      { start: '15:00', end: '15:30', label: '03:00 PM' },
-      { start: '15:30', end: '16:00', label: '03:30 PM' },
-      { start: '16:00', end: '16:30', label: '04:00 PM' },
-      { start: '16:30', end: '17:00', label: '04:30 PM' },
-      { start: '17:00', end: '17:30', label: '05:00 PM' },
-      { start: '17:30', end: '18:00', label: '05:30 PM' },
-      { start: '18:00', end: '18:30', label: '06:00 PM' },
-      { start: '18:30', end: '19:00', label: '06:30 PM' },
-      { start: '19:00', end: '19:30', label: '07:00 PM' },
-      { start: '19:30', end: '20:00', label: '07:30 PM' }
-    ];
+    const pad = n => (n < 10 ? '0' : '') + n;
+    const formatLabel = (h, m) => {
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      const dispH = h % 12 === 0 ? 12 : h % 12;
+      return `${pad(dispH)}:${pad(m)} ${ampm}`;
+    };
+    const all24HalfSlots = [];
+    for (let h = 0; h < 24; h++) {
+      for (let m = 0; m < 60; m += 30) {
+        const start = `${pad(h)}:${pad(m)}`;
+        const endMin = h * 60 + m + 30;
+        const endH = Math.floor(endMin / 60);
+        const endM = endMin % 60;
+        const end = `${pad(endH)}:${pad(endM)}`;
+        all24HalfSlots.push({ start, end, label: formatLabel(h, m), hour: h });
+      }
+    }
 
-    const slotsToShow = this.filterSession === 'morning'
-      ? morningHalfSlots
-      : this.filterSession === 'afternoon'
-        ? afternoonHalfSlots
-        : [...morningHalfSlots, ...afternoonHalfSlots];
+    let slotsToShow = all24HalfSlots;
+    if (this.filterSession === 'morning') {
+      slotsToShow = all24HalfSlots.filter(s => s.hour >= 6 && s.hour < 12);
+    } else if (this.filterSession === 'afternoon') {
+      slotsToShow = all24HalfSlots.filter(s => s.hour >= 12 && s.hour < 18);
+    } else if (this.filterSession === 'evening') {
+      slotsToShow = all24HalfSlots.filter(s => s.hour >= 18 && s.hour < 24);
+    } else if (this.filterSession === 'night') {
+      slotsToShow = all24HalfSlots.filter(s => s.hour >= 0 && s.hour < 6);
+    }
 
     return `
       <div class="nexus-cal-card">
@@ -6883,9 +6879,8 @@ const MeetingRoomsModule = {
       return;
     }
 
-    const morningSlots = ['08:00', '09:00', '10:00'];
-    const afternoonSlots = ['15:00', '16:00', '17:00', '18:00'];
-    const allSlots = [...morningSlots, ...afternoonSlots];
+    // All 24 hours of the day for 24/7 round-the-clock availability
+    const allSlots = Array.from({ length: 24 }, (_, h) => `${h < 10 ? '0' : ''}${h}:00`);
 
     const ist = this.getISTNow();
     const todayStr = ist.dateStr;
@@ -9777,25 +9772,39 @@ const MeetingRoomsModule = {
   },
 
   generateStartSlots() {
-    const morningStarts = [
-      { value: '08:00', label: '08:00 AM (Morning Session)' },
-      { value: '08:30', label: '08:30 AM (Morning Session)' },
-      { value: '09:00', label: '09:00 AM (Morning Session)' },
-      { value: '09:30', label: '09:30 AM (Morning Session)' },
-      { value: '10:00', label: '10:00 AM (Morning Session)' },
-      { value: '10:30', label: '10:30 AM (Morning Session)' }
-    ];
-    const afternoonStarts = [
-      { value: '15:00', label: '03:00 PM (Afternoon Session)' },
-      { value: '15:30', label: '03:30 PM (Afternoon Session)' },
-      { value: '16:00', label: '04:00 PM (Afternoon Session)' },
-      { value: '16:30', label: '04:30 PM (Afternoon Session)' },
-      { value: '17:00', label: '05:00 PM (Afternoon Session)' },
-      { value: '17:30', label: '05:30 PM (Afternoon Session)' },
-      { value: '18:00', label: '06:00 PM (Afternoon Session)' },
-      { value: '18:30', label: '06:30 PM (Afternoon Session)' }
-    ];
-    return { morningStarts, afternoonStarts, allStarts: [...morningStarts, ...afternoonStarts] };
+    const pad = n => (n < 10 ? '0' : '') + n;
+    const fmt = (h, m) => {
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      const dh = ((h + 11) % 12) + 1;
+      return `${dh}:${pad(m)} ${ampm}`;
+    };
+
+    const morningStarts = [];
+    for (let h = 6; h < 12; h++) {
+      morningStarts.push({ value: `${pad(h)}:00`, label: `${pad(h)}:00 (${fmt(h, 0)} • Morning)` });
+      morningStarts.push({ value: `${pad(h)}:30`, label: `${pad(h)}:30 (${fmt(h, 30)} • Morning)` });
+    }
+
+    const afternoonStarts = [];
+    for (let h = 12; h < 18; h++) {
+      afternoonStarts.push({ value: `${pad(h)}:00`, label: `${pad(h)}:00 (${fmt(h, 0)} • Afternoon)` });
+      afternoonStarts.push({ value: `${pad(h)}:30`, label: `${pad(h)}:30 (${fmt(h, 30)} • Afternoon)` });
+    }
+
+    const eveningStarts = [];
+    for (let h = 18; h < 24; h++) {
+      eveningStarts.push({ value: `${pad(h)}:00`, label: `${pad(h)}:00 (${fmt(h, 0)} • Evening)` });
+      eveningStarts.push({ value: `${pad(h)}:30`, label: `${pad(h)}:30 (${fmt(h, 30)} • Evening)` });
+    }
+
+    const nightStarts = [];
+    for (let h = 0; h < 6; h++) {
+      nightStarts.push({ value: `${pad(h)}:00`, label: `${pad(h)}:00 (${fmt(h, 0)} • Night)` });
+      nightStarts.push({ value: `${pad(h)}:30`, label: `${pad(h)}:30 (${fmt(h, 30)} • Night)` });
+    }
+
+    const allStarts = [...nightStarts, ...morningStarts, ...afternoonStarts, ...eveningStarts];
+    return { morningStarts, afternoonStarts, eveningStarts, nightStarts, allStarts };
   },
 
   getValidEndSlots(startVal) {
@@ -9803,8 +9812,8 @@ const MeetingRoomsModule = {
     const [h, m] = startVal.split(':').map(Number);
     const startMin = h * 60 + (m || 0);
 
-    // Allow user-customized windows up to 4 hours or until 21:00
-    const maxEndMin = Math.min(startMin + 240, 21 * 60);
+    // 24/7 access: allow windows up to 4 hours or until midnight (1440 mins)
+    const maxEndMin = Math.min(startMin + 240, 24 * 60);
     const endSlots = [];
 
     for (let cur = startMin + 15; cur <= maxEndMin; cur += 15) {
@@ -9813,8 +9822,8 @@ const MeetingRoomsModule = {
       const val = `${curH < 10 ? '0' : ''}${curH}:${curM < 10 ? '0' : ''}${curM}`;
       const durMinutes = cur - startMin;
       const duration = durMinutes / 60;
-      const displayHour = curH > 12 ? (curH - 12) : curH;
-      const period = curH >= 12 ? 'PM' : 'AM';
+      const displayHour = curH === 24 ? 12 : curH > 12 ? (curH - 12) : curH;
+      const period = curH >= 12 && curH < 24 ? 'PM' : 'AM';
       let durText = '';
       if (durMinutes < 60) durText = `${durMinutes}m`;
       else if (durMinutes % 60 === 0) durText = `${duration}h`;
@@ -9849,28 +9858,29 @@ const MeetingRoomsModule = {
   },
 
   switchModalSession(session) {
-    const morningBtn = document.getElementById('tab-session-morning');
-    const afternoonBtn = document.getElementById('tab-session-afternoon');
-    if (morningBtn && afternoonBtn) {
-      if (session === 'morning') {
-        morningBtn.className = 'btn btn-sm btn-primary';
-        morningBtn.style.background = '#2563eb';
-        morningBtn.style.color = '#ffffff';
-        afternoonBtn.className = 'btn btn-sm btn-outline';
-        afternoonBtn.style.background = 'transparent';
-        afternoonBtn.style.color = 'var(--text-primary)';
-      } else {
-        morningBtn.className = 'btn btn-sm btn-outline';
-        morningBtn.style.background = 'transparent';
-        morningBtn.style.color = 'var(--text-primary)';
-        afternoonBtn.className = 'btn btn-sm btn-primary';
-        afternoonBtn.style.background = '#2563eb';
-        afternoonBtn.style.color = '#ffffff';
+    const sessions = ['all', 'morning', 'afternoon', 'evening', 'night'];
+    sessions.forEach(s => {
+      const btn = document.getElementById(`tab-session-${s}`);
+      if (btn) {
+        if (s === session) {
+          btn.className = 'btn btn-sm btn-primary';
+          btn.style.background = '#2563eb';
+          btn.style.color = '#ffffff';
+        } else {
+          btn.className = 'btn btn-sm btn-outline';
+          btn.style.background = 'transparent';
+          btn.style.color = 'var(--text-primary)';
+        }
       }
-    }
+    });
 
-    const { morningStarts, afternoonStarts } = this.generateStartSlots();
-    const starts = session === 'morning' ? morningStarts : afternoonStarts;
+    const slotsData = this.generateStartSlots();
+    let starts = slotsData.allStarts;
+    if (session === 'morning') starts = slotsData.morningStarts;
+    else if (session === 'afternoon') starts = slotsData.afternoonStarts;
+    else if (session === 'evening') starts = slotsData.eveningStarts;
+    else if (session === 'night') starts = slotsData.nightStarts;
+
     const startSelect = document.getElementById('book-start-time');
     if (startSelect) {
       startSelect.innerHTML = starts.map(t => `<option value="${t.value}">${t.label}</option>`).join('');
@@ -10061,12 +10071,15 @@ const MeetingRoomsModule = {
     const initialRoom = rooms.find(r => r.id === preselectedRoomId) || rooms[0];
 
     // Determine initial session from preselectedTime
-    let initialSession = 'morning';
+    let initialSession = 'all';
     let initialStartTime = '09:00';
     if (preselectedTime) {
       initialStartTime = preselectedTime;
       const h = parseInt(preselectedTime.split(':')[0], 10);
-      initialSession = (h >= 12) ? 'afternoon' : 'morning';
+      if (h < 6) initialSession = 'night';
+      else if (h < 12) initialSession = 'morning';
+      else if (h < 18) initialSession = 'afternoon';
+      else initialSession = 'evening';
     }
 
     const availableAmenities = ['4K Display / Projector', 'Video Conferencing', 'Whiteboard & Markers', 'High-Speed Wi-Fi', 'Speakerphone', 'Tea / Coffee Service'];
@@ -10165,12 +10178,21 @@ const MeetingRoomsModule = {
                   </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
-                  <button type="button" id="tab-session-morning" class="btn btn-sm ${initialSession === 'morning' ? 'btn-primary' : 'btn-outline'}" style="font-size: 11.5px; font-weight: 700; padding: 7px 10px; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 5px;" onclick="MeetingRoomsModule.switchModalSession('morning')">
-                    <span>🌅</span> <span>Morning (08:00 – 11:00 AM)</span>
+                <div style="display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap;">
+                  <button type="button" id="tab-session-all" class="btn btn-sm ${initialSession === 'all' ? 'btn-primary' : 'btn-outline'}" style="font-size: 11px; font-weight: 700; padding: 6px 10px; border-radius: 8px; display: flex; align-items: center; gap: 4px;" onclick="MeetingRoomsModule.switchModalSession('all')">
+                    <span>🌐</span> <span>All 24/7</span>
                   </button>
-                  <button type="button" id="tab-session-afternoon" class="btn btn-sm ${initialSession === 'afternoon' ? 'btn-primary' : 'btn-outline'}" style="font-size: 11.5px; font-weight: 700; padding: 7px 10px; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 5px;" onclick="MeetingRoomsModule.switchModalSession('afternoon')">
-                    <span>🌆</span> <span>Afternoon (03:00 – 07:00 PM)</span>
+                  <button type="button" id="tab-session-morning" class="btn btn-sm ${initialSession === 'morning' ? 'btn-primary' : 'btn-outline'}" style="font-size: 11px; font-weight: 700; padding: 6px 10px; border-radius: 8px; display: flex; align-items: center; gap: 4px;" onclick="MeetingRoomsModule.switchModalSession('morning')">
+                    <span>🌅</span> <span>Morning (6am–12pm)</span>
+                  </button>
+                  <button type="button" id="tab-session-afternoon" class="btn btn-sm ${initialSession === 'afternoon' ? 'btn-primary' : 'btn-outline'}" style="font-size: 11px; font-weight: 700; padding: 6px 10px; border-radius: 8px; display: flex; align-items: center; gap: 4px;" onclick="MeetingRoomsModule.switchModalSession('afternoon')">
+                    <span>☀️</span> <span>Afternoon (12pm–6pm)</span>
+                  </button>
+                  <button type="button" id="tab-session-evening" class="btn btn-sm ${initialSession === 'evening' ? 'btn-primary' : 'btn-outline'}" style="font-size: 11px; font-weight: 700; padding: 6px 10px; border-radius: 8px; display: flex; align-items: center; gap: 4px;" onclick="MeetingRoomsModule.switchModalSession('evening')">
+                    <span>🌆</span> <span>Evening (6pm–12am)</span>
+                  </button>
+                  <button type="button" id="tab-session-night" class="btn btn-sm ${initialSession === 'night' ? 'btn-primary' : 'btn-outline'}" style="font-size: 11px; font-weight: 700; padding: 6px 10px; border-radius: 8px; display: flex; align-items: center; gap: 4px;" onclick="MeetingRoomsModule.switchModalSession('night')">
+                    <span>🌙</span> <span>Night (12am–6am)</span>
                   </button>
                 </div>
 

@@ -1791,8 +1791,8 @@ class NexusStore {
       const [h, m] = (t || '00:00').split(':').map(Number);
       return (h || 0) * 60 + (m || 0);
     };
-    const startCheckMin = afterTime ? toM(afterTime) : 8 * 60;
-    const closeMin = toM((room.operatingHours && room.operatingHours.close) || '20:00');
+    const startCheckMin = afterTime ? toM(afterTime) : 0;
+    const closeMin = 24 * 60;
 
     for (let m = startCheckMin; m + durMinutes <= closeMin; m += 30) {
       const candStart = m;
@@ -1936,10 +1936,9 @@ class NexusStore {
 
     const formatTime = (min) => `${pad(Math.floor(min / 60))}:${pad(min % 60)}`;
 
-    // Candidate time windows to scan (30-min steps from 08:00 to 19:00):
+    // Candidate time windows to scan (30-min steps across all 24 hours):
     const candidateStarts = [];
-    for (let m = 8 * 60; m <= 11 * 60 - reqDur; m += 30) candidateStarts.push(m);
-    for (let m = 15 * 60; m <= 19 * 60 - reqDur; m += 30) candidateStarts.push(m);
+    for (let m = 0; m <= 24 * 60 - reqDur; m += 30) candidateStarts.push(m);
 
     // 1. Same room later today (strictly in future)
     if (isToday) {
@@ -2705,7 +2704,7 @@ class NexusStore {
         maxRecurringOccurrences: 12,
         requireApprovalAboveHours: 0,
         autoSyncInvoice: true,
-        operatingHoursLabel: '08:00 AM – 11:00 AM & 03:00 PM – 07:00 PM IST'
+        operatingHoursLabel: '24/7 Round-the-Clock Access'
       };
     }
     return this.state.meetingRoomPolicies;
@@ -2783,7 +2782,7 @@ class NexusStore {
           hourlyRate: Number(rd.hourlyRate) || 1200,
           amenities: amenitiesArr,
           icon: rd.icon || '🏢',
-          operatingHours: rd.operatingHours || '08:00-11:00, 15:00-19:00',
+          operatingHours: rd.operatingHours || '24/7 Round-the-Clock Access',
           status: 'Active',
           underMaintenance: false,
           bookings: []

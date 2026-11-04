@@ -375,13 +375,14 @@ window.RoomGallery = {
     const M = window.MeetingRoomsModule;
     const durMins = Number(durationMins || this.selectedDurationMins || 60);
     
-    // 30-minute intervals within Hub operating hours:
-    // Morning session: 08:00 - 11:00 AM (closes at 11:00 = 660 mins)
-    // Afternoon session: 03:00 - 07:00 PM (closes at 19:00 = 1140 mins)
-    const candidateSlots = [
-      '08:00', '08:30', '09:00', '09:30', '10:00', '10:30',
-      '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30'
-    ];
+    // All 48 half-hour slots across 24/7 round-the-clock availability:
+    const candidateSlots = [];
+    const pad = n => (n < 10 ? '0' : '') + n;
+    for (let h = 0; h < 24; h++) {
+      candidateSlots.push(`${pad(h)}:00`);
+      candidateSlots.push(`${pad(h)}:30`);
+    }
+
     const istClock = this.getISTClock();
     const targetDate = this.normalizeDate(dateStr) || istClock.todayStr;
     
@@ -402,9 +403,8 @@ window.RoomGallery = {
       const start = toMin(s);
       const end = start + durMins;
 
-      // Operating session closing time boundary:
-      // Morning session closes at 11:00 (660 mins); Evening session closes at 19:00 (1140 mins)
-      const sessionClose = (start < 660) ? 660 : 1140;
+      // 24/7 round-the-clock operating hours: end time cannot exceed midnight (1440m) on same date
+      const sessionClose = 1440;
       const exceedsOperatingHours = (end > sessionClose);
 
       // Past slot check using incubator center's IST timezone
@@ -560,25 +560,59 @@ window.RoomGallery = {
       </section>
 
       <section class="rg-section">
-        <h4>
-          <span>3. Live Available Time Slots</span>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
+          <h4 style="margin: 0; display: flex; align-items: center; gap: 6px;">
+            <span>3. Live Available Time Slots</span>
+            <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #059669; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 999px;">⚡ 24/7 Open</span>
+          </h4>
           <span class="rg-muted" style="font-size: 11px; font-weight: 600;">${this.esc(dateLabel)} • ${openCount} open</span>
-        </h4>
-        <div class="rg-slots">
-          ${slots.map(s => {
-            const isSelected = (this.selectedSlot === s.start && s.state === 'open');
-            const cls = isSelected ? 'rg-slot selected' : `rg-slot ${s.state}`;
-            const displayLabel = isSelected ? 'Selected' : s.label;
+        </div>
+
+        <!-- 24/7 Quick Session Filter Pills -->
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;">
+          ${[
+            { id: 'all', label: 'All 24 Hours' },
+            { id: 'morning', label: '🌅 Morning (6am–12pm)' },
+            { id: 'afternoon', label: '🌆 Afternoon (12pm–6pm)' },
+            { id: 'evening', label: '🌙 Evening (6pm–12am)' },
+            { id: 'night', label: '🌌 Night (12am–6am)' }
+          ].map(sess => {
+            const isSel = (this.selectedSessionFilter || 'all') === sess.id;
             return `
-              <button type="button" class="${cls}"
-                ${s.disabled && !isSelected ? 'disabled' : ''}
-                onclick="RoomGallery.selectSlot('${s.start}')"
-                title="${isSelected ? 'Selected start time' : s.label}">
-                ${this.fmt12(s.start)}
-                <small>${displayLabel}</small>
+              <button type="button" class="rg-quick-pill ${isSel ? 'active' : ''}" onclick="RoomGallery.selectSessionFilter('${sess.id}')" style="font-size: 10.5px; padding: 3px 9px;">
+                ${sess.label}
               </button>
             `;
           }).join('')}
+        </div>
+
+        <div class="rg-slots" style="max-height: 280px; overflow-y: auto; padding-right: 2px;">
+          ${(() => {
+            const sessionFilter = this.selectedSessionFilter || 'all';
+            const displayedSlots = slots.filter(s => {
+              if (sessionFilter === 'all') return true;
+              const [h] = s.start.split(':').map(Number);
+              if (sessionFilter === 'morning') return h >= 6 && h < 12;
+              if (sessionFilter === 'afternoon') return h >= 12 && h < 18;
+              if (sessionFilter === 'evening') return h >= 18 && h < 24;
+              if (sessionFilter === 'night') return h >= 0 && h < 6;
+              return true;
+            });
+            return displayedSlots.map(s => {
+              const isSelected = (this.selectedSlot === s.start && s.state === 'open');
+              const cls = isSelected ? 'rg-slot selected' : `rg-slot ${s.state}`;
+              const displayLabel = isSelected ? 'Selected' : s.label;
+              return `
+                <button type="button" class="${cls}"
+                  ${s.disabled && !isSelected ? 'disabled' : ''}
+                  onclick="RoomGallery.selectSlot('${s.start}')"
+                  title="${isSelected ? 'Selected start time' : s.label}">
+                  ${this.fmt12(s.start)}
+                  <small>${displayLabel}</small>
+                </button>
+              `;
+            }).join('');
+          })()}
         </div>
       </section>
 
@@ -657,6 +691,12 @@ window.RoomGallery = {
 
     // Set selected start time and highlight in purple
     this.selectedSlot = slotTime;
+    this.refreshBookingMount();
+    this.updateFooterButtonState();
+  },
+
+  selectSessionFilter(sess) {
+    this.selectedSessionFilter = sess;
     this.refreshBookingMount();
     this.updateFooterButtonState();
   },
@@ -911,7 +951,7 @@ window.RoomGallery = {
       `Book up to ${policies.advanceBookingDays || 30} days ahead${policies.minAdvanceNoticeMins ? `, at least ${policies.minAdvanceNoticeMins} min in advance` : ''}`,
       `Free cancellation until 1 hour before start; reschedule until 1 hour before`,
       policies.allowRecurring !== false ? `Recurring bookings allowed (up to ${policies.maxRecurringOccurrences || 12} occurrences)` : 'Recurring bookings are disabled',
-      `Operating hours: ${policies.operatingHoursLabel || '08:00 AM – 11:00 AM & 03:00 PM – 07:00 PM IST'}`
+      `Operating hours: ${policies.operatingHoursLabel || '24/7 Round-the-Clock Access'}`
     ];
 
     const html = `

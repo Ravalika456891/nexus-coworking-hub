@@ -727,10 +727,9 @@ function findBookingAlternatives(allRooms, req) {
   const pad = n => (n < 10 ? '0' : '') + n;
   const formatTime = (min) => `${pad(Math.floor(min / 60))}:${pad(min % 60)}`;
 
-  // Candidate time windows to scan (30-min steps within operating hours 08:00 - 19:00):
+  // Candidate time windows to scan (30-min steps across all 24 hours):
   const candidateStarts = [];
-  for (let m = 8 * 60; m <= 11 * 60 - reqDur; m += 30) candidateStarts.push(m);
-  for (let m = 15 * 60; m <= 19 * 60 - reqDur; m += 30) candidateStarts.push(m);
+  for (let m = 0; m <= 24 * 60 - reqDur; m += 30) candidateStarts.push(m);
 
   // 1. Same room later today (strictly in future)
   if (isToday) {
@@ -1685,7 +1684,7 @@ function computeRoomStatus(room, selectedDate, currentClock = null, startupId = 
     };
   }
 
-  const operatingSlots = [8, 9, 10, 15, 16, 17, 18]; // 7 operating 1-hour slots
+  const operatingSlots = Array.from({ length: 24 }, (_, i) => i); // 24 operating 1-hour slots (24/7 round-the-clock)
   const bookings = ((room && room.bookings) || []).filter(b => b.date === targetDate && b.status !== 'Cancelled');
   const isPastDay = targetDate < ist.date;
   const isToday = targetDate === ist.date;
@@ -1708,16 +1707,6 @@ function computeRoomStatus(room, selectedDate, currentClock = null, startupId = 
       bookedSlots: myBooked + otherBooked,
       myBookedSlots: myBooked,
       otherBookedSlots: otherBooked
-    };
-  }
-
-  if (isToday && ist.minutes >= 19 * 60) {
-    return {
-      status: 'Closed for Today',
-      openSlots: 0,
-      bookedSlots: 0,
-      myBookedSlots: 0,
-      otherBookedSlots: 0
     };
   }
 
@@ -1760,9 +1749,7 @@ function computeRoomStatus(room, selectedDate, currentClock = null, startupId = 
   });
 
   if (isToday) {
-    const inMorningHours = ist.minutes >= 8 * 60 && ist.minutes < 11 * 60;
-    const inAfternoonHours = ist.minutes >= 15 * 60 && ist.minutes < 19 * 60;
-    const inOperatingHours = inMorningHours || inAfternoonHours;
+    const inOperatingHours = true;
     const activeBookingNow = bookings.find(b => toMinutes(b.startTime) <= ist.minutes && toMinutes(b.endTime) > ist.minutes);
 
     if (inOperatingHours && !activeBookingNow) {
@@ -3863,7 +3850,7 @@ async function manageMeetingRoomAdminAtomic(adminReq = {}) {
         rescheduleCutoffHours: 4,
         premiumRoomRequiresApproval: false,
         gracePeriodsEnabled: true,
-        operatingHoursLabel: '08:00 AM – 11:00 AM & 03:00 PM – 07:00 PM IST'
+        operatingHoursLabel: '24/7 Round-the-Clock Access'
       };
     }
 
@@ -3930,7 +3917,7 @@ async function manageMeetingRoomAdminAtomic(adminReq = {}) {
           icon: roomData.icon || '🏢',
           badgeColor: roomData.badgeColor || '#2563eb',
           floor: roomData.floor || 'Level 2 • Innovation Wing',
-          operatingHours: roomData.operatingHours || '08:00-11:00, 15:00-19:00',
+          operatingHours: roomData.operatingHours || '24/7 Round-the-Clock Access',
           status: roomData.underMaintenance ? 'Under Maintenance' : 'Active',
           underMaintenance: Boolean(roomData.underMaintenance),
           description: sanitizeRoomImageText(roomData.description, 600),
@@ -4280,7 +4267,7 @@ async function getMeetingRoomsAnalytics({ range = 'all', startDate = null, endDa
   });
 
   const daysInWindow = range === 'day' ? 1 : range === 'week' ? 7 : 30;
-  const operatingHoursPerDay = 7; // 08-11 (3h) + 15-19 (4h)
+  const operatingHoursPerDay = 24; // 24/7 round-the-clock access
 
   rooms.forEach(r => {
     const availHrs = daysInWindow * operatingHoursPerDay;
