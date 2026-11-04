@@ -2340,7 +2340,7 @@ const MeetingRoomsModule = {
     const startup = this.getMyStartup();
     const istNow = this.getISTNow();
     const targetMonth = this.creditsBillingMonth || istNow.todayStr.substring(0, 7);
-    const rooms = (data && data.rooms) || (window.store && window.store.getMeetingRooms ? window.store.getMeetingRooms() : []);
+    const rooms = (window.store && window.store.getMeetingRooms) ? window.store.getMeetingRooms() : [];
     const cs = (typeof window !== 'undefined' && window.creditService) ? window.creditService : ((typeof require === 'function') ? require('./creditService') : null);
     const bs = (typeof window !== 'undefined' && window.billingService) ? window.billingService : ((typeof require === 'function') ? require('./billingService') : null);
 
@@ -2442,6 +2442,7 @@ const MeetingRoomsModule = {
             <div style="display: flex; align-items: center; gap: 6px; background: var(--bg-surface-elevated, #F8FAFC); border: 1px solid var(--border-subtle, #ECEEF4); padding: 4px 10px; border-radius: 10px;">
               <span style="font-size: 12px;">📅</span>
               <select onchange="MeetingRoomsModule.setCreditsBillingMonth(this.value)" style="border: none; background: transparent; font-size: 12px; font-weight: 800; color: var(--text-primary, #111827); cursor: pointer;" aria-label="Select billing month">
+                <option value="all" ${targetMonth === 'all' ? 'selected' : ''}>All Time (Complete History)</option>
                 <option value="2026-11" ${targetMonth === '2026-11' ? 'selected' : ''}>November 2026 (Active)</option>
                 <option value="2026-10" ${targetMonth === '2026-10' ? 'selected' : ''}>October 2026</option>
                 <option value="2026-09" ${targetMonth === '2026-09' ? 'selected' : ''}>September 2026</option>

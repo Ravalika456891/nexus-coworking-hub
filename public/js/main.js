@@ -199,8 +199,16 @@ const App = {
       return;
     }
     if (tabId === 'billingCredits') {
-      if (window.MeetingRoomsModule) {
+      if (window.MeetingRoomsModule && window.MeetingRoomsModule.switchTab) {
         window.MeetingRoomsModule.switchTab('creditsBilling');
+      } else {
+        setTimeout(() => {
+          if (window.MeetingRoomsModule && window.MeetingRoomsModule.switchTab) {
+            window.MeetingRoomsModule.switchTab('creditsBilling');
+          } else {
+            this.renderModule('billingCredits');
+          }
+        }, 150);
       }
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
@@ -297,6 +305,14 @@ const App = {
         break;
       case 'meetingRooms':
         MeetingRoomsModule.render();
+        break;
+      case 'billingCredits':
+        if (window.MeetingRoomsModule && window.MeetingRoomsModule.switchTab) {
+          window.MeetingRoomsModule.switchTab('creditsBilling');
+        } else if (window.MeetingRoomsModule && window.MeetingRoomsModule.render) {
+          window.MeetingRoomsModule.activeTab = 'creditsBilling';
+          window.MeetingRoomsModule.render();
+        }
         break;
       case 'billing':
         BillingModule.render();

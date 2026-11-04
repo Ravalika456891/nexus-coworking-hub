@@ -532,7 +532,27 @@ window.INITIAL_DATA = {
         { stage: "Graduation", completed: false, date: "Target Dec 2026", note: "Demo Day showcase & institutional Series A round." }
       ],
       includedMeetingHours: 15,
-      usedMeetingHours: 7
+      usedMeetingHours: 7,
+
+      topUps: [
+        {
+          id: "TOPUP-2026-10-001",
+          paymentRef: "PAY-2026-OCT-8814",
+          invoiceNumber: "INV/2026-27/0002",
+          date: "2026-10-15",
+          time: "14:30",
+          packName: "Growth Pack (+100 Credits)",
+          credits: 100,
+          hours: 10,
+          baseAmount: 4500,
+          gstAmount: 810,
+          amount: 5310,
+          paymentMethod: "UPI AutoPay (alex@okaxis)",
+          validityDays: 90,
+          expiresAt: "2027-01-13",
+          status: "Active"
+        }
+      ],
     },
     {
       id: "STP-010",
@@ -1609,7 +1629,50 @@ window.INITIAL_DATA = {
 
   invoices: [
     {
+      id: "INV-2026-TOPUP-01",
+      invoiceNumber: "INV/2026-27/0002",
+      financialYear: "2026-27",
+      startupId: "STP-XYZ",
+      startupName: "XYZ Technologies",
+      serviceKey: "topup_credits",
+      billingPeriod: "2026-10",
+      billingPeriodDisplay: "15 Oct 2026",
+      issueDate: "2026-10-15",
+      dueDate: "2026-10-15",
+      paidDate: "2026-10-15",
+      description: "Meeting Room Credits Top-Up (Growth Pack: 100 Credits · 10.0 hrs)",
+      sacCode: "997212",
+      currency: "INR",
+      baseAmount: 4500,
+      subtotal: 4500,
+      taxableAmount: 4500,
+      gstRatePercent: 18,
+      cgstPercent: 9,
+      sgstPercent: 9,
+      igstPercent: 0,
+      cgstAmount: 405,
+      sgstAmount: 405,
+      igstAmount: 0,
+      taxGst: 810,
+      total: 5310,
+      netPayable: 5310,
+      amountInWords: "Rupees Five Thousand Three Hundred Ten Only",
+      status: "Paid",
+      paymentRef: "PAY-2026-OCT-8814",
+      paymentMethod: "UPI AutoPay",
+      buyerDetails: {
+        legalName: "XYZ Technologies Pvt Ltd",
+        entityType: "Private Limited",
+        gstin: "29AAACX9920M1Z4",
+        pan: "AAACX9920M",
+        placeOfSupply: "Karnataka (29)",
+        billingAddress: "Cabin 103, 3rd Floor, Nexus Hub, Koramangala, Bengaluru, KA 560034"
+      }
+    },
+    {
       id: "INV-2026-080",
+      invoiceNumber: "INV/2026-27/0001",
+      financialYear: "2026-27",
       startupId: "STP-XYZ",
       startupName: "XYZ Technologies",
       issueDate: "2026-09-25",

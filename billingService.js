@@ -185,20 +185,26 @@ function calculateGST(taxableAmount, buyerGstin = '', buyerStateCode = null) {
  * Validate unique invoice constraint: (customer, service, billing period)
  */
 function checkDuplicateInvoice(existingInvoices, startupId, serviceDesc, billingPeriod) {
-  if (!existingInvoices || !Array.isArray(existingInvoices)) return null;
+  if (!existingInvoices || !Array.isArray(existingInvoices)) return { isDuplicate: false, existingInvoice: null };
   const targetKey = (serviceDesc || 'workspace').replace(/\s+/g, ' ').trim().toLowerCase();
 
-  return existingInvoices.find(inv => {
+  const found = existingInvoices.find(inv => {
     if (inv.status === 'Void' || inv.status === 'Cancelled') return false;
     if (inv.startupId !== startupId) return false;
     if (inv.billingPeriod !== billingPeriod) return false;
 
     const invDesc = (inv.lineItems && inv.lineItems.length > 0)
       ? inv.lineItems[0].desc.replace(/\s+/g, ' ').trim().toLowerCase()
-      : 'workspace';
+      : (inv.description || inv.serviceKey || 'workspace').toLowerCase();
 
     return invDesc === targetKey || invDesc.includes(targetKey) || targetKey.includes(invDesc);
   });
+
+  return {
+    isDuplicate: !!found,
+    existingInvoice: found || null,
+    existingInvoiceId: found ? (found.invoiceNumber || found.id) : null
+  };
 }
 
 /**
@@ -273,6 +279,171 @@ function validateGSTIN(gstin) {
 }
 
 /**
+ * Configurable TDS Sections & Classification Engine
+ * Note: TDS is applied strictly on Base Amount (excluding GST).
+ */
+const TDS_CONFIG = {
+  sections: [
+    {
+      code: '194-I_building',
+      section: 'Section 194-I',
+      nature: 'Rent of Land, Building or Furniture',
+      ratePercent: 10,
+      thresholdAnnual: 240000,
+      description: 'Standard 10% TDS on commercial office rent'
+    },
+    {
+      code: '194-I_machinery',
+      section: 'Section 194-I',
+      nature: 'Rent of Plant & Machinery / Equipment',
+      ratePercent: 2,
+      thresholdAnnual: 240000,
+      description: '2% TDS for co-working equipment and infrastructure'
+    },
+    {
+      code: '194-C_company',
+      section: 'Section 194-C',
+      nature: 'Contractual Facility Services (Company)',
+      ratePercent: 2,
+      thresholdAnnual: 100000,
+      description: '2% TDS on service charges for corporate entities'
+    },
+    {
+      code: '194-J_tech',
+      section: 'Section 194-J',
+      nature: 'Fees for Technical / Incubation Services',
+      ratePercent: 2,
+      thresholdAnnual: 30000,
+      description: '2% TDS for software, incubation and technical advisory'
+    }
+  ],
+  quarters: ['Q1 (Apr - Jun)', 'Q2 (Jul - Sep)', 'Q3 (Oct - Dec)', 'Q4 (Jan - Mar)']
+};
+
+/**
+ * Calculate TDS on base taxable amount (strictly excluding GST)
+ */
+function calculateTDS(baseAmount, sectionCode = '194-I_building') {
+  const sec = TDS_CONFIG.sections.find(s => s.code === sectionCode) || TDS_CONFIG.sections[0];
+  const rate = sec.ratePercent;
+  const tdsAmount = Math.round((baseAmount * rate) / 100);
+  return {
+    sectionCode: sec.code,
+    section: sec.section,
+    nature: sec.nature,
+    ratePercent: rate,
+    baseAmount,
+    tdsAmount,
+    netPayableAfterTDS: Math.max(0, baseAmount - tdsAmount)
+  };
+}
+
+/**
+ * Calculate Net Payable for an invoice after applying credit notes & approved TDS
+ */
+function calculateNetPayable(invoice, creditNotes = []) {
+  if (!invoice) return { invoiceTotal: 0, appliedCreditNotes: [], totalCreditsApplied: 0, approvedTdsAmount: 0, netPayable: 0 };
+  const targetId = invoice.id;
+  const targetNo = invoice.invoiceNumber;
+  const appliedNotes = (creditNotes || []).filter(cn => cn.targetInvoiceId === targetId || cn.targetInvoiceNumber === targetNo || (cn.invoiceRef && (cn.invoiceRef === targetId || cn.invoiceRef === targetNo)));
+  const totalCreditsApplied = appliedNotes.reduce((sum, cn) => sum + (cn.amount || 0), 0);
+  const approvedTdsAmount = (invoice.tds && invoice.tds.status === 'Approved') ? (invoice.tds.tdsAmount || 0) : 0;
+  const netPayable = Math.max(0, (invoice.total || 0) - totalCreditsApplied - approvedTdsAmount);
+  return {
+    invoiceTotal: invoice.total || 0,
+    appliedCreditNotes: appliedNotes,
+    totalCreditsApplied,
+    approvedTdsAmount,
+    netPayable
+  };
+}
+
+/**
+ * Compute Next Auto-Renew Charge
+ * Adjusts against credit notes marked as 'next_invoice_adjustment'
+ */
+function calculateNextAutoRenewCharge(basePlanAmount, creditNotes = []) {
+  const unadjustedNotes = (creditNotes || []).filter(cn => cn.settlementType === 'next_invoice_adjustment' && !cn.isAdjusted);
+  const totalAdjustment = unadjustedNotes.reduce((sum, cn) => sum + (cn.amount || 0), 0);
+  const netCharge = Math.max(0, basePlanAmount - totalAdjustment);
+  return {
+    standardCharge: basePlanAmount,
+    adjustments: totalAdjustment,
+    unadjustedNotes,
+    netCharge
+  };
+}
+
+/**
+ * Validate PAN format and verify that characters 3-10 match GSTIN
+ */
+function validatePANAgainstGSTIN(pan, gstin) {
+  if (!pan || typeof pan !== 'string') return { valid: false, message: 'PAN is required' };
+  const cleanPAN = pan.trim().toUpperCase();
+  const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+  if (!panRegex.test(cleanPAN)) {
+    return { valid: false, message: 'Invalid PAN format. Must be 10 characters (e.g. AAACX9920M).' };
+  }
+  if (gstin && typeof gstin === 'string') {
+    const cleanGSTIN = gstin.trim().toUpperCase();
+    if (cleanGSTIN.length >= 12) {
+      const extractedPAN = cleanGSTIN.substring(2, 12);
+      if (extractedPAN !== cleanPAN) {
+        return {
+          valid: false,
+          message: `PAN (${cleanPAN}) does not match characters 3-12 of GSTIN (${extractedPAN}).`
+        };
+      }
+    }
+  }
+  return { valid: true, pan: cleanPAN };
+}
+
+/**
+ * Generate GSTR-1 Compliant CSV Export
+ */
+function generateGSTR1CSV(invoices) {
+  const headers = [
+    'GSTIN/UIN of Recipient',
+    'Receiver Name',
+    'Invoice Number',
+    'Invoice date',
+    'Invoice Value',
+    'Place Of Supply',
+    'Reverse Charge',
+    'Applicable % of Tax Rate',
+    'Invoice Type',
+    'E-Commerce GSTIN',
+    'Rate',
+    'Taxable Value',
+    'Cess Amount'
+  ];
+
+  const rows = [headers.join(',')];
+  (invoices || []).forEach(inv => {
+    const rate = inv.gstRatePercent || 18;
+    const taxableVal = inv.baseAmount || inv.taxableAmount || Math.round((inv.total || 0) / 1.18);
+    const row = [
+      sanitizeCSVCell(inv.buyerDetails?.gstin || inv.gstin || '29AAACX9920M1Z4'),
+      sanitizeCSVCell(inv.buyerDetails?.legalName || inv.startupName || 'Recipient'),
+      sanitizeCSVCell(inv.invoiceNumber || inv.id),
+      sanitizeCSVCell(inv.issueDate || '2026-10-15'),
+      sanitizeCSVCell((inv.total || 0).toFixed(2)),
+      sanitizeCSVCell(inv.buyerDetails?.placeOfSupply || '29-Karnataka'),
+      sanitizeCSVCell('N'),
+      sanitizeCSVCell(''),
+      sanitizeCSVCell('Regular B2B'),
+      sanitizeCSVCell(''),
+      sanitizeCSVCell(rate),
+      sanitizeCSVCell(taxableVal.toFixed(2)),
+      sanitizeCSVCell('0.00')
+    ];
+    rows.push(row.join(','));
+  });
+  return rows.join('\n');
+}
+
+/**
  * Sanitize cell content for CSV Export to prevent formula injection (=, +, -, @)
  */
 function sanitizeCSVCell(value) {
@@ -290,14 +461,20 @@ function sanitizeCSVCell(value) {
 const billingService = {
   SELLER_INFO,
   AUDIT_LOGS,
+  TDS_CONFIG,
   getFinancialYear,
   generateNextInvoiceNumber,
   numberToWordsIndian,
   calculateGST,
+  calculateTDS,
+  calculateNetPayable,
+  calculateNextAutoRenewCharge,
+  validatePANAgainstGSTIN,
   checkDuplicateInvoice,
   evaluateInvoiceStatus,
   voidInvoice,
   validateGSTIN,
+  generateGSTR1CSV,
   sanitizeCSVCell
 };
 

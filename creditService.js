@@ -22,6 +22,101 @@ const CREDIT_TOPUP_RATE = 50;     // ₹50 / credit
 const DEFAULT_TOPUP_VALIDITY_DAYS = 90;
 
 /**
+ * Standardized Top-Up Pack Pricing Table
+ * Stores explicit pack discounts, rates per 10 cr, base, GST (18%), and totals.
+ */
+const PACK_PRICING = [
+  {
+    id: 'pack_starter',
+    name: 'Starter Pack',
+    credits: 50,
+    hours: 5.0,
+    ratePer10Cr: 500,
+    discountPercent: 0,
+    baseAmount: 2500,
+    gstRatePercent: 18,
+    gstAmount: 450,
+    totalAmount: 2950,
+    validityDays: 90,
+    tag: 'Pay As You Go'
+  },
+  {
+    id: 'pack_growth',
+    name: 'Growth Pack',
+    credits: 100,
+    hours: 10.0,
+    ratePer10Cr: 450, // Discounted from ₹500
+    discountPercent: 10,
+    baseAmount: 4500,
+    gstRatePercent: 18,
+    gstAmount: 810,
+    totalAmount: 5310, // Exactly ₹5,310 (₹4,500 base + 18% GST)
+    validityDays: 90,
+    tag: 'Most Popular (Save 10%)'
+  },
+  {
+    id: 'pack_scale',
+    name: 'Scale-Up Pack',
+    credits: 200,
+    hours: 20.0,
+    ratePer10Cr: 400, // Discounted from ₹500
+    discountPercent: 20,
+    baseAmount: 8000,
+    gstRatePercent: 18,
+    gstAmount: 1440,
+    totalAmount: 9440,
+    validityDays: 90,
+    tag: 'Best Value (Save 20%)'
+  }
+];
+
+/**
+ * Single Source of Truth for Plan Credit Expiry Policies
+ * Generated wording is shared across Quota cards, Ledger, Modals and Alerts.
+ */
+const CREDIT_EXPIRY_POLICIES = {
+  startup: {
+    planKey: 'startup',
+    planName: 'Startup Plan',
+    monthlyAllowanceCredits: 150,
+    monthlyAllowanceHours: 15.0,
+    planCreditsRule: 'expire_at_month_end',
+    planCreditsExpiryDays: null,
+    planCreditsWording: 'Plan allowance resets at calendar month-end. Unused monthly hours do not rollover.',
+    topUpCreditsValidityDays: 90,
+    topUpCreditsWording: 'Top-up credits are valid for 90 days from purchase date across billing cycles.',
+    pausedPlanRule: 'freeze_and_preserve',
+    pausedPlanWording: 'When subscription is paused, unused plan credits are frozen and preserved until reactivation.'
+  },
+  growth: {
+    planKey: 'growth',
+    planName: 'Growth / Scale-up Venture',
+    monthlyAllowanceCredits: 300,
+    monthlyAllowanceHours: 30.0,
+    planCreditsRule: 'expire_at_month_end',
+    planCreditsExpiryDays: null,
+    planCreditsWording: 'Plan allowance resets at calendar month-end. Unused monthly hours do not rollover.',
+    topUpCreditsValidityDays: 90,
+    topUpCreditsWording: 'Top-up credits are valid for 90 days from purchase date across billing cycles.',
+    pausedPlanRule: 'freeze_and_preserve',
+    pausedPlanWording: 'When subscription is paused, unused plan credits are frozen and preserved until reactivation.'
+  },
+  enterprise: {
+    planKey: 'enterprise',
+    planName: 'Enterprise Accelerator',
+    monthlyAllowanceCredits: 600,
+    monthlyAllowanceHours: 60.0,
+    planCreditsRule: 'rollover_max_30_days',
+    planCreditsExpiryDays: 30,
+    planCreditsWording: 'Up to 50 hours rollover into next calendar month; remainder resets.',
+    topUpCreditsValidityDays: 180,
+    topUpCreditsWording: 'Enterprise top-up credits are valid for 180 days across billing cycles.',
+    pausedPlanRule: 'freeze_and_preserve',
+    pausedPlanWording: 'All credits frozen and preserved during subscription pause.'
+  }
+};
+
+/**
  * Helper to calculate booking duration in hours from "HH:MM" start/end
  */
 function calculateDurationHours(startTime, endTime) {
@@ -263,12 +358,17 @@ function getMonthlyAllowance(startup, allRooms = [], targetMonth = null, topUps 
     // Unified credit & hour metrics (10 credits = 1 hr)
     includedHours,
     planCredits,
+    openingCredits: planCredits,
     totalTopUpCredits,
+    topUpCredits: totalTopUpCredits,
     totalAvailableCredits,
     totalAvailableHours,
     usedCredits: totalConsumedCredits,
+    consumedCredits: totalConsumedCredits,
     usedHours: totalConsumedHours,
     remainingCredits: currentCreditBalance,
+    currentBalanceCredits: currentCreditBalance,
+    refundedCredits: 0,
     remainingHours: currentHourBalance,
     remainingPlanCredits,
     remainingTopUpCredits,
@@ -375,6 +475,8 @@ function buildReconciledLedger({
         description: `Extra Credit Top-Up (${t.packTitle || 'Top-Up Pack'})`,
         bookingRef: null,
         invoiceId: t.invoiceId || null,
+        paymentRef: t.paymentRef || null,
+        credits: tCredits,
         creditsChange: tCredits,
         hoursChange: tHours,
         creditsDisplay: `+${tCredits} credits`,
@@ -476,6 +578,8 @@ const creditService = {
   HOURLY_TOPUP_RATE,
   CREDIT_TOPUP_RATE,
   DEFAULT_TOPUP_VALIDITY_DAYS,
+  PACK_PRICING,
+  CREDIT_EXPIRY_POLICIES,
   calculateDurationHours,
   formatTime12h,
   formatDateIndian,
