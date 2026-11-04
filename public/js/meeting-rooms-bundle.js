@@ -473,6 +473,56 @@ function MeetingRoomsApp() {
     _useState2 = _slicedToArray(_useState, 2),
     activeNav = _useState2[0],
     setActiveNav = _useState2[1];
+  var _useStateNotif = useState(false),
+    _useStateNotif2 = _slicedToArray(_useStateNotif, 2),
+    isNotifOpen = _useStateNotif2[0],
+    setIsNotifOpen = _useStateNotif2[1];
+  var _useStateNotifs = useState([
+    {
+      id: "notif-1",
+      title: "Upcoming Session Today",
+      desc: "Boardroom Alpha • 07:00 PM – 08:00 PM (IST)",
+      time: "Today",
+      icon: "calendar",
+      badgeColor: "bg-blue-50 text-[#2563EB]",
+      isUnread: true,
+      target: "My Bookings"
+    },
+    {
+      id: "notif-2",
+      title: "Top-up Invoice Pending",
+      desc: "INV/2026-27/0086 for ₹5,310 (100 credits)",
+      time: "Pending",
+      icon: "creditCard",
+      badgeColor: "bg-amber-50 text-amber-700",
+      isUnread: true,
+      target: "Billing & Credits"
+    },
+    {
+      id: "notif-3",
+      title: "Startup Plan Quota Active",
+      desc: "15.0 hrs quota: 4.0h plan left + 10.0h top-up",
+      time: "Nov 2026",
+      icon: "bolt",
+      badgeColor: "bg-emerald-50 text-emerald-700",
+      isUnread: false,
+      target: "Billing & Credits"
+    },
+    {
+      id: "notif-4",
+      title: "Desk Allocation Confirmed",
+      desc: "Pod #4 (6 Desks) allocated to XYZ Technologies",
+      time: "Active",
+      icon: "building",
+      badgeColor: "bg-purple-50 text-[#4F3FE0]",
+      isUnread: false,
+      target: "Workspace & Desks"
+    }
+  ]),
+    _useStateNotifs2 = _slicedToArray(_useStateNotifs, 2),
+    systemNotifs = _useStateNotifs2[0],
+    setSystemNotifs = _useStateNotifs2[1];
+  var unreadNotifsCount = systemNotifs.filter(function (n) { return n.isUnread; }).length;
   var _useState3 = useState(INITIAL_ROOMS),
     _useState4 = _slicedToArray(_useState3, 2),
     rooms = _useState4[0],
@@ -1841,6 +1891,12 @@ function MeetingRoomsApp() {
 
   // Hash Sync
   var navigateTo = function navigateTo(navName) {
+    if (navName === "Calendar") {
+      setActiveNav("Meeting Rooms");
+      setViewMode("Day");
+      window.location.hash = "meeting-rooms";
+      return;
+    }
     setActiveNav(navName);
     window.location.hash = navName.toLowerCase().replace(/\s+/g, "-");
   };
@@ -2099,9 +2155,6 @@ function MeetingRoomsApp() {
     name: "My Bookings",
     icon: "bookmark"
   }, {
-    name: "Calendar",
-    icon: "calendarDays"
-  }, {
     name: "Billing & Credits",
     icon: "creditCard"
   }, {
@@ -2213,18 +2266,88 @@ function MeetingRoomsApp() {
   }, "XYZ Technologies (STP-XYZ)"), /*#__PURE__*/React.createElement(Icon, {
     name: "chevronDown",
     className: "w-3.5 h-3.5 text-[#8A90A2]"
-  })), /*#__PURE__*/React.createElement("button", {
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "relative"
+  }, /*#__PURE__*/React.createElement("button", {
     type: "button",
     onClick: function onClick() {
-      return showToast("Notifications: 2 pending requests");
+      setIsNotifOpen(!isNotifOpen);
     },
-    className: "w-9 h-9 rounded-full bg-[#F6F7FB] border border-[#ECEEF4] flex items-center justify-center relative hover:bg-gray-100 transition-all"
+    className: "w-9 h-9 rounded-full bg-[#F6F7FB] border border-[#ECEEF4] flex items-center justify-center relative hover:bg-gray-100 transition-all cursor-pointer",
+    title: "Notifications & Activity Feed",
+    "aria-label": "View notifications"
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "bell",
     className: "w-4 h-4 text-[#374151]"
-  }), /*#__PURE__*/React.createElement("span", {
-    className: "w-2 h-2 rounded-full bg-red-500 absolute top-2 right-2 border-2 border-white"
+  }), unreadNotifsCount > 0 && /*#__PURE__*/React.createElement("span", {
+    className: "w-2.5 h-2.5 rounded-full bg-red-500 absolute top-1.5 right-1.5 border-2 border-white shadow-xs"
+  })), isNotifOpen && /*#__PURE__*/React.createElement("div", {
+    className: "absolute right-0 top-11 w-80 sm:w-96 bg-white border border-[#ECEEF4] rounded-2xl shadow-card z-50 overflow-hidden text-left animate-fadeIn"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "p-4 bg-[#F8FAFC] border-b border-[#ECEEF4] flex items-center justify-between"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-base"
+  }, "🔔"), /*#__PURE__*/React.createElement("span", {
+    className: "text-xs font-black text-[#111827] tracking-tight"
+  }, "Notifications"), unreadNotifsCount > 0 ? /*#__PURE__*/React.createElement("span", {
+    className: "bg-[#EEEBFF] text-[#4F3FE0] text-[10.5px] font-extrabold px-2 py-0.5 rounded-full"
+  }, unreadNotifsCount, " New") : /*#__PURE__*/React.createElement("span", {
+    className: "bg-emerald-50 text-emerald-700 text-[10.5px] font-bold px-2 py-0.5 rounded-full"
+  }, "All caught up")), unreadNotifsCount > 0 && /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      setSystemNotifs(systemNotifs.map(function(n) { return Object.assign({}, n, { isUnread: false }); }));
+    },
+    className: "text-[11px] font-bold text-[#4F3FE0] hover:underline cursor-pointer"
+  }, "Mark all read")), /*#__PURE__*/React.createElement("div", {
+    className: "max-h-[360px] overflow-y-auto divide-y divide-[#ECEEF4]"
+  }, systemNotifs.map(function (item) {
+    return /*#__PURE__*/React.createElement("div", {
+      key: item.id,
+      onClick: function onClick() {
+        setSystemNotifs(systemNotifs.map(function(n) {
+          return n.id === item.id ? Object.assign({}, n, { isUnread: false }) : n;
+        }));
+        setIsNotifOpen(false);
+        if (item.target) navigateTo(item.target);
+      },
+      className: "p-3.5 hover:bg-[#F8FAFC] cursor-pointer transition-colors flex items-start gap-3 relative ".concat(item.isUnread ? "bg-[#FAF9FF]" : "")
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 ".concat(item.badgeColor || "bg-gray-100 text-gray-600")
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: item.icon || "bell",
+      className: "w-4 h-4"
+    })), /*#__PURE__*/React.createElement("div", {
+      className: "flex-1 min-w-0"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between gap-2"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-xs font-bold text-[#111827] truncate"
+    }, item.title), /*#__PURE__*/React.createElement("span", {
+      className: "text-[10px] font-semibold text-[#8A90A2] flex-shrink-0"
+    }, item.time)), /*#__PURE__*/React.createElement("p", {
+      className: "text-[11.5px] text-[#64748B] mt-0.5 leading-snug"
+    }, item.desc)), item.isUnread && /*#__PURE__*/React.createElement("span", {
+      className: "w-2 h-2 rounded-full bg-[#4F3FE0] flex-shrink-0 mt-2"
+    }));
   })), /*#__PURE__*/React.createElement("div", {
+    className: "p-3 bg-[#F8FAFC] border-t border-[#ECEEF4] flex items-center justify-between text-xs"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      setIsNotifOpen(false);
+      navigateTo("My Bookings");
+    },
+    className: "text-[#4F3FE0] font-bold hover:underline cursor-pointer"
+  }, "View My Bookings →"), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      setIsNotifOpen(false);
+    },
+    className: "text-[#8A90A2] hover:text-[#111827] font-semibold cursor-pointer"
+  }, "Close")))), /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2.5 pl-2 cursor-pointer",
     onClick: function onClick() {
       return navigateTo("Settings");

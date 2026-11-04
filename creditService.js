@@ -414,6 +414,7 @@ function buildReconciledLedger({
     hoursDisplay: `+${includedHours.toFixed(1)} hrs`,
     runningBalanceCredits: runningBalance,
     runningBalanceHours: Number((runningBalance / CREDITS_PER_HOUR).toFixed(1)),
+    bucket: 'Plan',
     expiresAt: FormatHelper.formatDate(planExpiryDate),
     isPositive: true
   });
@@ -480,6 +481,7 @@ function buildReconciledLedger({
         hoursDisplay: `+${tHours.toFixed(1)} hrs`,
         runningBalanceCredits: runningBalance,
         runningBalanceHours: Number((runningBalance / CREDITS_PER_HOUR).toFixed(1)),
+        bucket: 'Top-Up',
         expiresAt: t.expiresAt ? FormatHelper.formatDate(t.expiresAt) : '90 Days',
         isPositive: true
       });
@@ -499,7 +501,7 @@ function buildReconciledLedger({
         displayDateTime: `${FormatHelper.formatDate(b.date)}, ${timeRange}`,
         type: 'debit',
         typeLabel: 'Room Reservation',
-        description: `Session in ${b.roomName || 'Meeting Room'} (${b.purpose || b.title || 'Team Session'})`,
+        description: b.purpose || b.title || `Team Session in ${b.roomName || 'Meeting Room'}`,
         bookingRef: b.id,
         roomId: b.roomId,
         roomName: b.roomName,
@@ -510,6 +512,7 @@ function buildReconciledLedger({
         hoursDisplay: `-${dur.toFixed(1)} hrs`,
         runningBalanceCredits: runningBalance,
         runningBalanceHours: Number((runningBalance / CREDITS_PER_HOUR).toFixed(1)),
+        bucket: b.debitedFrom === 'topup' ? 'Top-Up' : (b.debitedFrom === 'overage' ? 'Overage' : 'Plan'),
         expiresAt: null,
         isPositive: false
       });
@@ -535,6 +538,8 @@ function buildReconciledLedger({
         hoursDisplay: `+${rHours.toFixed(1)} hrs`,
         runningBalanceCredits: runningBalance,
         runningBalanceHours: Number((runningBalance / CREDITS_PER_HOUR).toFixed(1)),
+        bucket: 'Plan',
+        expiresAt: null,
         isPositive: true
       });
     }
