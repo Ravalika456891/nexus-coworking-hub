@@ -7685,8 +7685,12 @@ const MeetingRoomsModule = {
                 </div>
                 <div>
                   <h3 style="font-size: 14.5px; font-weight: 800; color: var(--text-primary); margin: 0;">${room.name}</h3>
-                  <div style="font-size: 11px; color: var(--text-muted); margin-top: 1px;">
-                    👥 ${room.capacity} Pax Capacity • ₹${room.hourlyRate}/hr
+                  <div style="font-size: 11px; color: var(--text-muted); margin-top: 1px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                    <span>👥 <strong>${booking.attendees || 4} Pax Expected</strong></span>
+                    <span>•</span>
+                    <span>Max ${room.capacity} Pax</span>
+                    <span>•</span>
+                    <span style="font-weight: 700; color: #4f46e5;">₹${room.hourlyRate}/hr</span>
                   </div>
                 </div>
               </div>
@@ -7726,20 +7730,6 @@ const MeetingRoomsModule = {
                 <div style="font-size: 11.5px; font-weight: 800; color: #2563eb; font-family: var(--font-mono); white-space: nowrap; letter-spacing: -0.01em;">
                   ${formatSlot12h(booking.startTime)} – ${formatSlot12h(booking.endTime)}
                 </div>
-              </div>
-            </div>
-
-            <div style="background: var(--bg-surface-elevated); border: 1.5px solid var(--border-subtle); border-radius: 12px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;">
-              <div>
-                <div style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.04em;">
-                  💳 Billing / Plan
-                </div>
-                <div style="font-size: 13px; font-weight: 800; color: #16a34a; margin-top: 2px;">
-                  ${booking.cost === 0 ? 'Covered by Plan (₹0)' : `₹${(booking.cost || 0).toLocaleString('en-IN')}`}
-                </div>
-              </div>
-              <div style="font-size: 12px; font-weight: 700; color: var(--text-primary); background: var(--bg-surface); padding: 5px 12px; border-radius: 8px; border: 1px solid var(--border-subtle);">
-                👥 ${booking.attendees || 4} Pax Expected
               </div>
             </div>
 
