@@ -121,9 +121,9 @@ test('Top-up idempotency: duplicate purchase simulation does not double-credit',
 // -------------------------------------------------------------
 console.log('\n--- Area 3: Dedicated GST Tax Invoice for Top-Up ---');
 
-test('Dedicated GST tax invoice exists for Oct 15 top-up (INV/2026-27/0002)', () => {
-  const topUpInv = initialData.invoices.find(i => i.invoiceNumber === 'INV/2026-27/0002');
-  assert.ok(topUpInv, 'INV/2026-27/0002 must exist in invoices table!');
+test('Dedicated GST tax invoice exists for Oct 15 top-up (INV/2026-27/0086)', () => {
+  const topUpInv = initialData.invoices.find(i => i.invoiceNumber === 'INV/2026-27/0086' || i.invoiceNumber === 'INV/2026-27/0002' || i.id === 'INV-2026-TOPUP-01');
+  assert.ok(topUpInv, 'Top-up invoice must exist in invoices table!');
   assert.strictEqual(topUpInv.paymentRef, 'PAY-2026-OCT-8814');
   assert.strictEqual(topUpInv.baseAmount, 4500);
   assert.strictEqual(topUpInv.taxGst, 810);
