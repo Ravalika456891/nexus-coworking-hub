@@ -2341,8 +2341,8 @@ const MeetingRoomsModule = {
     const istNow = this.getISTNow();
     const targetMonth = this.creditsBillingMonth || istNow.todayStr.substring(0, 7);
     const rooms = (data && data.rooms) || (window.store && window.store.getMeetingRooms ? window.store.getMeetingRooms() : []);
-    const cs = (typeof window !== 'undefined' && window.creditService) ? window.creditService : require('../../creditService');
-    const bs = (typeof window !== 'undefined' && window.billingService) ? window.billingService : require('../../billingService');
+    const cs = (typeof window !== 'undefined' && window.creditService) ? window.creditService : ((typeof require === 'function') ? require('./creditService') : null);
+    const bs = (typeof window !== 'undefined' && window.billingService) ? window.billingService : ((typeof require === 'function') ? require('./billingService') : null);
 
     const allowance = cs.getMonthlyAllowance(startup, rooms, targetMonth, startup.topUps || []);
     const ledger = allowance.ledger || [];
@@ -2393,8 +2393,8 @@ const MeetingRoomsModule = {
     const rooms = (data && data.rooms) || (window.store && window.store.getMeetingRooms ? window.store.getMeetingRooms() : []);
 
     // Use unified server-side creditService (Single Source of Truth)
-    const cs = (typeof window !== 'undefined' && window.creditService) ? window.creditService : require('../../creditService');
-    const bs = (typeof window !== 'undefined' && window.billingService) ? window.billingService : require('../../billingService');
+    const cs = (typeof window !== 'undefined' && window.creditService) ? window.creditService : ((typeof require === 'function') ? require('./creditService') : null);
+    const bs = (typeof window !== 'undefined' && window.billingService) ? window.billingService : ((typeof require === 'function') ? require('./billingService') : null);
 
     const allowance = cs.getMonthlyAllowance(startup, rooms, targetMonth, startup.topUps || []);
     const subTab = this.creditsBillingSubTab || 'overview';
@@ -3812,7 +3812,7 @@ const MeetingRoomsModule = {
       return;
     }
 
-    const bs = (typeof window !== 'undefined' && window.billingService) ? window.billingService : require('../../billingService');
+    const bs = (typeof window !== 'undefined' && window.billingService) ? window.billingService : ((typeof require === 'function') ? require('./billingService') : null);
     const baseAmt = inv.subtotal || inv.taxableAmount || Math.round((inv.total || 0) / 1.18);
     const gstAmt = inv.taxGst || (inv.total ? inv.total - baseAmt : 0);
     const gst = bs.calculateGST(baseAmt, inv.gstin || '29AAACX9920M1Z4');
@@ -4020,7 +4020,7 @@ const MeetingRoomsModule = {
     const gstin = document.getElementById('billing-gstin')?.value;
     const address = document.getElementById('billing-address')?.value;
 
-    const bs = (typeof window !== 'undefined' && window.billingService) ? window.billingService : require('../../billingService');
+    const bs = (typeof window !== 'undefined' && window.billingService) ? window.billingService : ((typeof require === 'function') ? require('./billingService') : null);
     if (gstin && !bs.validateGSTIN(gstin)) {
       if (typeof App !== 'undefined') App.showToast('Invalid GSTIN format (must be 15 alphanumeric characters).', 'danger');
       return;

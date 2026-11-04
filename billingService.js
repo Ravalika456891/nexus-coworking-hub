@@ -287,7 +287,7 @@ function sanitizeCSVCell(value) {
   return `"${str}"`;
 }
 
-module.exports = {
+const billingService = {
   SELLER_INFO,
   AUDIT_LOGS,
   getFinancialYear,
@@ -302,5 +302,9 @@ module.exports = {
 };
 
 if (typeof window !== 'undefined') {
-  window.billingService = module.exports;
+  window.billingService = billingService;
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = billingService;
 }

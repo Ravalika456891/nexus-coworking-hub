@@ -469,7 +469,7 @@ function evaluateBookingCost(startup, allRooms, { roomId, date, startTime, endTi
   };
 }
 
-module.exports = {
+const creditService = {
   CREDITS_PER_HOUR,
   HOURLY_OVERAGE_RATE,
   CREDIT_OVERAGE_RATE,
@@ -486,5 +486,9 @@ module.exports = {
 };
 
 if (typeof window !== 'undefined') {
-  window.creditService = module.exports;
+  window.creditService = creditService;
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = creditService;
 }
