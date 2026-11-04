@@ -8629,10 +8629,10 @@ const MeetingRoomsModule = {
     const attendees = this.quickFlowState.attendees || 4;
 
     const modal = document.getElementById('modal-quick-duration-book');
-    const confirmBtn = modal ? modal.querySelector('#quick-summary-mount button') : null;
+    const confirmBtn = modal ? modal.querySelector('button.btn-primary') : null;
     if (confirmBtn) {
       confirmBtn.disabled = true;
-      confirmBtn.innerHTML = `<span style="display: inline-block; width: 14px; height: 14px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; margin-right: 6px; vertical-align: middle;"></span> Reserving...`;
+      confirmBtn.innerHTML = '<span>⏳ Booking...</span>';
     }
 
     try {
@@ -8641,10 +8641,13 @@ const MeetingRoomsModule = {
         startupId: myStartup.id,
         startupName: myStartup.name,
         title,
+        purpose: title,
         date: this.selectedDate,
         startTime,
         endTime,
-        attendees
+        attendees,
+        requestedAmenities: [],
+        specialRequests: ''
       });
 
       if (res.success) {
