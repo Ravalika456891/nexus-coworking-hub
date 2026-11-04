@@ -1243,6 +1243,8 @@ const MeetingRoomsModule = {
     // Filtered and sorted dataset
     const filteredList = this.getFilteredMyBookings(myBookings);
     const filteredHours = filteredList.reduce((acc, b) => acc + (b.status !== 'Cancelled' ? this.calculateBookingDuration(b.startTime, b.endTime) : 0), 0);
+    const filteredOverageFees = filteredList.reduce((acc, b) => acc + (b.status !== 'Cancelled' ? (Number(b.cost) || 0) : 0), 0);
+    const filteredCredits = Math.round(filteredHours * 10);
 
     // Pagination
     const pageSize = this.myBookingsPageSize || 25;
@@ -1311,9 +1313,9 @@ const MeetingRoomsModule = {
               <span class="kpi-title" style="font-size: 12px; font-weight: 700; text-transform: uppercase;">Monthly Credit Balance</span>
               <div class="kpi-icon-wrap" style="color: #16a34a;">💳</div>
             </div>
-            <div class="kpi-value" style="font-size: 26px; font-weight: 800; color: #16a34a;">${allowance.remainingHours.toFixed(1)} hrs free</div>
+            <div class="kpi-value" style="font-size: 26px; font-weight: 800; color: #16a34a;">${allowance.remainingHours.toFixed(1)} hrs (${allowance.remainingCredits || Math.round(allowance.remainingHours * 10)} cr)</div>
             <div class="kpi-footer" style="font-size: 11.5px; color: var(--text-muted);">
-              <span>${allowance.usedHours.toFixed(1)} hrs consumed of ${allowance.includedHours.toFixed(1)} hrs allowance</span>
+              <span>${allowance.usedHours.toFixed(1)} hrs used (${allowance.usedCredits || Math.round(allowance.usedHours * 10)} cr) of ${allowance.includedHours.toFixed(1)} hrs quota</span>
             </div>
           </div>
 
@@ -1327,7 +1329,7 @@ const MeetingRoomsModule = {
               ₹${totalFeesBilled.toLocaleString('en-IN')}
             </div>
             <div class="kpi-footer" style="font-size: 11.5px; color: var(--text-muted);">
-              <span>${allowance.overageHours > 0 ? `${allowance.overageHours.toFixed(1)}h overage billed` : '✓ 100% within plan allowance'}</span>
+              <span>${allowance.overageHours > 0 ? `${allowance.overageHours.toFixed(1)}h overage billed` : '✓ Fully covered by plan credits'}</span>
             </div>
           </div>
         </div>
@@ -1463,9 +1465,9 @@ const MeetingRoomsModule = {
             <div class="table-wrapper my-bookings-table-wrapper" style="overflow-x: auto; position: relative;">
               <table class="nexus-table my-bookings-table" style="width: 100%; border-collapse: separate; border-spacing: 0; margin: 0; font-size: 12.5px;">
                 <thead>
-                  <tr style="background: var(--bg-surface-elevated);">
-                    <!-- 1. Room (Sticky Left) -->
-                    <th class="col-room" style="position: sticky; left: 0; background: var(--bg-surface-elevated); z-index: 6; box-shadow: 3px 0 6px rgba(0,0,0,0.04); cursor: pointer;" onclick="MeetingRoomsModule.toggleRowSort('room')">
+                  <tr>
+                    <!-- 1. Room -->
+                    <th class="col-room" style="cursor: pointer;" onclick="MeetingRoomsModule.toggleRowSort('room')">
                       Room${sortIndicator('room')}
                     </th>
                     <!-- 2. Purpose & Attendees -->
@@ -1476,16 +1478,16 @@ const MeetingRoomsModule = {
                     <th class="col-time" style="cursor: pointer;" onclick="MeetingRoomsModule.toggleRowSort('date')">
                       Time (IST)${sortIndicator('date')}
                     </th>
-                    <!-- 4. Usage -->
+                    <!-- 4. Usage & Credits -->
                     <th class="col-usage" style="cursor: pointer;" onclick="MeetingRoomsModule.toggleRowSort('duration')">
-                      Usage${sortIndicator('duration')}
+                      Usage &amp; Credits${sortIndicator('duration')}
                     </th>
                     <!-- 5. Status -->
                     <th class="col-status" style="cursor: pointer;" onclick="MeetingRoomsModule.toggleRowSort('status')">
                       Status${sortIndicator('status')}
                     </th>
-                    <!-- 6. Sticky Actions Header -->
-                    <th class="col-actions" style="text-align: right; position: sticky; right: 0; background: var(--bg-surface-elevated); z-index: 6; box-shadow: -3px 0 6px rgba(0,0,0,0.06); padding-right: 16px;">
+                    <!-- 6. Actions Header -->
+                    <th class="col-actions" style="text-align: right; padding-right: 18px;">
                       Actions
                     </th>
                   </tr>
@@ -1554,12 +1556,16 @@ const MeetingRoomsModule = {
 
                         renderedRows.push(`
                           <tr style="background: rgba(147, 51, 234, 0.04); border-top: 2px solid rgba(147, 51, 234, 0.2); font-weight: 600;">
-                            <td class="col-room" style="position: sticky; left: 0; background: var(--bg-surface); z-index: 5; box-shadow: 3px 0 6px rgba(0,0,0,0.04); white-space: nowrap;">
-                              <div style="display: flex; align-items: center; gap: 8px;">
-                                <span style="font-size: 18px;">${firstItem.roomIcon || '🏢'}</span>
-                                <div style="min-width: 0; overflow: hidden;">
-                                  <strong style="color: var(--text-primary); font-size: 12.5px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; display: block;">${firstItem.roomName}</strong>
-                                  <div style="font-size: 10.5px; color: var(--text-muted);">${sRoom ? sRoom.floor : '6F'} • ${sRoom ? sRoom.capacity : 4} Pax</div>
+                            <td class="col-room" style="white-space: nowrap;">
+                              <div style="display: flex; align-items: center; gap: 10px;">
+                                <span style="font-size: 18px; width: 34px; height: 34px; border-radius: 8px; background: rgba(147, 51, 234, 0.12); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">${firstItem.roomIcon || '🏢'}</span>
+                                <div style="min-width: 0; flex: 1;">
+                                  <strong style="color: var(--text-primary); font-size: 13px; font-weight: 700; white-space: nowrap; display: block;">${firstItem.roomName}</strong>
+                                  <div style="font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 5px; margin-top: 2px;">
+                                    <span>${sRoom ? (sRoom.floor || '1F') : '1F'}</span>
+                                    <span>•</span>
+                                    <span>${sRoom ? sRoom.capacity : 4} Pax</span>
+                                  </div>
                                 </div>
                               </div>
                             </td>
@@ -1576,11 +1582,16 @@ const MeetingRoomsModule = {
                             </td>
                             <td class="col-time" style="white-space: nowrap;">
                               <div style="font-weight: 700; color: var(--text-primary); font-size: 12px;">
-                                ${this.formatTimeTo12Hour(firstItem.startTime)} – ${this.formatTimeTo12Hour(firstItem.endTime)}, ${this.calculateBookingDuration(firstItem.startTime, firstItem.endTime) === 1 ? '1 hr' : `${this.calculateBookingDuration(firstItem.startTime, firstItem.endTime).toFixed(1)} hrs`}
+                                ${this.formatTimeTo12Hour(firstItem.startTime)} – ${this.formatTimeTo12Hour(firstItem.endTime)}
                               </div>
                             </td>
                             <td class="col-usage" style="white-space: nowrap;">
-                              <span style="font-weight: 700; font-size: 12px; color: var(--text-primary);">${durClean}</span>
+                              <span style="font-weight: 700; font-size: 12.5px; color: var(--text-primary);">${durClean}</span>
+                              <div style="margin-top: 3px;">
+                                <span class="badge" style="background: rgba(147, 51, 234, 0.08); color: #7e22ce; border: 1px solid rgba(147, 51, 234, 0.2); font-size: 10px; padding: 2px 7px; font-weight: 700; border-radius: 5px;">
+                                  ${Math.round(totalSeriesHours * 10)} credits
+                                </span>
+                              </div>
                             </td>
                             <td class="col-status" style="white-space: nowrap;">
                               <span style="display: inline-flex; align-items: center; gap: 5px; font-weight: 700; color: #7e22ce; font-size: 11px;">
@@ -1588,7 +1599,7 @@ const MeetingRoomsModule = {
                                 ${upcomingCount} upcoming / ${group.length}
                               </span>
                             </td>
-                            <td class="col-actions" style="white-space: nowrap; text-align: right; position: sticky; right: 0; background: var(--bg-surface); z-index: 5; box-shadow: -3px 0 6px rgba(0,0,0,0.06); padding-right: 16px;">
+                            <td class="col-actions" style="white-space: nowrap; text-align: right; padding-right: 18px;">
                               <div style="display: flex; gap: 6px; justify-content: flex-end; align-items: center;">
                                 <button type="button" class="btn btn-sm btn-outline" onclick="MeetingRoomsModule.toggleSeriesExpansion('${sId}')" style="font-size: 11px; padding: 4px 9px; font-weight: 700; border-radius: 6px; color: #7e22ce; border-color: rgba(147, 51, 234, 0.4);" aria-label="Toggle series expansion">
                                   ${isExpanded ? '▲ Hide' : `▼ Show ${group.length}`}
@@ -1621,13 +1632,14 @@ const MeetingRoomsModule = {
             </div>
 
             <!-- Table Summary & Pagination Footer -->
-            <div style="padding: 12px 20px; background: var(--bg-surface-elevated); border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--text-muted);">
-              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <div style="padding: 13px 20px; background: var(--bg-surface-elevated); border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--text-muted);">
+              <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
                 <span>
                   Showing <strong>${totalItems}</strong> reservations (<strong>${filteredHours.toFixed(1)} hrs</strong>)
                 </span>
-                <span class="badge" style="background: rgba(34, 197, 94, 0.12); color: #15803d; font-weight: 700; font-size: 11px; padding: 4px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
-                  <span>💳</span> <span>${allowance.monthLabel || allowance.monthName || 'November'}: ${allowance.usedHours.toFixed(1)} / ${allowance.includedHours.toFixed(1)} hrs used • <strong>${allowance.remainingHours.toFixed(1)} hrs free remaining</strong></span>
+                <span class="badge" style="background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; font-weight: 700; font-size: 11px; padding: 4px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;">
+                  <span>💳</span>
+                  <span>${allowance.monthLabel || allowance.monthName || 'Nov 2026'}: <strong>${allowance.usedHours.toFixed(1)} / ${allowance.includedHours.toFixed(1)} hrs</strong> used (${allowance.usedCredits || Math.round(allowance.usedHours * 10)} cr) • <strong>${allowance.remainingHours.toFixed(1)} hrs</strong> remaining (${allowance.remainingCredits || Math.round(allowance.remainingHours * 10)} cr)</span>
                 </span>
                 ${totalPages > 1 ? `
                   <span>•</span>
@@ -1668,9 +1680,13 @@ const MeetingRoomsModule = {
               ` : ''}
 
               <div style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
-                <span>Total Reserved: <strong style="color: var(--text-primary); font-family: var(--font-mono);">${totalHoursBooked.toFixed(1)} hrs</strong></span>
+                <span>Total in View: <strong style="color: var(--text-primary); font-family: var(--font-mono);">${filteredHours.toFixed(1)} hrs</strong></span>
                 <span>•</span>
-                <span>Total Fees: <strong style="color: #2563eb; font-family: var(--font-mono);">${totalFeesBilled > 0 ? `₹${totalFeesBilled.toLocaleString('en-IN')}` : '₹0 (100% Free)'}</strong></span>
+                <span>Plan Quota: <strong style="color: #2563eb; font-family: var(--font-mono);">${filteredCredits} credits</strong></span>
+                ${filteredOverageFees > 0 ? `
+                  <span>•</span>
+                  <span>Overage: <strong style="color: #dc2626; font-family: var(--font-mono);">₹${filteredOverageFees.toLocaleString('en-IN')}</strong></span>
+                ` : ''}
               </div>
             </div>
           ` : `
@@ -1778,6 +1794,7 @@ const MeetingRoomsModule = {
   renderDeclutteredRowHtml(b, myStartup, currentRole, todayStr, liveTimeStr, isIndented = false, occurrenceIdx = 1, totalOccurrences = 1) {
     const dur = this.calculateBookingDuration(b.startTime, b.endTime);
     const durStrClean = dur === 1 ? '1 hr' : `${dur.toFixed(1)} hrs`;
+    const creditsDebited = Math.round(dur * 10);
     const bRoom = window.store.getMeetingRoomById(b.roomId);
     const roomCap = (bRoom && bRoom.capacity) || b.capacity || 4;
     const isOverCap = b.attendees > roomCap;
@@ -1917,17 +1934,17 @@ const MeetingRoomsModule = {
 
     return `
       <tr style="transition: all 0.15s ease; ${isIndented ? 'background: rgba(147, 51, 234, 0.02);' : ''}">
-        <!-- 1. Room (Sticky Left) -->
-        <td class="col-room" style="position: sticky; left: 0; background: var(--bg-surface); z-index: 5; box-shadow: 3px 0 6px rgba(0,0,0,0.04); white-space: nowrap; ${isIndented ? 'padding-left: 28px;' : ''}">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 18px; width: 30px; height: 30px; border-radius: 7px; background: rgba(37, 99, 235, 0.08); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+        <!-- 1. Room -->
+        <td class="col-room" style="${isIndented ? 'padding-left: 28px;' : ''}">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 18px; width: 34px; height: 34px; border-radius: 8px; background: rgba(37, 99, 235, 0.08); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
               ${b.roomIcon || '🏢'}
             </span>
-            <div style="min-width: 0; overflow: hidden;">
-              <strong style="color: var(--text-primary); font-size: 12.5px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; display: block;" title="${b.roomName}">
+            <div style="min-width: 0; flex: 1;">
+              <strong style="color: var(--text-primary); font-size: 13px; font-weight: 700; white-space: nowrap; display: block;" title="${b.roomName}">
                 ${isIndented ? '↳ ' : ''}${b.roomName}
               </strong>
-              <div style="font-size: 10.5px; color: var(--text-muted); display: flex; align-items: center; gap: 4px;">
+              <div style="font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 5px; margin-top: 2px;">
                 <span>${bRoom ? (bRoom.floor || '1F') : '1F'}</span>
                 <span>•</span>
                 <span>${roomCap} Pax</span>
@@ -1968,23 +1985,23 @@ const MeetingRoomsModule = {
           ` : ''}
         </td>
 
-        <!-- 4. Usage (Clear & Free Indicator) -->
+        <!-- 4. Usage & Plan Credits -->
         <td class="col-usage" style="white-space: nowrap;">
           <div style="font-weight: 700; font-size: 12.5px; color: var(--text-primary);">${durStrClean}</div>
           ${b.status === 'Cancelled' ? `
             <div style="margin-top: 3px;">
-              <span class="badge" style="background: #f1f5f9; color: #64748b; font-size: 9.5px; padding: 1px 6px; font-weight: 600; border-radius: 4px;">Refunded</span>
+              <span class="badge" style="background: #f1f5f9; color: #64748b; font-size: 10px; padding: 2px 7px; font-weight: 600; border-radius: 5px;">Refunded (${creditsDebited} cr)</span>
             </div>
           ` : Number(b.cost) > 0 ? `
             <div style="margin-top: 3px;">
-              <span class="badge" style="background: #fef3c7; color: #92400e; border: 1px solid #fde68a; font-size: 9.5px; padding: 1px 6px; font-weight: 700; border-radius: 4px;">
-                ⚠️ ₹${Number(b.cost).toLocaleString('en-IN')} overage
+              <span class="badge" style="background: #fef3c7; color: #92400e; border: 1px solid #fde68a; font-size: 10px; padding: 2px 7px; font-weight: 700; border-radius: 5px;">
+                ⚠️ ₹${Number(b.cost).toLocaleString('en-IN')} (${creditsDebited} cr)
               </span>
             </div>
           ` : `
             <div style="margin-top: 3px;">
-              <span class="badge" style="background: rgba(34, 197, 94, 0.12); color: #15803d; border: 1px solid rgba(34, 197, 94, 0.25); font-size: 9.5px; padding: 1px 6px; font-weight: 700; border-radius: 4px;">
-                ✓ Free (Plan)
+              <span class="badge" style="background: rgba(37, 99, 235, 0.08); color: #2563eb; border: 1px solid rgba(37, 99, 235, 0.2); font-size: 10px; padding: 2px 7px; font-weight: 700; border-radius: 5px;">
+                ✓ ${creditsDebited} credits (Plan)
               </span>
             </div>
           `}
@@ -1995,8 +2012,8 @@ const MeetingRoomsModule = {
           ${statusDotHtml}
         </td>
 
-        <!-- 6. Sticky Actions Column -->
-        <td class="col-actions" style="white-space: nowrap; text-align: right; position: sticky; right: 0; background: var(--bg-surface); z-index: 5; box-shadow: -3px 0 6px rgba(0,0,0,0.06); padding: 8px 16px 8px 8px;">
+        <!-- 6. Actions Column -->
+        <td class="col-actions" style="white-space: nowrap; text-align: right; padding: 8px 18px 8px 8px;">
           <div style="display: flex; gap: 6px; justify-content: flex-end; align-items: center; flex-wrap: nowrap;">
             ${primaryBtnHtml}
             <div class="meeting-row-menu-wrapper" style="position: relative; display: inline-block;">

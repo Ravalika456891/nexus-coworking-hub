@@ -1587,7 +1587,7 @@ body.rg-no-scroll {
    ========================================================================== */
 .my-bookings-table {
   width: 100% !important;
-  table-layout: fixed !important;
+  table-layout: auto !important;
   border-collapse: separate !important;
   border-spacing: 0 !important;
 }
@@ -1598,39 +1598,57 @@ body.rg-no-scroll {
   vertical-align: middle !important;
 }
 
+.my-bookings-table th {
+  background: var(--bg-surface-elevated, #f8fafc) !important;
+  color: var(--text-muted, #64748b) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  padding: 13px 18px !important;
+  border-bottom: 1px solid var(--border-subtle, #e2e8f0) !important;
+}
+
+.my-bookings-table td {
+  padding: 12px 18px !important;
+  border-bottom: 1px solid var(--border-subtle, #f1f5f9) !important;
+  color: var(--text-primary) !important;
+}
+
 .my-bookings-table tr {
-  max-height: 64px !important;
+  min-height: 60px !important;
 }
 
 .my-bookings-table .col-room {
-  width: 190px !important;
-  min-width: 170px !important;
-  max-width: 210px !important;
+  width: 250px !important;
+  min-width: 230px !important;
 }
 
 .my-bookings-table .col-purpose {
   width: auto !important;
-  min-width: 180px !important;
+  min-width: 230px !important;
 }
 
 .my-bookings-table .col-time {
-  width: 180px !important;
-  min-width: 165px !important;
+  width: 200px !important;
+  min-width: 185px !important;
+  white-space: nowrap !important;
 }
 
 .my-bookings-table .col-usage {
-  width: 130px !important;
-  min-width: 115px !important;
+  width: 160px !important;
+  min-width: 145px !important;
 }
 
 .my-bookings-table .col-status {
-  width: 140px !important;
-  min-width: 125px !important;
+  width: 130px !important;
+  min-width: 120px !important;
 }
 
 .my-bookings-table .col-actions {
-  width: 150px !important;
-  min-width: 140px !important;
+  width: 160px !important;
+  min-width: 150px !important;
+  text-align: right !important;
 }
 
 .meeting-row-menu {
