@@ -2379,6 +2379,30 @@ const MeetingRoomsModule = {
     }
   },
 
+  exportGSTR1CSV() {
+    const startup = this.getMyStartup();
+    const istNow = this.getISTNow();
+    const targetMonth = this.creditsBillingMonth || istNow.todayStr.substring(0, 7);
+    const allInvoices = (window.store && window.store.getInvoices) ? window.store.getInvoices() : [];
+    let startupInvoices = allInvoices.filter(inv => !inv.startupId || inv.startupId === startup.id || inv.startupName === startup.name);
+    if (startupInvoices.length === 0) startupInvoices = allInvoices;
+
+    const bs = (typeof window !== 'undefined' && window.billingService) ? window.billingService : ((typeof require === 'function') ? require('./billingService') : null);
+    const csvContentText = bs.generateGSTR1CSV(startupInvoices);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContentText);
+    const link = document.createElement('a');
+    link.setAttribute('href', csvContent);
+    link.setAttribute('download', `nexus-gstr1-invoices-${targetMonth}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    if (typeof App !== 'undefined' && App.showToast) {
+      App.showToast(`📥 Exported GSTR-1 compliant CSV (${startupInvoices.length} invoices).`, 'success');
+    }
+  },
+
   renderCreditsAndBillingView(data) {
     const startup = data.myStartup || (window.store && window.store.getActiveStartup ? window.store.getActiveStartup() : null) || {
       id: 'STP-XYZ',
@@ -2935,6 +2959,18 @@ const MeetingRoomsModule = {
                   style="padding: 6px 12px; font-size: 12px; border-radius: 8px; border: 1px solid var(--border-subtle, #E2E8F0); background: var(--bg-surface, #ffffff);"
                 />
 
+                <!-- GSTR-1 Export Button -->
+                <button
+                  type="button"
+                  onclick="MeetingRoomsModule.exportGSTR1CSV()"
+                  class="btn btn-outline btn-sm"
+                  style="font-size: 12px; font-weight: 800; border-radius: 8px; padding: 6px 14px; color: #059669; border-color: rgba(16, 185, 129, 0.35); display: inline-flex; align-items: center; gap: 6px;"
+                  title="Export GSTR-1 format CSV for Accountant / CA Filing"
+                >
+                  <span>📥</span>
+                  <span>Export GSTR-1 CSV</span>
+                </button>
+
                 ${isAdmin ? `
                   <button
                     type="button"
@@ -3375,32 +3411,82 @@ const MeetingRoomsModule = {
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
               <!-- Profile Card -->
               <div class="nexus-billing-panel">
-                <h4 style="font-size: 14px; font-weight: 900; color: var(--text-primary, #111827); margin: 0 0 14px 0; display: flex; align-items: center; gap: 8px;">
-                  <span>🏢</span>
-                  <span>GST Legal Billing Profile</span>
-                </h4>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                  <h4 style="font-size: 14px; font-weight: 900; color: var(--text-primary, #111827); margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <span>🏢</span>
+                    <span>GST Legal Billing Profile</span>
+                  </h4>
+                  <span style="font-size: 10px; font-weight: 800; background: rgba(79, 63, 224, 0.08); color: #4F3FE0; padding: 2px 8px; border-radius: 999px;">
+                    Future Invoices
+                  </span>
+                </div>
+                <div style="font-size: 11px; color: var(--text-muted, #64748B); background: rgba(148, 163, 184, 0.08); padding: 8px 12px; border-radius: 8px; margin-bottom: 14px; line-height: 1.4;">
+                  ℹ️ <strong>Immutable Snapshot:</strong> Issued invoices preserve legal buyer details at issue time. Edits apply strictly to future invoices.
+                </div>
                 <form onsubmit="MeetingRoomsModule.updateBillingProfile('${startup.id}', event)">
                   <div style="display: flex; flex-direction: column; gap: 12px; font-size: 12px;">
+                    <div>
+                      <label style="display: block; font-weight: 800; color: var(--text-muted, #64748B); text-transform: uppercase; font-size: 10.5px; margin-bottom: 4px;">
+                        Entity Classification
+                      </label>
+                      <select id="billing-entity-type" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-subtle, #E2E8F0); background: var(--bg-surface, #ffffff); font-size: 12.5px; font-weight: 700;">
+                        <option value="Private Limited" selected>Private Limited Company (Pvt Ltd)</option>
+                        <option value="Limited Liability Partnership">Limited Liability Partnership (LLP)</option>
+                        <option value="Partnership Firm">Partnership Firm</option>
+                        <option value="Sole Proprietorship">Sole Proprietorship</option>
+                        <option value="Public Limited">Public Limited Company</option>
+                      </select>
+                    </div>
                     <div>
                       <label style="display: block; font-weight: 800; color: var(--text-muted, #64748B); text-transform: uppercase; font-size: 10.5px; margin-bottom: 4px;">
                         Company Legal Name
                       </label>
                       <input type="text" id="billing-legal-name" value="${startup.name || 'XYZ Technologies Private Limited'}" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-subtle, #E2E8F0); background: var(--bg-surface, #ffffff); font-size: 12.5px; font-weight: 700;" required />
                     </div>
-                    <div>
-                      <label style="display: block; font-weight: 800; color: var(--text-muted, #64748B); text-transform: uppercase; font-size: 10.5px; margin-bottom: 4px;">
-                        GSTIN (15 Characters)
-                      </label>
-                      <input type="text" id="billing-gstin" value="${startup.gstin || '29AAACX9920M1Z4'}" maxlength="15" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-subtle, #E2E8F0); background: var(--bg-surface, #ffffff); font-size: 12.5px; font-weight: 700; font-family: monospace;" required />
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                      <div>
+                        <label style="display: block; font-weight: 800; color: var(--text-muted, #64748B); text-transform: uppercase; font-size: 10.5px; margin-bottom: 4px;">
+                          GSTIN (15 Characters)
+                        </label>
+                        <input type="text" id="billing-gstin" value="${startup.gstin || '29AAACX9920M1Z4'}" maxlength="15" oninput="MeetingRoomsModule.onGSTINInput(this.value)" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-subtle, #E2E8F0); background: var(--bg-surface, #ffffff); font-size: 12px; font-weight: 700; font-family: monospace;" required />
+                      </div>
+                      <div>
+                        <label style="display: block; font-weight: 800; color: var(--text-muted, #64748B); text-transform: uppercase; font-size: 10.5px; margin-bottom: 4px;">
+                          PAN (Chars 3–12 of GSTIN)
+                        </label>
+                        <input type="text" id="billing-pan" value="${(startup.gstin || '29AAACX9920M1Z4').substring(2, 12)}" maxlength="10" readonly style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-subtle, #E2E8F0); background: var(--bg-surface-elevated, #F8FAFC); font-size: 12px; font-weight: 700; font-family: monospace; color: #4F3FE0;" />
+                      </div>
                     </div>
                     <div>
                       <label style="display: block; font-weight: 800; color: var(--text-muted, #64748B); text-transform: uppercase; font-size: 10.5px; margin-bottom: 4px;">
-                        Registered Billing Address
+                        State &amp; Place of Supply (Code 29)
                       </label>
-                      <textarea id="billing-address" rows="2" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-subtle, #E2E8F0); background: var(--bg-surface, #ffffff); font-size: 12px;">Cabin PC-103, Nexus Hub, Indiranagar, Bengaluru, Karnataka 560038</textarea>
+                      <select id="billing-state" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-subtle, #E2E8F0); background: var(--bg-surface, #ffffff); font-size: 12px; font-weight: 700;">
+                        <option value="29-Karnataka" selected>29 - Karnataka (Intra-state: CGST 9% + SGST 9%)</option>
+                        <option value="27-Maharashtra">27 - Maharashtra (Inter-state: IGST 18%)</option>
+                        <option value="07-Delhi">07 - Delhi (Inter-state: IGST 18%)</option>
+                        <option value="33-Tamil Nadu">33 - Tamil Nadu (Inter-state: IGST 18%)</option>
+                        <option value="36-Telangana">36 - Telangana (Inter-state: IGST 18%)</option>
+                      </select>
                     </div>
-                    <button type="submit" class="btn btn-primary btn-sm" style="background: #4F3FE0; border-color: #4338CA; font-weight: 800; font-size: 12px; padding: 8px 16px; border-radius: 8px; align-self: flex-start;">
-                      Save Profile Changes
+                    <div>
+                      <label style="display: block; font-weight: 800; color: var(--text-muted, #64748B); text-transform: uppercase; font-size: 10.5px; margin-bottom: 4px;">
+                        Registered Billing Address (Structured)
+                      </label>
+                      <input type="text" id="billing-address-line1" value="Cabin PC-103, 3rd Floor, Nexus Hub" placeholder="Address Line 1" style="width: 100%; padding: 7px 12px; border-radius: 8px; border: 1px solid var(--border-subtle, #E2E8F0); background: var(--bg-surface, #ffffff); font-size: 12px; margin-bottom: 6px;" required />
+                      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 8px;">
+                        <input type="text" id="billing-city" value="Bengaluru" placeholder="City" style="width: 100%; padding: 7px 12px; border-radius: 8px; border: 1px solid var(--border-subtle, #E2E8F0); background: var(--bg-surface, #ffffff); font-size: 12px;" required />
+                        <input type="text" id="billing-pin" value="560034" placeholder="PIN Code" style="width: 100%; padding: 7px 12px; border-radius: 8px; border: 1px solid var(--border-subtle, #E2E8F0); background: var(--bg-surface, #ffffff); font-size: 12px;" required />
+                      </div>
+                    </div>
+                    <div>
+                      <label style="display: block; font-weight: 800; color: var(--text-muted, #64748B); text-transform: uppercase; font-size: 10.5px; margin-bottom: 4px;">
+                        Billing Email Addresses (Multiple Comma-Separated)
+                      </label>
+                      <input type="text" id="billing-emails" value="finance@xyztechnologies.io, accounts@xyztechnologies.io" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-subtle, #E2E8F0); background: var(--bg-surface, #ffffff); font-size: 12px; font-weight: 700;" required />
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm" style="background: #4F3FE0; border-color: #4338CA; font-weight: 800; font-size: 12px; padding: 8px 18px; border-radius: 8px; align-self: flex-start; margin-top: 4px;">
+                      Save Billing Profile
                     </button>
                   </div>
                 </form>
@@ -3408,18 +3494,24 @@ const MeetingRoomsModule = {
 
               <!-- Payment Methods & Auto-Renew Card -->
               <div class="nexus-billing-panel">
-                <h4 style="font-size: 14px; font-weight: 900; color: var(--text-primary, #111827); margin: 0 0 14px 0; display: flex; align-items: center; gap: 8px;">
-                  <span>💳</span>
-                  <span>Payment Methods &amp; Auto-Renew</span>
-                </h4>
-                <div style="display: flex; flex-direction: column; gap: 14px; font-size: 12px;">
-                  <!-- Saved Card -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                  <h4 style="font-size: 14px; font-weight: 900; color: var(--text-primary, #111827); margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <span>💳</span>
+                    <span>Payment Methods &amp; Mandates</span>
+                  </h4>
+                  <button type="button" onclick="MeetingRoomsModule.openAddPaymentMethodModal('${startup.id}')" class="btn btn-outline btn-sm" style="font-size: 11px; font-weight: 800; border-radius: 6px; padding: 4px 10px; color: #4F3FE0; border-color: rgba(79,63,224,0.3);">
+                    + Add Method
+                  </button>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 12px; font-size: 12px;">
+                  <!-- Method 1: Primary Corporate Card -->
                   <div style="border: 1px solid var(--border-subtle, #E2E8F0); border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center;">
                     <div style="display: flex; align-items: center; gap: 10px;">
-                      <span style="font-size: 20px;">💳</span>
+                      <span style="font-size: 22px;">💳</span>
                       <div>
                         <div style="font-weight: 800; color: var(--text-primary, #111827);">HDFC Corporate Visa •••• 4821</div>
-                        <div style="font-size: 10.5px; color: var(--text-muted, #8A90A2); margin-top: 2px;">Expires 08/29 • Primary method</div>
+                        <div style="font-size: 10.5px; color: var(--text-muted, #8A90A2); margin-top: 2px;">Expires 08/29 • Primary Auto-Renew Method</div>
                       </div>
                     </div>
                     <span style="font-size: 10.5px; font-weight: 800; background: rgba(16, 185, 129, 0.12); color: #059669; padding: 3px 8px; border-radius: 6px;">
@@ -3427,32 +3519,60 @@ const MeetingRoomsModule = {
                     </span>
                   </div>
 
-                  <!-- Auto Renew Toggle -->
+                  <!-- Method 2: UPI AutoPay Mandate (Used for Oct 15 Top-Up) -->
+                  <div style="border: 1px solid var(--border-subtle, #E2E8F0); border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; background: rgba(79, 63, 224, 0.02);">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                      <span style="font-size: 22px;">⚡</span>
+                      <div>
+                        <div style="font-weight: 800; color: var(--text-primary, #111827);">Axis UPI AutoPay (alex@okaxis)</div>
+                        <div style="font-size: 10.5px; color: var(--text-muted, #8A90A2); margin-top: 2px;">Mandate UMN: HUB20261015AXIS • Used for Oct 15 Top-Up</div>
+                      </div>
+                    </div>
+                    <button type="button" onclick="if(typeof App !== 'undefined') App.showToast('UPI AutoPay mandate set as default.', 'info');" class="btn btn-outline btn-sm" style="font-size: 10.5px; font-weight: 700; padding: 3px 8px; border-radius: 6px;">
+                      Set Default
+                    </button>
+                  </div>
+
+                  <!-- 30-Day Card Expiry Reminder Banner -->
+                  <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 10px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; font-size: 11px; color: #B45309;">
+                    <span style="font-size: 18px;">⚠️</span>
+                    <div>
+                      <strong>Proactive Card Expiry Alert:</strong> Card ending in 4821 is monitored. Notifications trigger 30 days prior to expiry.
+                    </div>
+                  </div>
+
+                  <!-- Auto Renew Accessible Switch & Net Payable Calculation -->
                   <div style="background: var(--bg-surface-elevated, #F8FAFC); border: 1px solid var(--border-subtle, #E2E8F0); border-radius: 12px; padding: 14px; display: flex; justify-content: space-between; align-items: center;">
                     <div>
                       <div style="font-weight: 800; color: var(--text-primary, #111827);">Auto-Renew Membership</div>
-                      <div style="font-size: 11px; color: var(--text-muted, #64748B); margin-top: 2px;">Next charge: <strong>1 Dec 2026</strong> (₹29,500 via HDFC Corporate)</div>
+                      <div style="font-size: 11px; color: var(--text-muted, #64748B); margin-top: 2px;">
+                        Next charge: <strong>1 Dec 2026</strong> • Net: <strong style="color: #059669;">₹27,140</strong> (₹29,500 less ₹2,360 CN adjustment)
+                      </div>
                     </div>
-                    <label style="position: relative; display: inline-block; width: 44px; height: 24px; cursor: pointer;">
-                      <input type="checkbox" checked onchange="MeetingRoomsModule.toggleAutoRenew('${startup.id}', this.checked)" style="opacity: 0; width: 0; height: 0;" />
-                      <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #4F3FE0; transition: .3s; border-radius: 24px;"></span>
-                    </label>
-                  </div>
-
-                  <!-- Failed Payment Policy Note -->
-                  <div style="font-size: 11px; color: var(--text-muted, #64748B); background: rgba(79, 63, 224, 0.05); padding: 8px 12px; border-radius: 8px; line-height: 1.4;">
-                    ℹ️ <strong>Retry &amp; Grace Period:</strong> Failed auto-renewals retry automatically on Day 2, 4, and 7. Your account enjoys a 7-day grace period with unhindered room bookings.
-                  </div>
-
-                  <!-- TDS Deduction Option -->
-                  <div style="border: 1px dashed var(--border-subtle, #CBD5E1); border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                      <div style="font-weight: 800; color: var(--text-primary, #111827);">Pay Net of TDS (Section 194-I)</div>
-                      <div style="font-size: 10.5px; color: var(--text-muted, #64748B); margin-top: 2px;">Upload Form 16A TDS certificate for 10% tax credit.</div>
-                    </div>
-                    <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openTDSModal('${startupInvoices[0] ? startupInvoices[0].id : 'INV-2026-080'}')" style="font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px;">
-                      Upload TDS
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked="true"
+                      id="auto-renew-switch"
+                      onclick="MeetingRoomsModule.toggleAutoRenewSwitch('${startup.id}')"
+                      style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; font-size: 11px; font-weight: 800; background: #059669; color: #ffffff; border: none; cursor: pointer; transition: all 0.2s ease;"
+                    >
+                      <span>✓</span>
+                      <span id="auto-renew-label">ON</span>
                     </button>
+                  </div>
+
+                  <!-- Configurable TDS Section Selector Card -->
+                  <div style="border: 1px dashed var(--border-subtle, #CBD5E1); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <div>
+                        <div style="font-weight: 800; color: var(--text-primary, #111827); font-size: 12px;">TDS Compliance (Income Tax Act)</div>
+                        <div style="font-size: 10.5px; color: var(--text-muted, #64748B); margin-top: 2px;">TDS is deducted strictly on Base Amount (excluding GST).</div>
+                      </div>
+                      <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openTDSModal('${startupInvoices[0] ? startupInvoices[0].id : 'INV-2026-080'}')" style="font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 6px; color: #4F3FE0; border-color: rgba(79,63,224,0.3);">
+                        ⚙️ Configure TDS
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -4015,61 +4135,266 @@ const MeetingRoomsModule = {
     if (mount) mount.innerHTML = modalHtml;
   },
 
+  onGSTINInput(gstin) {
+    if (!gstin) return;
+    const clean = gstin.trim().toUpperCase();
+    if (clean.length >= 12) {
+      const pan = clean.substring(2, 12);
+      const panEl = document.getElementById('billing-pan');
+      if (panEl) panEl.value = pan;
+    }
+  },
+
   updateBillingProfile(startupId, event) {
     if (event) event.preventDefault();
     const legalName = document.getElementById('billing-legal-name')?.value;
+    const entityType = document.getElementById('billing-entity-type')?.value;
     const gstin = document.getElementById('billing-gstin')?.value;
-    const address = document.getElementById('billing-address')?.value;
+    const pan = document.getElementById('billing-pan')?.value;
+    const state = document.getElementById('billing-state')?.value;
+    const line1 = document.getElementById('billing-address-line1')?.value;
+    const city = document.getElementById('billing-city')?.value;
+    const pin = document.getElementById('billing-pin')?.value;
+    const emails = document.getElementById('billing-emails')?.value;
 
     const bs = (typeof window !== 'undefined' && window.billingService) ? window.billingService : ((typeof require === 'function') ? require('./billingService') : null);
+
     if (gstin && !bs.validateGSTIN(gstin)) {
-      if (typeof App !== 'undefined') App.showToast('Invalid GSTIN format (must be 15 alphanumeric characters).', 'danger');
+      if (typeof App !== 'undefined') App.showToast('Invalid GSTIN format (must be 15 alphanumeric characters matching state code).', 'danger');
       return;
     }
+
+    if (pan && gstin) {
+      const panCheck = bs.validatePANAgainstGSTIN(pan, gstin);
+      if (!panCheck.valid) {
+        if (typeof App !== 'undefined') App.showToast(panCheck.message, 'danger');
+        return;
+      }
+    }
+
+    const fullAddress = `${line1 || ''}, ${city || ''}, ${state || ''} - ${pin || ''}`.replace(/^,\s*|,\s*$/g, '');
 
     const startup = window.store.getStartupById(startupId);
     if (startup) {
       startup.name = legalName || startup.name;
+      startup.entityType = entityType || startup.entityType;
       startup.gstin = gstin ? gstin.trim().toUpperCase() : startup.gstin;
-      startup.billingAddress = address;
+      startup.pan = pan ? pan.trim().toUpperCase() : startup.pan;
+      startup.billingAddress = fullAddress;
+      startup.billingEmails = emails;
       if (window.store.save) window.store.save();
     }
 
-    if (typeof App !== 'undefined') App.showToast('Billing profile saved successfully.', 'success');
-  },
-
-  toggleAutoRenew(startupId, enabled) {
     if (typeof App !== 'undefined') {
-      App.showToast(enabled ? 'Auto-renew enabled for next cycle (1 Dec 2026).' : 'Auto-renew disabled.', 'info');
+      App.showToast('✅ Billing profile saved. Updates will apply to future invoices.', 'success');
     }
   },
 
-  openTDSModal(invoiceId) {
-    const modalHtml = `
-      <div class="modal-overlay active" id="modal-tds" onclick="if(event.target === this) MeetingRoomsModule.closeModal('modal-tds')" style="display: flex; align-items: center; justify-content: center; z-index: 1070; padding: 16px; background: rgba(15, 23, 42, 0.78); backdrop-filter: blur(8px);">
-        <div style="background: #ffffff; border-radius: 18px; max-width: 460px; width: 100%; overflow: hidden; padding: 24px; box-shadow: 0 25px 60px rgba(0,0,0,0.35);">
-          <h3 style="font-size: 18px; font-weight: 900; color: #111827; margin: 0 0 6px 0;">
-            🏢 Section 194-I TDS Credit
-          </h3>
-          <p style="font-size: 12px; color: #64748B; margin: 0 0 14px 0;">
-            Attach Form 16A or Challan ITNS 281 for 10% rent TDS deduction on invoice #${invoiceId}.
-          </p>
-          <div style="border: 2px dashed #CBD5E1; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 16px; cursor: pointer;" onclick="document.getElementById('tds-file').click()">
-            <span style="font-size: 28px;">📄</span>
-            <div style="font-weight: 800; font-size: 12px; margin-top: 4px; color: #4F3FE0;">Click to select Form 16A PDF</div>
-            <div style="font-size: 10px; color: #94A3B8;">Max size: 5 MB</div>
-            <input type="file" id="tds-file" accept=".pdf" style="display: none;" onchange="document.getElementById('tds-filename').textContent = this.files[0]?.name || ''" />
-            <div id="tds-filename" style="font-weight: 700; color: #059669; font-size: 11px; margin-top: 4px;"></div>
+  toggleAutoRenewSwitch(startupId) {
+    const sw = document.getElementById('auto-renew-switch');
+    const lbl = document.getElementById('auto-renew-label');
+    const isCurrentlyOn = sw && sw.getAttribute('aria-checked') === 'true';
+
+    if (isCurrentlyOn) {
+      // Show confirmation dialog before turning off
+      const modalHtml = `
+        <div class="modal-overlay active" id="modal-autorenew-confirm" onclick="if(event.target === this) MeetingRoomsModule.closeModal('modal-autorenew-confirm')" style="display: flex; align-items: center; justify-content: center; z-index: 1080; padding: 16px; background: rgba(15, 23, 42, 0.78); backdrop-filter: blur(8px);">
+          <div style="background: #ffffff; border-radius: 18px; max-width: 440px; width: 100%; overflow: hidden; padding: 24px; box-shadow: 0 25px 60px rgba(0,0,0,0.35); border: 1px solid #E2E8F0;">
+            <div style="font-size: 28px; margin-bottom: 8px;">⚠️</div>
+            <h3 style="font-size: 18px; font-weight: 900; color: #111827; margin: 0 0 6px 0;">
+              Disable Membership Auto-Renew?
+            </h3>
+            <p style="font-size: 12.5px; color: #64748B; margin: 0 0 16px 0; line-height: 1.5;">
+              If disabled, your dedicated workspace and meeting room credit allowances will expire on <strong>30 November 2026</strong>. You will not be billed on 1 December 2026.
+            </p>
+            <div style="display: flex; justify-content: flex-end; gap: 8px;">
+              <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.closeModal('modal-autorenew-confirm')" style="font-weight: 700;">
+                Keep Auto-Renew ON
+              </button>
+              <button type="button" class="btn btn-danger btn-sm" onclick="MeetingRoomsModule.confirmDisableAutoRenew('${startupId}')" style="font-weight: 800; background: #DC2626; border-color: #B91C1C; color: #ffffff;">
+                Yes, Turn OFF
+              </button>
+            </div>
           </div>
-          <div style="display: flex; justify-content: flex-end; gap: 8px;">
-            <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.closeModal('modal-tds')" style="font-weight: 700;">Cancel</button>
-            <button type="button" class="btn btn-primary btn-sm" onclick="MeetingRoomsModule.closeModal('modal-tds'); App.showToast('TDS certificate submitted for Admin approval.', 'success');" style="background: #4F3FE0; font-weight: 800;">Upload &amp; Submit</button>
+        </div>
+      `;
+      const mount = document.getElementById('modal-mount');
+      if (mount) mount.innerHTML = modalHtml;
+    } else {
+      if (sw) {
+        sw.setAttribute('aria-checked', 'true');
+        sw.style.background = '#059669';
+      }
+      if (lbl) lbl.textContent = 'ON';
+      if (typeof App !== 'undefined') {
+        App.showToast('✅ Auto-renew enabled. Next billing on 1 Dec 2026 (Net ₹27,140).', 'success');
+      }
+    }
+  },
+
+  confirmDisableAutoRenew(startupId) {
+    this.closeModal('modal-autorenew-confirm');
+    const sw = document.getElementById('auto-renew-switch');
+    const lbl = document.getElementById('auto-renew-label');
+    if (sw) {
+      sw.setAttribute('aria-checked', 'false');
+      sw.style.background = '#64748B';
+    }
+    if (lbl) lbl.textContent = 'OFF';
+    if (typeof App !== 'undefined') {
+      App.showToast('Auto-renew disabled. Access active until 30 Nov 2026.', 'warning');
+    }
+  },
+
+  openAddPaymentMethodModal(startupId) {
+    const modalHtml = `
+      <div class="modal-overlay active" id="modal-add-payment-method" onclick="if(event.target === this) MeetingRoomsModule.closeModal('modal-add-payment-method')" style="display: flex; align-items: center; justify-content: center; z-index: 1070; padding: 16px; background: rgba(15, 23, 42, 0.78); backdrop-filter: blur(8px);">
+        <div style="background: #ffffff; border-radius: 18px; max-width: 480px; width: 100%; overflow: hidden; padding: 24px; box-shadow: 0 25px 60px rgba(0,0,0,0.35);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+            <h3 style="font-size: 18px; font-weight: 900; color: #111827; margin: 0; display: flex; align-items: center; gap: 8px;">
+              <span>💳</span>
+              <span>Add Corporate Payment Method</span>
+            </h3>
+            <button type="button" onclick="MeetingRoomsModule.closeModal('modal-add-payment-method')" style="background: transparent; border: none; font-size: 16px; cursor: pointer;">✕</button>
+          </div>
+          <p style="font-size: 12px; color: #64748B; margin: 0 0 16px 0;">
+            Securely tokenize via Razorpay / NPCI gateway for recurring workspace rent &amp; top-up credit purchases.
+          </p>
+          <div style="display: flex; flex-direction: column; gap: 12px; font-size: 12px;">
+            <div>
+              <label style="display: block; font-weight: 800; color: #64748B; font-size: 10.5px; text-transform: uppercase; margin-bottom: 4px;">Payment Method Type</label>
+              <select id="new-pay-type" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 12px; font-weight: 700;">
+                <option value="card">Corporate Credit / Debit Card (Visa, Mastercard, RuPay)</option>
+                <option value="upi">UPI AutoPay Mandate (GPay, PhonePe, BHIM, Axis)</option>
+                <option value="netbanking">Net Banking Corporate Direct Debit</option>
+              </select>
+            </div>
+            <div>
+              <label style="display: block; font-weight: 800; color: #64748B; font-size: 10.5px; text-transform: uppercase; margin-bottom: 4px;">Card / Mandate Identifier</label>
+              <input type="text" id="new-pay-ref" placeholder="Card Number or UPI ID (e.g. founder@okaxis)" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 12px;" />
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;">
+              <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.closeModal('modal-add-payment-method')" style="font-weight: 700;">Cancel</button>
+              <button type="button" class="btn btn-primary btn-sm" onclick="MeetingRoomsModule.closeModal('modal-add-payment-method'); if(typeof App !== 'undefined') App.showToast('✅ Payment method authenticated & added.', 'success');" style="background: #4F3FE0; font-weight: 800;">Verify &amp; Save</button>
+            </div>
           </div>
         </div>
       </div>
     `;
     const mount = document.getElementById('modal-mount');
     if (mount) mount.innerHTML = modalHtml;
+  },
+
+  openTDSModal(invoiceId) {
+    const inv = window.store ? window.store.getInvoiceById(invoiceId) : null;
+    const baseAmt = inv ? (inv.subtotal || inv.taxableAmount || Math.round((inv.total || 29500) / 1.18)) : 25000;
+    const bs = (typeof window !== 'undefined' && window.billingService) ? window.billingService : null;
+    const sections = bs ? bs.TDS_CONFIG.sections : [
+      { code: '194-I_building', section: 'Section 194-I', nature: 'Rent of Land, Building or Furniture', ratePercent: 10 },
+      { code: '194-I_machinery', section: 'Section 194-I', nature: 'Rent of Equipment / Machinery', ratePercent: 2 },
+      { code: '194-C_company', section: 'Section 194-C', nature: 'Contractual Facility Services', ratePercent: 2 },
+      { code: '194-J_tech', section: 'Section 194-J', nature: 'Technical / Incubation Advisory', ratePercent: 2 }
+    ];
+
+    const modalHtml = `
+      <div class="modal-overlay active" id="modal-tds" onclick="if(event.target === this) MeetingRoomsModule.closeModal('modal-tds')" style="display: flex; align-items: center; justify-content: center; z-index: 1070; padding: 16px; background: rgba(15, 23, 42, 0.78); backdrop-filter: blur(8px);">
+        <div style="background: #ffffff; border-radius: 18px; max-width: 520px; width: 100%; overflow: hidden; padding: 24px; box-shadow: 0 25px 60px rgba(0,0,0,0.35);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <h3 style="font-size: 18px; font-weight: 900; color: #111827; margin: 0; display: flex; align-items: center; gap: 8px;">
+              <span>🏢</span>
+              <span>TDS Deduction &amp; Form 16A Credit</span>
+            </h3>
+            <button type="button" onclick="MeetingRoomsModule.closeModal('modal-tds')" style="background: transparent; border: none; font-size: 16px; cursor: pointer;">✕</button>
+          </div>
+          <p style="font-size: 12px; color: #64748B; margin: 0 0 14px 0; line-height: 1.4;">
+            As per Indian Income Tax regulations, TDS is deducted <strong>strictly on Base Taxable Value</strong> (excluding GST).
+          </p>
+
+          <div style="display: flex; flex-direction: column; gap: 12px; font-size: 12px;">
+            <div>
+              <label style="display: block; font-weight: 800; color: #64748B; font-size: 10.5px; text-transform: uppercase; margin-bottom: 4px;">
+                TDS Section &amp; Classification
+              </label>
+              <select id="tds-section-select" onchange="MeetingRoomsModule.onTDSSectionChange(this.value, ${baseAmt})" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 12px; font-weight: 700;">
+                ${sections.map(s => `<option value="${s.code}" ${s.code === '194-I_building' ? 'selected' : ''}>${s.section}: ${s.nature} (${s.ratePercent}%)</option>`).join('')}
+              </select>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <div>
+                <label style="display: block; font-weight: 800; color: #64748B; font-size: 10.5px; text-transform: uppercase; margin-bottom: 4px;">
+                  Applicable Quarter
+                </label>
+                <select id="tds-quarter" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 12px; font-weight: 700;">
+                  <option value="Q3" selected>Q3 FY 2026-27 (Oct - Dec)</option>
+                  <option value="Q2">Q2 FY 2026-27 (Jul - Sep)</option>
+                  <option value="Q1">Q1 FY 2026-27 (Apr - Jun)</option>
+                  <option value="Q4">Q4 FY 2026-27 (Jan - Mar)</option>
+                </select>
+              </div>
+              <div>
+                <label style="display: block; font-weight: 800; color: #64748B; font-size: 10.5px; text-transform: uppercase; margin-bottom: 4px;">
+                  Base Taxable Amount
+                </label>
+                <input type="text" value="₹${Number(baseAmt).toLocaleString('en-IN')}" readonly style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; background: #F8FAFC; font-weight: 800; font-size: 12px;" />
+              </div>
+            </div>
+
+            <!-- Calculated TDS preview -->
+            <div style="background: rgba(79, 63, 224, 0.05); border: 1px solid rgba(79, 63, 224, 0.2); border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <span style="font-size: 11px; color: #64748B;">TDS Deductible (10% on ₹${Number(baseAmt).toLocaleString('en-IN')}):</span>
+                <div id="tds-amount-preview" style="font-size: 15px; font-weight: 900; color: #4F3FE0; margin-top: 2px;">₹${Number(Math.round(baseAmt * 0.1)).toLocaleString('en-IN')}</div>
+              </div>
+              <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #B45309; font-weight: 800; font-size: 11px; padding: 4px 10px; border-radius: 6px;">
+                ● Requires Admin Approval
+              </span>
+            </div>
+
+            <!-- File Upload -->
+            <div style="border: 2px dashed #CBD5E1; border-radius: 12px; padding: 16px; text-align: center; cursor: pointer;" onclick="document.getElementById('tds-file').click()">
+              <span style="font-size: 26px;">📄</span>
+              <div style="font-weight: 800; font-size: 12px; margin-top: 4px; color: #4F3FE0;">Attach Form 16A Certificate or Challan (PDF)</div>
+              <div style="font-size: 10.5px; color: #94A3B8;">Max size: 5 MB</div>
+              <input type="file" id="tds-file" accept=".pdf" style="display: none;" onchange="document.getElementById('tds-filename').textContent = 'Attached: ' + (this.files[0]?.name || '')" />
+              <div id="tds-filename" style="font-weight: 700; color: #059669; font-size: 11.5px; margin-top: 4px;"></div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px;">
+              <button type="button" class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.closeModal('modal-tds')" style="font-weight: 700;">Cancel</button>
+              <button type="button" class="btn btn-primary btn-sm" onclick="MeetingRoomsModule.submitTDS('${invoiceId}')" style="background: #4F3FE0; font-weight: 800;">Submit for Approval</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    const mount = document.getElementById('modal-mount');
+    if (mount) mount.innerHTML = modalHtml;
+  },
+
+  onTDSSectionChange(sectionCode, baseAmt) {
+    const bs = (typeof window !== 'undefined' && window.billingService) ? window.billingService : null;
+    const calc = bs ? bs.calculateTDS(baseAmt, sectionCode) : { tdsAmount: Math.round(baseAmt * 0.1), ratePercent: 10 };
+    const el = document.getElementById('tds-amount-preview');
+    if (el) el.textContent = `₹${Number(calc.tdsAmount).toLocaleString('en-IN')}`;
+  },
+
+  submitTDS(invoiceId) {
+    this.closeModal('modal-tds');
+    const inv = window.store ? window.store.getInvoiceById(invoiceId) : null;
+    if (inv) {
+      inv.tds = {
+        section: 'Section 194-I',
+        status: 'Pending',
+        tdsAmount: 2500,
+        submittedAt: new Date().toISOString()
+      };
+      if (window.store.save) window.store.save();
+    }
+    if (typeof App !== 'undefined') {
+      App.showToast('✅ Form 16A submitted. Amount payable will be updated upon Admin verification.', 'success');
+    }
+    this.render();
   },
 
   // Tab 5: Analytics Dashboard View (Utilization, Peak Hours, Cancellations, Revenue, Startup Usage)
@@ -10564,7 +10889,7 @@ const MeetingRoomsModule = {
 };
 
 // Global click listener to close popover row menus
-if (typeof window !== 'undefined' && !window.__meetingMenuListenerAttached) {
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function' && !window.__meetingMenuListenerAttached) {
   window.addEventListener('click', (e) => {
     if (!e.target.closest('.meeting-row-menu-wrapper')) {
       if (window.MeetingRoomsModule && window.MeetingRoomsModule.closeAllRowMenus) {
@@ -10575,4 +10900,10 @@ if (typeof window !== 'undefined' && !window.__meetingMenuListenerAttached) {
   window.__meetingMenuListenerAttached = true;
 }
 
-window.MeetingRoomsModule = MeetingRoomsModule;
+if (typeof window !== 'undefined') {
+  window.MeetingRoomsModule = MeetingRoomsModule;
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = MeetingRoomsModule;
+}

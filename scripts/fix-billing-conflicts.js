@@ -98,3 +98,4 @@ if (!content.includes('INV/2026-27/0002')) {
 
 fs.writeFileSync(initialDataPath, content, 'utf8');
 console.log('✅ Successfully wrote approved fixes to js/initialData.js.');
+
