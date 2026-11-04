@@ -114,3 +114,4 @@ if (sNorm.includes(targetNorm)) {
   console.error('Target getWorkspaces method not matched directly!');
   process.exit(1);
 }
+

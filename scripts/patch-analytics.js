@@ -444,3 +444,4 @@ const newAnalyticsMethod = `renderAnalyticsTabView({ rooms }) {
 s = s.slice(0, startIdx) + newAnalyticsMethod + '\n\n' + s.slice(endIdx);
 fs.writeFileSync(filePath, s, 'utf8');
 console.log('✅ Updated renderAnalyticsTabView in js/modules/meetingRooms.js successfully!');
+

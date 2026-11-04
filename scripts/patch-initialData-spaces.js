@@ -43,3 +43,4 @@ content = content.replace(/"Dedicated D-10/g, '"Dedicated DD-10');
 
 fs.writeFileSync(initialDataPath, content, 'utf8');
 console.log('✅ initialData.js spaces updated successfully!');
+

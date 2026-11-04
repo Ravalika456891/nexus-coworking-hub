@@ -348,6 +348,7 @@ function getMonthlyAllowance(startup, allRooms = [], targetMonth = null, topUps 
     percent_left: pctLeft,
     // Backward compatibility aliases
     includedHours,
+    planMonthlyHours: includedHours,
     planCredits,
     openingCredits: planCredits,
     totalTopUpCredits,
@@ -365,6 +366,8 @@ function getMonthlyAllowance(startup, allRooms = [], targetMonth = null, topUps 
     remainingHours: currentHourBalance,
     remainingPlanCredits,
     remainingTopUpCredits,
+    planRemainingHours: Number((remainingPlanCredits / CREDITS_PER_HOUR).toFixed(1)),
+    topUpRemainingHours: Number((remainingTopUpCredits / CREDITS_PER_HOUR).toFixed(1)),
     overageCredits,
     overageHours,
     overageFee,

@@ -34,7 +34,7 @@ class NexusStore {
     this.syncFromCloud();
 
     // Live continuous database synchronization across all sections
-    if (typeof window !== 'undefined' && !this._cloudSyncInterval) {
+    if (typeof window !== 'undefined' && typeof document !== 'undefined' && !this._cloudSyncInterval) {
       this._cloudSyncInterval = setInterval(() => {
         if (!document.hidden) {
           this.syncFromCloud();
@@ -149,38 +149,24 @@ class NexusStore {
       });
     }
 
-    // Ensure T-Hub Contact Inquiries seed data
-    if (!this.state.contactInquiries || this.state.contactInquiries.length === 0) {
-      this.state.contactInquiries = [
-        {
-          id: 'INQ-101',
-          ticketNumber: 'THUB-2026-8841',
-          name: 'Aditya Sharma',
-          email: 'aditya@neuralcraft.ai',
-          phone: '+91 98765 43210',
-          category: 'Funding',
-          department: 'funding@t-hub.co',
-          organization: 'NeuralCraft AI',
-          subject: 'Seed Stage Venture Acceleration & T-Fund pitch',
-          message: 'Looking to connect with T-Hub angel network and T-Fund managers for our Seed round pitch. We have an operational ARR of $120k.',
-          createdAt: '2026-10-08T10:30:00Z',
-          status: 'In Review'
-        },
-        {
-          id: 'INQ-102',
-          ticketNumber: 'THUB-2026-8842',
-          name: 'Dr. Priya Varma',
-          email: 'priya.varma@iith.ac.in',
-          phone: '+91 91234 56789',
-          category: 'Academia',
-          department: 'academia@t-hub.co',
-          organization: 'IIT Hyderabad Innovation Cell',
-          subject: 'Faculty & Student Innovation Cohort Immersion',
-          message: 'Requesting an innovation immersion tour and hackathon partnership for our final year engineering students cohort of 40 students.',
-          createdAt: '2026-10-09T14:15:00Z',
-          status: 'New'
-        }
-      ];
+    // Ensure Hub Organization Settings
+    if (!this.state.hubInfo || !this.state.hubInfo.hours) {
+      this.state.hubInfo = JSON.parse(JSON.stringify(window.INITIAL_DATA.hubInfo || {}));
+    }
+
+    // Ensure Visitors seed data
+    if (!this.state.visitors || this.state.visitors.length === 0) {
+      this.state.visitors = JSON.parse(JSON.stringify(window.INITIAL_DATA.visitors || []));
+    }
+
+    // Ensure Support Tickets seed data
+    if (!this.state.supportTickets || this.state.supportTickets.length === 0) {
+      this.state.supportTickets = JSON.parse(JSON.stringify(window.INITIAL_DATA.supportTickets || []));
+    }
+
+    // Ensure Inquiries seed data
+    if (!this.state.contactInquiries || this.state.contactInquiries.length === 0 || this.state.contactInquiries.some(i => (i.ticketNumber || '').startsWith('THUB-'))) {
+      this.state.contactInquiries = JSON.parse(JSON.stringify(window.INITIAL_DATA.contactInquiries || []));
     }
     // Ensure meeting room seed reservations exist for today and 2026-10-25
     if (!this.state.meetingRooms || this.state.meetingRooms.length === 0) {
@@ -322,8 +308,139 @@ class NexusStore {
     }
   }
 
-  getContactInquiries() {
-    return this.state.contactInquiries || [];
+  // Single Source of Truth: Organization & Hub Settings
+  getHubSettings() {
+    return this.state.hubInfo || (window.INITIAL_DATA && window.INITIAL_DATA.hubInfo) || {};
+  }
+
+  updateHubSettings(updated) {
+    if (!this.state.hubInfo) this.state.hubInfo = {};
+    Object.assign(this.state.hubInfo, updated);
+    this.save();
+    return this.state.hubInfo;
+  }
+
+  // --- Visitor Management Service (Scoped by Company) ---
+  getVisitors(companyId = null) {
+    const list = this.state.visitors || [];
+    const isOp = this.isOperatorUser ? this.isOperatorUser() : (this.currentUserRole === 'operator' || this.currentUserRole === 'super_admin');
+    if (isOp && !companyId) return list;
+    const target = companyId || this.activeFounderId || (this.getActiveStartup ? this.getActiveStartup()?.id : null) || 'STP-XYZ';
+    return list.filter(v => v.hostCompany === target || v.hostCompanyName === 'XYZ Technologies' || (v.hostName && v.hostName.includes('Alex Morgan')));
+  }
+
+  addVisitor(data) {
+    if (!this.state.visitors) this.state.visitors = [];
+    const randSuffix = Math.floor(1000 + Math.random() * 9000);
+    const newVisitor = {
+      id: `VIS-${100 + this.state.visitors.length + 1}`,
+      passNumber: `PASS-2026-${randSuffix}`,
+      name: (data.name || 'Visitor').trim(),
+      phone: (data.phone || '').trim(),
+      email: (data.email || '').trim(),
+      company: (data.company || 'External Guest').trim(),
+      purpose: data.purpose || 'Client Meeting',
+      hostName: data.hostName || 'Alex Morgan',
+      hostCompany: data.hostCompany || this.activeFounderId || 'STP-XYZ',
+      hostCompanyName: data.hostCompanyName || 'XYZ Technologies',
+      room: data.room || 'Boardroom Alpha',
+      date: data.date || new Date().toISOString().split('T')[0],
+      time: data.time || '10:00 AM',
+      idType: data.idType || 'Aadhaar Card',
+      status: 'Pass Issued',
+      checkInTime: null,
+      checkOutTime: null,
+      createdAt: new Date().toISOString()
+    };
+    this.state.visitors.unshift(newVisitor);
+
+    // Add activity log event
+    if (this.state.activityLog) {
+      this.state.activityLog.unshift({
+        id: `ACT-VIS-${Date.now()}`,
+        timestamp: 'Just now',
+        category: 'Visitors',
+        description: `Visitor pass ${newVisitor.passNumber} issued for ${newVisitor.name} (${newVisitor.company}). Host: ${newVisitor.hostName}.`,
+        icon: '🪪'
+      });
+    }
+
+    this.save();
+    return newVisitor;
+  }
+
+  updateVisitorStatus(id, newStatus) {
+    if (!this.state.visitors) return null;
+    const v = this.state.visitors.find(item => item.id === id || item.passNumber === id);
+    if (v) {
+      v.status = newStatus;
+      const nowIso = new Date().toISOString();
+      if (newStatus === 'Checked In') {
+        v.checkInTime = nowIso;
+      } else if (newStatus === 'Completed' || newStatus === 'Checked Out') {
+        v.status = 'Completed';
+        v.checkOutTime = nowIso;
+      }
+      this.save();
+      return v;
+    }
+    return null;
+  }
+
+  // --- Help & Support Tickets ---
+  getSupportTickets(companyId = null) {
+    const list = this.state.supportTickets || [];
+    const isOp = this.isOperatorUser ? this.isOperatorUser() : (this.currentUserRole === 'operator' || this.currentUserRole === 'super_admin');
+    if (isOp && !companyId) return list;
+    const target = companyId || this.activeFounderId || (this.getActiveStartup ? this.getActiveStartup()?.id : null) || 'STP-XYZ';
+    return list.filter(t => t.startupId === target || t.startupName === 'XYZ Technologies');
+  }
+
+  addSupportTicket(data) {
+    if (!this.state.supportTickets) this.state.supportTickets = [];
+    const randSuffix = Math.floor(1000 + Math.random() * 9000);
+    const newTicket = {
+      id: `TICK-${100 + this.state.supportTickets.length + 1}`,
+      ticketNumber: `TICK-2026-${randSuffix}`,
+      startupId: data.startupId || this.activeFounderId || 'STP-XYZ',
+      startupName: data.startupName || 'XYZ Technologies',
+      submittedBy: data.submittedBy || 'Alex Morgan',
+      category: data.category || 'Facility & Maintenance',
+      priority: data.priority || 'Medium',
+      location: data.location || 'Cabin 103 (Pod 4)',
+      subject: (data.subject || 'Facility Assistance Request').trim(),
+      description: (data.description || '').trim(),
+      status: 'Open',
+      slaHours: data.priority === 'Urgent' ? 2 : data.priority === 'High' ? 4 : 24,
+      createdAt: new Date().toISOString(),
+      resolvedAt: null
+    };
+    this.state.supportTickets.unshift(newTicket);
+    this.save();
+    return newTicket;
+  }
+
+  updateTicketStatus(id, newStatus) {
+    if (!this.state.supportTickets) return null;
+    const t = this.state.supportTickets.find(item => item.id === id || item.ticketNumber === id);
+    if (t) {
+      t.status = newStatus;
+      if (newStatus === 'Resolved' || newStatus === 'Closed') {
+        t.resolvedAt = new Date().toISOString();
+      }
+      this.save();
+      return t;
+    }
+    return null;
+  }
+
+  // --- Inquiries (Ecosystem Contact & Inquiries) ---
+  getContactInquiries(companyId = null) {
+    const list = this.state.contactInquiries || [];
+    const isOp = this.isOperatorUser ? this.isOperatorUser() : (this.currentUserRole === 'operator' || this.currentUserRole === 'super_admin');
+    if (isOp && !companyId) return list;
+    const target = companyId || this.activeFounderId || (this.getActiveStartup ? this.getActiveStartup()?.id : null) || 'STP-XYZ';
+    return list.filter(i => !i.startupId || i.startupId === target || i.organization === 'XYZ Technologies');
   }
 
   addContactInquiry(data) {
@@ -331,15 +448,16 @@ class NexusStore {
     const randSuffix = Math.floor(1000 + Math.random() * 9000);
     const newInquiry = {
       id: `INQ-${100 + this.state.contactInquiries.length + 1}`,
-      ticketNumber: `THUB-2026-${randSuffix}`,
-      name: data.name || 'Anonymous Founder',
-      email: data.email || '',
-      phone: data.phone || '',
-      category: data.category || 'General',
-      department: data.department || 'contact@t-hub.co',
-      organization: data.organization || '',
-      subject: data.subject || 'Ecosystem Inquiry',
-      message: data.message || '',
+      ticketNumber: `NX-2026-${randSuffix}`,
+      name: (data.name || 'Alex Morgan').trim(),
+      email: (data.email || 'alex.m@xyztech.io').trim(),
+      phone: (data.phone || '+91 98765 43210').trim(),
+      category: data.category || 'General Incubation',
+      department: 'support@nexushub.co',
+      organization: (data.organization || 'XYZ Technologies').trim(),
+      startupId: data.startupId || this.activeFounderId || 'STP-XYZ',
+      subject: (data.subject || 'Ecosystem Inquiry').trim(),
+      message: (data.message || '').trim(),
       createdAt: new Date().toISOString(),
       status: 'New'
     };
@@ -1686,7 +1804,9 @@ class NexusStore {
     const startup = this.getStartupById(sId) || (this.getStartups() || []).find(s => s.id === sId) || { id: sId, name: 'Startup', includedMeetingHours: 15, subscriptionPlan: 'Startup Plan' };
     
     // Delegate to unified creditService (Single Source of Truth)
-    const srv = (typeof window !== 'undefined') ? (window.creditService || window.CreditService) : null;
+    const srv = (typeof window !== 'undefined' && (window.creditService || window.CreditService))
+      || (typeof creditService !== 'undefined' ? creditService : null)
+      || (typeof require !== 'undefined' ? (() => { try { return require('../creditService'); } catch (e) { try { return require('./creditService'); } catch (e2) { return null; } } })() : null);
     if (srv && srv.getMonthlyAllowance) {
       const rooms = this.getMeetingRooms() || [];
       const allowance = srv.getMonthlyAllowance(startup, rooms, targetMonth, startup.topUps || []);
@@ -4359,3 +4479,7 @@ class NexusStore {
 
 window.store = new NexusStore();
 window.store.init();
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = window.store;
+}
