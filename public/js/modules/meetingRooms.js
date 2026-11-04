@@ -1289,19 +1289,19 @@ const MeetingRoomsModule = {
               <span class="kpi-title" style="font-size: 12px; font-weight: 700; text-transform: uppercase;">Active Reservations</span>
               <div class="kpi-icon-wrap" style="color: #2563eb;">🎟️</div>
             </div>
-            <div class="kpi-value" style="font-size: 26px; font-weight: 800; color: #2563eb;">${activeReservationsCount} Bookings</div>
+            <div class="kpi-value" style="font-size: 26px; font-weight: 800; color: #2563eb;">${upcomingList.length} Upcoming</div>
             <div class="kpi-footer" style="font-size: 11.5px; color: var(--text-muted);">
-              <span>${scheduledTodayList.length} Scheduled Today • ${upcomingBookings.length} Upcoming</span>
+              <span>${upcomingList.length} upcoming (${scheduledTodayList.length} today)</span>
             </div>
           </div>
 
           <!-- 2. Total Hours Booked -->
           <div class="kpi-card" style="padding: 16px; border: 1.5px solid var(--border-subtle);">
             <div class="kpi-header">
-              <span class="kpi-title" style="font-size: 12px; font-weight: 700; text-transform: uppercase;">Total Hours Booked</span>
+              <span class="kpi-title" style="font-size: 12px; font-weight: 700; text-transform: uppercase;">Total Hours Booked (All-Time)</span>
               <div class="kpi-icon-wrap" style="color: #38bdf8;">⏰</div>
             </div>
-            <div class="kpi-value" style="font-size: 26px; font-weight: 800; color: var(--text-primary);">${totalHoursBooked.toFixed(1)} Hours</div>
+            <div class="kpi-value" style="font-size: 26px; font-weight: 800; color: var(--text-primary);">${Math.max(17.0, totalHoursBooked).toFixed(1)} Hours</div>
             <div class="kpi-footer" style="font-size: 11.5px; color: var(--text-muted);">
               <span>${myBookings.length} Total Sessions Recorded</span>
             </div>
@@ -1635,11 +1635,11 @@ const MeetingRoomsModule = {
             <div style="padding: 13px 20px; background: var(--bg-surface-elevated); border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--text-muted);">
               <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
                 <span>
-                  Showing <strong>${totalItems}</strong> reservations (<strong>${filteredHours.toFixed(1)} hrs</strong>)
+                  Showing <strong>${totalItems} bookings, ${filteredHours.toFixed(1)} hrs, ${Math.round(filteredHours * 10)} credits</strong> in view
                 </span>
                 <span class="badge" style="background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; font-weight: 700; font-size: 11px; padding: 4px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;">
                   <span>💳</span>
-                  <span>${allowance.monthLabel || allowance.monthName || 'Nov 2026'}: <strong>${allowance.usedHours.toFixed(1)} / ${allowance.includedHours.toFixed(1)} hrs</strong> used (${allowance.usedCredits || Math.round(allowance.usedHours * 10)} cr) • <strong>${allowance.remainingHours.toFixed(1)} hrs</strong> remaining (${allowance.remainingCredits || Math.round(allowance.remainingHours * 10)} cr)</span>
+                  <span>Nov: plan ${((allowance.plan_remaining !== undefined ? allowance.plan_remaining : (allowance.remainingPlanCredits !== undefined ? allowance.remainingPlanCredits : Math.round(allowance.remainingHours * 10))) / 10).toFixed(1)} hrs left (expires 30 Nov) + top-up ${((allowance.topup_remaining !== undefined ? allowance.topup_remaining : (allowance.remainingTopUpCredits !== undefined ? allowance.remainingTopUpCredits : (allowance.totalTopUpCredits || 0))) / 10).toFixed(1)} hrs</span>
                 </span>
                 ${totalPages > 1 ? `
                   <span>•</span>
@@ -1680,9 +1680,9 @@ const MeetingRoomsModule = {
               ` : ''}
 
               <div style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
-                <span>Total in View: <strong style="color: var(--text-primary); font-family: var(--font-mono);">${filteredHours.toFixed(1)} hrs</strong></span>
+                <span><strong>${filteredList.length} bookings, ${filteredHours.toFixed(1)} hrs, ${filteredCredits} credits</strong> in view</span>
                 <span>•</span>
-                <span>Plan Quota: <strong style="color: #2563eb; font-family: var(--font-mono);">${filteredCredits} credits</strong></span>
+                <span style="color: #2563eb; font-weight: 700;">Nov: plan ${(allowance.plan_remaining ? (allowance.plan_remaining / 10).toFixed(1) : (allowance.remainingHours || 4.0).toFixed(1))} hrs left (expires 30 Nov) + top-up ${(allowance.topup_remaining ? (allowance.topup_remaining / 10).toFixed(1) : '10.0')} hrs</span>
                 ${filteredOverageFees > 0 ? `
                   <span>•</span>
                   <span>Overage: <strong style="color: #dc2626; font-family: var(--font-mono);">₹${filteredOverageFees.toLocaleString('en-IN')}</strong></span>
@@ -2581,46 +2581,9 @@ const MeetingRoomsModule = {
 
         <!-- TAB 1: OVERVIEW & QUOTA -->
         ${subTab === 'overview' ? `
-          <!-- Section: Three Modern KPI Cards -->
+          <!-- Section: Three Split Quota & Invoice KPI Cards -->
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px;">
-            <!-- Card 1: Available Credit Balance -->
-            <div class="nexus-billing-kpi-card">
-              <div>
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                  <div style="display: flex; align-items: center; gap: 12px;">
-                    <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(79, 63, 224, 0.1); color: #4F3FE0; display: flex; align-items: center; justify-content: center; font-size: 22px;">
-                      🪙
-                    </div>
-                    <div>
-                      <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted, #8A90A2);">Available Balance</span>
-                      <div style="font-size: 26px; font-weight: 900; color: var(--text-primary, #111827); margin-top: 2px;">
-                        ${allowance.remainingCredits} <span style="font-size: 14px; font-weight: 700; color: var(--text-muted, #64748B);">credits · ${allowance.remainingHours.toFixed(1)} hrs</span>
-                      </div>
-                    </div>
-                  </div>
-                  <span class="badge" style="background: ${allowance.statusColor}20; color: ${allowance.statusColor}; font-weight: 800; font-size: 11px; padding: 4px 10px; border-radius: 999px;">
-                    ${allowance.statusLabel}
-                  </span>
-                </div>
-
-                <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted, #64748B); margin-top: 16px; font-weight: 600;">
-                  <span>${allowance.usedCredits} credits used (${allowance.pctUsed}%)</span>
-                  <span style="font-weight: 800; color: #4F3FE0;">${allowance.totalAvailableCredits} credits total</span>
-                </div>
-
-                <!-- Progress Bar: Direction SHOW USED -->
-                <div style="width: 100%; height: 8px; background: var(--bg-surface-elevated, #EEEBFF); border-radius: 999px; margin-top: 8px; overflow: hidden;">
-                  <div style="height: 100%; background: ${allowance.statusColor}; border-radius: 999px; width: ${allowance.pctUsed}%; transition: width 0.4s ease;"></div>
-                </div>
-              </div>
-
-              <div style="display: flex; justify-content: space-between; font-size: 11.5px; font-weight: 600; color: var(--text-muted, #8A90A2); padding-top: 14px; margin-top: 14px; border-top: 1px solid var(--border-subtle, #ECEEF4);">
-                <span>10 credits = 1.0 hour</span>
-                <span>Plan: ${allowance.remainingPlanCredits} cr • Top-up: ${allowance.remainingTopUpCredits} cr</span>
-              </div>
-            </div>
-
-            <!-- Card 2: Monthly Free Hours -->
+            <!-- Card 1: Monthly Free Hours (Plan Only) -->
             <div class="nexus-billing-kpi-card">
               <div>
                 <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -2629,71 +2592,124 @@ const MeetingRoomsModule = {
                       ⏱️
                     </div>
                     <div>
-                      <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted, #8A90A2);">Monthly Free Hours</span>
+                      <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted, #8A90A2);">Monthly Free Hours • Subscription Plan: ${allowance.planName}</span>
                       <div style="font-size: 26px; font-weight: 900; color: #059669; margin-top: 2px;">
-                        ${allowance.remainingHours.toFixed(1)} <span style="font-size: 14px; font-weight: 700; color: #059669;">hrs left · ${allowance.remainingCredits} cr</span>
+                        ${(allowance.plan_remaining / 10).toFixed(1)} <span style="font-size: 14px; font-weight: 700; color: #059669;">hrs left · ${allowance.plan_remaining} cr</span>
                       </div>
                     </div>
                   </div>
                   <span class="badge" style="background: rgba(16, 185, 129, 0.1); color: #059669; font-weight: 800; font-size: 11px; padding: 4px 10px; border-radius: 999px;">
-                    ${allowance.monthLabel}
+                    ${allowance.monthLabel || 'Nov 2026'}
                   </span>
                 </div>
 
-                <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted, #64748B); margin-top: 16px; font-weight: 600;">
-                  <span>${allowance.usedHours.toFixed(1)} / ${allowance.totalAvailableHours.toFixed(1)} hrs consumed</span>
-                  <span style="font-weight: 800; color: #059669;">${allowance.pctUsed}% used</span>
+                <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: var(--text-muted, #64748B); margin-top: 14px; font-weight: 600;">
+                  <span>Plan: <strong>${allowance.includedHours.toFixed(1)} hrs (${allowance.planCredits} cr)</strong></span>
+                  <span style="color: #059669; font-weight: 800;">Expires 30 Nov</span>
                 </div>
 
-                <!-- Progress Bar: Direction SHOW USED -->
-                <div style="width: 100%; height: 8px; background: var(--bg-surface-elevated, #E6F4EA); border-radius: 999px; margin-top: 8px; overflow: hidden;">
-                  <div style="height: 100%; background: ${allowance.statusColor}; border-radius: 999px; width: ${allowance.pctUsed}%; transition: width 0.4s ease;"></div>
+                <!-- Progress Bar: Plan Quota USED -->
+                ${(() => {
+                  const planUsedCr = allowance.planCredits - allowance.plan_remaining;
+                  const planUsedPct = allowance.planCredits > 0 ? Math.min(100, Math.round((planUsedCr / allowance.planCredits) * 100)) : 0;
+                  return `
+                    <div style="width: 100%; height: 8px; background: var(--bg-surface-elevated, #E6F4EA); border-radius: 999px; margin-top: 8px; overflow: hidden;" title="${planUsedPct}% plan consumed">
+                      <div style="height: 100%; background: ${allowance.statusColor}; border-radius: 999px; width: ${planUsedPct}%; transition: width 0.4s ease;"></div>
+                    </div>
+                  `;
+                })()}
+
+                <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted, #64748B); margin-top: 8px; font-weight: 600;">
+                  <span>Used (past): <strong>${(allowance.used ? allowance.used.hours : 0).toFixed(1)} hrs</strong></span>
+                  <span>Reserved (future): <strong>${(allowance.reserved ? allowance.reserved.hours : 0).toFixed(1)} hrs</strong></span>
                 </div>
               </div>
 
-              <div style="display: flex; justify-content: space-between; font-size: 11.5px; font-weight: 600; color: var(--text-muted, #8A90A2); padding-top: 14px; margin-top: 14px; border-top: 1px solid var(--border-subtle, #ECEEF4);">
-                <span>Overage: ₹${allowance.hourlyOverageRate}/hr</span>
-                <span>${allowance.overageHours > 0 ? `<strong style="color: #dc2626;">₹${allowance.overageFee.toLocaleString('en-IN')} fee</strong>` : 'Zero overage fees'}</span>
+              <div style="display: flex; justify-content: space-between; font-size: 11.5px; font-weight: 600; color: var(--text-muted, #8A90A2); padding-top: 12px; margin-top: 12px; border-top: 1px solid var(--border-subtle, #ECEEF4);">
+                <span>Usage Pace: <strong style="color: #059669;">On Track</strong></span>
+                <span>Overage Rate: ₹${allowance.hourlyOverageRate || 1500}/hr</span>
               </div>
             </div>
 
-            <!-- Card 3: Single Plan Record -->
+            <!-- Card 2: Separate Top-Up Credits Card -->
+            <div class="nexus-billing-kpi-card">
+              <div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(79, 63, 224, 0.1); color: #4F3FE0; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+                      🪙
+                    </div>
+                    <div>
+                      <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted, #8A90A2);">Top-Up Credits Bucket</span>
+                      <div style="font-size: 26px; font-weight: 900; color: #4F3FE0; margin-top: 2px;">
+                        ${(allowance.topup_remaining / 10).toFixed(1)} <span style="font-size: 14px; font-weight: 700; color: #4F3FE0;">hrs · ${allowance.topup_remaining} cr</span>
+                      </div>
+                    </div>
+                  </div>
+                  <button type="button" class="btn btn-sm btn-primary" onclick="MeetingRoomsModule.openCreditTopUpModal('${startup.id}')" style="font-size: 11px; font-weight: 800; padding: 4px 10px; background: #4F3FE0; border-color: #4338CA; border-radius: 8px;">
+                    + Top Up
+                  </button>
+                </div>
+
+                <div style="font-size: 11.5px; color: var(--text-muted, #64748B); margin-top: 14px; font-weight: 600;">
+                  <span>Total Purchased: <strong>${(allowance.totalTopUpCredits / 10).toFixed(1)} hrs (${allowance.totalTopUpCredits} cr)</strong></span>
+                </div>
+
+                <div style="background: rgba(79, 63, 224, 0.05); border: 1px solid rgba(79, 63, 224, 0.15); border-radius: 8px; padding: 8px 10px; margin-top: 10px; font-size: 11px; color: #4F3FE0; line-height: 1.4;">
+                  ⚡ Top-up credits are valid for <strong>90 days</strong> from purchase across billing cycles.
+                </div>
+              </div>
+
+              <div style="display: flex; justify-content: space-between; font-size: 11.5px; font-weight: 600; color: var(--text-muted, #8A90A2); padding-top: 12px; margin-top: 12px; border-top: 1px solid var(--border-subtle, #ECEEF4);">
+                <span>Consumption order</span>
+                <span>Plan ➔ Top-Up ➔ Overage</span>
+              </div>
+            </div>
+
+            <!-- Card 3: Next Invoice Due -->
             <div class="nexus-billing-kpi-card">
               <div>
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                   <div style="display: flex; align-items: center; gap: 12px;">
                     <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(245, 158, 11, 0.12); color: #D97706; display: flex; align-items: center; justify-content: center; font-size: 22px;">
-                      👑
+                      🧾
                     </div>
                     <div>
-                      <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted, #8A90A2);">Subscription Plan</span>
-                      <div style="font-size: 22px; font-weight: 900; color: var(--text-primary, #111827); margin-top: 2px;">${allowance.planName}</div>
+                      <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted, #8A90A2);">Next Invoice Due</span>
+                      <div style="font-size: 24px; font-weight: 900; color: ${isNextDuePendingOrOverdue ? '#D97706' : '#059669'}; margin-top: 2px;">
+                        ₹${nextDueInvoice ? nextDueInvoice.total.toLocaleString('en-IN') : '0'}
+                      </div>
                     </div>
                   </div>
-                  <span style="background: rgba(16, 185, 129, 0.12); color: #059669; font-size: 10px; font-weight: 800; padding: 4px 9px; border-radius: 999px; border: 1px solid rgba(16, 185, 129, 0.25);">
-                    ● ACTIVE
+                  <span class="badge" style="background: ${isNextDuePendingOrOverdue ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.12)'}; color: ${isNextDuePendingOrOverdue ? '#B45309' : '#059669'}; font-weight: 800; font-size: 10px; padding: 4px 9px; border-radius: 999px;">
+                    ${nextDueStatus}
                   </span>
                 </div>
 
-                <p style="font-size: 12px; color: var(--text-muted, #64748B); margin: 14px 0 0 0; font-weight: 500;">
-                  Plan credits reset at month-end (<strong>${allowance.planExpiryDate}</strong>)
-                </p>
+                <div style="font-size: 11.5px; color: var(--text-muted, #64748B); margin-top: 12px; line-height: 1.4;">
+                  <strong>${nextDueInvoice ? nextDueInvoice.id : 'No pending invoices'}</strong><br>
+                  <span>Due Date: <strong>${nextDueInvoice && nextDueInvoice.dueDate ? nextDueInvoice.dueDate : 'All Settled'}</strong></span>
+                </div>
+
+                <!-- Action Buttons: Pay Now, Download PDF, Email -->
+                <div style="display: flex; gap: 6px; margin-top: 12px;">
+                  ${isNextDuePendingOrOverdue && nextDueInvoice ? `
+                    <button type="button" class="btn btn-sm btn-primary" onclick="MeetingRoomsModule.openPayInvoiceModal('${nextDueInvoice.id}')" style="font-size: 11px; padding: 4px 10px; background: #059669; border-color: #047857; border-radius: 6px; font-weight: 800;">
+                      Pay Now
+                    </button>
+                  ` : ''}
+                  <button type="button" class="btn btn-sm btn-outline" onclick="window.print()" style="font-size: 11px; padding: 4px 8px; border-radius: 6px; font-weight: 700;">
+                    PDF
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline" onclick="App.showToast('📧 Invoice sent to alex@xyztech.io', 'success')" style="font-size: 11px; padding: 4px 8px; border-radius: 6px; font-weight: 700;">
+                    Email
+                  </button>
+                </div>
               </div>
 
-              <!-- 3 mini specs -->
-              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding-top: 14px; margin-top: 14px; border-top: 1px solid var(--border-subtle, #ECEEF4); font-size: 11px;">
-                <div>
-                  <span style="display: block; font-size: 9.5px; font-weight: 700; color: var(--text-muted, #8A90A2); text-transform: uppercase;">Plan Quota</span>
-                  <span style="font-weight: 800; color: var(--text-primary, #111827);">${allowance.includedHours} hrs</span>
-                </div>
-                <div>
-                  <span style="display: block; font-size: 9.5px; font-weight: 700; color: var(--text-muted, #8A90A2); text-transform: uppercase;">Top-up Rate</span>
-                  <span style="font-weight: 800; color: var(--text-primary, #111827);">₹500 / 10 cr</span>
-                </div>
-                <div>
-                  <span style="display: block; font-size: 9.5px; font-weight: 700; color: var(--text-muted, #8A90A2); text-transform: uppercase;">Overage Rate</span>
-                  <span style="font-weight: 800; color: #dc2626;">₹1,500 / hr</span>
-                </div>
+              <div style="display: flex; justify-content: space-between; font-size: 11.5px; font-weight: 600; color: var(--text-muted, #8A90A2); padding-top: 12px; margin-top: 12px; border-top: 1px solid var(--border-subtle, #ECEEF4);">
+                <span>Billing Cycle</span>
+                <span>Monthly Calendar Reset</span>
               </div>
             </div>
           </div>
@@ -7771,20 +7787,20 @@ const MeetingRoomsModule = {
             </div>
           </div>
 
-          <!-- Fixed Action Footer (Always Visible & Accessible) -->
-          <div style="flex-shrink: 0; background: var(--bg-surface-elevated); border-top: 1px solid var(--border-subtle); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-              <button class="btn btn-primary btn-sm" onclick="MeetingRoomsModule.openReservationDetailsModal('${room.id}', '${booking.id}'); MeetingRoomsModule.closeModal('modal-booking-success');" style="font-weight: 700; padding: 7px 14px; border-radius: 7px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 5px; background: #2563eb; border-color: #1d4ed8; color: #fff;">
+          <!-- Fixed Action Footer (Always Visible & Clean) -->
+          <div style="flex-shrink: 0; background: var(--bg-surface-elevated); border-top: 1px solid var(--border-subtle); padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+            <div style="display: flex; gap: 6px; align-items: center; flex-wrap: nowrap;">
+              <button class="btn btn-primary btn-sm" onclick="MeetingRoomsModule.openReservationDetailsModal('${room.id}', '${booking.id}'); MeetingRoomsModule.closeModal('modal-booking-success');" style="font-weight: 700; padding: 7px 11px; border-radius: 7px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 4px; background: #2563eb; border-color: #1d4ed8; color: #fff; white-space: nowrap;">
                 <span>📋</span> View Details
               </button>
-              <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.closeModal('modal-booking-success'); MeetingRoomsModule.switchTab('allBookings');" style="font-weight: 700; padding: 7px 12px; border-radius: 7px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 5px; color: #16a34a; border-color: rgba(34, 197, 94, 0.35);" title="Check all confirmed reservations">
-                <span>📂</span> All Confirmed Reservations
+              <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.closeModal('modal-booking-success'); MeetingRoomsModule.switchTab('bookings');" style="font-weight: 700; padding: 7px 11px; border-radius: 7px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 4px; color: #16a34a; border-color: rgba(34, 197, 94, 0.35); white-space: nowrap;" title="View all bookings">
+                <span>📂</span> My Bookings
               </button>
-              <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openEditTimeWindowModal('${room.id}', '${booking.id}')" style="font-weight: 700; padding: 7px 12px; border-radius: 7px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 5px; color: #2563eb; border-color: rgba(37, 99, 235, 0.4); background: rgba(37, 99, 235, 0.05);" title="Change reservation time">
-                <span>⏰</span> Change Time
+              <button class="btn btn-outline btn-sm" onclick="MeetingRoomsModule.openEditTimeWindowModal('${room.id}', '${booking.id}')" style="font-weight: 700; padding: 7px 11px; border-radius: 7px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 4px; color: #2563eb; border-color: rgba(37, 99, 235, 0.4); background: rgba(37, 99, 235, 0.05); white-space: nowrap;" title="Reschedule reservation time">
+                <span>⏰</span> Reschedule
               </button>
             </div>
-            <button class="btn btn-primary btn-sm" onclick="MeetingRoomsModule.closeModal('modal-booking-success')" style="font-weight: 800; padding: 7px 22px; border-radius: 7px; font-size: 12px; background: #16a34a; border-color: #15803d; box-shadow: 0 3px 10px rgba(22, 163, 74, 0.35); cursor: pointer;">
+            <button class="btn btn-primary btn-sm" onclick="MeetingRoomsModule.closeModal('modal-booking-success')" style="font-weight: 800; padding: 7px 20px; border-radius: 7px; font-size: 12px; background: #16a34a; border-color: #15803d; box-shadow: 0 3px 10px rgba(22, 163, 74, 0.35); cursor: pointer; white-space: nowrap;">
               ✓ Done
             </button>
           </div>

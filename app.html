@@ -369,15 +369,6 @@
           <span class="nav-item-text">My Bookings</span>
         </a>
 
-        <a class="nav-item" data-tab="calendar" id="nav-item-calendar">
-          <span class="nav-item-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/>
-            </svg>
-          </span>
-          <span class="nav-item-text">Calendar</span>
-        </a>
-
         <a class="nav-item" data-tab="billingCredits" id="nav-item-billingCredits" onclick="App.switchTab('billingCredits')">
           <span class="nav-item-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -436,7 +427,7 @@
           <span class="nav-item-text">Members</span>
         </a>
 
-        <a class="nav-item" data-tab="database" id="nav-item-database">
+        <a class="nav-item admin-only-nav" data-tab="database" id="nav-item-database" style="display: none;">
           <span class="nav-item-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
               <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>
@@ -641,8 +632,10 @@
   <div class="toast-container" id="toast-container"></div>
 
   <!-- Scripts -->
-  <script src="js/initialData.js?v=20261104_37"></script>
-  <script src="creditService.js?v=20261104_37"></script>
+  <script src="js/formatters.js?v=20261104_38"></script>
+  <script src="js/planCatalog.js?v=20261104_38"></script>
+  <script src="js/initialData.js?v=20261104_38"></script>
+  <script src="creditService.js?v=20261104_38"></script>
   <script src="billingService.js?v=20261104_37"></script>
   <script src="js/store.js?v=20261104_37"></script>
   <script src="js/modules/dashboard.js?v=20261104_37"></script>

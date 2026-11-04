@@ -221,14 +221,31 @@ async function handleApi(req, res, parsedUrl) {
     }
 
     // -----------------------------------------------------------
+    // Context & Role-Based Data Scoping (Backend-Enforced)
+    // Roles: member, company_admin, operator (staff), super_admin
+    // -----------------------------------------------------------
+    const rawRole = (req.headers['x-user-role'] || searchParams.get('userRole') || 'member').toLowerCase();
+    const userRole = (rawRole === 'founder' || rawRole === 'startup' || rawRole === 'startup_member') ? 'member' : rawRole;
+    const companyId = req.headers['x-company-id'] || req.headers['x-startup-id'] || searchParams.get('companyId') || searchParams.get('startupId') || 'STP-XYZ';
+    const isOperator = userRole === 'operator' || userRole === 'super_admin' || userRole === 'admin' || userRole === 'incubator_admin';
+
     // Dedicated Direct Entity Endpoints
     // -----------------------------------------------------------
     if (pathname === '/api/startups') {
       if (req.method === 'GET') {
         const resData = await db.getTableRecords('startups', { limit: 100 });
-        return sendJson(res, 200, { ok: true, startups: resData.records || [] });
+        let records = resData.records || [];
+        // Strict Scoping: Members and company admins see ONLY their own startup profile
+        if (!isOperator) {
+          records = records.filter(s => s.id === companyId);
+        }
+        return sendJson(res, 200, { ok: true, startups: records });
       }
       if (req.method === 'POST') {
+        // Operator-only: Register Startup
+        if (!isOperator) {
+          return sendJson(res, 403, { ok: false, error: 'Access denied: Registering startups requires operator or administrator privileges.' });
+        }
         const body = await parseJsonBody(req);
         const ins = await db.insertTableRecord('startups', body);
         return sendJson(res, ins.ok ? 201 : 400, ins);
@@ -236,6 +253,10 @@ async function handleApi(req, res, parsedUrl) {
       if (req.method === 'PUT' || req.method === 'PATCH') {
         const body = await parseJsonBody(req);
         const targetId = body.id || body._id;
+        // Non-operators can only edit their own startup profile (company_admin)
+        if (!isOperator && targetId !== companyId) {
+          return sendJson(res, 403, { ok: false, error: 'Access denied: You can only update your own company profile.' });
+        }
         const updates = body.updates || body;
         const upd = await db.updateTableRecord('startups', targetId, updates);
         return sendJson(res, upd.ok ? 200 : 400, upd);
@@ -244,12 +265,32 @@ async function handleApi(req, res, parsedUrl) {
 
     if (pathname === '/api/workspaces' && req.method === 'GET') {
       const resData = await db.getTableRecords('workspaces', { limit: 100 });
-      return sendJson(res, 200, { ok: true, workspaces: resData.records || [] });
+      let records = resData.records || [];
+      // Anonymize other startups' private allocation data for members
+      if (!isOperator) {
+        records = records.map(w => {
+          if (w.allocatedStartupId && w.allocatedStartupId !== companyId) {
+            return {
+              ...w,
+              allocatedStartupId: 'OCCUPIED',
+              assignedTo: 'Occupied by another venture',
+              currentOccupant: null
+            };
+          }
+          return w;
+        });
+      }
+      return sendJson(res, 200, { ok: true, workspaces: records });
     }
 
     if (pathname === '/api/invoices' && req.method === 'GET') {
       const resData = await db.getTableRecords('invoices', { limit: 100 });
-      return sendJson(res, 200, { ok: true, invoices: resData.records || [] });
+      let records = resData.records || [];
+      // Strict Scoping: Members see only their own company's invoices
+      if (!isOperator) {
+        records = records.filter(i => i.startupId === companyId);
+      }
+      return sendJson(res, 200, { ok: true, invoices: records });
     }
 
     if (pathname === '/api/invoices/generate-batch' && req.method === 'POST') {
@@ -293,13 +334,13 @@ async function handleApi(req, res, parsedUrl) {
 
     if (pathname === '/api/credits/topup' && req.method === 'POST') {
       const body = await parseJsonBody(req);
-      const { startupId, credits, hours, amount, packTitle, paymentMethod, idempotencyKey } = body;
+      const { startupId, credits, hours, amount, packTitle, paymentMethod, idempotencyKey, dueDays } = body;
 
       if (!startupId || !credits || !amount) {
         return sendJson(res, 400, { ok: false, error: 'startupId, credits, and amount are required' });
       }
 
-      // 1. Idempotency Check
+      // 1. Idempotency Check (Double-click & retry protection)
       if (idempotencyKey && IDEMPOTENCY_CACHE.has(idempotencyKey)) {
         const cached = IDEMPOTENCY_CACHE.get(idempotencyKey);
         return sendJson(res, 200, { ok: true, idempotentReplay: true, ...cached });
@@ -322,21 +363,27 @@ async function handleApi(req, res, parsedUrl) {
       const expDateObj = new Date(now.getTime() + validityDays * 24 * 60 * 60 * 1000);
       const expiresAt = expDateObj.toISOString().split('T')[0];
 
-      // 2. Generate consecutive GST Invoice
+      // Configurable due date (default: 7 days)
+      const dueDaysCount = parseInt(dueDays, 10) || 7;
+      const dueDateObj = new Date(now.getTime() + dueDaysCount * 24 * 60 * 60 * 1000);
+      const dueDateIST = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(dueDateObj);
+
+      // 2. Generate consecutive GST Invoice as Pending
       if (!Array.isArray(appState.invoices)) appState.invoices = [];
       const nextInvNum = billingService.generateNextInvoiceNumber(appState.invoices, todayIST);
       const gstCalc = billingService.calculateGST(amount, startup.gstin || '29AAACX9920M1Z4');
+      const packNameClean = packTitle || 'Growth Pack';
 
       const invoice = {
         id: nextInvNum,
         startupId: startup.id,
         startupName: startup.name,
         issueDate: todayIST,
-        dueDate: todayIST,
-        billingPeriod: new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(now),
+        dueDate: dueDateIST,
+        billingPeriod: `Credit top-up, ${packNameClean}`,
         lineItems: [
           {
-            desc: `Meeting Room Credit Top-up (${packTitle || 'Top-up Pack'} - ${hours || credits / 10} hrs / ${credits} credits)`,
+            desc: `Credit top-up, ${packNameClean} (${hours || credits / 10} hrs / ${credits} credits)`,
             qty: 1,
             rate: amount,
             amount: amount,
@@ -351,15 +398,15 @@ async function handleApi(req, res, parsedUrl) {
         taxGst: gstCalc.totalGst,
         total: gstCalc.totalAmount,
         amountInWords: billingService.numberToWordsIndian(gstCalc.totalAmount),
-        status: 'Paid',
+        status: 'Pending', // Pending until payment is confirmed
         paymentMethod: paymentMethod || 'UPI',
-        paidAt: now.toISOString(),
+        paidAt: null,
         receiptUrl: `/receipts/${nextInvNum}`
       };
 
       appState.invoices.unshift(invoice);
 
-      // 3. Add top-up credit bucket entry
+      // 3. Top-up entry is recorded as Pending (Credits granted ONLY on payment success)
       if (!Array.isArray(startup.topUps)) startup.topUps = [];
       const topUpEntry = {
         id: `TOPUP-${Date.now()}`,
@@ -368,11 +415,12 @@ async function handleApi(req, res, parsedUrl) {
         time: new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: false }).format(now),
         credits: Number(credits),
         remainingCredits: Number(credits),
-        packTitle: packTitle || 'Top-up Pack',
+        packTitle: packNameClean,
         invoiceId: invoice.id,
         expiresAt,
         amount,
-        paymentMethod: paymentMethod || 'UPI'
+        paymentMethod: paymentMethod || 'UPI',
+        status: 'Pending' // Requires payment confirmation to activate
       };
       startup.topUps.push(topUpEntry);
 
@@ -382,7 +430,7 @@ async function handleApi(req, res, parsedUrl) {
       const allowance = creditService.getMonthlyAllowance(startup, appState.meetingRooms || [], todayIST.substring(0, 7), startup.topUps);
 
       const responsePayload = {
-        message: `Successfully credited ${credits} credits (${(credits / 10).toFixed(1)} hrs) to ${startup.name}.`,
+        message: `Generated top-up invoice #${invoice.id} for ${startup.name}. Complete payment to activate ${credits} credits.`,
         topUp: topUpEntry,
         invoice,
         allowance
@@ -392,8 +440,71 @@ async function handleApi(req, res, parsedUrl) {
         IDEMPOTENCY_CACHE.set(idempotencyKey, responsePayload);
       }
 
-      broadcastMeetingRoomUpdate({ action: 'topup_credited', startupId, credits });
-      return sendJson(res, 200, { ok: true, ...responsePayload });
+      broadcastMeetingRoomUpdate({ action: 'topup_created', startupId, invoiceId: invoice.id });
+      return sendJson(res, 201, { ok: true, ...responsePayload });
+    }
+
+    // Payment Confirmation Webhook/Endpoint: Grants credits upon payment success
+    if (pathname === '/api/credits/topup-confirm-payment' && req.method === 'POST') {
+      const body = await parseJsonBody(req);
+      const { invoiceId, startupId, idempotencyKey, paymentReference } = body;
+
+      if (!invoiceId) {
+        return sendJson(res, 400, { ok: false, error: 'invoiceId is required' });
+      }
+
+      if (idempotencyKey && IDEMPOTENCY_CACHE.has(idempotencyKey)) {
+        return sendJson(res, 200, { ok: true, idempotentReplay: true, ...IDEMPOTENCY_CACHE.get(idempotencyKey) });
+      }
+
+      const appState = await db.getAppState();
+      const invoices = appState.invoices || [];
+      const invoice = invoices.find(i => i.id === invoiceId);
+      if (!invoice) {
+        return sendJson(res, 404, { ok: false, error: 'Invoice not found' });
+      }
+
+      const startups = appState.startups || [];
+      const targetStartupId = startupId || invoice.startupId;
+      const startup = startups.find(s => s.id === targetStartupId);
+      if (!startup) {
+        return sendJson(res, 404, { ok: false, error: 'Startup not found' });
+      }
+
+      // Mark Invoice as Paid
+      const now = new Date();
+      invoice.status = 'Paid';
+      invoice.paidAt = now.toISOString();
+      invoice.paymentReference = paymentReference || `PAY-${Date.now().toString(36).toUpperCase()}`;
+
+      // Activate Top-Up Credits
+      let activatedCredits = 0;
+      if (Array.isArray(startup.topUps)) {
+        const topUp = startup.topUps.find(t => t.invoiceId === invoiceId);
+        if (topUp) {
+          topUp.status = 'Paid';
+          topUp.activatedAt = now.toISOString();
+          activatedCredits = topUp.credits;
+        }
+      }
+
+      await db.saveAppState(appState);
+
+      const todayIST = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+      const allowance = creditService.getMonthlyAllowance(startup, appState.meetingRooms || [], todayIST.substring(0, 7), startup.topUps);
+
+      const resultPayload = {
+        message: `Payment successful! Activated ${activatedCredits} credits for ${startup.name}.`,
+        invoice,
+        allowance
+      };
+
+      if (idempotencyKey) {
+        IDEMPOTENCY_CACHE.set(idempotencyKey, resultPayload);
+      }
+
+      broadcastMeetingRoomUpdate({ action: 'topup_paid', startupId: startup.id, invoiceId, credits: activatedCredits });
+      return sendJson(res, 200, { ok: true, ...resultPayload });
     }
 
     if (pathname === '/api/invoices/void' && req.method === 'POST') {
@@ -478,12 +589,20 @@ async function handleApi(req, res, parsedUrl) {
 
     if (pathname === '/api/payments' && req.method === 'GET') {
       const resData = await db.getTableRecords('payments', { limit: 100 });
-      return sendJson(res, 200, { ok: true, payments: resData.records || [] });
+      let records = resData.records || [];
+      if (!isOperator) {
+        records = records.filter(p => p.startupId === companyId);
+      }
+      return sendJson(res, 200, { ok: true, payments: records });
     }
 
     if (pathname === '/api/milestones' && req.method === 'GET') {
       const resData = await db.getTableRecords('milestones', { limit: 100 });
-      return sendJson(res, 200, { ok: true, milestones: resData.records || [] });
+      let records = resData.records || [];
+      if (!isOperator) {
+        records = records.filter(m => m.startupId === companyId);
+      }
+      return sendJson(res, 200, { ok: true, milestones: records });
     }
 
     // -----------------------------------------------------------
@@ -658,12 +777,11 @@ async function handleApi(req, res, parsedUrl) {
 
     // Role-Scoped Reservations Ledger Endpoint (Server-side pagination, search, status tabs)
     if (pathname === '/api/meeting-rooms/reservations' && req.method === 'GET') {
-      const userRole = req.headers['x-user-role'] || searchParams.get('userRole') || 'founder';
-      const requestingStartupId = req.headers['x-startup-id'] || searchParams.get('requestingStartupId') || searchParams.get('startupId') || undefined;
+      const targetStartupId = !isOperator ? companyId : (searchParams.get('startupId') || searchParams.get('requestingStartupId') || undefined);
       const result = await db.getMeetingRoomReservations({
-        userRole,
-        requestingStartupId,
-        startupId: searchParams.get('startupId') || undefined,
+        userRole: isOperator ? 'super_admin' : 'founder',
+        requestingStartupId: companyId,
+        startupId: targetStartupId,
         roomId: searchParams.get('roomId') || undefined,
         status: searchParams.get('status') || undefined,
         paymentStatus: searchParams.get('paymentStatus') || undefined,
@@ -678,14 +796,17 @@ async function handleApi(req, res, parsedUrl) {
       return sendJson(res, result.status || (result.ok ? 200 : 403), result);
     }
 
-    // Export Reservations as CSV (Respects active filters & permissions)
+    // Export Reservations as CSV (Operator or strictly scoped to own company)
     if (pathname === '/api/meeting-rooms/export-csv' && req.method === 'GET') {
-      const userRole = req.headers['x-user-role'] || searchParams.get('userRole') || 'founder';
-      const requestingStartupId = req.headers['x-startup-id'] || searchParams.get('requestingStartupId') || searchParams.get('startupId') || undefined;
+      const requestedId = searchParams.get('startupId');
+      if (!isOperator && requestedId && requestedId !== companyId) {
+        return sendJson(res, 403, { ok: false, error: 'Access denied: You cannot export data of other companies.' });
+      }
+
       const result = await db.getMeetingRoomReservations({
-        userRole,
-        requestingStartupId,
-        startupId: searchParams.get('startupId') || undefined,
+        userRole: isOperator ? 'super_admin' : 'founder',
+        requestingStartupId: companyId,
+        startupId: !isOperator ? companyId : (requestedId || undefined),
         roomId: searchParams.get('roomId') || undefined,
         status: searchParams.get('status') || undefined,
         paymentStatus: searchParams.get('paymentStatus') || undefined,
@@ -744,6 +865,9 @@ async function handleApi(req, res, parsedUrl) {
 
     if (pathname === '/api/leads') {
       if (req.method === 'GET') {
+        if (!isOperator) {
+          return sendJson(res, 403, { ok: false, error: 'Access denied: Viewing leads requires operator privileges.' });
+        }
         const leads = await db.getLeads();
         return sendJson(res, 200, { ok: true, leads });
       }
@@ -755,12 +879,18 @@ async function handleApi(req, res, parsedUrl) {
     }
 
     if (pathname === '/api/leads/update' && req.method === 'POST') {
+      if (!isOperator) {
+        return sendJson(res, 403, { ok: false, error: 'Access denied: Modifying leads requires operator privileges.' });
+      }
       const body = await parseJsonBody(req);
       const success = await db.updateLead(body.id, body.updates);
       return sendJson(res, success ? 200 : 400, { ok: success });
     }
 
     if (pathname === '/api/leads/delete' && req.method === 'POST') {
+      if (!isOperator) {
+        return sendJson(res, 403, { ok: false, error: 'Access denied: Deleting leads requires operator privileges.' });
+      }
       const body = await parseJsonBody(req);
       const success = await db.deleteLead(body.id);
       return sendJson(res, success ? 200 : 400, { ok: success });
@@ -769,11 +899,15 @@ async function handleApi(req, res, parsedUrl) {
     if (pathname === '/api/inquiries') {
       if (req.method === 'GET') {
         const inquiries = await db.getInquiries();
-        return sendJson(res, 200, { ok: true, inquiries });
+        let records = Array.isArray(inquiries) ? inquiries : [];
+        if (!isOperator) {
+          records = records.filter(iq => iq.startupId === companyId || iq.companyId === companyId);
+        }
+        return sendJson(res, 200, { ok: true, inquiries: records });
       }
       if (req.method === 'POST') {
         const body = await parseJsonBody(req);
-        const success = await db.saveInquiry(body);
+        const success = await db.saveInquiry({ ...body, startupId: companyId });
         return sendJson(res, success ? 201 : 503, { ok: success });
       }
     }

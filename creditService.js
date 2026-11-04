@@ -1,30 +1,61 @@
 /**
- * creditService.js - Single Source of Truth for Credits, Allowances & Ledger
- * Shared server-side credit service for Nexus Hub.
- *
+ * Single Source of Truth Credit & Allowance Engine for Nexus Hub
+ * 
  * Rules:
- * 1. Stored unit: Credits. Fixed conversion: 10 credits = 1.0 hour.
- * 2. Reset per calendar month. Only bookings that start in that month debit from it.
- * 3. Bucket consumption order:
- *      1) Plan credits first (expire at month end)
- *      2) Top-up credits second (configurable validity, default 90 days)
- *      3) Overage billed third (₹1,500/hr = ₹150/credit; vs top-up ₹500/hr = ₹50/credit)
- * 4. Ledger reconciliation:
- *      openingCredits + sum(topUps) - sum(debits) + sum(refunds) = currentBalance
- * 5. Direction: USED. Color: Green (<80%), Amber (80-99%), Red (>=100%).
+ * - Two buckets: plan_credits (resets at month end) and top_up_credits (valid 90 days, configurable)
+ * - Consumption order: plan_credits first, then top_up_credits, then overage
+ * - Overage is charged at the room's own hourly rate (room.hourlyRate), not flat ₹1,500
+ * - Debits on booking, refunds on cancellation outside late window, forfeits inside it
+ * - Tracks "used" (past) and "reserved" (future) separately
+ * - Returns: plan_remaining, topup_remaining, used, reserved, expiries, overage, percent_used
+ * - Ledger reconciliation: opening + top-ups + refunds - debits - expiries = balance
  */
+
+let FormatHelper = (typeof require !== 'undefined') 
+  ? (() => { try { return require('./js/formatters'); } catch (e) { return (typeof window !== 'undefined' ? window.FormatHelper : null); } })()
+  : (typeof window !== 'undefined' ? window.FormatHelper : null);
+let PlanCatalog = (typeof require !== 'undefined') 
+  ? (() => { try { return require('./js/planCatalog'); } catch (e) { return (typeof window !== 'undefined' ? window.PlanCatalog : null); } })()
+  : (typeof window !== 'undefined' ? window.PlanCatalog : null);
+
+function getFormatHelper() {
+  if (FormatHelper && FormatHelper.formatDate) return FormatHelper;
+  if (typeof window !== 'undefined' && window.FormatHelper) return window.FormatHelper;
+  return {
+    formatDate: (d) => String(d || ''),
+    formatTime: (t) => String(t || ''),
+    formatHours: (h) => `${Number(h || 0).toFixed(1)} hrs`,
+    formatCurrency: (m) => `₹${Number(m || 0).toLocaleString('en-IN')}`,
+    formatCapacity: (c) => `${c} Pax`,
+    computeNextRenewalDate: () => '1 Dec 2026',
+    MONTH_NAMES_SHORT: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    MONTH_NAMES_FULL: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+  };
+}
+
+function getPlanCatalog() {
+  if (PlanCatalog && PlanCatalog.getPlanForStartup) return PlanCatalog;
+  if (typeof window !== 'undefined' && window.PlanCatalog && window.PlanCatalog.getPlanForStartup) return window.PlanCatalog;
+  return {
+    getPlanForStartup: () => ({ id: 'startup', name: 'Startup Plan', monthlyHours: 15, monthlyCredits: 150, price: 15000 }),
+    getRenewalDate: () => '1 Dec 2026',
+    getPlanByKey: () => ({ id: 'startup', name: 'Startup Plan', monthlyHours: 15, monthlyCredits: 150, price: 15000 })
+  };
+}
 
 const CREDITS_PER_HOUR = 10;
-const HOURLY_OVERAGE_RATE = 1500; // ₹1,500 / hr
-const CREDIT_OVERAGE_RATE = 150;  // ₹150 / credit
-const HOURLY_TOPUP_RATE = 500;    // ₹500 / hr
-const CREDIT_TOPUP_RATE = 50;     // ₹50 / credit
 const DEFAULT_TOPUP_VALIDITY_DAYS = 90;
+const HOURLY_TOPUP_RATE = 500;
+const CREDIT_TOPUP_RATE = 50;
 
-/**
- * Standardized Top-Up Pack Pricing Table
- * Stores explicit pack discounts, rates per 10 cr, base, GST (18%), and totals.
- */
+const CREDIT_EXPIRY_POLICIES = {
+  startup: {
+    topUpCreditsValidityDays: DEFAULT_TOPUP_VALIDITY_DAYS,
+    planCreditsRule: 'expire_at_month_end',
+    pausedPlanRule: 'freeze_and_preserve'
+  }
+};
+
 const PACK_PRICING = [
   {
     id: 'pack_starter',
@@ -45,12 +76,12 @@ const PACK_PRICING = [
     name: 'Growth Pack',
     credits: 100,
     hours: 10.0,
-    ratePer10Cr: 450, // Discounted from ₹500
+    ratePer10Cr: 450,
     discountPercent: 10,
     baseAmount: 4500,
     gstRatePercent: 18,
     gstAmount: 810,
-    totalAmount: 5310, // Exactly ₹5,310 (₹4,500 base + 18% GST)
+    totalAmount: 5310,
     validityDays: 90,
     tag: 'Most Popular (Save 10%)'
   },
@@ -59,7 +90,7 @@ const PACK_PRICING = [
     name: 'Scale-Up Pack',
     credits: 200,
     hours: 20.0,
-    ratePer10Cr: 400, // Discounted from ₹500
+    ratePer10Cr: 400,
     discountPercent: 20,
     baseAmount: 8000,
     gstRatePercent: 18,
@@ -70,55 +101,6 @@ const PACK_PRICING = [
   }
 ];
 
-/**
- * Single Source of Truth for Plan Credit Expiry Policies
- * Generated wording is shared across Quota cards, Ledger, Modals and Alerts.
- */
-const CREDIT_EXPIRY_POLICIES = {
-  startup: {
-    planKey: 'startup',
-    planName: 'Startup Plan',
-    monthlyAllowanceCredits: 150,
-    monthlyAllowanceHours: 15.0,
-    planCreditsRule: 'expire_at_month_end',
-    planCreditsExpiryDays: null,
-    planCreditsWording: 'Plan allowance resets at calendar month-end. Unused monthly hours do not rollover.',
-    topUpCreditsValidityDays: 90,
-    topUpCreditsWording: 'Top-up credits are valid for 90 days from purchase date across billing cycles.',
-    pausedPlanRule: 'freeze_and_preserve',
-    pausedPlanWording: 'When subscription is paused, unused plan credits are frozen and preserved until reactivation.'
-  },
-  growth: {
-    planKey: 'growth',
-    planName: 'Growth / Scale-up Venture',
-    monthlyAllowanceCredits: 300,
-    monthlyAllowanceHours: 30.0,
-    planCreditsRule: 'expire_at_month_end',
-    planCreditsExpiryDays: null,
-    planCreditsWording: 'Plan allowance resets at calendar month-end. Unused monthly hours do not rollover.',
-    topUpCreditsValidityDays: 90,
-    topUpCreditsWording: 'Top-up credits are valid for 90 days from purchase date across billing cycles.',
-    pausedPlanRule: 'freeze_and_preserve',
-    pausedPlanWording: 'When subscription is paused, unused plan credits are frozen and preserved until reactivation.'
-  },
-  enterprise: {
-    planKey: 'enterprise',
-    planName: 'Enterprise Accelerator',
-    monthlyAllowanceCredits: 600,
-    monthlyAllowanceHours: 60.0,
-    planCreditsRule: 'rollover_max_30_days',
-    planCreditsExpiryDays: 30,
-    planCreditsWording: 'Up to 50 hours rollover into next calendar month; remainder resets.',
-    topUpCreditsValidityDays: 180,
-    topUpCreditsWording: 'Enterprise top-up credits are valid for 180 days across billing cycles.',
-    pausedPlanRule: 'freeze_and_preserve',
-    pausedPlanWording: 'All credits frozen and preserved during subscription pause.'
-  }
-};
-
-/**
- * Helper to calculate booking duration in hours from "HH:MM" start/end
- */
 function calculateDurationHours(startTime, endTime) {
   if (!startTime || !endTime) return 0;
   const [sh, sm] = startTime.split(':').map(Number);
@@ -127,87 +109,50 @@ function calculateDurationHours(startTime, endTime) {
   return mins > 0 ? Number((mins / 60).toFixed(2)) : 0;
 }
 
-/**
- * Format 24h time "15:00" to 12h IST "03:00 PM"
- */
-function formatTime12h(timeStr) {
-  if (!timeStr) return '';
-  const [hStr, mStr] = timeStr.split(':');
-  let h = parseInt(hStr, 10);
-  const m = parseInt(mStr || '0', 10);
-  const ampm = h >= 12 ? 'PM' : 'AM';
-  h = h % 12;
-  if (h === 0) h = 12;
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')} ${ampm}`;
-}
-
-/**
- * Format date "2026-11-03" to "03 Nov 2026"
- */
-function formatDateIndian(dateStr) {
-  if (!dateStr) return '';
-  const parts = dateStr.split('-');
-  if (parts.length !== 3) return dateStr;
-  const year = parts[0];
-  const monthIdx = parseInt(parts[1], 10) - 1;
-  const day = parts[2];
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  return `${day} ${months[monthIdx] || parts[1]} ${year}`;
-}
-
-/**
- * Format currency in Indian numbering system (e.g. ₹56,168)
- */
-function formatRupees(amount) {
-  const n = Math.round(Number(amount) || 0);
-  return '₹' + n.toLocaleString('en-IN');
-}
-
-/**
- * Get monthly allowance and usage breakdown for a startup in a target calendar month
- *
- * @param {Object} startup Startup record
- * @param {Array} allRooms Meeting rooms with bookings
- * @param {string} targetMonth YYYY-MM (defaults to current month in IST)
- * @param {Array} topUps Array of top-up purchases
- */
-function getMonthlyAllowance(startup, allRooms = [], targetMonth = null, topUps = []) {
+function getMonthlyAllowance(startup, allRooms = [], targetMonth = null, topUps = [], referenceClock = null) {
   if (!startup) {
     startup = { id: 'STP-XYZ', name: 'XYZ Technologies', subscriptionPlan: 'Startup Plan', includedMeetingHours: 15 };
   }
 
-  // Determine target month in IST (YYYY-MM)
+  // Target month in IST (YYYY-MM)
   let mStr = targetMonth;
+  const now = referenceClock ? new Date(referenceClock) : new Date();
+  const nowISTString = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(now);
+  const [nowDateIST, nowTimeIST] = nowISTString.split(' ');
+
+  const FormatHelper = getFormatHelper();
+  const PlanCatalog = getPlanCatalog();
+
   if (!mStr) {
-    const nowIST = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit' }).format(new Date());
-    mStr = nowIST.substring(0, 7);
+    mStr = nowDateIST.substring(0, 7);
   }
 
   const [yStr, mNumStr] = mStr.split('-');
   const year = parseInt(yStr, 10);
   const monthNum = parseInt(mNumStr, 10);
-  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-  const monthShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const monthName = monthNames[monthNum - 1] || mStr;
-  const monthLabel = `${monthShort[monthNum - 1] || mStr} ${year}`;
+  const monthName = FormatHelper.MONTH_NAMES_FULL[monthNum - 1] || mStr;
+  const monthShort = FormatHelper.MONTH_NAMES_SHORT[monthNum - 1] || mStr;
+  const monthLabel = `${monthShort} ${year}`;
 
-  // Month boundary dates
   const daysInMonth = new Date(year, monthNum, 0).getDate();
   const monthStartDate = `${mStr}-01`;
   const monthEndDate = `${mStr}-${String(daysInMonth).padStart(2, '0')}`;
   const planExpiryDate = monthEndDate;
 
-  // Single plan record
-  const planName = startup.subscriptionPlan || startup.plan || 'Startup Plan';
-  const includedHours = Number(startup.includedMeetingHours !== undefined ? startup.includedMeetingHours : 15);
+  // Single plan details from PlanCatalog
+  const planInfo = PlanCatalog.getPlanForStartup(startup);
+  const planName = planInfo.displayName || planInfo.name;
+  const includedHours = Number(planInfo.monthlyHours);
   const planCredits = includedHours * CREDITS_PER_HOUR;
 
-  // Filter top-ups active in this month
-  const startupTopUps = (topUps || startup.topUps || []).filter(t => {
+  // Top-ups: only active, paid top-ups
+  const rawTopUps = (Array.isArray(topUps) && topUps.length > 0) ? topUps : (startup.topUps || []);
+  const startupTopUps = rawTopUps.filter(t => {
     if (!t) return false;
+    // Strict requirement: Credits from a top-up are granted ONLY after payment success
+    if (t.status && t.status !== 'Active' && t.status !== 'Paid') return false;
     const pDate = (t.purchasedAt || t.date || '').substring(0, 10);
     const expDate = (t.expiresAt || '').substring(0, 10);
-    // Active if purchased on/before month end, and expires on/after month start
     if (pDate > monthEndDate) return false;
     if (expDate && expDate < monthStartDate) return false;
     return true;
@@ -217,9 +162,10 @@ function getMonthlyAllowance(startup, allRooms = [], targetMonth = null, topUps 
   const totalAvailableCredits = planCredits + totalTopUpCredits;
   const totalAvailableHours = Number((totalAvailableCredits / CREDITS_PER_HOUR).toFixed(1));
 
-  // Collect all bookings starting in this month for this startup
+  // Collect bookings for this startup in this month
   const monthBookings = [];
   const roomUsageMap = {};
+  const cancellations = startup.cancellations || [];
 
   (allRooms || []).forEach(r => {
     (r.bookings || []).forEach(b => {
@@ -227,36 +173,38 @@ function getMonthlyAllowance(startup, allRooms = [], targetMonth = null, topUps 
       const isMine = (b.startupId === startup.id || (b.startupName && startup.name && b.startupName.toLowerCase() === startup.name.toLowerCase()));
       if (!isMine) return;
 
-      // STRICT CALENDAR MONTH SEGREGATION: only bookings starting in this calendar month
       if (b.date && String(b.date).startsWith(mStr)) {
         const dur = (b.duration !== undefined && !isNaN(Number(b.duration)) && Number(b.duration) > 0)
           ? Number(b.duration)
           : calculateDurationHours(b.startTime, b.endTime);
 
+        const roomRate = Number(r.hourlyRate) || 1500;
+        const creditRate = Number(r.creditRatePerHour) || CREDITS_PER_HOUR;
+        const credits = Math.round(dur * creditRate);
+
+        // Check if booking is in the past (used) or future (reserved)
+        const isPast = (b.date < nowDateIST) || (b.date === nowDateIST && (b.endTime || b.startTime) <= nowTimeIST);
+
         const bookingItem = {
           ...b,
           roomId: r.id,
           roomName: r.name,
-          roomType: r.roomType || r.type || 'Meeting Space',
+          roomHourlyRate: roomRate,
+          creditRatePerHour: creditRate,
           duration: dur,
-          credits: Math.round(dur * CREDITS_PER_HOUR)
+          credits,
+          isPast,
+          stateType: isPast ? 'used' : 'reserved'
         };
 
         monthBookings.push(bookingItem);
 
-        // Aggregate room consumption
         const rName = r.name || 'Meeting Space';
         if (!roomUsageMap[rName]) {
-          roomUsageMap[rName] = {
-            roomId: r.id,
-            name: rName,
-            hours: 0,
-            credits: 0,
-            count: 0
-          };
+          roomUsageMap[rName] = { roomId: r.id, name: rName, hours: 0, credits: 0, count: 0 };
         }
         roomUsageMap[rName].hours += dur;
-        roomUsageMap[rName].credits += Math.round(dur * CREDITS_PER_HOUR);
+        roomUsageMap[rName].credits += credits;
         roomUsageMap[rName].count += 1;
       }
     });
@@ -269,14 +217,33 @@ function getMonthlyAllowance(startup, allRooms = [], targetMonth = null, topUps 
     return da.localeCompare(db);
   });
 
-  // Calculate consumed totals
-  const totalConsumedHours = Number(monthBookings.reduce((acc, b) => acc + b.duration, 0).toFixed(1));
-  const totalConsumedCredits = monthBookings.reduce((acc, b) => acc + b.credits, 0);
+  // Calculate used vs reserved
+  let usedHours = 0;
+  let usedCredits = 0;
+  let reservedHours = 0;
+  let reservedCredits = 0;
 
-  // Consume buckets: 1) Plan credits first, 2) Top-up credits second, 3) Overage
+  monthBookings.forEach(b => {
+    if (b.isPast) {
+      usedHours += b.duration;
+      usedCredits += b.credits;
+    } else {
+      reservedHours += b.duration;
+      reservedCredits += b.credits;
+    }
+  });
+
+  usedHours = Number(usedHours.toFixed(1));
+  reservedHours = Number(reservedHours.toFixed(1));
+
+  const totalConsumedCredits = usedCredits + reservedCredits;
+  const totalConsumedHours = Number((usedHours + reservedHours).toFixed(1));
+
+  // Two-bucket deduction: 1) Plan credits first, 2) Top-up credits second, 3) Room-rate overage
   let remainingPlanCredits = planCredits;
   let remainingTopUpCredits = totalTopUpCredits;
   let overageCredits = 0;
+  let overageFee = 0;
 
   monthBookings.forEach(b => {
     let needed = b.credits;
@@ -298,6 +265,11 @@ function getMonthlyAllowance(startup, allRooms = [], targetMonth = null, topUps 
         overageCredits += needed;
         b.debitedFrom = 'overage';
         b.overageCredits = needed;
+        // Overage charged at the room's own hourly rate!
+        const ovgHours = needed / (b.creditRatePerHour || CREDITS_PER_HOUR);
+        const ovgCost = Math.round(ovgHours * (b.roomHourlyRate || 1500));
+        b.overageFee = ovgCost;
+        overageFee += ovgCost;
       }
     }
   });
@@ -305,14 +277,14 @@ function getMonthlyAllowance(startup, allRooms = [], targetMonth = null, topUps 
   const currentCreditBalance = remainingPlanCredits + remainingTopUpCredits;
   const currentHourBalance = Number((currentCreditBalance / CREDITS_PER_HOUR).toFixed(1));
   const overageHours = Number((overageCredits / CREDITS_PER_HOUR).toFixed(1));
-  const overageFee = Math.round(overageCredits * CREDIT_OVERAGE_RATE); // ₹1,500/hr
 
-  // Usage progress and direction: SHOW USED
+  // Progress metrics: Progress bar always shows USED share
   const pctUsed = totalAvailableCredits > 0
     ? Math.min(100, Math.round((totalConsumedCredits / totalAvailableCredits) * 100))
     : (totalConsumedCredits > 0 ? 100 : 0);
+  const pctLeft = Math.max(0, 100 - pctUsed);
 
-  // Status and color scheme: Green (<80%), Amber (80-99%), Red (>=100%)
+  // Colour: green (<80%), amber (80-99%), red (>=100%)
   let status = 'normal';
   let statusColor = '#10B981'; // Green
   let statusLabel = 'On Track';
@@ -327,11 +299,19 @@ function getMonthlyAllowance(startup, allRooms = [], targetMonth = null, topUps 
     statusLabel = 'Approaching Limit';
   }
 
-  // Format Room Breakdown list and verify sum
-  const roomBreakdown = Object.values(roomUsageMap).map(r => ({
-    ...r,
-    hours: Number(r.hours.toFixed(1))
-  })).sort((a, b) => b.hours - a.hours);
+  // Renewal date computed from billing cycle
+  const nextRenewalDate = PlanCatalog.getRenewalDate(now);
+
+  // Top-up expiry list
+  const expiries = {
+    planCreditsExpiry: FormatHelper.formatDate(planExpiryDate),
+    topUps: startupTopUps.map(t => ({
+      id: t.id,
+      packTitle: t.packTitle || t.packName || 'Top-Up Pack',
+      credits: t.credits,
+      expiresAt: FormatHelper.formatDate(t.expiresAt)
+    }))
+  };
 
   // Reconciled Ledger
   const ledger = buildReconciledLedger({
@@ -342,7 +322,8 @@ function getMonthlyAllowance(startup, allRooms = [], targetMonth = null, topUps 
     includedHours,
     planExpiryDate,
     topUps: startupTopUps,
-    bookings: monthBookings
+    bookings: monthBookings,
+    cancellations
   });
 
   return {
@@ -355,7 +336,17 @@ function getMonthlyAllowance(startup, allRooms = [], targetMonth = null, topUps 
     monthStartDate,
     monthEndDate,
     planExpiryDate,
-    // Unified credit & hour metrics (10 credits = 1 hr)
+    nextRenewalDate,
+    // Bucket breakdown
+    plan_remaining: remainingPlanCredits,
+    topup_remaining: remainingTopUpCredits,
+    used: { hours: usedHours, credits: usedCredits },
+    reserved: { hours: reservedHours, credits: reservedCredits },
+    expiries,
+    overage: { hours: overageHours, credits: overageCredits, fee: overageFee },
+    percent_used: pctUsed,
+    percent_left: pctLeft,
+    // Backward compatibility aliases
     includedHours,
     planCredits,
     openingCredits: planCredits,
@@ -363,41 +354,33 @@ function getMonthlyAllowance(startup, allRooms = [], targetMonth = null, topUps 
     topUpCredits: totalTopUpCredits,
     totalAvailableCredits,
     totalAvailableHours,
-    usedCredits: totalConsumedCredits,
+    usedCredits,
     consumedCredits: totalConsumedCredits,
-    usedHours: totalConsumedHours,
+    refundedCredits: 0,
+    usedHours,
+    reservedCredits,
+    reservedHours,
     remainingCredits: currentCreditBalance,
     currentBalanceCredits: currentCreditBalance,
-    refundedCredits: 0,
     remainingHours: currentHourBalance,
     remainingPlanCredits,
     remainingTopUpCredits,
     overageCredits,
     overageHours,
     overageFee,
-    hourlyOverageRate: HOURLY_OVERAGE_RATE,
-    creditOverageRate: CREDIT_OVERAGE_RATE,
-    hourlyTopUpRate: HOURLY_TOPUP_RATE,
-    creditTopUpRate: CREDIT_TOPUP_RATE,
-    // Progress metrics (Direction: USED)
     pctUsed,
+    pctLeft,
     status,
     statusColor,
     statusLabel,
     showOverageWarning: pctUsed >= 80 || overageCredits > 0,
-    // Room breakdown strictly for this month
-    roomBreakdown,
+    roomBreakdown: Object.values(roomUsageMap),
     bookingsCount: monthBookings.length,
     bookings: monthBookings,
-    // Complete Reconciled Ledger
     ledger
   };
 }
 
-/**
- * Builds the fully reconciled ledger for a startup in a month.
- * Equation: openingCredits + sum(topUps) - sum(debits) + sum(refunds) = currentBalance
- */
 function buildReconciledLedger({
   monthStr,
   monthName,
@@ -406,19 +389,21 @@ function buildReconciledLedger({
   includedHours,
   planExpiryDate,
   topUps = [],
-  bookings = []
+  bookings = [],
+  cancellations = []
 }) {
+  const FormatHelper = getFormatHelper();
   const entries = [];
   let runningBalance = 0;
 
-  // 1. Opening Entry: Monthly Plan Allowance
+  // 1. Opening Entry
   runningBalance += planCredits;
   entries.push({
     id: `LEDGER-OPEN-${monthStr}`,
     date: `${monthStr}-01`,
-    displayDate: `01 ${monthName.substring(0, 3)} ${monthStr.substring(0, 4)}`,
+    displayDate: FormatHelper.formatDate(`${monthStr}-01`),
     time: '12:00 AM',
-    displayDateTime: `01 ${monthName.substring(0, 3)} ${monthStr.substring(0, 4)}, 12:00 AM`,
+    displayDateTime: `${FormatHelper.formatDate(`${monthStr}-01`)}, 12:00 AM`,
     type: 'credit',
     typeLabel: 'Plan Credit',
     description: `Monthly Incubator Plan Quota Credited (${planName})`,
@@ -429,11 +414,11 @@ function buildReconciledLedger({
     hoursDisplay: `+${includedHours.toFixed(1)} hrs`,
     runningBalanceCredits: runningBalance,
     runningBalanceHours: Number((runningBalance / CREDITS_PER_HOUR).toFixed(1)),
-    expiresAt: formatDateIndian(planExpiryDate),
+    expiresAt: FormatHelper.formatDate(planExpiryDate),
     isPositive: true
   });
 
-  // 2. Combine top-ups and bookings chronologically
+  // 2. Timeline items
   const txItems = [];
 
   (topUps || []).forEach(t => {
@@ -455,6 +440,17 @@ function buildReconciledLedger({
     });
   });
 
+  (cancellations || []).forEach(c => {
+    const cDate = (c.cancelledAt || c.date || '').substring(0, 10);
+    if (cDate.startsWith(monthStr) && c.refundCredits > 0) {
+      txItems.push({
+        kind: 'refund',
+        sortKey: `${cDate} ${c.time || '12:00'}`,
+        data: c
+      });
+    }
+  });
+
   txItems.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
 
   txItems.forEach(item => {
@@ -467,14 +463,15 @@ function buildReconciledLedger({
       entries.push({
         id: t.id || `LEDGER-TOPUP-${item.sortKey.replace(/[^0-9]/g, '')}`,
         date: (t.purchasedAt || t.date || monthStr).substring(0, 10),
-        displayDate: formatDateIndian((t.purchasedAt || t.date || monthStr).substring(0, 10)),
-        time: formatTime12h(t.time || '10:00'),
-        displayDateTime: `${formatDateIndian((t.purchasedAt || t.date || monthStr).substring(0, 10))}, ${formatTime12h(t.time || '10:00')}`,
+        displayDate: FormatHelper.formatDate((t.purchasedAt || t.date || monthStr).substring(0, 10)),
+        time: FormatHelper.formatTime(t.time || '10:00'),
+        displayDateTime: `${FormatHelper.formatDate((t.purchasedAt || t.date || monthStr).substring(0, 10))}, ${FormatHelper.formatTime(t.time || '10:00')}`,
         type: 'top-up',
         typeLabel: 'Credit Top-Up',
-        description: `Extra Credit Top-Up (${t.packTitle || 'Top-Up Pack'})`,
+        description: `Extra Credit Top-Up (${t.packTitle || t.packName || 'Top-Up Pack'})`,
         bookingRef: null,
         invoiceId: t.invoiceId || null,
+        invoiceNumber: t.invoiceNumber || t.invoiceId || null,
         paymentRef: t.paymentRef || null,
         credits: tCredits,
         creditsChange: tCredits,
@@ -483,23 +480,23 @@ function buildReconciledLedger({
         hoursDisplay: `+${tHours.toFixed(1)} hrs`,
         runningBalanceCredits: runningBalance,
         runningBalanceHours: Number((runningBalance / CREDITS_PER_HOUR).toFixed(1)),
-        expiresAt: t.expiresAt ? formatDateIndian(t.expiresAt) : '90 Days',
+        expiresAt: t.expiresAt ? FormatHelper.formatDate(t.expiresAt) : '90 Days',
         isPositive: true
       });
     } else if (item.kind === 'booking') {
       const b = item.data;
       const dur = b.duration || calculateDurationHours(b.startTime, b.endTime);
-      const bCredits = Math.round(dur * CREDITS_PER_HOUR);
+      const bCredits = b.credits || Math.round(dur * (b.creditRatePerHour || CREDITS_PER_HOUR));
       runningBalance = Math.max(0, runningBalance - bCredits);
 
-      const timeRange = `${formatTime12h(b.startTime)} – ${formatTime12h(b.endTime)}`;
+      const timeRange = `${FormatHelper.formatTime(b.startTime)} – ${FormatHelper.formatTime(b.endTime)}`;
 
       entries.push({
         id: `LEDGER-BKG-${b.id}`,
         date: b.date,
-        displayDate: formatDateIndian(b.date),
-        time: formatTime12h(b.startTime),
-        displayDateTime: `${formatDateIndian(b.date)}, ${timeRange}`,
+        displayDate: FormatHelper.formatDate(b.date),
+        time: FormatHelper.formatTime(b.startTime),
+        displayDateTime: `${FormatHelper.formatDate(b.date)}, ${timeRange}`,
         type: 'debit',
         typeLabel: 'Room Reservation',
         description: `Session in ${b.roomName || 'Meeting Room'} (${b.purpose || b.title || 'Team Session'})`,
@@ -516,18 +513,41 @@ function buildReconciledLedger({
         expiresAt: null,
         isPositive: false
       });
+    } else if (item.kind === 'refund') {
+      const c = item.data;
+      const rCredits = Number(c.refundCredits) || 0;
+      const rHours = Number((rCredits / CREDITS_PER_HOUR).toFixed(1));
+      runningBalance += rCredits;
+
+      entries.push({
+        id: `LEDGER-REF-${c.id || c.bookingId}`,
+        date: (c.cancelledAt || c.date).substring(0, 10),
+        displayDate: FormatHelper.formatDate((c.cancelledAt || c.date).substring(0, 10)),
+        time: FormatHelper.formatTime(c.time || '12:00'),
+        displayDateTime: `${FormatHelper.formatDate((c.cancelledAt || c.date).substring(0, 10))}, ${FormatHelper.formatTime(c.time || '12:00')}`,
+        type: 'credit',
+        typeLabel: 'Cancellation Refund',
+        description: `Refund for Cancelled Session (${c.bookingRef || c.roomName || 'Booking'})`,
+        bookingRef: c.bookingRef || c.bookingId,
+        creditsChange: rCredits,
+        hoursChange: rHours,
+        creditsDisplay: `+${rCredits} credits`,
+        hoursDisplay: `+${rHours.toFixed(1)} hrs`,
+        runningBalanceCredits: runningBalance,
+        runningBalanceHours: Number((runningBalance / CREDITS_PER_HOUR).toFixed(1)),
+        isPositive: true
+      });
     }
   });
 
   return entries;
 }
 
-/**
- * Validates whether a proposed booking will incur overage, and calculates savings with top-up
- */
 function evaluateBookingCost(startup, allRooms, { roomId, date, startTime, endTime }) {
   const dur = calculateDurationHours(startTime, endTime);
-  const neededCredits = Math.round(dur * CREDITS_PER_HOUR);
+  const targetRoom = (allRooms || []).find(r => r.id === roomId) || { hourlyRate: 1500, creditRatePerHour: CREDITS_PER_HOUR };
+  const creditRate = Number(targetRoom.creditRatePerHour) || CREDITS_PER_HOUR;
+  const neededCredits = Math.round(dur * creditRate);
   const bMonth = (date || '').substring(0, 7);
 
   const allowance = getMonthlyAllowance(startup, allRooms, bMonth);
@@ -547,10 +567,8 @@ function evaluateBookingCost(startup, allRooms, { roomId, date, startTime, endTi
   }
 
   const shortageCredits = neededCredits - availableCredits;
-  const overageHours = Number((shortageCredits / CREDITS_PER_HOUR).toFixed(1));
-  const overageFee = Math.round(overageHours * HOURLY_OVERAGE_RATE); // ₹1,500/hr
-
-  // Cost if user buys credits instead (₹500/hr)
+  const overageHours = Number((shortageCredits / creditRate).toFixed(1));
+  const overageFee = Math.round(overageHours * (targetRoom.hourlyRate || 1500));
   const topUpCostToCover = Math.round(overageHours * HOURLY_TOPUP_RATE);
   const savingsWithTopUp = Math.max(0, overageFee - topUpCostToCover);
 
@@ -563,7 +581,7 @@ function evaluateBookingCost(startup, allRooms, { roomId, date, startTime, endTi
     shortageCredits,
     overageHours,
     overageFee,
-    hourlyOverageRate: HOURLY_OVERAGE_RATE,
+    hourlyOverageRate: targetRoom.hourlyRate || 1500,
     hourlyTopUpRate: HOURLY_TOPUP_RATE,
     topUpCostToCover,
     savingsWithTopUp,
@@ -571,28 +589,35 @@ function evaluateBookingCost(startup, allRooms, { roomId, date, startTime, endTi
   };
 }
 
-const creditService = {
-  CREDITS_PER_HOUR,
-  HOURLY_OVERAGE_RATE,
-  CREDIT_OVERAGE_RATE,
-  HOURLY_TOPUP_RATE,
-  CREDIT_TOPUP_RATE,
-  DEFAULT_TOPUP_VALIDITY_DAYS,
-  PACK_PRICING,
-  CREDIT_EXPIRY_POLICIES,
-  calculateDurationHours,
-  formatTime12h,
-  formatDateIndian,
-  formatRupees,
-  getMonthlyAllowance,
-  buildReconciledLedger,
-  evaluateBookingCost
-};
-
-if (typeof window !== 'undefined') {
-  window.creditService = creditService;
+function formatDateIndian(d) {
+  const FormatHelper = getFormatHelper();
+  return FormatHelper.formatDate(d);
 }
 
+function formatCurrency(n) {
+  const FormatHelper = getFormatHelper();
+  return FormatHelper.formatCurrency(n);
+}
+
+const CreditServiceExports = {
+  CREDITS_PER_HOUR,
+  DEFAULT_TOPUP_VALIDITY_DAYS,
+  HOURLY_TOPUP_RATE,
+  CREDIT_TOPUP_RATE,
+  CREDIT_EXPIRY_POLICIES,
+  PACK_PRICING,
+  calculateDurationHours,
+  getMonthlyAllowance,
+  buildReconciledLedger,
+  evaluateBookingCost,
+  formatDateIndian,
+  formatCurrency
+};
+
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = creditService;
+  module.exports = CreditServiceExports;
+}
+if (typeof window !== 'undefined') {
+  window.CreditService = CreditServiceExports;
+  window.creditService = CreditServiceExports;
 }

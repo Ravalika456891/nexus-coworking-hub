@@ -1686,9 +1686,10 @@ class NexusStore {
     const startup = this.getStartupById(sId) || (this.getStartups() || []).find(s => s.id === sId) || { id: sId, name: 'Startup', includedMeetingHours: 15, subscriptionPlan: 'Startup Plan' };
     
     // Delegate to unified creditService (Single Source of Truth)
-    if (typeof window !== 'undefined' && window.creditService && window.creditService.getMonthlyAllowance) {
+    const srv = (typeof window !== 'undefined') ? (window.creditService || window.CreditService) : null;
+    if (srv && srv.getMonthlyAllowance) {
       const rooms = this.getMeetingRooms() || [];
-      const allowance = window.creditService.getMonthlyAllowance(startup, rooms, targetMonth, startup.topUps || []);
+      const allowance = srv.getMonthlyAllowance(startup, rooms, targetMonth, startup.topUps || []);
       startup.usedMeetingHours = allowance.usedHours;
       return allowance;
     }

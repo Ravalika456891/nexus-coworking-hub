@@ -483,8 +483,8 @@ const DashboardModule = {
             <div class="dash-kpi-icon icon-purple">📅</div>
           </div>
           <div class="dash-kpi-value tabular-nums">${kpi.upcomingMeetings.count}</div>
-          <div class="dash-kpi-footer">
-            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px;">
+          <div class="dash-kpi-footer" style="flex-wrap: wrap; gap: 4px;">
+            <span style="font-size: 11.5px; color: #64748b; font-weight: 600;">
               ${kpi.upcomingMeetings.nextHint || 'Confirmed bookings'}
             </span>
             <span class="dash-kpi-link">My Bookings &rarr;</span>
@@ -516,7 +516,7 @@ const DashboardModule = {
             ${kpi.remainingCredits.remaining} <span style="font-size: 13px; font-weight: 600; color: #64748b;">credits</span>
           </div>
           <div class="dash-kpi-footer">
-            <span>${kpi.remainingCredits.percent || 66}% quota left</span>
+            <span>${kpi.remainingCredits.percent || 0}% used • ${kpi.remainingCredits.percentLeft ?? (100 - (kpi.remainingCredits.percent || 0))}% left</span>
             <span class="dash-kpi-link">${isEmployee ? 'Details' : 'Upgrade'} &rarr;</span>
           </div>
         </div>
@@ -532,7 +532,7 @@ const DashboardModule = {
           </div>
           <div class="dash-kpi-footer">
             <span>${kpi.pendingRequests.description || 'All confirmed'}</span>
-            <span class="dash-kpi-link">Review &rarr;</span>
+            ${kpi.pendingRequests.count > 0 ? `<span class="dash-kpi-link">Review &rarr;</span>` : ''}
           </div>
         </div>
 
@@ -616,10 +616,16 @@ const DashboardModule = {
   },
 
   renderStartupCreditsWidget(startup, isEmployee) {
-    const total = startup.totalCredits || 120;
-    const remaining = startup.remainingCredits ?? 80;
+    const total = startup.totalCredits || 150;
+    const remaining = startup.remainingCredits ?? 140;
     const used = startup.usedCredits ?? (total - remaining);
-    const pct = Math.round((remaining / total) * 100);
+    const usedPct = total > 0 ? Math.min(100, Math.round((used / total) * 100)) : 0;
+    const leftPct = Math.max(0, 100 - usedPct);
+
+    // Progress color: green <80%, amber 80-99%, red at 100%
+    let barColor = '#10B981';
+    if (usedPct >= 100) barColor = '#EF4444';
+    else if (usedPct >= 80) barColor = '#F59E0B';
 
     return `
       <div class="dash-card">
@@ -628,7 +634,7 @@ const DashboardModule = {
             <span style="font-size: 18px;">💳</span>
             <div>
               <h3 class="dash-card-title">Booking Allowance</h3>
-              <span style="font-size: 11px; color: #64748b;">${startup.plan || 'Scale-Up Growth Plan'}</span>
+              <span style="font-size: 11px; font-weight: 700; color: #4338ca;">${startup.plan || 'Startup Plan'}</span>
             </div>
           </div>
           ${!isEmployee ? `
@@ -642,16 +648,28 @@ const DashboardModule = {
           <div style="font-size: 20px; font-weight: 900; color: #1e1b4b;" class="tabular-nums">
             ${remaining} credits <span style="font-size: 12px; font-weight: 600; color: #64748b;">remaining</span>
           </div>
-          <span style="font-size: 11.5px; font-weight: 700; color: #4338ca;">${pct}%</span>
+          <span style="font-size: 11.5px; font-weight: 700; color: ${barColor};">${usedPct}% used (${leftPct}% left)</span>
         </div>
 
-        <div class="dash-progress-track">
-          <div class="dash-progress-bar" style="width: ${pct}%;"></div>
+        <div class="dash-progress-track" title="${usedPct}% quota consumed">
+          <div class="dash-progress-bar" style="width: ${usedPct}%; background: ${barColor};"></div>
         </div>
 
-        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 11.5px; color: #64748b; font-weight: 600;">
-          <span>Consumed: <strong>${used} credits</strong></span>
-          <span>Renews on <strong>${startup.renewalDate || '1 Nov 2026'}</strong></span>
+        <div style="display: flex; flex-direction: column; gap: 4px; font-size: 11.5px; color: #64748b; font-weight: 600;">
+          <div style="display: flex; justify-content: space-between;">
+            <span>Plan Credits: <strong>${startup.planCredits || remaining} cr</strong> (exp. ${startup.planCreditsExpiry || 'Month-end'})</span>
+            <span>Consumed: <strong>${used} cr</strong></span>
+          </div>
+          ${startup.topUpCredits > 0 ? `
+            <div style="display: flex; justify-content: space-between; color: #4338ca;">
+              <span>Top-Up Credits: <strong>+${startup.topUpCredits} cr</strong></span>
+              <span>Valid 90 Days</span>
+            </div>
+          ` : ''}
+          <div style="display: flex; justify-content: space-between; border-top: 1px dashed #e2e8f0; padding-top: 4px; margin-top: 2px;">
+            <span>Next Billing Cycle</span>
+            <span>Renews on <strong>${startup.renewalDate || '1 Dec 2026'}</strong></span>
+          </div>
         </div>
       </div>
     `;
@@ -659,11 +677,12 @@ const DashboardModule = {
 
   renderStartupOverviewWidget(data) {
     const ov = data?.startupOverview || {
-      teamCount: 8,
+      teamCount: 6,
       assignedSpace: 'Pod #4 (6 Desks)',
       unpaidInvoicesCount: 0,
       outstandingDueFormatted: '₹0.00',
-      upcomingMilestone: 'Prototype Beta (Due 15 Nov)'
+      upcomingMilestone: 'Revenue Generation (Due 20 Nov 2026)',
+      isMilestoneOverdue: false
     };
 
     return `
@@ -695,7 +714,12 @@ const DashboardModule = {
 
           <div class="dash-overview-chip">
             <span class="dash-chip-label">Next Milestone</span>
-            <span class="dash-chip-val" style="font-size: 12.5px; color: #4338ca;">${ov.upcomingMilestone}</span>
+            <span class="dash-chip-val" style="font-size: 12px; color: ${ov.isMilestoneOverdue ? '#dc2626' : '#4338ca'}; display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
+              <span>${ov.upcomingMilestone}</span>
+              ${ov.isMilestoneOverdue ? `
+                <span style="background: #ef4444; color: #ffffff; font-size: 9.5px; font-weight: 800; padding: 1px 6px; border-radius: 4px; text-transform: uppercase;">Overdue</span>
+              ` : ''}
+            </span>
           </div>
         </div>
       </div>
@@ -791,12 +815,17 @@ const DashboardModule = {
     return `
       <div class="dash-activity-list">
         ${activities.slice(0, 5).map(act => `
-          <div class="dash-activity-item">
+          <div class="dash-activity-item" ${act.linkTab ? `onclick="App.switchTab('${act.linkTab}')"` : ''} style="${act.linkTab ? 'cursor: pointer;' : ''}">
             <div class="dash-activity-icon">${act.icon || '📌'}</div>
             <div class="dash-activity-content">
-              <div class="dash-activity-title">${act.title}</div>
+              <div class="dash-activity-title" style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                <span>${act.title}</span>
+                ${act.linkTab ? `<span style="font-size: 10px; color: #4f46e5; font-weight: 700;">View &rarr;</span>` : ''}
+              </div>
               <div class="dash-activity-time">
-                <span style="font-weight: 600; color: #4f46e5;">${act.module || 'Operations'}</span>
+                <span style="font-weight: 700; color: #0f172a;">${act.actor || 'Operations'}</span>
+                <span>•</span>
+                <span style="color: #64748b;">${act.module || 'System'}</span>
                 <span>•</span>
                 <span class="tabular-nums">${act.relativeTime || 'Just now'}</span>
               </div>
@@ -808,6 +837,13 @@ const DashboardModule = {
   },
 
   renderStartupAssistanceCard() {
+    const hub = (typeof window !== 'undefined' && window.store && window.store.getHubInfo) ? window.store.getHubInfo() : {
+      name: 'Nexus Co-Working & Incubation Hub',
+      address: 'Survey No. 45/1, Outer Ring Road, Tech Corridor, Bangalore 560103',
+      contactEmail: 'operations@nexushub.co',
+      contactPhone: '+91 80 4968 2000'
+    };
+
     return `
       <div class="dash-card">
         <div class="dash-card-header">
@@ -819,10 +855,11 @@ const DashboardModule = {
 
         <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; margin-bottom: 12px;">
           <div style="font-size: 12.5px; font-weight: 700; color: #0f172a; margin-bottom: 4px;">
-            Need help with room equipment, catering, or guest access?
+            ${hub.name || 'Nexus Hub Community Helpdesk'}
           </div>
           <div style="font-size: 11.5px; color: #64748b; line-height: 1.4;">
-            The Cyber City Hub operations desk is on standby. Reach incubation community managers or raise a facilities ticket directly.
+            📍 ${hub.address || 'Outer Ring Road, Bangalore'}<br>
+            ✉️ ${hub.contactEmail || 'operations@nexushub.co'} • 📞 ${hub.contactPhone || '+91 80 4968 2000'}
           </div>
         </div>
 

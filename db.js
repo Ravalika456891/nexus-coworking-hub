@@ -230,11 +230,24 @@ async function getTableStats() {
 }
 
 async function getTableRecords(tableName, { page = 1, limit = 25, search = '', sortField = '_id', sortOrder = -1 } = {}) {
-  const database = await connectDB();
-  if (!database) return { ok: false, error: 'Database disconnected' };
-
   const validTable = TABLE_DEFINITIONS.find(t => t.name === tableName);
   if (!validTable) return { ok: false, error: `Invalid table: ${tableName}` };
+
+  const database = await connectDB();
+  if (!database) {
+    const seed = loadInitialSeedData();
+    const sourceKey = validTable.sourceKey;
+    let items = (seed && seed[sourceKey]) ? JSON.parse(JSON.stringify(seed[sourceKey])) : [];
+    return {
+      ok: true,
+      table: validTable,
+      total: items.length,
+      page: 1,
+      limit,
+      totalPages: 1,
+      records: items.slice(0, parseInt(limit) || 25)
+    };
+  }
 
   const col = database.collection(tableName);
   let filter = {};
@@ -2747,47 +2760,53 @@ async function getStartupDashboardSummary(requestedStartupId, requestedMonth, ro
     if (!isOccupied) availableRoomsCount++;
   });
 
-  // Single Source of Truth Credit Allowance via creditService
+  // Single Source of Truth Credit Allowance via creditService & PlanCatalog
   const creditAllowance = creditService.getMonthlyAllowance(startup, meetingRooms, targetMonth, startup.topUps || []);
   const totalCredits = creditAllowance.totalAvailableCredits;
   const usedCredits = creditAllowance.usedCredits;
   const remainingCredits = creditAllowance.remainingCredits;
-  const remainingPercent = creditAllowance.pctUsed; // Direction: USED
+  const remainingPercent = creditAllowance.pctUsed; // Direction: ALWAYS USED
+  const percentLeft = creditAllowance.percent_left;
   const remainingHours = creditAllowance.remainingHours;
   const usedHours = creditAllowance.usedHours;
 
   // Pending requests
   const pendingRequests = startupBookings.filter(b => b.status === 'Pending');
 
-  // Scoped activity feed
-  const recentActivities = (rawActivities || [])
-    .filter(act => {
-      if (!act) return false;
-      const text = `${act.action || ''} ${act.title || ''} ${act.description || ''} ${act.startupName || ''}`;
-      return text.includes(startup.name) || text.includes(startup.id) || act.startupId === startup.id;
-    })
-    .slice(0, 5)
-    .map(act => ({
-      id: act.id,
-      icon: act.icon || '📌',
-      title: act.action || act.title || 'Activity recorded',
-      module: act.module || 'Operations',
-      relativeTime: formatRelativeTimeIST(act.timestamp || Date.now())
-    }));
+  // Real Scoped Activity Feed (Actor, time, and target link)
+  const recentActivities = [];
 
-  if (recentActivities.length === 0 && startupBookings.length > 0) {
-    startupBookings.slice(0, 3).forEach((b, i) => {
-      recentActivities.push({
-        id: `act-${b.id}`,
-        icon: '📅',
-        title: `Reserved ${b.roomName} for ${b.title}`,
-        module: 'Meeting Rooms',
-        relativeTime: i === 0 ? 'Today' : `${i + 1}d ago`
-      });
+  // Add real booking activities
+  startupBookings.slice(0, 4).forEach(b => {
+    recentActivities.push({
+      id: `act-bkg-${b.id}`,
+      icon: '📅',
+      actor: b.bookedBy || 'Team Member',
+      title: `Reserved ${b.roomName} for ${b.title || b.purpose || 'Session'}`,
+      description: `${b.date} • ${b.startTime} - ${b.endTime} (${b.duration || 1} hr)`,
+      module: 'Meeting Rooms',
+      relativeTime: formatRelativeTimeIST(b.createdAt || `${b.date}T${b.startTime || '10:00'}:00`),
+      linkTab: 'bookings',
+      linkId: b.id
     });
-  }
+  });
 
-  // Financial & Overview
+  // Add real top-up activities
+  (startup.topUps || []).slice(0, 2).forEach(t => {
+    recentActivities.push({
+      id: `act-topup-${t.id}`,
+      icon: '💳',
+      actor: t.paymentMethod || 'Finance',
+      title: `Purchased ${t.packTitle || t.packName || 'Credit Top-up'} (+${t.credits} credits)`,
+      description: `Invoice #${t.invoiceId || 'INV-TOPUP'} • Total ₹${(t.amount || 0).toLocaleString('en-IN')}`,
+      module: 'Billing',
+      relativeTime: formatRelativeTimeIST(t.purchasedAt || `${t.date}T10:00:00`),
+      linkTab: 'billingCredits',
+      linkId: t.id
+    });
+  });
+
+  // Financial & Invoices
   const isEmployee = role === 'startup_member';
   const startupInvoices = invoices.filter(inv => inv.startupId === startup.id && inv.status !== 'Cancelled');
   const unpaidInvoices = startupInvoices.filter(inv => {
@@ -2799,7 +2818,38 @@ async function getStartupDashboardSummary(requestedStartupId, requestedMonth, ro
     const paidSum = payments.filter(p => p.invoiceId === inv.id && p.status === 'Successful').reduce((acc, p) => acc + (p.amount || 0), 0);
     outstandingDue += Math.max(0, (inv.total || 0) - paidSum);
   });
+
+  // Add invoice activity
+  startupInvoices.slice(0, 2).forEach(inv => {
+    recentActivities.push({
+      id: `act-inv-${inv.id}`,
+      icon: '🧾',
+      actor: 'Nexus Accounts',
+      title: `Tax Invoice #${inv.id} issued`,
+      description: `${inv.billingPeriod || 'Billing'} • Total ₹${(inv.total || 0).toLocaleString('en-IN')} (${inv.status || 'Active'})`,
+      module: 'Billing',
+      relativeTime: formatRelativeTimeIST(inv.issueDate ? `${inv.issueDate}T12:00:00` : Date.now()),
+      linkTab: 'billingCredits',
+      linkId: inv.id
+    });
+  });
+
+  // Sort activities newest first
+  recentActivities.sort((a, b) => (b.id || '').localeCompare(a.id || ''));
+
+  // Milestone resolution: Find the first uncompleted milestone
   const startupMilestones = milestones.filter(m => m.startupId === startup.id || m.startupName === startup.name);
+  const uncompletedMilestones = startupMilestones.filter(m => m.status !== 'Completed');
+  const targetMilestone = uncompletedMilestones[0] || startupMilestones[startupMilestones.length - 1];
+
+  let upcomingMilestoneText = 'Phase 2 Product Beta';
+  let isMilestoneOverdue = false;
+  if (targetMilestone) {
+    const isOverdue = Boolean(targetMilestone.targetDate && targetMilestone.targetDate < ist.date);
+    isMilestoneOverdue = isOverdue;
+    const formattedDate = targetMilestone.targetDate ? targetMilestone.targetDate : 'Nov 2026';
+    upcomingMilestoneText = `${targetMilestone.title || targetMilestone.milestone || 'Milestone'} (${isOverdue ? 'Overdue: ' : 'Due '}${formattedDate})`;
+  }
 
   return {
     ok: true,
@@ -2809,12 +2859,17 @@ async function getStartupDashboardSummary(requestedStartupId, requestedMonth, ro
       id: startup.id,
       name: startup.name,
       founderName: startup.founders?.name || 'Alex Morgan',
-      plan: startup.plan || 'Scale-Up Growth Plan',
+      plan: creditAllowance.planName || 'Startup Plan',
       totalCredits,
       usedCredits,
       remainingCredits,
       remainingPercent,
-      renewalDate: '1 Nov 2026'
+      percentLeft,
+      statusColor: creditAllowance.statusColor,
+      statusLabel: creditAllowance.statusLabel,
+      renewalDate: creditAllowance.nextRenewalDate || '1 Dec 2026',
+      planCreditsExpiry: creditAllowance.expiries?.planCreditsExpiry || '',
+      topUpExpiries: creditAllowance.expiries?.topUps || []
     },
     kpi: {
       upcomingMeetings: {
@@ -2833,6 +2888,8 @@ async function getStartupDashboardSummary(requestedStartupId, requestedMonth, ro
         total: totalCredits,
         unit: 'credits',
         percent: remainingPercent,
+        percentLeft,
+        statusColor: creditAllowance.statusColor,
         linkTab: isEmployee ? 'meetingRooms' : 'billingCredits'
       },
       pendingRequests: {
@@ -2843,13 +2900,14 @@ async function getStartupDashboardSummary(requestedStartupId, requestedMonth, ro
     },
     todaysSchedule,
     upcomingBookings,
-    recentActivities,
+    recentActivities: recentActivities.slice(0, 5),
     startupOverview: isEmployee ? null : {
-      teamCount: Array.isArray(startup.teamMembers) ? startup.teamMembers.length : 8,
+      teamCount: startup.teamSize || (Array.isArray(startup.teamMembers) ? startup.teamMembers.length : 6),
       assignedSpace: startup.assignedSpace || startup.space || 'Pod #4 (6 Desks)',
       unpaidInvoicesCount: unpaidInvoices.length,
       outstandingDueFormatted: formatCurrencyINR(outstandingDue),
-      upcomingMilestone: startupMilestones[0] ? `${startupMilestones[0].title || startupMilestones[0].milestone} (Due ${startupMilestones[0].targetDate || 'Nov 2026'})` : 'Phase 2 Product Beta'
+      upcomingMilestone: upcomingMilestoneText,
+      isMilestoneOverdue
     }
   };
 }
