@@ -1,6 +1,8 @@
 // Auto-Refresh & Live Real-Time Synchronization Engine
 (function() {
   if (typeof window === 'undefined') return;
+  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  if (!isLocal) return; // Disable live reload in production / Vercel
 
   let eventSource = null;
   let reconnectTimeout = null;

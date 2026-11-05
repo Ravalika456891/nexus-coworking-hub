@@ -441,6 +441,13 @@ var AMENITIES_LIST = [{
   icon: "sun"
 }];
 
+function getGreeting() {
+  var hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
+
 // --- Main App Component ---
 function MeetingRoomsApp() {
   // States
@@ -473,6 +480,18 @@ function MeetingRoomsApp() {
     _useState2 = _slicedToArray(_useState, 2),
     activeNav = _useState2[0],
     setActiveNav = _useState2[1];
+  var _useStateCreditModal = useState(false),
+    _useStateCreditModal2 = _slicedToArray(_useStateCreditModal, 2),
+    showPurchaseCreditsModal = _useStateCreditModal2[0],
+    setShowPurchaseCreditsModal = _useStateCreditModal2[1];
+  var _useStateCreditTier = useState(100),
+    _useStateCreditTier2 = _slicedToArray(_useStateCreditTier, 2),
+    selectedCreditTier = _useStateCreditTier2[0],
+    setSelectedCreditTier = _useStateCreditTier2[1];
+  var _useStateToast = useState(null),
+    _useStateToast2 = _slicedToArray(_useStateToast, 2),
+    toastMessage = _useStateToast2[0],
+    setToastMessage = _useStateToast2[1];
   var _useStateNotif = useState(false),
     _useStateNotif2 = _slicedToArray(_useStateNotif, 2),
     isNotifOpen = _useStateNotif2[0],
