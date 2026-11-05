@@ -542,18 +542,6 @@ function MeetingRoomsApp() {
     systemNotifs = _useStateNotifs2[0],
     setSystemNotifs = _useStateNotifs2[1];
   var unreadNotifsCount = systemNotifs.filter(function (n) { return n.isUnread; }).length;
-  useEffect(function () {
-    if (!isNotifOpen) return;
-    function handleDocClick(e) {
-      if (!e.target.closest("#header-notif-container")) {
-        setIsNotifOpen(false);
-      }
-    }
-    document.addEventListener("click", handleDocClick);
-    return function () {
-      document.removeEventListener("click", handleDocClick);
-    };
-  }, [isNotifOpen]);
   var _useState3 = useState(INITIAL_ROOMS),
     _useState4 = _slicedToArray(_useState3, 2),
     rooms = _useState4[0],
@@ -2298,7 +2286,6 @@ function MeetingRoomsApp() {
     name: "chevronDown",
     className: "w-3.5 h-3.5 text-[#8A90A2]"
   })), /*#__PURE__*/React.createElement("div", {
-    id: "header-notif-container",
     className: "relative"
   }, /*#__PURE__*/React.createElement("button", {
     type: "button",
@@ -2444,38 +2431,1928 @@ function MeetingRoomsApp() {
   }, "View Calendar")))), /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
   }, /*#__PURE__*/React.createElement("div", {
+    onClick: function onClick() {
+      return navigateTo("My Bookings");
+    },
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft hover:shadow-card hover:-translate-y-1 transition-all cursor-pointer group"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between text-[#8A90A2]"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-xs font-bold uppercase tracking-wider text-[#64748B]"
+  }, "Upcoming Meetings"), /*#__PURE__*/React.createElement("div", {
+    className: "w-9 h-9 rounded-xl bg-purple-50 text-[#6E42E5] flex items-center justify-center group-hover:scale-105 transition-transform"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "calendar",
+    className: "w-5 h-5 text-[#6E42E5]"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "text-3xl font-black text-[#111827] mt-3"
+  }, upcomingBookings.length, /*#__PURE__*/React.createElement("span", {
+    className: "text-xs font-bold text-emerald-600 ml-2 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200"
+  }, "100% Confirmed")), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between text-xs text-[#8A90A2] mt-3 pt-3 border-t border-[#ECEEF4]"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[#374151] font-medium"
+  }, "Next: Today at 03:00 PM"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[#4F3FE0] font-bold group-hover:translate-x-0.5 transition-transform"
+  }, "My Bookings \u2192"))), /*#__PURE__*/React.createElement("div", {
+    onClick: function onClick() {
+      return navigateTo("Meeting Rooms");
+    },
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft hover:shadow-card hover:-translate-y-1 transition-all cursor-pointer group"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between text-[#8A90A2]"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-xs font-bold uppercase tracking-wider text-[#64748B]"
+  }, "Available Rooms"), /*#__PURE__*/React.createElement("div", {
+    className: "w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-105 transition-transform"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "building",
+    className: "w-5 h-5 text-emerald-600"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "text-3xl font-black text-[#059669] mt-3"
+  }, "5 ", /*#__PURE__*/React.createElement("span", {
+    className: "text-base text-[#8A90A2] font-semibold"
+  }, "/ 6"), /*#__PURE__*/React.createElement("span", {
+    className: "text-xs font-bold text-[#059669] ml-2 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200"
+  }, "83% Ready")), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between text-xs text-[#8A90A2] mt-3 pt-3 border-t border-[#ECEEF4]"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[#374151] font-medium"
+  }, "Open right now"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[#4F3FE0] font-bold group-hover:translate-x-0.5 transition-transform"
+  }, "Book Room \u2192"))), /*#__PURE__*/React.createElement("div", {
+    onClick: function onClick() {
+      return navigateTo("Billing & Credits");
+    },
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft hover:shadow-card hover:-translate-y-1 transition-all cursor-pointer group"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between text-[#8A90A2]"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-xs font-bold uppercase tracking-wider text-[#64748B]"
+  }, "Remaining Credits"), /*#__PURE__*/React.createElement("div", {
+    className: "w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-105 transition-transform"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "creditCard",
+    className: "w-5 h-5 text-blue-600"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "text-3xl font-black text-[#2563eb] mt-3"
+  }, "80 ", /*#__PURE__*/React.createElement("span", {
+    className: "text-sm font-semibold text-[#8A90A2]"
+  }, "/ 120 cr")), /*#__PURE__*/React.createElement("div", {
+    className: "w-full bg-[#ECEEF4] rounded-full h-1.5 mt-2 overflow-hidden"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-[#4F3FE0] h-full rounded-full",
+    style: {
+      width: "66%"
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between text-xs text-[#8A90A2] mt-3 pt-2 border-t border-[#ECEEF4]"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[#374151] font-medium"
+  }, "Renews in 24 hours"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[#4F3FE0] font-bold group-hover:translate-x-0.5 transition-transform"
+  }, "Billing \u2192"))), /*#__PURE__*/React.createElement("div", {
+    onClick: function onClick() {
+      return navigateTo("My Bookings");
+    },
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft hover:shadow-card hover:-translate-y-1 transition-all cursor-pointer group"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between text-[#8A90A2]"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-xs font-bold uppercase tracking-wider text-[#64748B]"
+  }, "Pending Requests"), /*#__PURE__*/React.createElement("div", {
+    className: "w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-105 transition-transform"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "clock",
+    className: "w-5 h-5 text-amber-600"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "text-3xl font-black text-[#111827] mt-3"
+  }, "0"), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between text-xs text-[#8A90A2] mt-3 pt-3 border-t border-[#ECEEF4]"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[#374151] font-medium"
+  }, "All approved \u2713"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[#4F3FE0] font-bold group-hover:translate-x-0.5 transition-transform"
+  }, "Review \u2192")))), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-1 lg:grid-cols-12 gap-6 items-start"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "lg:col-span-7 space-y-6"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between mb-4"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h4", {
+    className: "text-sm font-black text-[#111827] flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("span", null, "\u26A1"), " Quick Actions"), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-[#8A90A2] mt-0.5"
+  }, "Direct shortcuts to frequent meeting and facility tasks")), /*#__PURE__*/React.createElement("span", {
+    className: "text-[11px] font-bold text-[#64748B] bg-[#F8FAFC] px-2.5 py-1 rounded-full border border-[#ECEEF4]"
+  }, "Shortcuts")), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-1 sm:grid-cols-2 gap-3.5"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return navigateTo("Meeting Rooms");
+    },
+    className: "flex items-center justify-between p-4 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#F3EFFE] hover:border-[#6E42E5]/30 hover:shadow-xs transition-all text-left group"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-3"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-10 h-10 rounded-xl bg-purple-50 text-[#6E42E5] flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "calendar",
+    className: "w-5 h-5 text-[#6E42E5]"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "text-xs font-bold text-[#111827]"
+  }, "Book a Room"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] text-[#8A90A2]"
+  }, "Meeting Rooms & Pods"))), /*#__PURE__*/React.createElement("span", {
+    className: "text-[#8A90A2] group-hover:text-[#4F3FE0] group-hover:translate-x-1 transition-all text-sm font-bold"
+  }, "\u2192")), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return navigateTo("My Bookings");
+    },
+    className: "flex items-center justify-between p-4 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#EEF5FF] hover:border-[#2B71FF]/30 hover:shadow-xs transition-all text-left group"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-3"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-10 h-10 rounded-xl bg-blue-50 text-[#2B71FF] flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "bookmark",
+    className: "w-5 h-5 text-[#2B71FF]"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "text-xs font-bold text-[#111827]"
+  }, "My Bookings"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] text-[#8A90A2]"
+  }, "Active reservations"))), /*#__PURE__*/React.createElement("span", {
+    className: "text-[#8A90A2] group-hover:text-[#4F3FE0] group-hover:translate-x-1 transition-all text-sm font-bold"
+  }, "\u2192")), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return navigateTo("Calendar");
+    },
+    className: "flex items-center justify-between p-4 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#EEFAF3] hover:border-[#12A150]/30 hover:shadow-xs transition-all text-left group"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-3"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "calendarDays",
+    className: "w-5 h-5 text-emerald-600"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "text-xs font-bold text-[#111827]"
+  }, "Open Calendar"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] text-[#8A90A2]"
+  }, "Full Timeline View"))), /*#__PURE__*/React.createElement("span", {
+    className: "text-[#8A90A2] group-hover:text-[#4F3FE0] group-hover:translate-x-1 transition-all text-sm font-bold"
+  }, "\u2192")), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return navigateTo("Visitors");
+    },
+    className: "flex items-center justify-between p-4 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#FFF5EC] hover:border-[#F36B20]/30 hover:shadow-xs transition-all text-left group"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-3"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-10 h-10 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "userPlus",
+    className: "w-5 h-5 text-orange-600"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "text-xs font-bold text-[#111827]"
+  }, "Invite Guests"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] text-[#8A90A2]"
+  }, "Visitor Gate Pass"))), /*#__PURE__*/React.createElement("span", {
+    className: "text-[#8A90A2] group-hover:text-[#4F3FE0] group-hover:translate-x-1 transition-all text-sm font-bold"
+  }, "\u2192")))), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between mb-4"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h4", {
+    className: "text-sm font-black text-[#111827] flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("span", null, "\uD83C\uDFE2"), " Venture Facilities Overview"), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-[#8A90A2] mt-0.5"
+  }, "Assigned physical space and operational amenities")), /*#__PURE__*/React.createElement("span", {
+    onClick: function onClick() {
+      return navigateTo("Workspace & Desks");
+    },
+    className: "text-xs font-bold text-[#4F3FE0] hover:underline cursor-pointer"
+  }, "Manage Space \u2192")), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-2 sm:grid-cols-4 gap-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    onClick: function onClick() {
+      return navigateTo("Members");
+    },
+    className: "p-3.5 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl cursor-pointer hover:border-[#4F3FE0]/30 transition-colors"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "w-7 h-7 rounded-lg bg-indigo-50 text-[#4F3FE0] flex items-center justify-center mb-1.5"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "users",
+    className: "w-4 h-4"
+  })), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-bold text-[#8A90A2] uppercase tracking-wider"
+  }, "Active Team"), /*#__PURE__*/React.createElement("div", {
+    className: "text-sm font-black text-[#111827] mt-0.5"
+  }, "8 Members"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10.5px] text-[#64748B] block mt-0.5"
+  }, "Team Registered")), /*#__PURE__*/React.createElement("div", {
+    onClick: function onClick() {
+      return navigateTo("Workspace & Desks");
+    },
+    className: "p-3.5 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl cursor-pointer hover:border-[#4F3FE0]/30 transition-colors"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "w-7 h-7 rounded-lg bg-purple-50 text-[#6E42E5] flex items-center justify-center mb-1.5"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "building",
+    className: "w-4 h-4"
+  })), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-bold text-[#8A90A2] uppercase tracking-wider"
+  }, "Assigned Space"), /*#__PURE__*/React.createElement("div", {
+    className: "text-sm font-black text-[#111827] mt-0.5"
+  }, "Suite 401"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10.5px] text-[#64748B] block mt-0.5"
+  }, "6 Desks (Fl 4)")), /*#__PURE__*/React.createElement("div", {
+    onClick: function onClick() {
+      return navigateTo("Billing & Credits");
+    },
+    className: "p-3.5 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl cursor-pointer hover:border-[#4F3FE0]/30 transition-colors"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center mb-1.5"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "creditCard",
+    className: "w-4 h-4"
+  })), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-bold text-[#8A90A2] uppercase tracking-wider"
+  }, "Invoices Due"), /*#__PURE__*/React.createElement("div", {
+    className: "text-sm font-black text-emerald-600 mt-0.5"
+  }, "All Settled \u2713"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10.5px] text-emerald-700 font-semibold block mt-0.5"
+  }, "$0.00 Overdue")), /*#__PURE__*/React.createElement("div", {
+    onClick: function onClick() {
+      return navigateTo("Analytics");
+    },
+    className: "p-3.5 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl cursor-pointer hover:border-[#4F3FE0]/30 transition-colors"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center mb-1.5"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "crown",
+    className: "w-4 h-4 text-amber-600"
+  })), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-bold text-[#8A90A2] uppercase tracking-wider"
+  }, "Next Milestone"), /*#__PURE__*/React.createElement("div", {
+    className: "text-sm font-black text-[#4F3FE0] mt-0.5"
+  }, "Beta Prototype"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10.5px] text-[#64748B] block mt-0.5"
+  }, "Target: Nov 15"))))), /*#__PURE__*/React.createElement("div", {
+    className: "lg:col-span-5 space-y-6"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between pb-3 border-b border-[#ECEEF4] mb-4"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h4", {
+    className: "text-sm font-black text-[#111827] flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDDD3\uFE0F"), " Today's Schedule"), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-[#8A90A2] mt-0.5"
+  }, "Timeline of room allocations")), /*#__PURE__*/React.createElement("button", {
+    onClick: function onClick() {
+      return navigateTo("Calendar");
+    },
+    className: "text-xs font-bold text-[#4F3FE0] hover:underline"
+  }, "View Calendar \u2192")), /*#__PURE__*/React.createElement("div", {
+    className: "relative pl-5 space-y-4 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#ECEEF4]"
+  }, todaysSchedule.slice(0, 4).map(function (item, idx) {
+    return /*#__PURE__*/React.createElement("div", {
+      key: idx,
+      onClick: function onClick() {
+        return navigateTo("Meeting Rooms");
+      },
+      className: "relative flex items-start gap-3 p-3 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:border-[#4F3FE0]/40 transition-all cursor-pointer group"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "absolute -left-[21px] top-3.5 w-2.5 h-2.5 rounded-full border-2 border-white ".concat(item.dotColor || 'bg-[#4F3FE0]', " shadow-xs")
+    }), /*#__PURE__*/React.createElement("div", {
+      className: "flex-1 min-w-0"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between gap-2"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-[11px] font-bold text-[#4F3FE0]"
+    }, item.time), /*#__PURE__*/React.createElement("span", {
+      className: "bg-emerald-50 text-emerald-600 border border-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded-full"
+    }, "Confirmed")), /*#__PURE__*/React.createElement("div", {
+      className: "text-xs font-bold text-[#111827] mt-1 group-hover:text-[#4F3FE0] transition-colors truncate"
+    }, item.title), /*#__PURE__*/React.createElement("div", {
+      className: "text-[11px] text-[#8A90A2] mt-0.5"
+    }, item.room, " \u2022 \uD83D\uDC65 ", item.attendees, " pax")));
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "mt-4 pt-3 border-t border-[#ECEEF4] flex items-center justify-between text-xs text-[#64748B]"
+  }, /*#__PURE__*/React.createElement("span", null, "Need to book a new slot?"), /*#__PURE__*/React.createElement("button", {
+    onClick: function onClick() {
+      return navigateTo("Meeting Rooms");
+    },
+    className: "bg-[#4F3FE0] text-white px-3.5 py-1.5 rounded-xl text-xs font-bold hover:bg-[#4335C9] transition-all"
+  }, "+ Reserve Space"))), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft space-y-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between pb-3 border-b border-[#ECEEF4]"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h4", {
+    className: "text-sm font-black text-[#111827] flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDD52"), " Recent Activity"), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-[#8A90A2] mt-0.5"
+  }, "Authorized venture event stream")), /*#__PURE__*/React.createElement("span", {
+    onClick: function onClick() {
+      return navigateTo("Analytics");
+    },
+    className: "text-xs font-bold text-[#4F3FE0] hover:underline cursor-pointer"
+  }, "View All \u2192")), /*#__PURE__*/React.createElement("div", {
+    className: "divide-y divide-[#ECEEF4]"
+  }, DASHBOARD_ACTIVITIES.map(function (act) {
+    return /*#__PURE__*/React.createElement("div", {
+      key: act.id,
+      className: "py-2.5 flex items-start justify-between gap-3 first:pt-1 last:pb-1"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-start gap-3"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "w-8 h-8 rounded-xl bg-[#F6F7FB] border border-[#ECEEF4] flex items-center justify-center text-[#4F3FE0] flex-shrink-0 mt-0.5"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: act.icon,
+      className: "w-4 h-4 text-[#4F3FE0]"
+    })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      className: "text-xs font-bold text-[#111827]"
+    }, act.title), /*#__PURE__*/React.createElement("div", {
+      className: "text-[11px] text-[#64748B] mt-0.5"
+    }, act.desc))), /*#__PURE__*/React.createElement("span", {
+      className: "text-[10px] font-semibold text-[#8A90A2] whitespace-nowrap bg-[#F8FAFC] px-2 py-0.5 rounded-md border border-[#ECEEF4]"
+    }, act.time));
+  })))))), activeNav === "Meeting Rooms" && /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-8 items-start animate-fadeIn"
+  }, /*#__PURE__*/React.createElement("main", {
+    className: "space-y-6 min-w-0"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "relative rounded-2xl border border-[#ECEEF4] overflow-hidden bg-white shadow-soft flex items-center min-h-[220px]"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "absolute inset-0 bg-gradient-to-r from-[#EAE6FF] via-[#F4F2FF] to-transparent z-10 w-[60%]"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "absolute right-0 top-0 bottom-0 w-[55%] h-full z-0 overflow-hidden"
+  }, /*#__PURE__*/React.createElement("img", {
+    src: "assets/rooms/banner-hero.jpg",
+    onError: function onError(e) {
+      e.target.onerror = null;
+      e.target.src = "https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=1200&q=80";
+    },
+    alt: "Modern Boardroom",
+    className: "w-full h-full object-cover object-center"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "absolute inset-0 bg-gradient-to-r from-[#F4F2FF] via-transparent to-black/10"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "relative z-20 p-8 max-w-[560px]"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-1.5 text-xs font-bold text-[#4F3FE0] uppercase tracking-wider mb-2"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "bolt",
+    className: "w-3.5 h-3.5 text-[#4F3FE0]",
+    strokeWidth: 2.5
+  }), /*#__PURE__*/React.createElement("span", null, "NEXUS HUB")), /*#__PURE__*/React.createElement("h2", {
+    className: "text-[34px] xl:text-[38px] font-black text-[#111827] leading-[1.12] tracking-tight"
+  }, "Book the right space ", /*#__PURE__*/React.createElement("br", null), "for every idea"), /*#__PURE__*/React.createElement("p", {
+    className: "text-[13px] text-[#374151] font-medium mt-2 max-w-[460px]"
+  }, "Modern meeting rooms for productive discussions, workshops and client calls."), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-wrap items-center gap-2 mt-4 pt-1"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-sm border border-[#ECEEF4] rounded-lg px-2.5 py-1 text-[11px] font-semibold text-[#111827] shadow-sm"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-2 h-2 rounded-full bg-emerald-500"
+  }), "Instant Booking"), /*#__PURE__*/React.createElement("span", {
+    className: "inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-sm border border-[#ECEEF4] rounded-lg px-2.5 py-1 text-[11px] font-semibold text-[#111827] shadow-sm"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-2 h-2 rounded-full bg-blue-500"
+  }), "Real-time Availability"), /*#__PURE__*/React.createElement("span", {
+    className: "inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-sm border border-[#ECEEF4] rounded-lg px-2.5 py-1 text-[11px] font-semibold text-[#111827] shadow-sm"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-2 h-2 rounded-full bg-amber-500"
+  }), "Flexible Durations"), /*#__PURE__*/React.createElement("span", {
+    className: "inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-sm border border-[#ECEEF4] rounded-lg px-2.5 py-1 text-[11px] font-semibold text-[#111827] shadow-sm"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-2 h-2 rounded-full bg-indigo-500"
+  }), "Integrated Calendar")))), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft space-y-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-[1fr_1.3fr_1fr_auto] gap-3 items-center"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-col"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-bold uppercase tracking-wider text-[#8A90A2] mb-1"
+  }, "Date"), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2 bg-[#F6F7FB] border border-[#ECEEF4] rounded-xl px-3.5 py-2.5 cursor-pointer hover:border-[#4F3FE0]/50 transition-all"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "calendar",
+    className: "w-4 h-4 text-[#4F3FE0]"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-[13px] font-semibold text-[#111827] whitespace-nowrap"
+  }, selectedDate), /*#__PURE__*/React.createElement(Icon, {
+    name: "chevronDown",
+    className: "w-3.5 h-3.5 text-[#8A90A2] ml-auto"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-col"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-bold uppercase tracking-wider text-[#8A90A2] mb-1"
+  }, "Time"), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2 bg-[#F6F7FB] border border-[#ECEEF4] rounded-xl px-3.5 py-2.5 cursor-pointer hover:border-[#4F3FE0]/50 transition-all"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "clock",
+    className: "w-4 h-4 text-[#4F3FE0]"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-[13px] font-semibold text-[#111827] whitespace-nowrap"
+  }, selectedTime), /*#__PURE__*/React.createElement(Icon, {
+    name: "chevronDown",
+    className: "w-3.5 h-3.5 text-[#8A90A2] ml-auto"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-col"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-bold uppercase tracking-wider text-[#8A90A2] mb-1"
+  }, "People"), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2 bg-[#F6F7FB] border border-[#ECEEF4] rounded-xl px-3.5 py-2.5 cursor-pointer hover:border-[#4F3FE0]/50 transition-all"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "users",
+    className: "w-4 h-4 text-[#4F3FE0]"
+  }), /*#__PURE__*/React.createElement("select", {
+    value: selectedPeople,
+    onChange: function onChange(e) {
+      return setSelectedPeople(Number(e.target.value));
+    },
+    className: "bg-transparent text-[13px] font-semibold text-[#111827] outline-none cursor-pointer w-full"
+  }, /*#__PURE__*/React.createElement("option", {
+    value: 2
+  }, "2 people"), /*#__PURE__*/React.createElement("option", {
+    value: 4
+  }, "4 people"), /*#__PURE__*/React.createElement("option", {
+    value: 6
+  }, "6 people"), /*#__PURE__*/React.createElement("option", {
+    value: 8
+  }, "8 people"), /*#__PURE__*/React.createElement("option", {
+    value: 10
+  }, "10 people"), /*#__PURE__*/React.createElement("option", {
+    value: 20
+  }, "20+ people")))), /*#__PURE__*/React.createElement("div", {
+    className: "self-end pt-4 sm:pt-0"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return showToast("\uD83D\uDD0D Filtered rooms with capacity >= ".concat(selectedPeople));
+    },
+    className: "w-full bg-[#4F3FE0] hover:bg-[#4335C9] text-white px-7 py-2.5 rounded-xl text-[13px] font-bold transition-all shadow-sm flex items-center justify-center gap-2 active:scale-95"
+  }, /*#__PURE__*/React.createElement("span", null, "Search Rooms")))), /*#__PURE__*/React.createElement("div", {
+    className: "pt-2 border-t border-[#ECEEF4] flex items-center justify-between flex-wrap gap-2"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center flex-wrap gap-1.5"
+  }, ROOM_TYPES.map(function (type) {
+    return /*#__PURE__*/React.createElement("button", {
+      key: type,
+      type: "button",
+      onClick: function onClick() {
+        return setSelectedType(type);
+      },
+      className: "px-3 py-1.5 rounded-full text-xs font-semibold transition-all ".concat(selectedType === type ? "bg-[#4F3FE0] text-white shadow-sm" : "bg-[#F6F7FB] hover:bg-gray-200 text-[#374151]")
+    }, type);
+  })), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return showToast("Advanced filters: Price range & availability applied");
+    },
+    className: "inline-flex items-center gap-1.5 border border-[#4F3FE0] text-[#4F3FE0] hover:bg-[#F4F2FF] px-3.5 py-1.5 rounded-full text-xs font-bold transition-all"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "sliders",
+    className: "w-3.5 h-3.5"
+  }), /*#__PURE__*/React.createElement("span", null, "More Filters"))), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center flex-wrap gap-2 pt-1"
+  }, AMENITIES_LIST.map(function (amenity) {
+    var isSelected = selectedAmenities.includes(amenity.name);
+    return /*#__PURE__*/React.createElement("button", {
+      key: amenity.name,
+      type: "button",
+      onClick: function onClick() {
+        return toggleAmenity(amenity.name);
+      },
+      className: "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11.5px] font-medium border transition-all ".concat(isSelected ? "bg-[#EEEBFF] border-[#4F3FE0] text-[#4F3FE0] font-semibold" : "bg-white border-[#ECEEF4] text-[#374151] hover:border-gray-300")
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: amenity.icon,
+      className: "w-3.5 h-3.5 ".concat(isSelected ? "text-[#4F3FE0]" : "text-[#8A90A2]")
+    }), /*#__PURE__*/React.createElement("span", null, amenity.name));
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-4 shadow-soft flex items-center justify-between flex-wrap gap-3 my-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2 flex-wrap"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-xs font-black text-[#111827] flex items-center gap-1.5"
+  }, /*#__PURE__*/React.createElement("span", null, "🏢"), "Floor:"), ["all", "1F", "2F", "3F", "4F", "5F", "6F", "7F"].map(function (fl) {
+    var isActive = selectedFloor === fl;
+    return /*#__PURE__*/React.createElement("button", {
+      key: fl,
+      type: "button",
+      onClick: function onClick() { setSelectedFloor(fl); },
+      className: "px-3 py-1 rounded-xl text-xs font-bold transition-all " + (isActive ? "bg-[#4F3FE0] text-white shadow-xs" : "bg-[#F6F7FB] text-[#64748B] hover:bg-[#EDE9FE] hover:text-[#4338CA]")
+    }, fl === "all" ? "All Floors" : fl);
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2 flex-wrap"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-xs font-black text-[#111827] flex items-center gap-1.5"
+  }, /*#__PURE__*/React.createElement("span", null, "👥"), "People:"), [0, 4, 6, 8].map(function (num) {
+    var isActive = (num === 0 && (!selectedPeople || selectedPeople === 0)) || selectedPeople === num;
+    return /*#__PURE__*/React.createElement("button", {
+      key: num,
+      type: "button",
+      onClick: function onClick() { setSelectedPeople(num); },
+      className: "px-3 py-1 rounded-xl text-xs font-bold transition-all " + (isActive ? "bg-[#4F3FE0] text-white shadow-xs" : "bg-[#F6F7FB] text-[#64748B] hover:bg-[#EDE9FE] hover:text-[#4338CA]")
+    }, num === 0 ? "All" : num + "+");
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between pt-2"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-3"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "text-xl font-black text-[#111827]"
+  }, "Available Rooms"), /*#__PURE__*/React.createElement("span", {
+    className: "bg-[#DCFCE7] text-[#16A34A] px-2.5 py-0.5 rounded-full text-xs font-bold border border-emerald-200"
+  }, filteredRooms.length, " rooms available")), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center bg-white border border-[#ECEEF4] p-1 rounded-xl shadow-xs"
+  }, ["Cards", "List", "Calendar"].map(function (v) {
+    return /*#__PURE__*/React.createElement("button", {
+      key: v,
+      type: "button",
+      onClick: function onClick() {
+        return setViewMode(v);
+      },
+      className: "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ".concat(viewMode === v ? "bg-[#4F3FE0] text-white shadow-xs" : "text-[#64748B] hover:text-[#111827]")
+    }, /*#__PURE__*/React.createElement("span", null, v));
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5"
+  }, filteredRooms.length === 0 ? (
+    selectedFloor === "5F" ? /*#__PURE__*/React.createElement("div", {
+      className: "bg-white border-2 border-dashed border-[#ECEEF4] rounded-2xl p-12 text-center my-6 flex flex-col items-center justify-center col-span-full shadow-soft"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "w-14 h-14 rounded-2xl bg-[#F6F7FB] flex items-center justify-center text-2xl mb-4 shadow-inner"
+    }, "🏢"), /*#__PURE__*/React.createElement("h3", {
+      className: "text-base font-bold text-[#111827] mb-1"
+    }, "No meeting rooms on 5F"), /*#__PURE__*/React.createElement("p", {
+      className: "text-xs text-[#64748B] max-w-sm mb-5 leading-relaxed"
+    }, "This floor currently has no meeting rooms. Please select another floor to explore available spaces."), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: function onClick() { setSelectedFloor("all"); },
+      className: "px-5 py-2.5 bg-[#4F3FE0] hover:bg-[#4335C9] text-white rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95"
+    }, "View All Floors")) : /*#__PURE__*/React.createElement("div", {
+      className: "bg-white border border-[#ECEEF4] rounded-2xl p-10 text-center text-[#64748B] text-sm my-6 col-span-full"
+    }, "No meeting rooms match your filter criteria. Try clearing some filters.")
+  ) : filteredRooms.map(function (room) {
+    var isFav = favorites.has(room.id);
+    var isAvailable = room.status === "Available";
+    return /*#__PURE__*/React.createElement("div", {
+      key: room.id,
+      className: "bg-white border border-[#ECEEF4] rounded-2xl overflow-hidden shadow-soft hover:shadow-card hover:-translate-y-1 transition-all duration-200 flex flex-col group"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "relative aspect-[16/9] w-full overflow-hidden bg-gray-100"
+    }, /*#__PURE__*/React.createElement("img", {
+      src: room.image,
+      onError: function onError(e) {
+        e.target.onerror = null;
+        e.target.src = room.fallbackImage;
+      },
+      alt: room.name,
+      className: "w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+    }), /*#__PURE__*/React.createElement("div", {
+      className: "absolute top-3 left-3"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "px-2.5 py-1 rounded-full text-[11px] font-bold text-white shadow-md ".concat(isAvailable ? "bg-[#16A34A]" : "bg-[#F97316]")
+    }, room.status)), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: function onClick(e) {
+        return toggleFavorite(room.id, e);
+      },
+      className: "w-8 h-8 rounded-full bg-white/95 backdrop-blur-sm shadow-md flex items-center justify-center absolute top-3 right-3 hover:scale-110 active:scale-95 transition-all"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: isFav ? "heartFilled" : "heart",
+      className: "w-4 h-4 ".concat(isFav ? "text-[#EF4444]" : "text-[#8A90A2]"),
+      strokeWidth: 2
+    }))), /*#__PURE__*/React.createElement("div", {
+      className: "p-4 flex-1 flex flex-col justify-between"
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-start justify-between gap-2 mb-1"
+    }, /*#__PURE__*/React.createElement("h4", {
+      className: "font-bold text-[15px] text-[#111827] cursor-pointer hover:text-[#4F3FE0] transition-colors leading-tight",
+      onClick: function onClick() {
+        return openBookingDrawer(room);
+      }
+    }, room.name), room.floor ? /*#__PURE__*/React.createElement("span", {
+      className: "px-2 py-0.5 bg-[#EDE9FE] text-[#4338CA] text-[10px] font-extrabold rounded-md uppercase shrink-0"
+    }, room.floor) : null), /*#__PURE__*/React.createElement("div", {
+      className: "text-[11px] font-semibold text-[#64748B] mb-1"
+    }, "Floor: ", /*#__PURE__*/React.createElement("strong", {
+      className: "text-[#1E293B]"
+    }, room.floor || "1F"), " · Room: ", /*#__PURE__*/React.createElement("strong", {
+      className: "text-[#4F3FE0] font-mono"
+    }, room.roomNumber || room.id)), /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-1.5 text-xs text-[#64748B] font-medium mt-1"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "users",
+      className: "w-3.5 h-3.5 text-[#8A90A2]"
+    }), /*#__PURE__*/React.createElement("span", null, room.capacity, " people"), /*#__PURE__*/React.createElement("span", {
+      className: "mx-1"
+    }, "\u2022"), /*#__PURE__*/React.createElement("span", {
+      className: "text-[#4F3FE0] font-semibold"
+    }, room.rate))), /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between pt-3 mt-3 border-t border-[#ECEEF4]"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-2 text-[#8A90A2]"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "monitor",
+      className: "w-4 h-4 hover:text-[#111827]"
+    }), /*#__PURE__*/React.createElement(Icon, {
+      name: "video",
+      className: "w-4 h-4 hover:text-[#111827]"
+    }), /*#__PURE__*/React.createElement(Icon, {
+      name: "mic",
+      className: "w-4 h-4 hover:text-[#111827]"
+    }), /*#__PURE__*/React.createElement(Icon, {
+      name: "wifi",
+      className: "w-4 h-4 hover:text-[#111827]"
+    })), isAvailable ? /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: function onClick() {
+        return openBookingDrawer(room);
+      },
+      className: "bg-[#4F3FE0] hover:bg-[#4335C9] text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95"
+    }, "Book Now") : /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: function onClick() {
+        return openBookingDrawer(room);
+      },
+      className: "border border-[#ECEEF4] hover:bg-gray-50 text-[#374151] px-4 py-2 rounded-xl text-xs font-semibold transition-all"
+    }, "View Schedule"))));
+  }))), /*#__PURE__*/React.createElement("aside", {
+    className: "space-y-5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-4 shadow-soft"
+  }, /*#__PURE__*/React.createElement("h4", {
+    className: "text-[13px] font-bold text-[#111827] mb-3"
+  }, "Quick Actions"), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-4 gap-2 text-center"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return openBookingDrawer(rooms[0]);
+    },
+    className: "bg-[#F3EFFE] hover:bg-[#EAE4FE] text-[#6E42E5] p-2.5 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all group"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "calendar",
+    className: "w-5 h-5 text-[#6E42E5] group-hover:scale-110 transition-transform"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10.5px] font-bold leading-tight"
+  }, "Book a Room")), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return navigateTo("My Bookings");
+    },
+    className: "bg-[#EEF5FF] hover:bg-[#DFEDFF] text-[#2B71FF] p-2.5 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all group"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "fileText",
+    className: "w-5 h-5 text-[#2B71FF] group-hover:scale-110 transition-transform"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10.5px] font-bold leading-tight"
+  }, "My Bookings")), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return showToast("Recurring scheduler activated");
+    },
+    className: "bg-[#EEFAF3] hover:bg-[#DEFAEA] text-[#12A150] p-2.5 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all group"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "repeat",
+    className: "w-5 h-5 text-[#12A150] group-hover:scale-110 transition-transform"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10.5px] font-bold leading-tight"
+  }, "Recurring")), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return navigateTo("Visitors");
+    },
+    className: "bg-[#FFF5EC] hover:bg-[#FFE8D5] text-[#F36B20] p-2.5 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all group"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "userPlus",
+    className: "w-5 h-5 text-[#F36B20] group-hover:scale-110 transition-transform"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10.5px] font-bold leading-tight"
+  }, "Invite Guests")))), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-4 shadow-soft"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between mb-3"
+  }, /*#__PURE__*/React.createElement("h4", {
+    className: "text-[13px] font-bold text-[#111827]"
+  }, "Today's Schedule"), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return navigateTo("Calendar");
+    },
+    className: "text-xs font-semibold text-[#4F3FE0] hover:underline"
+  }, "View Calendar")), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-2.5"
+  }, todaysSchedule.map(function (item, idx) {
+    return /*#__PURE__*/React.createElement("div", {
+      key: idx,
+      className: "flex items-start gap-2.5 text-xs"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "w-[84px] text-[10.5px] font-semibold text-[#8A90A2] pt-1 whitespace-nowrap leading-tight"
+    }, item.time.replace("–", "\n–")), /*#__PURE__*/React.createElement("div", {
+      className: "pt-2 flex flex-col items-center"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "w-2 h-2 rounded-full ".concat(item.dotColor, " ring-4 ring-white shadow-xs")
+    })), /*#__PURE__*/React.createElement("div", {
+      className: "flex-1 bg-[#F8FAFC] border border-[#ECEEF4] ".concat(item.tintColor, " rounded-xl p-2.5")
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "font-bold text-[#111827] text-[12px] truncate"
+    }, item.title), /*#__PURE__*/React.createElement(Icon, {
+      name: "moreHorizontal",
+      className: "w-3.5 h-3.5 text-[#8A90A2]"
+    })), /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between text-[11px] text-[#64748B] mt-1"
+    }, /*#__PURE__*/React.createElement("span", null, item.room), /*#__PURE__*/React.createElement("span", {
+      className: "inline-flex items-center gap-1 font-medium"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "users",
+      className: "w-3 h-3 text-[#8A90A2]"
+    }), item.attendees))));
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-4 shadow-soft"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between mb-3"
+  }, /*#__PURE__*/React.createElement("h4", {
+    className: "text-[13px] font-bold text-[#111827]"
+  }, "My Upcoming Bookings"), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return navigateTo("Bookings");
+    },
+    className: "text-xs font-semibold text-[#4F3FE0] hover:underline"
+  }, "View All")), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-2.5"
+  }, upcomingBookings.map(function (bkg) {
+    return /*#__PURE__*/React.createElement("div", {
+      key: bkg.id,
+      className: "flex items-center justify-between bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl p-2.5 hover:border-gray-300 transition-all text-xs"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-2.5 min-w-0"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "text-left leading-tight w-[58px] flex-shrink-0"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "font-bold text-[#111827] text-[11.5px]"
+    }, bkg.date), /*#__PURE__*/React.createElement("div", {
+      className: "text-[10px] text-[#8A90A2]"
+    }, bkg.time)), /*#__PURE__*/React.createElement("div", {
+      className: "w-1 h-8 rounded-full ".concat(bkg.barColor, " flex-shrink-0")
+    }), /*#__PURE__*/React.createElement("div", {
+      className: "truncate"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "font-bold text-[#111827] text-[12px] truncate"
+    }, bkg.title), /*#__PURE__*/React.createElement("div", {
+      className: "text-[11px] text-[#64748B] truncate flex items-center gap-1.5"
+    }, /*#__PURE__*/React.createElement("span", null, bkg.room), /*#__PURE__*/React.createElement("span", null, "\u2022"), /*#__PURE__*/React.createElement("span", null, "\uD83D\uDC65 ", bkg.attendees)))), /*#__PURE__*/React.createElement("span", {
+      className: "px-2 py-0.5 rounded-full text-[10.5px] font-bold flex-shrink-0 ".concat(bkg.statusColor)
+    }, bkg.status));
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-4 shadow-soft"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between mb-2"
+  }, /*#__PURE__*/React.createElement("h4", {
+    className: "text-[13px] font-bold text-[#111827]"
+  }, "Usage & Credits"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[11px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full"
+  }, "2 hrs free remaining")), /*#__PURE__*/React.createElement("div", {
+    className: "w-full h-2 bg-[#E4DEFF] rounded-full overflow-hidden mt-2.5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "h-full bg-[#4F3FE0] rounded-full w-[80%]"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between text-xs mt-2 text-[#64748B]"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "font-bold text-[#111827]"
+  }, "8 / 10 hours used"), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return navigateTo("Billing & Credits");
+    },
+    className: "text-xs font-semibold text-[#4F3FE0] hover:underline"
+  }, "View Details"))))), (activeNav === "My Bookings" || activeNav === "Bookings" || activeNav === "My Reservations") && function () {
+    // Calculate dynamic KPI counts from state
+    var totalCount = upcomingBookings.length;
+    var confirmedCount = upcomingBookings.filter(function (b) {
+      return b.status === "Confirmed";
+    }).length;
+    var pendingCount = upcomingBookings.filter(function (b) {
+      return b.status === "Pending";
+    }).length;
+    var cancelledCount = upcomingBookings.filter(function (b) {
+      return b.status === "Cancelled";
+    }).length;
+
+    // Dynamic filtering logic
+    var filteredBookings = upcomingBookings.filter(function (bkg) {
+      if (bookingsFilterTab !== "All Bookings" && bkg.status !== bookingsFilterTab) {
+        return false;
+      }
+      if (bookingsSearchQuery.trim()) {
+        var q = bookingsSearchQuery.toLowerCase();
+        var matchTitle = (bkg.title || "").toLowerCase().includes(q);
+        var matchRoom = (bkg.room || "").toLowerCase().includes(q);
+        var matchResId = (bkg.resId || "").toLowerCase().includes(q);
+        if (!matchTitle && !matchRoom && !matchResId) return false;
+      }
+      if (bookingsRoomFilter !== "All Rooms" && bkg.room !== bookingsRoomFilter) {
+        return false;
+      }
+      if (bookingsDateFilter === "Today" && bkg.date !== "Today") return false;
+      if (bookingsDateFilter === "Upcoming" && (bkg.status === "Cancelled" || bkg.status === "Completed")) return false;
+      if (bookingsDateFilter === "Past" && bkg.status !== "Completed" && bkg.status !== "Cancelled") return false;
+      return true;
+    });
+    var isFilterActive = bookingsSearchQuery || bookingsRoomFilter !== "All Rooms" || bookingsDateFilter !== "All Dates" || bookingsFilterTab !== "All Bookings";
+    return /*#__PURE__*/React.createElement("div", {
+      className: "space-y-6 animate-fadeIn"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "relative rounded-2xl border border-[#ECEEF4] overflow-hidden bg-white shadow-soft flex items-center min-h-[150px] sm:min-h-[170px] max-h-[190px]"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "absolute inset-0 bg-gradient-to-r from-white via-white/95 via-[#F6F4FF]/75 to-transparent z-10 w-full sm:w-[65%]"
+    }), /*#__PURE__*/React.createElement("div", {
+      className: "absolute right-0 top-0 bottom-0 w-full sm:w-[50%] h-full z-0 overflow-hidden"
+    }, /*#__PURE__*/React.createElement("img", {
+      src: "assets/rooms/banner-hero.jpg",
+      onError: function onError(e) {
+        e.target.onerror = null;
+        e.target.src = "https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=1200&q=80";
+      },
+      alt: "NEXUS HUB Modern Meeting Space",
+      className: "w-full h-full object-cover object-center"
+    }), /*#__PURE__*/React.createElement("div", {
+      className: "absolute inset-0 bg-gradient-to-r from-[#F6F4FF]/60 via-transparent to-black/10"
+    })), /*#__PURE__*/React.createElement("div", {
+      className: "relative z-20 p-6 sm:p-7 max-w-[580px]"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EEEBFF] text-[#4F3FE0] text-[11px] font-bold mb-2"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "w-2 h-2 rounded-full bg-[#4F3FE0] animate-pulse"
+    }), /*#__PURE__*/React.createElement("span", null, "RESERVATION COMMAND CENTER \u2022 XYZ TECHNOLOGIES")), /*#__PURE__*/React.createElement("h2", {
+      className: "text-2xl sm:text-3xl font-black text-[#111827] tracking-tight"
+    }, "My Bookings & Reservations"), /*#__PURE__*/React.createElement("p", {
+      className: "text-xs sm:text-sm text-[#64748B] mt-1 leading-relaxed"
+    }, "Manage, track and modify your meeting room bookings all in one place."), /*#__PURE__*/React.createElement("div", {
+      className: "mt-3.5"
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: function onClick() {
+        return navigateTo("Meeting Rooms");
+      },
+      className: "bg-[#4F3FE0] hover:bg-[#4335C9] text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow-sm hover:shadow-md active:scale-[0.98] flex items-center gap-2"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-sm font-bold"
+    }, "+"), /*#__PURE__*/React.createElement("span", null, "Book a Meeting Room"))))), /*#__PURE__*/React.createElement("div", {
+      className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+    }, /*#__PURE__*/React.createElement("div", {
+      onClick: function onClick() {
+        return setBookingsFilterTab("All Bookings");
+      },
+      className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft hover:shadow-card hover:-translate-y-0.5 transition-all cursor-pointer group"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between text-[#8A90A2]"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-[11px] font-extrabold uppercase tracking-wider text-[#64748B]"
+    }, "Total Bookings"), /*#__PURE__*/React.createElement("div", {
+      className: "w-9 h-9 rounded-xl bg-purple-50 text-[#4F3FE0] flex items-center justify-center group-hover:scale-105 transition-transform"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "calendar",
+      className: "w-5 h-5 text-[#4F3FE0]"
+    }))), /*#__PURE__*/React.createElement("div", {
+      className: "text-3xl font-black text-[#111827] mt-2"
+    }, totalCount), /*#__PURE__*/React.createElement("div", {
+      className: "text-[11px] font-medium text-[#8A90A2] mt-1 flex items-center gap-1.5"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "w-1.5 h-1.5 rounded-full bg-[#4F3FE0]"
+    }), /*#__PURE__*/React.createElement("span", null, "All scheduled sessions"))), /*#__PURE__*/React.createElement("div", {
+      onClick: function onClick() {
+        return setBookingsFilterTab("Confirmed");
+      },
+      className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft hover:shadow-card hover:-translate-y-0.5 transition-all cursor-pointer group"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between text-[#8A90A2]"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-[11px] font-extrabold uppercase tracking-wider text-[#64748B]"
+    }, "Confirmed"), /*#__PURE__*/React.createElement("div", {
+      className: "w-9 h-9 rounded-xl bg-emerald-50 text-[#16A66A] flex items-center justify-center group-hover:scale-105 transition-transform"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "checkCircle",
+      className: "w-5 h-5 text-[#16A66A]"
+    }))), /*#__PURE__*/React.createElement("div", {
+      className: "text-3xl font-black text-[#16A66A] mt-2"
+    }, confirmedCount), /*#__PURE__*/React.createElement("div", {
+      className: "text-[11px] font-medium text-[#8A90A2] mt-1 flex items-center gap-1.5"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "w-1.5 h-1.5 rounded-full bg-[#16A66A]"
+    }), /*#__PURE__*/React.createElement("span", null, "Guaranteed active slots"))), /*#__PURE__*/React.createElement("div", {
+      onClick: function onClick() {
+        return setBookingsFilterTab("Pending");
+      },
+      className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft hover:shadow-card hover:-translate-y-0.5 transition-all cursor-pointer group"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between text-[#8A90A2]"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-[11px] font-extrabold uppercase tracking-wider text-[#64748B]"
+    }, "Pending"), /*#__PURE__*/React.createElement("div", {
+      className: "w-9 h-9 rounded-xl bg-amber-50 text-[#F59E0B] flex items-center justify-center group-hover:scale-105 transition-transform"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "clock",
+      className: "w-5 h-5 text-[#F59E0B]"
+    }))), /*#__PURE__*/React.createElement("div", {
+      className: "text-3xl font-black text-[#F59E0B] mt-2"
+    }, pendingCount), /*#__PURE__*/React.createElement("div", {
+      className: "text-[11px] font-medium text-[#8A90A2] mt-1 flex items-center gap-1.5"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "w-1.5 h-1.5 rounded-full bg-[#F59E0B]"
+    }), /*#__PURE__*/React.createElement("span", null, "Awaiting admin review"))), /*#__PURE__*/React.createElement("div", {
+      onClick: function onClick() {
+        return setBookingsFilterTab("Cancelled");
+      },
+      className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft hover:shadow-card hover:-translate-y-0.5 transition-all cursor-pointer group"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between text-[#8A90A2]"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-[11px] font-extrabold uppercase tracking-wider text-[#64748B]"
+    }, "Cancelled"), /*#__PURE__*/React.createElement("div", {
+      className: "w-9 h-9 rounded-xl bg-rose-50 text-[#EF4444] flex items-center justify-center group-hover:scale-105 transition-transform"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "xCircle",
+      className: "w-5 h-5 text-[#EF4444]"
+    }))), /*#__PURE__*/React.createElement("div", {
+      className: "text-3xl font-black text-[#EF4444] mt-2"
+    }, cancelledCount), /*#__PURE__*/React.createElement("div", {
+      className: "text-[11px] font-medium text-[#8A90A2] mt-1 flex items-center gap-1.5"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "w-1.5 h-1.5 rounded-full bg-[#EF4444]"
+    }), /*#__PURE__*/React.createElement("span", null, "Released & refunded")))), /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between flex-wrap gap-3 pt-1"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-2 overflow-x-auto pb-1 max-w-full"
+    }, ["All Bookings", "Confirmed", "Pending", "Cancelled", "Completed"].map(function (tab) {
+      var isActive = bookingsFilterTab === tab;
+      return /*#__PURE__*/React.createElement("button", {
+        key: tab,
+        onClick: function onClick() {
+          return setBookingsFilterTab(tab);
+        },
+        className: "px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ".concat(isActive ? "bg-[#4F3FE0] text-white shadow-xs" : "bg-white border border-[#ECEEF4] text-[#64748B] hover:text-[#111827] hover:bg-[#F8FAFC]")
+      }, /*#__PURE__*/React.createElement("span", null, tab), /*#__PURE__*/React.createElement("span", {
+        className: "ml-2 text-[10.5px] px-1.5 py-0.2 rounded-full font-extrabold ".concat(isActive ? "bg-white/20 text-white" : "bg-gray-100 text-[#64748B]")
+      }, tab === "All Bookings" ? totalCount : upcomingBookings.filter(function (b) {
+        return b.status === tab;
+      }).length));
+    })), /*#__PURE__*/React.createElement("div", {
+      className: "text-xs font-semibold text-[#8A90A2]"
+    }, "Showing ", /*#__PURE__*/React.createElement("strong", {
+      className: "text-[#111827]"
+    }, filteredBookings.length), " of ", totalCount, " reservations")), /*#__PURE__*/React.createElement("div", {
+      className: "bg-white border border-[#ECEEF4] rounded-2xl p-4 shadow-soft flex items-center justify-between flex-wrap gap-3"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-3 flex-1 min-w-[260px]"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "relative flex-1"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "search",
+      className: "w-4 h-4 text-[#8A90A2] absolute left-3.5 top-1/2 -translate-y-1/2"
+    }), /*#__PURE__*/React.createElement("input", {
+      type: "text",
+      value: bookingsSearchQuery,
+      onChange: function onChange(e) {
+        return setBookingsSearchQuery(e.target.value);
+      },
+      placeholder: "Search by meeting title, room, or #RES ID...",
+      className: "w-full bg-[#F6F7FB] border border-[#ECEEF4] rounded-xl pl-10 pr-4 py-2 text-xs text-[#111827] placeholder-[#8A90A2] focus:outline-none focus:border-[#4F3FE0] focus:bg-white transition-all"
+    }), bookingsSearchQuery && /*#__PURE__*/React.createElement("button", {
+      onClick: function onClick() {
+        return setBookingsSearchQuery("");
+      },
+      className: "absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "x",
+      className: "w-3.5 h-3.5"
+    })))), /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-2.5 flex-wrap"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-1.5 bg-[#F6F7FB] border border-[#ECEEF4] rounded-xl px-3 py-1.5 text-xs text-[#374151]"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "calendar",
+      className: "w-3.5 h-3.5 text-[#8A90A2]"
+    }), /*#__PURE__*/React.createElement("select", {
+      value: bookingsDateFilter,
+      onChange: function onChange(e) {
+        return setBookingsDateFilter(e.target.value);
+      },
+      className: "bg-transparent border-none text-xs font-semibold text-[#374151] focus:outline-none cursor-pointer"
+    }, /*#__PURE__*/React.createElement("option", {
+      value: "All Dates"
+    }, "All Dates"), /*#__PURE__*/React.createElement("option", {
+      value: "Today"
+    }, "Today Only"), /*#__PURE__*/React.createElement("option", {
+      value: "Upcoming"
+    }, "Upcoming Only"), /*#__PURE__*/React.createElement("option", {
+      value: "Past"
+    }, "Past / Archived"))), /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-1.5 bg-[#F6F7FB] border border-[#ECEEF4] rounded-xl px-3 py-1.5 text-xs text-[#374151]"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "building",
+      className: "w-3.5 h-3.5 text-[#8A90A2]"
+    }), /*#__PURE__*/React.createElement("select", {
+      value: bookingsRoomFilter,
+      onChange: function onChange(e) {
+        return setBookingsRoomFilter(e.target.value);
+      },
+      className: "bg-transparent border-none text-xs font-semibold text-[#374151] focus:outline-none cursor-pointer"
+    }, /*#__PURE__*/React.createElement("option", {
+      value: "All Rooms"
+    }, "All Rooms"), rooms.map(function (r) {
+      return /*#__PURE__*/React.createElement("option", {
+        key: r.id,
+        value: r.name
+      }, r.name);
+    }))), isFilterActive && /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: function onClick() {
+        setBookingsSearchQuery("");
+        setBookingsRoomFilter("All Rooms");
+        setBookingsDateFilter("All Dates");
+        setBookingsFilterTab("All Bookings");
+      },
+      className: "text-xs font-bold text-[#EF4444] hover:bg-rose-50 px-3 py-1.5 rounded-xl border border-rose-200 transition-all flex items-center gap-1"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "x",
+      className: "w-3 h-3"
+    }), /*#__PURE__*/React.createElement("span", null, "Clear Filters")))), /*#__PURE__*/React.createElement("div", {
+      className: "grid grid-cols-1 lg:grid-cols-12 gap-6 items-start"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "lg:col-span-8 space-y-3.5"
+    }, filteredBookings.length === 0 ? /*#__PURE__*/React.createElement("div", {
+      className: "bg-white border border-[#ECEEF4] rounded-2xl p-12 text-center shadow-soft"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "w-14 h-14 rounded-2xl bg-gray-50 text-gray-400 flex items-center justify-center mx-auto mb-3"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "calendar",
+      className: "w-7 h-7 text-gray-400"
+    })), /*#__PURE__*/React.createElement("h4", {
+      className: "text-base font-bold text-[#111827]"
+    }, "No reservations match your filters"), /*#__PURE__*/React.createElement("p", {
+      className: "text-xs text-[#8A90A2] mt-1 max-w-sm mx-auto"
+    }, "Try resetting your search query or selecting a different status tab."), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: function onClick() {
+        setBookingsSearchQuery("");
+        setBookingsRoomFilter("All Rooms");
+        setBookingsDateFilter("All Dates");
+        setBookingsFilterTab("All Bookings");
+      },
+      className: "mt-4 px-4 py-2 bg-[#4F3FE0] text-white rounded-xl text-xs font-bold shadow-xs hover:bg-[#4335C9]"
+    }, "Reset All Filters")) : filteredBookings.map(function (bkg) {
+      var isCancelled = bkg.status === "Cancelled";
+      var isCompleted = bkg.status === "Completed";
+      var canModify = !isCancelled && !isCompleted;
+      return /*#__PURE__*/React.createElement("div", {
+        key: bkg.id,
+        className: "bg-white border border-[#ECEEF4] rounded-2xl p-4 sm:p-5 shadow-soft hover:shadow-card hover:-translate-y-0.5 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 group"
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "flex items-center gap-3.5 flex-shrink-0"
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl px-2.5 py-2 text-center min-w-[54px] flex flex-col items-center justify-center flex-shrink-0"
+      }, /*#__PURE__*/React.createElement("span", {
+        className: "text-lg font-black text-[#111827] leading-none"
+      }, bkg.day || "30"), /*#__PURE__*/React.createElement("span", {
+        className: "text-[10px] font-extrabold text-[#4F3FE0] tracking-wider uppercase mt-1 leading-none"
+      }, bkg.month || "OCT")), /*#__PURE__*/React.createElement("div", {
+        onClick: function onClick() {
+          return setDetailsModalBooking(bkg);
+        },
+        className: "w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden border border-[#ECEEF4] relative flex-shrink-0 cursor-pointer group-hover:border-[#4F3FE0]/40 transition-all",
+        title: "View room details for ".concat(bkg.room)
+      }, /*#__PURE__*/React.createElement("img", {
+        src: bkg.roomImage || "assets/rooms/mr-01-main.jpg",
+        onError: function onError(e) {
+          e.target.onerror = null;
+          e.target.src = bkg.fallbackImage || "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=400&q=80";
+        },
+        alt: bkg.room,
+        className: "w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300",
+        loading: "lazy"
+      }), /*#__PURE__*/React.createElement("div", {
+        className: "absolute inset-0 bg-black/5 hover:bg-transparent transition-colors"
+      }))), /*#__PURE__*/React.createElement("div", {
+        className: "flex-1 min-w-0"
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "flex items-center gap-2 flex-wrap"
+      }, /*#__PURE__*/React.createElement("h4", {
+        onClick: function onClick() {
+          return setDetailsModalBooking(bkg);
+        },
+        className: "text-sm sm:text-[15px] font-black text-[#111827] truncate hover:text-[#4F3FE0] cursor-pointer"
+      }, bkg.title), bkg.isRecurring && /*#__PURE__*/React.createElement("span", {
+        className: "bg-[#F4F2FF] border border-[#E3DEFF] text-[#4F3FE0] text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1"
+      }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDD04"), /*#__PURE__*/React.createElement("span", null, "Recurring"))), /*#__PURE__*/React.createElement("div", {
+        className: "flex items-center gap-2.5 text-xs text-[#64748B] mt-1 flex-wrap"
+      }, /*#__PURE__*/React.createElement("span", {
+        className: "font-bold text-[#374151] flex items-center gap-1"
+      }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDCCD"), /*#__PURE__*/React.createElement("span", null, bkg.room)), /*#__PURE__*/React.createElement("span", null, "\u2022"), /*#__PURE__*/React.createElement("span", {
+        className: "flex items-center gap-1"
+      }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDD52"), /*#__PURE__*/React.createElement("span", null, bkg.time)), /*#__PURE__*/React.createElement("span", null, "\u2022"), /*#__PURE__*/React.createElement("span", {
+        className: "flex items-center gap-1"
+      }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDC65"), /*#__PURE__*/React.createElement("span", null, bkg.attendees, " attendees")), /*#__PURE__*/React.createElement("span", null, "\u2022"), /*#__PURE__*/React.createElement("span", {
+        className: "text-[#4F3FE0] font-bold"
+      }, "\uD83E\uDE99 ", bkg.credits || 18, " cr"), bkg.resId && /*#__PURE__*/React.createElement("span", {
+        className: "text-[10px] text-[#8A90A2] font-mono bg-gray-50 px-1.5 py-0.2 rounded border border-[#ECEEF4]"
+      }, "#", bkg.resId)), bkg.purpose && /*#__PURE__*/React.createElement("p", {
+        className: "text-[11px] text-[#8A90A2] mt-1 line-clamp-1 italic"
+      }, "\u201C", bkg.purpose, "\u201D")), /*#__PURE__*/React.createElement("div", {
+        className: "flex items-center gap-2 sm:gap-2.5 flex-wrap sm:flex-nowrap justify-between sm:justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-[#ECEEF4]"
+      }, /*#__PURE__*/React.createElement("span", {
+        className: "px-2.5 py-1 rounded-full text-[11px] font-bold ".concat(bkg.statusColor || 'bg-gray-100 text-gray-700')
+      }, bkg.status), canModify ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
+        type: "button",
+        onClick: function onClick() {
+          setRescheduleBooking(bkg);
+          setRescheduleNewRoom(bkg.room);
+          setRescheduleNewTime(bkg.time);
+        },
+        className: "border border-[#ECEEF4] hover:bg-[#F8FAFC] hover:border-[#4F3FE0]/40 text-[#374151] hover:text-[#4F3FE0] px-3 py-1.5 rounded-xl text-xs font-bold transition-all"
+      }, "Reschedule"), /*#__PURE__*/React.createElement("button", {
+        type: "button",
+        onClick: function onClick() {
+          return setCancelModalBooking(bkg);
+        },
+        className: "text-rose-500 hover:text-rose-700 hover:bg-rose-50 border border-transparent hover:border-rose-200 text-xs font-bold px-2.5 py-1.5 rounded-xl transition-all"
+      }, "Cancel")) : /*#__PURE__*/React.createElement("span", {
+        className: "text-[11px] font-medium text-[#8A90A2] italic px-1"
+      }, isCancelled ? "Slot Released" : "Completed"), /*#__PURE__*/React.createElement("button", {
+        type: "button",
+        onClick: function onClick() {
+          return setDetailsModalBooking(bkg);
+        },
+        className: "text-xs font-bold text-[#4F3FE0] hover:bg-[#EEEBFF] px-2.5 py-1.5 rounded-xl transition-all",
+        title: "View full booking details"
+      }, "Details \u2192")));
+    })), /*#__PURE__*/React.createElement("div", {
+      className: "lg:col-span-4 space-y-6"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between pb-3 border-b border-[#ECEEF4] mb-3"
+    }, /*#__PURE__*/React.createElement("h4", {
+      className: "text-xs font-black uppercase tracking-wider text-[#111827] flex items-center gap-2"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "w-2 h-2 rounded-full bg-[#4F3FE0]"
+    }), /*#__PURE__*/React.createElement("span", null, "Upcoming Schedule")), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: function onClick() {
+        return navigateTo("Calendar");
+      },
+      className: "text-xs font-bold text-[#4F3FE0] hover:underline"
+    }, "View Calendar \u2192")), /*#__PURE__*/React.createElement("div", {
+      className: "relative pl-4 space-y-4"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "absolute left-[7px] top-2 bottom-2 w-0.5 bg-[#ECEEF4]"
+    }), upcomingBookings.filter(function (b) {
+      return b.status === "Confirmed" || b.status === "Pending";
+    }).slice(0, 4).map(function (item) {
+      return /*#__PURE__*/React.createElement("div", {
+        key: item.id,
+        className: "relative group cursor-pointer",
+        onClick: function onClick() {
+          return setDetailsModalBooking(item);
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "absolute -left-4 top-1.5 w-2.5 h-2.5 rounded-full border-2 border-white shadow-xs ".concat(item.status === 'Confirmed' ? 'bg-[#16A66A]' : 'bg-[#F59E0B]')
+      }), /*#__PURE__*/React.createElement("div", {
+        className: "bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl p-3 hover:bg-white hover:border-[#4F3FE0]/30 hover:shadow-xs transition-all"
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "flex items-center justify-between text-[11px] mb-1"
+      }, /*#__PURE__*/React.createElement("span", {
+        className: "font-bold text-[#4F3FE0]"
+      }, item.date, " \u2022 ", item.time.split("–")[0].trim()), /*#__PURE__*/React.createElement("span", {
+        className: "text-[10px] font-bold px-1.5 py-0.2 rounded-full ".concat(item.status === 'Confirmed' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600')
+      }, item.status)), /*#__PURE__*/React.createElement("div", {
+        className: "text-xs font-bold text-[#111827] truncate"
+      }, item.title), /*#__PURE__*/React.createElement("div", {
+        className: "text-[11px] text-[#8A90A2] mt-0.5 truncate flex items-center gap-1"
+      }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDCCD ", item.room), /*#__PURE__*/React.createElement("span", null, "\u2022"), /*#__PURE__*/React.createElement("span", null, "\uD83D\uDC65 ", item.attendees))));
+    }))), /*#__PURE__*/React.createElement("div", {
+      className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft"
+    }, /*#__PURE__*/React.createElement("h4", {
+      className: "text-xs font-black uppercase tracking-wider text-[#111827] mb-3 flex items-center gap-2"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "w-5 h-5 rounded-lg bg-yellow-50 text-yellow-600 flex items-center justify-center"
+    }, "\u26A1"), /*#__PURE__*/React.createElement("span", null, "Quick Actions")), /*#__PURE__*/React.createElement("div", {
+      className: "grid grid-cols-2 gap-2.5"
+    }, /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: function onClick() {
+        return openBookingDrawer(rooms[0]);
+      },
+      className: "p-3 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#F3EFFE] hover:border-[#6E42E5]/30 transition-all text-center group"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "w-9 h-9 rounded-xl bg-purple-50 text-[#6E42E5] flex items-center justify-center mx-auto mb-1.5 group-hover:scale-105 transition-transform"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "calendar",
+      className: "w-4 h-4 text-[#6E42E5]"
+    })), /*#__PURE__*/React.createElement("div", {
+      className: "text-xs font-bold text-[#111827]"
+    }, "Book a Room"), /*#__PURE__*/React.createElement("div", {
+      className: "text-[10px] text-[#8A90A2] mt-0.5"
+    }, "6 Facilities")), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: function onClick() {
+        return navigateTo("Calendar");
+      },
+      className: "p-3 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#EEF5FF] hover:border-[#2B71FF]/30 transition-all text-center group"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "w-9 h-9 rounded-xl bg-blue-50 text-[#2B71FF] flex items-center justify-center mx-auto mb-1.5 group-hover:scale-105 transition-transform"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "calendarDays",
+      className: "w-4 h-4 text-[#2B71FF]"
+    })), /*#__PURE__*/React.createElement("div", {
+      className: "text-xs font-bold text-[#111827]"
+    }, "Open Calendar"), /*#__PURE__*/React.createElement("div", {
+      className: "text-[10px] text-[#8A90A2] mt-0.5"
+    }, "Weekly Grid")), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: function onClick() {
+        return navigateTo("Visitors");
+      },
+      className: "p-3 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#EEFAF3] hover:border-[#12A150]/30 transition-all text-center group"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-1.5 group-hover:scale-105 transition-transform"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "userPlus",
+      className: "w-4 h-4 text-emerald-600"
+    })), /*#__PURE__*/React.createElement("div", {
+      className: "text-xs font-bold text-[#111827]"
+    }, "Invite Guests"), /*#__PURE__*/React.createElement("div", {
+      className: "text-[10px] text-[#8A90A2] mt-0.5"
+    }, "QR Gate Pass")), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: function onClick() {
+        return navigateTo("Meeting Rooms");
+      },
+      className: "p-3 rounded-xl bg-[#F8FAFC] border border-[#ECEEF4] hover:bg-[#FFF8EC] hover:border-[#F59E0B]/30 transition-all text-center group"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-1.5 group-hover:scale-105 transition-transform"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "sparkles",
+      className: "w-4 h-4 text-amber-600"
+    })), /*#__PURE__*/React.createElement("div", {
+      className: "text-xs font-bold text-[#111827]"
+    }, "Check Live"), /*#__PURE__*/React.createElement("div", {
+      className: "text-[10px] text-[#8A90A2] mt-0.5"
+    }, "5/6 Available")))))));
+  }(), activeNav === "Calendar" && /*#__PURE__*/React.createElement("div", {
+    className: "space-y-6 animate-fadeIn"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft flex items-center justify-between flex-wrap gap-4"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
+    className: "text-2xl font-black text-[#111827]"
+  }, "Interactive Room Calendar"), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-[#8A90A2] mt-1"
+  }, "Real-time room occupancy and timeline scheduling")), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-1.5 bg-[#F8FAFC] border border-[#ECEEF4] p-1 rounded-xl"
+  }, ["Day", "Week", "Month"].map(function (v) {
+    return /*#__PURE__*/React.createElement("button", {
+      key: v,
+      onClick: function onClick() {
+        return setCalendarView(v);
+      },
+      className: "px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ".concat(calendarView === v ? "bg-[#4F3FE0] text-white shadow-xs" : "text-[#64748B] hover:text-[#111827]")
+    }, v);
+  }))), calendarView === "Day" && /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft space-y-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between pb-3 border-b border-[#ECEEF4] flex-wrap gap-2 text-xs"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "font-bold text-[#111827] flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "calendar",
+    className: "w-4 h-4 text-[#4F3FE0]"
+  }), /*#__PURE__*/React.createElement("span", null, "Monday, 2 November 2026 • Full Schedule")), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-3 text-[11px] font-semibold text-[#8A90A2]"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "flex items-center gap-1.5"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-2.5 h-2.5 rounded-full bg-[#4F3FE0]"
+  }), " Reserved Meeting"), /*#__PURE__*/React.createElement("span", {
+    className: "flex items-center gap-1.5"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-2.5 h-2.5 rounded-full bg-emerald-500"
+  }), " Open Slot (Click to Book)"))), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-6 gap-2 text-center font-bold text-xs text-[#64748B] pb-2"
+  }, rooms.map(function (r) {
+    return /*#__PURE__*/React.createElement("div", {
+      key: r.id,
+      className: "truncate px-1 bg-[#F8FAFC] py-2 rounded-lg border border-[#ECEEF4]"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "font-extrabold text-[#111827] truncate"
+    }, r.name), /*#__PURE__*/React.createElement("div", {
+      className: "text-[10px] text-[#8A90A2] font-semibold mt-0.5"
+    }, r.capacity, " Pax"));
+  })), ["08:00 AM", "09:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM", "05:00 PM", "06:00 PM", "07:00 PM"].map(function (hour) {
+    return /*#__PURE__*/React.createElement("div", {
+      key: hour,
+      className: "grid grid-cols-6 gap-2 items-center py-2.5 border-b border-gray-100 text-xs"
+    }, rooms.map(function (r) {
+      var isOccupied = (hour === "09:00 AM" && r.id === "mr-1") ||
+                       (hour === "11:00 AM" && r.id === "mr-2") ||
+                       (hour === "03:00 PM" && r.id === "mr-4") ||
+                       (hour === "04:00 PM" && r.id === "mr-1");
+      return isOccupied ? /*#__PURE__*/React.createElement("div", {
+        key: r.id,
+        className: "bg-[#EEEBFF] border border-[#D5CCFF] text-[#4F3FE0] p-2.5 rounded-xl text-center font-bold truncate shadow-2xs"
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "text-[11px]"
+      }, "Occupied (", hour, ")"), /*#__PURE__*/React.createElement("div", {
+        className: "text-[9.5px] font-semibold text-[#6D5CD6] truncate mt-0.5"
+      }, r.id === "mr-1" ? "Leadership Review" : r.id === "mr-2" ? "Investor Pitch" : "Sprint Planning")) : /*#__PURE__*/React.createElement("button", {
+        key: r.id,
+        onClick: function onClick() {
+          openBookingModal(r);
+        },
+        className: "bg-[#F8FAFC] border border-dashed border-[#ECEEF4] hover:border-[#4F3FE0] hover:bg-[#F3EFFE] text-[#8A90A2] hover:text-[#4F3FE0] p-2.5 rounded-xl text-center font-medium transition-all group"
+      }, /*#__PURE__*/React.createElement("span", {
+        className: "group-hover:font-bold"
+      }, "+ Open (", hour, ")"));
+    }));
+  })), calendarView === "Week" && /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft space-y-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between pb-3 border-b border-[#ECEEF4] text-xs"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "font-bold text-[#111827]"
+  }, "Week of Nov 2 – Nov 8, 2026"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[#8A90A2]"
+  }, "7 Active Bookings Across 6 Suites")), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-7 gap-3 text-center"
+  }, [
+    { day: "Mon", date: "Nov 2", count: 3, active: true },
+    { day: "Tue", date: "Nov 3", count: 2, active: false },
+    { day: "Wed", date: "Nov 4", count: 4, active: false },
+    { day: "Thu", date: "Nov 5", count: 1, active: false },
+    { day: "Fri", date: "Nov 6", count: 5, active: false },
+    { day: "Sat", date: "Nov 7", count: 0, active: false },
+    { day: "Sun", date: "Nov 8", count: 0, active: false }
+  ].map(function (d) {
+    return /*#__PURE__*/React.createElement("div", {
+      key: d.day,
+      className: "p-4 rounded-xl border transition-all ".concat(d.active ? "border-[#4F3FE0] bg-[#EEEBFF]" : "border-[#ECEEF4] bg-[#F8FAFC]")
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "text-xs font-bold text-[#8A90A2]"
+    }, d.day), /*#__PURE__*/React.createElement("div", {
+      className: "text-base font-black text-[#111827] mt-0.5"
+    }, d.date), /*#__PURE__*/React.createElement("div", {
+      className: "text-xs font-bold text-[#4F3FE0] mt-2"
+    }, d.count, " bookings"), /*#__PURE__*/React.createElement("button", {
+      onClick: function onClick() {
+        return setCalendarView("Day");
+      },
+      className: "mt-3 w-full text-[11px] font-bold py-1.5 bg-white border border-[#ECEEF4] rounded-lg text-[#111827] hover:border-[#4F3FE0]"
+    }, "View Day"));
+  }))), calendarView === "Month" && /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft space-y-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between pb-3 border-b border-[#ECEEF4] text-xs font-bold text-[#111827]"
+  }, /*#__PURE__*/React.createElement("span", null, "November 2026"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[#8A90A2]"
+  }, "30 Days • 18 Reserved Slots")), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-7 gap-2 text-center text-xs"
+  }, ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(function (h) {
+    return /*#__PURE__*/React.createElement("div", {
+      key: h,
+      className: "font-black text-[#8A90A2] py-2"
+    }, h);
+  }), Array.from({ length: 30 }, function (_, i) {
+    var dayNum = i + 1;
+    var hasBookings = [2, 3, 4, 6, 9, 11, 14, 18, 20, 25].includes(dayNum);
+    return /*#__PURE__*/React.createElement("div", {
+      key: dayNum,
+      onClick: function onClick() {
+        return setCalendarView("Day");
+      },
+      className: "p-2.5 rounded-xl border border-[#ECEEF4] bg-[#F8FAFC] hover:border-[#4F3FE0] hover:bg-[#EEEBFF] cursor-pointer transition-all flex flex-col items-center justify-between min-h-[58px]"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "font-bold text-[#111827]"
+    }, dayNum), hasBookings && /*#__PURE__*/React.createElement("span", {
+      className: "w-2 h-2 rounded-full bg-[#4F3FE0]"
+    }));
+  })))), activeNav === "Billing & Credits" && /*#__PURE__*/React.createElement("div", {
+    className: "space-y-6 animate-fadeIn"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between flex-wrap gap-4"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] font-extrabold tracking-wider text-[#8A90A2] uppercase mb-1"
+  }, "Billing & Credits"), /*#__PURE__*/React.createElement("h2", {
+    className: "text-2xl sm:text-3xl font-black text-[#111827] tracking-tight"
+  }, "Billing & Meeting Room Credits"), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs sm:text-sm text-[#64748B] mt-1"
+  }, "Track quota, plans, invoices, and transaction activity")), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "relative w-28 h-16 flex-shrink-0 hidden md:block"
+  }, /*#__PURE__*/React.createElement("svg", {
+    viewBox: "0 0 140 90",
+    fill: "none",
+    xmlns: "http://www.w3.org/2000/svg",
+    className: "w-full h-full drop-shadow-md"
+  }, /*#__PURE__*/React.createElement("ellipse", {
+    cx: "65",
+    cy: "45",
+    rx: "50",
+    ry: "30",
+    fill: "#C7D2FE",
+    fillOpacity: "0.4",
+    filter: "blur(14px)"
+  }), /*#__PURE__*/React.createElement("g", {
+    transform: "rotate(-7 55 42)"
+  }, /*#__PURE__*/React.createElement("rect", {
+    x: "15",
+    y: "12",
+    width: "82",
+    height: "50",
+    rx: "9",
+    fill: "url(#cardGrad)"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "25",
+    y: "24",
+    width: "13",
+    height: "10",
+    rx: "2",
+    fill: "#FCD34D"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "25",
+    y1: "29",
+    x2: "38",
+    y2: "29",
+    stroke: "#F59E0B",
+    strokeWidth: "0.8"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "31.5",
+    y1: "24",
+    x2: "31.5",
+    y2: "34",
+    stroke: "#F59E0B",
+    strokeWidth: "0.8"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "25",
+    y: "44",
+    width: "36",
+    height: "4",
+    rx: "2",
+    fill: "white",
+    fillOpacity: "0.85"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "80",
+    cy: "44",
+    r: "5.5",
+    fill: "#F472B6",
+    fillOpacity: "0.85"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "87",
+    cy: "44",
+    r: "5.5",
+    fill: "#FBBF24",
+    fillOpacity: "0.85"
+  })), /*#__PURE__*/React.createElement("g", {
+    transform: "translate(88, 40)"
+  }, /*#__PURE__*/React.createElement("circle", {
+    cx: "15",
+    cy: "15",
+    r: "13",
+    fill: "#FBBF24",
+    stroke: "#F59E0B",
+    strokeWidth: "1.2"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "15",
+    cy: "15",
+    r: "9.5",
+    fill: "#FDE68A"
+  }), /*#__PURE__*/React.createElement("text", {
+    x: "15",
+    y: "19",
+    fontSize: "11",
+    fontWeight: "bold",
+    textAnchor: "middle",
+    fill: "#D97706"
+  }, "\u20B9")), /*#__PURE__*/React.createElement("circle", {
+    cx: "18",
+    cy: "20",
+    r: "2.5",
+    fill: "#818CF8",
+    fillOpacity: "0.8"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "106",
+    cy: "16",
+    r: "2",
+    fill: "#60A5FA",
+    fillOpacity: "0.8"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "98",
+    cy: "74",
+    r: "1.8",
+    fill: "#FCD34D",
+    fillOpacity: "0.9"
+  }), /*#__PURE__*/React.createElement("defs", null, /*#__PURE__*/React.createElement("linearGradient", {
+    id: "cardGrad",
+    x1: "15",
+    y1: "12",
+    x2: "97",
+    y2: "62",
+    gradientUnits: "userSpaceOnUse"
+  }, /*#__PURE__*/React.createElement("stop", {
+    stopColor: "#6366F1"
+  }), /*#__PURE__*/React.createElement("stop", {
+    offset: "0.5",
+    stopColor: "#4F46E5"
+  }), /*#__PURE__*/React.createElement("stop", {
+    offset: "1",
+    stopColor: "#3B82F6"
+  }))))), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return setShowPurchaseCreditsModal(true);
+    },
+    className: "bg-[#4F3FE0] hover:bg-[#4335C9] text-white px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm hover:shadow-md active:scale-[0.98] flex items-center gap-1.5"
+  }, /*#__PURE__*/React.createElement("span", null, "+ Purchase Extra Credits")))), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-1 lg:grid-cols-3 gap-5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft flex flex-col justify-between hover:shadow-card transition-all"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "w-10 h-10 rounded-xl bg-[#F3EFFE] text-[#4F3FE0] flex items-center justify-center flex-shrink-0"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "coins",
+    className: "w-5 h-5 text-[#4F3FE0]"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    className: "text-[11px] font-extrabold uppercase tracking-wider text-[#8A90A2]"
+  }, "Remaining Balance"), /*#__PURE__*/React.createElement("div", {
+    className: "text-2xl sm:text-3xl font-black text-[#111827] mt-0.5"
+  }, "80 credits"))), /*#__PURE__*/React.createElement(Icon, {
+    name: "chevronRight",
+    className: "w-4 h-4 text-[#A0AEC0]"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between text-xs text-[#64748B] mt-4 font-medium"
+  }, /*#__PURE__*/React.createElement("span", null, "Out of 120 credits total quota"), /*#__PURE__*/React.createElement("span", {
+    className: "font-bold text-[#4F3FE0]"
+  }, "67% left")), /*#__PURE__*/React.createElement("div", {
+    className: "w-full h-2 bg-[#EEEBFF] rounded-full mt-2 overflow-hidden"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "h-full bg-gradient-to-r from-[#5937F5] to-[#4F3FE0] rounded-full w-[67%]"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between text-[11px] font-medium text-[#8A90A2] pt-3 mt-3 border-t border-[#ECEEF4]"
+  }, /*#__PURE__*/React.createElement("span", null, "40 credits used"), /*#__PURE__*/React.createElement("span", null, "120 total"))), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft flex flex-col justify-between hover:shadow-card transition-all"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "w-10 h-10 rounded-xl bg-[#ECFDF5] text-[#059669] flex items-center justify-center flex-shrink-0"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "clock",
+    className: "w-5 h-5 text-[#059669]"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    className: "text-[11px] font-extrabold uppercase tracking-wider text-[#8A90A2]"
+  }, "Monthly Free Hours"), /*#__PURE__*/React.createElement("div", {
+    className: "text-2xl sm:text-3xl font-black text-[#059669] mt-0.5"
+  }, "2.0 hrs left"))), /*#__PURE__*/React.createElement(Icon, {
+    name: "chevronRight",
+    className: "w-4 h-4 text-[#A0AEC0]"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between text-xs text-[#64748B] mt-4 font-medium"
+  }, /*#__PURE__*/React.createElement("span", null, "8 / 10 hours consumed"), /*#__PURE__*/React.createElement("span", {
+    className: "font-bold text-[#059669]"
+  }, "20% left")), /*#__PURE__*/React.createElement("div", {
+    className: "w-full h-2 bg-[#E6F4EA] rounded-full mt-2 overflow-hidden"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "h-full bg-gradient-to-r from-[#10B981] to-[#059669] rounded-full w-[20%]"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between text-[11px] font-medium text-[#8A90A2] pt-3 mt-3 border-t border-[#ECEEF4]"
+  }, /*#__PURE__*/React.createElement("span", null, "8 hrs used"), /*#__PURE__*/React.createElement("span", null, "10 hrs total"))), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft flex flex-col justify-between hover:shadow-card transition-all"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "w-10 h-10 rounded-xl bg-[#FEF3C7] text-[#D97706] flex items-center justify-center flex-shrink-0"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "crown",
+    className: "w-5 h-5 text-[#D97706]",
+    strokeWidth: 2
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    className: "text-[11px] font-extrabold uppercase tracking-wider text-[#8A90A2]"
+  }, "Subscription Plan"), /*#__PURE__*/React.createElement("div", {
+    className: "text-xl sm:text-2xl font-black text-[#111827] mt-0.5"
+  }, "Scale-up Venture"))), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-1.5"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "bg-[#ECFDF5] text-[#059669] text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200"
+  }, "\u25CF ACTIVE"), /*#__PURE__*/React.createElement(Icon, {
+    name: "chevronRight",
+    className: "w-4 h-4 text-[#A0AEC0]"
+  }))), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-[#64748B] mt-3 font-medium"
+  }, "Renews automatically on Nov 1, 2026")), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-3 gap-2 pt-3 mt-3 border-t border-[#ECEEF4] text-[11px]"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-1.5 text-[#374151]"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-base"
+  }, "\uD83D\uDCC5"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    className: "block text-[9.5px] font-semibold text-[#8A90A2] uppercase"
+  }, "Monthly"), /*#__PURE__*/React.createElement("span", {
+    className: "font-bold text-[#111827]"
+  }, "10 free hrs"))), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-1.5 text-[#374151]"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-base"
+  }, "\uD83E\uDE99"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    className: "block text-[9.5px] font-semibold text-[#8A90A2] uppercase"
+  }, "Base quota"), /*#__PURE__*/React.createElement("span", {
+    className: "font-bold text-[#111827]"
+  }, "120 credits"))), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-1.5 text-[#374151]"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-base"
+  }, "\u2B50"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    className: "block text-[9.5px] font-semibold text-[#8A90A2] uppercase"
+  }, "Extra credits"), /*#__PURE__*/React.createElement("span", {
+    className: "font-bold text-[#111827]"
+  }, "\u20B9500 / 10 cr")))))), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-1 lg:grid-cols-12 gap-6 items-start"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "lg:col-span-5 space-y-6"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between mb-4"
+  }, /*#__PURE__*/React.createElement("h4", {
+    className: "text-sm font-black text-[#111827] flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-6 h-6 rounded-lg bg-purple-50 text-[#4F3FE0] flex items-center justify-center"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "barChart",
+    className: "w-3.5 h-3.5 text-[#4F3FE0]"
+  })), /*#__PURE__*/React.createElement("span", null, "Credit Usage This Month")), /*#__PURE__*/React.createElement("span", {
+    className: "text-xs font-semibold text-[#374151] bg-[#F8FAFC] border border-[#ECEEF4] px-2.5 py-1 rounded-lg"
+  }, "October 2026 \u25BE")), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-col sm:flex-row items-center gap-6 my-2"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "relative w-36 h-36 flex items-center justify-center flex-shrink-0"
+  }, /*#__PURE__*/React.createElement("svg", {
+    className: "w-full h-full transform -rotate-90",
+    viewBox: "0 0 120 120"
+  }, /*#__PURE__*/React.createElement("circle", {
+    cx: "60",
+    cy: "60",
+    r: "48",
+    stroke: "#EEEBFF",
+    strokeWidth: "13",
+    fill: "transparent"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "60",
+    cy: "60",
+    r: "48",
+    stroke: "#4F3FE0",
+    strokeWidth: "13",
+    strokeDasharray: "301.59",
+    strokeDashoffset: "202.06",
+    strokeLinecap: "round",
+    fill: "transparent",
+    className: "transition-all duration-700 ease-out"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "absolute inset-0 flex flex-col items-center justify-center text-center"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-2xl font-black text-[#111827] tracking-tight"
+  }, "120"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-semibold text-[#8A90A2]"
+  }, "Total Credits"))), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-3 w-full"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between text-xs"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2 font-bold text-[#111827]"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-2.5 h-2.5 rounded-full bg-[#4F3FE0]"
+  }), /*#__PURE__*/React.createElement("span", null, "40 credits used")), /*#__PURE__*/React.createElement("span", {
+    className: "font-semibold text-[#8A90A2]"
+  }, "33%")), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between text-xs"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2 font-bold text-[#111827]"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-2.5 h-2.5 rounded-full bg-[#818CF8]"
+  }), /*#__PURE__*/React.createElement("span", null, "80 credits remaining")), /*#__PURE__*/React.createElement("span", {
+    className: "font-semibold text-[#8A90A2]"
+  }, "67%")))), /*#__PURE__*/React.createElement("div", {
+    className: "mt-5 bg-[#F5F3FF] border border-[#E0E7FF] rounded-xl p-3.5 flex items-center gap-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "w-8 h-8 rounded-lg bg-indigo-100 text-[#4338CA] flex items-center justify-center flex-shrink-0 font-bold"
+  }, "\uD83D\uDCC8"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "text-xs font-bold text-[#4338CA]"
+  }, "You're on track!"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] text-[#6366F1] mt-0.5"
+  }, "67% of your monthly quota is still available.")))), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between mb-4"
+  }, /*#__PURE__*/React.createElement("h4", {
+    className: "text-sm font-black text-[#111827] flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-6 h-6 rounded-lg bg-purple-50 text-[#4F3FE0] flex items-center justify-center"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "fileText",
+    className: "w-3.5 h-3.5 text-[#4F3FE0]"
+  })), /*#__PURE__*/React.createElement("span", null, "Plan & Billing Details")), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return showToast("Viewing full subscription tier specifications");
+    },
+    className: "text-xs font-bold text-[#4F3FE0] hover:underline"
+  }, "View Plan \u2192")), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-1 sm:grid-cols-3 gap-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "p-3 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-[10px] font-semibold text-[#8A90A2] uppercase flex items-center gap-1"
+  }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDCC5"), " Next Renewal"), /*#__PURE__*/React.createElement("div", {
+    className: "text-xs font-bold text-[#111827] mt-1"
+  }, "Nov 1, 2026"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[10px] text-emerald-600 font-semibold mt-0.5"
+  }, "\u25CF Auto-renew enabled")), /*#__PURE__*/React.createElement("div", {
+    className: "p-3 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-[10px] font-semibold text-[#8A90A2] uppercase flex items-center gap-1"
+  }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDCC4"), " Last Invoice"), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-1.5 mt-1"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-xs font-bold text-[#111827]"
+  }, "INV-2026-1028"), /*#__PURE__*/React.createElement("span", {
+    className: "bg-emerald-50 text-emerald-600 border border-emerald-200 text-[9px] font-bold px-1.5 py-0.2 rounded"
+  }, "Paid")), /*#__PURE__*/React.createElement("div", {
+    className: "text-[10px] text-[#8A90A2] mt-0.5"
+  }, "28 Oct 2026")), /*#__PURE__*/React.createElement("div", {
+    className: "p-3 bg-[#F8FAFC] border border-[#ECEEF4] rounded-xl"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-[10px] font-semibold text-[#8A90A2] uppercase flex items-center gap-1"
+  }, /*#__PURE__*/React.createElement("span", null, "\uD83E\uDE99"), " Extra Credits Price"), /*#__PURE__*/React.createElement("div", {
+    className: "text-xs font-bold text-[#111827] mt-1"
+  }, "\u20B9500 / 10 credits"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[10px] text-[#8A90A2] mt-0.5"
+  }, "Buy additional credits anytime"))))), /*#__PURE__*/React.createElement("div", {
+    className: "lg:col-span-7"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between mb-4"
+  }, /*#__PURE__*/React.createElement("h4", {
+    className: "text-sm font-black text-[#111827] flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-6 h-6 rounded-lg bg-purple-50 text-[#4F3FE0] flex items-center justify-center"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "bookmark",
+    className: "w-3.5 h-3.5 text-[#4F3FE0]"
+  })), /*#__PURE__*/React.createElement("span", null, "Recent Credit Ledger")), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return showToast("Opening full audit ledger with filter controls");
+    },
+    className: "text-xs font-bold text-[#4F3FE0] hover:underline"
+  }, "View All \u2192")), /*#__PURE__*/React.createElement("div", {
+    className: "divide-y divide-[#ECEEF4]"
+  }, [{
+    title: "Session in Collaboration Room",
+    date: "Today, 03:30 PM",
+    credits: "-18 credits",
+    hours: "-1.5 hrs",
+    iconType: "calendar",
+    iconBg: "bg-blue-50 text-[#2563EB]"
+  }, {
+    title: "Client Meeting in Pitch Arena Nexus",
+    date: "28 Oct 2026, 11:30 AM",
+    credits: "-25 credits",
+    hours: "-1.5 hrs",
+    iconType: "users",
+    iconBg: "bg-purple-50 text-[#6E42E5]"
+  }, {
+    title: "Monthly Incubator Quota Credited",
+    date: "01 Oct 2026, 12:00 AM",
+    credits: "+120 credits",
+    hours: "+10.0 hrs",
+    iconType: "gift",
+    iconBg: "bg-emerald-50 text-[#059669]",
+    isCredit: true
+  }, {
+    title: "Team Sync in Focus Room",
+    date: "27 Oct 2026, 02:00 PM",
+    credits: "-12 credits",
+    hours: "-1.0 hrs",
+    iconType: "calendar",
+    iconBg: "bg-blue-50 text-[#2563EB]"
+  }, {
+    title: "Product Planning - Boardroom Alpha",
+    date: "26 Oct 2026, 09:00 AM",
+    credits: "-20 credits",
+    hours: "-2.0 hrs",
+    iconType: "users",
+    iconBg: "bg-purple-50 text-[#6E42E5]"
+  }].map(function (tx, idx) {
+    return /*#__PURE__*/React.createElement("div", {
+      key: idx,
+      className: "py-3.5 flex items-center justify-between hover:bg-[#F8FAFC] px-2 rounded-xl transition-all"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-3.5"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ".concat(tx.iconBg)
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: tx.iconType,
+      className: "w-5 h-5"
+    })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      className: "text-xs font-bold text-[#111827]"
+    }, tx.title), /*#__PURE__*/React.createElement("div", {
+      className: "text-[11px] text-[#8A90A2] mt-0.5"
+    }, tx.date))), /*#__PURE__*/React.createElement("div", {
+      className: "text-right"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "text-xs font-bold ".concat(tx.isCredit ? 'text-emerald-600 font-extrabold' : 'text-[#111827]')
+    }, tx.credits), /*#__PURE__*/React.createElement("div", {
+      className: "text-[11px] ".concat(tx.isCredit ? 'text-emerald-600 font-medium' : 'text-[#8A90A2]')
+    }, tx.hours)));
+  })))))), activeNav === "Analytics" && /*#__PURE__*/React.createElement("div", {
+    className: "space-y-6 animate-fadeIn"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft flex items-center justify-between flex-wrap gap-4"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
+    className: "text-2xl font-black text-[#111827]"
+  }, "Meeting Space Insights & Analytics"), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-[#8A90A2] mt-1"
+  }, "Utilization frequency, party density, peak hours, and incubator credit savings")), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2 flex-wrap"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-1 bg-[#F8FAFC] border border-[#ECEEF4] p-1 rounded-xl"
+  }, ["This Month", "Last 7 Days", "Last 90 Days"].map(function (p) {
+    return /*#__PURE__*/React.createElement("button", {
+      key: p,
+      onClick: function onClick() {
+        return setAnalyticsPeriod(p);
+      },
+      className: "px-3 py-1.5 rounded-lg text-xs font-bold transition-all ".concat(analyticsPeriod === p ? "bg-[#4F3FE0] text-white shadow-xs" : "text-[#64748B] hover:text-[#111827]")
+    }, p);
+  })), /*#__PURE__*/React.createElement("button", {
+    onClick: function onClick() {
+      return showToast("Analytics summary report (CSV) exported successfully!");
+    },
+    className: "bg-[#111827] hover:bg-black text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 transition-all shadow-xs"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "download",
+    className: "w-3.5 h-3.5"
+  }), /*#__PURE__*/React.createElement("span", null, "Export Report")))), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+  }, /*#__PURE__*/React.createElement("div", {
     className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft"
   }, /*#__PURE__*/React.createElement("span", {
     className: "text-xs font-bold text-[#8A90A2]"
   }, "Total Booked Hours"), /*#__PURE__*/React.createElement("div", {
     className: "text-3xl font-black text-[#111827] mt-2"
-  }, "16.0 hrs"), /*#__PURE__*/React.createElement("span", {
+  }, "28 hrs"), /*#__PURE__*/React.createElement("span", {
     className: "text-xs font-bold text-emerald-600 mt-1 block"
-  }, "XYZ Technologies • This Month")), /*#__PURE__*/React.createElement("div", {
+  }, "↑ 14% vs last month")), /*#__PURE__*/React.createElement("div", {
     className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft"
   }, /*#__PURE__*/React.createElement("span", {
     className: "text-xs font-bold text-[#8A90A2]"
-  }, "Billed Revenue"), /*#__PURE__*/React.createElement("div", {
-    className: "text-3xl font-black text-[#111827] mt-2"
-  }, "₹0"), /*#__PURE__*/React.createElement("span", {
-    className: "text-xs text-[#8A90A2] mt-1 block"
-  }, "100% within plan credits")), /*#__PURE__*/React.createElement("div", {
-    className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "text-xs font-bold text-[#8A90A2]"
-  }, "Credit Value Used"), /*#__PURE__*/React.createElement("div", {
-    className: "text-3xl font-black text-[#16a34a] mt-2"
-  }, "₹24,000"), /*#__PURE__*/React.createElement("span", {
-    className: "text-xs text-[#8A90A2] mt-1 block"
-  }, "Plan subsidized (hours × room rate)")), /*#__PURE__*/React.createElement("div", {
-    className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "text-xs font-bold text-[#8A90A2]"
-  }, "Credit Quota Remaining"), /*#__PURE__*/React.createElement("div", {
+  }, "Favorite Room"), /*#__PURE__*/React.createElement("div", {
     className: "text-2xl font-black text-[#4F3FE0] mt-2"
-  }, "14.0 hrs"), /*#__PURE__*/React.createElement("span", {
-    className: "text-xs font-bold text-[#4F3FE0] mt-1 block"
-  }, "Plan: 4.0h left + 10.0h top-up"))), /*#__PURE__*/React.createElement("div", {
+  }, "Boardroom Alpha"), /*#__PURE__*/React.createElement("span", {
+    className: "text-xs text-[#8A90A2] mt-1 block"
+  }, "82% utilization rate")), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-xs font-bold text-[#8A90A2]"
+  }, "Average Attendance"), /*#__PURE__*/React.createElement("div", {
+    className: "text-3xl font-black text-[#111827] mt-2"
+  }, "5.8 pax"), /*#__PURE__*/React.createElement("span", {
+    className: "text-xs text-[#8A90A2] mt-1 block"
+  }, "Healthy meeting density")), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white border border-[#ECEEF4] rounded-2xl p-5 shadow-soft"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-xs font-bold text-[#8A90A2]"
+  }, "Credits Saved"), /*#__PURE__*/React.createElement("div", {
+    className: "text-3xl font-black text-emerald-600 mt-2"
+  }, "₹14,500"), /*#__PURE__*/React.createElement("span", {
+    className: "text-xs text-[#8A90A2] mt-1 block"
+  }, "Included with incubator pass"))), /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-1 lg:grid-cols-2 gap-6"
   }, /*#__PURE__*/React.createElement("div", {
     className: "bg-white border border-[#ECEEF4] rounded-2xl p-6 shadow-soft space-y-4"
@@ -2488,7 +4365,7 @@ function MeetingRoomsApp() {
   }, [
     { name: "Boardroom Alpha", pct: 82, hrs: "28 hrs", color: "bg-[#4F3FE0]" },
     { name: "Pitch Arena Nexus", pct: 68, hrs: "22 hrs", color: "bg-indigo-500" },
-    
+    { name: "Collaboration Room", pct: 55, hrs: "16 hrs", color: "bg-purple-500" },
     { name: "Focus Room", pct: 48, hrs: "14 hrs", color: "bg-blue-500" },
     { name: "Training Room", pct: 35, hrs: "10 hrs", color: "bg-emerald-500" },
     { name: "Creative Studio", pct: 28, hrs: "8 hrs", color: "bg-amber-500" }
@@ -2517,11 +4394,11 @@ function MeetingRoomsApp() {
   }, "Hourly booking volume across the day (12-hour format)")), /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-5 gap-2 items-end h-40 pt-4"
   }, [
-    { time: "10:00 AM", count: 12, pct: "50%" },
-    { time: "02:00 PM", count: 18, pct: "75%" },
-    { time: "05:00 PM", count: 14, pct: "58%" },
-    { time: "07:00 PM", count: 24, pct: "100%" },
-    { time: "10:30 PM", count: 16, pct: "66%" }
+    { time: "09:00 AM", count: 18, pct: "75%" },
+    { time: "11:00 AM", count: 24, pct: "100%" },
+    { time: "01:00 PM", count: 12, pct: "50%" },
+    { time: "03:00 PM", count: 22, pct: "92%" },
+    { time: "05:00 PM", count: 14, pct: "58%" }
   ].map(function (slot) {
     return /*#__PURE__*/React.createElement("div", {
       key: slot.time,
