@@ -20,7 +20,22 @@ const AuthGate = {
     const gate = document.getElementById('auth-gate-overlay');
     if (!gate) return;
 
-    const sessionRaw = sessionStorage.getItem('nexus_auth_session');
+    let sessionRaw = sessionStorage.getItem('nexus_auth_session');
+    if (!sessionRaw && !sessionStorage.getItem('nexus_logged_out')) {
+      const defaultSession = {
+        userId: 'USR-FOUNDER-1',
+        name: 'Alex Morgan',
+        phone: '9880012345',
+        role: 'startup',
+        startupId: 'STP-01',
+        startupName: 'NeuroPulse AI',
+        founderName: 'Alex Morgan',
+        timestamp: Date.now()
+      };
+      sessionStorage.setItem('nexus_auth_session', JSON.stringify(defaultSession));
+      sessionRaw = JSON.stringify(defaultSession);
+    }
+
     if (!sessionRaw) {
       document.documentElement.classList.add('auth-locked');
       gate.style.display = 'flex';
@@ -248,6 +263,7 @@ const AuthGate = {
   },
 
   unlockGateWithSuccess(toastMsg) {
+    sessionStorage.removeItem('nexus_logged_out');
     const gate = document.getElementById('auth-gate-overlay');
     if (gate) {
       gate.classList.add('unlocking');
@@ -269,6 +285,7 @@ const AuthGate = {
 
   lockSessionAndLogout() {
     sessionStorage.removeItem('nexus_auth_session');
+    sessionStorage.setItem('nexus_logged_out', '1');
     document.documentElement.classList.add('auth-locked');
     const gate = document.getElementById('auth-gate-overlay');
     if (gate) {

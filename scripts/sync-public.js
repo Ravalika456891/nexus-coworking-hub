@@ -33,7 +33,7 @@ copyDir(path.join(root, 'assets'), path.join(pub, 'assets'));
 // 2. Sync root files
 copyFile(path.join(root, 'app.html'), path.join(pub, 'app.html'));
 copyFile(path.join(root, 'meeting-rooms.html'), path.join(pub, 'meeting-rooms.html'));
-copyFile(path.join(root, 'meeting-rooms.html'), path.join(pub, 'index.html'));
+copyFile(path.join(root, 'app.html'), path.join(pub, 'index.html'));
 copyFile(path.join(root, 'index.html'), path.join(pub, 'landing.html'));
 copyFile(path.join(root, 'cancellation.js'), path.join(pub, 'cancellation.js'));
 copyFile(path.join(root, 'creditService.js'), path.join(pub, 'creditService.js'));

@@ -997,6 +997,7 @@ async function handleApi(req, res, parsedUrl) {
 }
 
 async function handler(req, res) {
+  console.log(`[REQ] ${req.method} ${req.url}`);
   const matchedHeader = req.headers['x-matched-path'] || req.headers['x-invoke-path'];
   const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
 
@@ -1023,7 +1024,7 @@ async function handler(req, res) {
     return handleApi(req, res, parsedUrl);
   }
 
-  if (reqUrl === '/' || reqUrl === '') reqUrl = '/meeting-rooms.html';
+  if (reqUrl === '/' || reqUrl === '') reqUrl = '/app.html';
   if (reqUrl === '/app' || reqUrl === '/app/') reqUrl = '/app.html';
   if (reqUrl === '/meeting-rooms' || reqUrl === '/meeting-rooms/') reqUrl = '/meeting-rooms.html';
 
@@ -1077,10 +1078,10 @@ if (!process.env.VERCEL) {
         console.error('Server error:', err);
       }
     });
-    s.listen(portToTry, () => {
+    s.listen(portToTry, '0.0.0.0', () => {
       currentServer = s;
       console.log(`\n⚡ NEXUS Hub Operating System Server Started!`);
-      console.log(`👉 Access URL: http://localhost:${portToTry}/\n`);
+      console.log(`👉 Access URL: http://localhost:${portToTry}/ or http://127.0.0.1:${portToTry}/\n`);
     });
   }
   startServer(PORT);

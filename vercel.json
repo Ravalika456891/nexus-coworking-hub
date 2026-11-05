@@ -4,12 +4,12 @@
     { "source": "/api/(.*)", "destination": "/api/index?__route=$1" },
     { "source": "/company/(.*)", "destination": "/api/index?__route=company/$1" },
     { "source": "/workspaces/(.*)", "destination": "/api/index?__route=workspaces/$1" },
-    { "source": "/billing", "destination": "/meeting-rooms.html" },
-    { "source": "/bookings", "destination": "/meeting-rooms.html" },
+    { "source": "/billing", "destination": "/app.html?tab=billingCredits" },
+    { "source": "/bookings", "destination": "/app.html?tab=meetingRooms" },
     { "source": "/meeting-rooms", "destination": "/meeting-rooms.html" },
     { "source": "/meeting-rooms/(.*)", "destination": "/meeting-rooms.html" },
     { "source": "/app", "destination": "/app.html" },
     { "source": "/app/(.*)", "destination": "/app.html" },
-    { "source": "/", "destination": "/meeting-rooms.html" }
+    { "source": "/", "destination": "/app.html" }
   ]
 }

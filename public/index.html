@@ -1,114 +1,668 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NEXUS HUB – Modern Coworking Management</title>
-
-  <!-- Inter Font -->
+  <title>NEXUS | Co-Working & Startup Incubation Operating System</title>
+  <meta name="description" content="Comprehensive Co-Working & Startup Incubation Management System managing the entire lifecycle: Onboarding, Workspace Allocation, Meeting Rooms, Rent Calculation, Invoicing, Payments, Incubation Milestones, and Analytics.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
-    rel="stylesheet">
-
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-
-
-          fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-          },
-          colors: {
-            nexus: {
-              primary: '#4F3FE0',
-              'primary-hover': '#4335C9',
-              bg: '#F6F7FB',
-              card: '#FFFFFF',
-              border: '#ECEEF4',
-              heading: '#111827',
-              body: '#374151',
-              muted: '#8A90A2',
-              lavender: '#F4F2FF',
-              'lavender-light': '#F8F7FF',
-              'lavender-border': '#E4DEFF'
-            }
-          },
-          boxShadow: {
-            soft: '0 2px 14px rgba(17, 24, 39, 0.04)',
-            card: '0 4px 20px rgba(79, 63, 224, 0.06)'
-          }
-        }
-      }
-    }
-  </script>
-
-  <!-- React 18 Fast CDN with Fallback -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
-  <script>
-    if (!window.React) {
-      document.write('<script src="https://unpkg.com/react@18/umd/react.production.min.js"><\/script>');
-      document.write('<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"><\/script>');
-    }
-  </script>
-
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/design-system.css?v=20261104_35">
+  <link rel="stylesheet" href="css/components.css?v=20261104_35">
+  <link rel="stylesheet" href="css/clean-room-ui.css?v=20261104_35">
+  <link rel="stylesheet" href="css/clean-dashboard-ui.css?v=20261104_35">
   <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: #F6F7FB;
-      color: #374151;
-      -webkit-font-smoothing: antialiased;
+    /* Invoice type selector buttons */
+    .inv-type-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 8px;
+      border-radius: var(--radius-md);
+      background: var(--bg-surface-elevated);
+      border: 2px solid var(--border-subtle);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.18s ease;
+      min-height: 68px;
     }
-
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
+    .inv-type-btn:hover {
+      border-color: var(--accent-primary);
+      color: var(--accent-primary);
+      background: rgba(99, 102, 241, 0.07);
     }
-
-    ::-webkit-scrollbar-track {
-      background: #F1F3F9;
+    .inv-type-btn.active {
+      border-color: var(--accent-primary);
+      background: rgba(99, 102, 241, 0.12);
+      color: var(--accent-primary);
     }
+    /* ==========================================================================
+       ENTERPRISE PRINT STYLESHEET (PDF & PAPER READY)
+       ========================================================================== */
+    @media print {
+      @page {
+        margin: 10mm 12mm;
+        size: auto;
+      }
 
-    ::-webkit-scrollbar-thumb {
-      background: #D1D5E0;
-      border-radius: 999px;
-    }
+      html, body {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        height: auto !important;
+        min-height: 0 !important;
+        overflow: visible !important;
+        font-size: 11pt !important;
+      }
 
-    ::-webkit-scrollbar-thumb:hover {
-      background: #A0A6B8;
+      /* Hide chrome, navigation, auth gate, toasts, banners, and action controls */
+      .app-sidebar,
+      .app-header,
+      .persona-banner-bar,
+      #auth-gate-overlay,
+      .toast-container,
+      .modal-close-btn,
+      .modal-header .btn,
+      .modal-header button,
+      .modal-footer,
+      .btn:not(.keep-print),
+      button:not(.keep-print),
+      .no-print {
+        display: none !important;
+      }
+
+      /* When printing a Modal (Invoice Viewer, Reservation Details, Diploma, Statement, etc.) */
+      body.printing-modal .app-shell,
+      body:has(#modal-mount .modal-overlay) .app-shell,
+      body:has(#modal-mount:not(:empty)) .app-shell,
+      body:has(.modal-overlay.active) .app-shell {
+        display: none !important;
+      }
+
+      #modal-mount {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+
+      .modal-overlay,
+      .modal-overlay.active,
+      .modal-backdrop {
+        display: block !important;
+        position: static !important;
+        inset: auto !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
+        background: transparent !important;
+        backdrop-filter: none !important;
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: visible !important;
+      }
+
+      .modal-content,
+      .modal-wide {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-shadow: none !important;
+        border: none !important;
+        background: #ffffff !important;
+        color: #0f172a !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: visible !important;
+        border-radius: 0 !important;
+      }
+
+      .modal-header {
+        border-bottom: 2px solid #e2e8f0 !important;
+        padding: 0 0 12px 0 !important;
+        margin-bottom: 16px !important;
+        background: transparent !important;
+      }
+
+      .modal-body {
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: visible !important;
+      }
+
+      .invoice-view-box {
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+        background: #ffffff !important;
+        color: #0f172a !important;
+      }
+
+      /* When printing regular views (no modal) */
+      .app-shell {
+        display: block !important;
+        position: static !important;
+        height: auto !important;
+        overflow: visible !important;
+      }
+
+      .app-main {
+        margin-left: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow: visible !important;
+      }
+
+      .view-container.active {
+        display: block !important;
+        overflow: visible !important;
+        padding: 0 !important;
+      }
+
+      .view-container:not(.active) {
+        display: none !important;
+      }
+
+      table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+      }
+
+      tr, td, th {
+        page-break-inside: avoid !important;
+      }
+
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
     }
   </style>
+  <script>
+    // Security Gate: Check auth session before page renders to prevent flash of content
+    if (!sessionStorage.getItem('nexus_auth_session')) {
+      document.documentElement.classList.add('auth-locked');
+    }
+  </script>
 </head>
-
-<body class="bg-[#F6F7FB] min-h-screen">
-  <div id="root">
-    <div
-      style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #F6F7FB; font-family: Inter, sans-serif;">
-      <div style="display: flex; flex-direction: column; align-items: center; gap: 12px;">
-        <div
-          style="width: 38px; height: 38px; border: 3px solid #E2E8F0; border-top-color: #4F3FE0; border-radius: 50%; animation: nx-spin 0.8s linear infinite;">
+<body>
+  <!-- Authentication Gate (Security Lock Screen) -->
+  <div id="auth-gate-overlay" class="auth-gate-overlay" style="display: none;">
+    <div class="auth-gate-card">
+      <!-- Header Banner -->
+      <div class="auth-gate-header">
+        <div class="auth-gate-logo">⚡</div>
+        <h2 class="auth-gate-title">NEXUS HUB</h2>
+        <div class="auth-gate-subtitle">Co-Working &amp; Incubation OS • Command Center Terminal</div>
+        <div class="auth-gate-badge">
+          <span>🔒</span>
+          <span>Authentication Required</span>
         </div>
-        <div style="font-size: 13px; font-weight: 700; color: #111827;">Loading NEXUS HUB...</div>
       </div>
+
+      <!-- Tab Switcher -->
+      <div class="auth-gate-tabs">
+        <button type="button" id="gate-tab-btn-startup" class="auth-gate-tab-btn active" onclick="App.switchGateTab('startup')">
+          <span>📱</span>
+          <span>Founder Login</span>
+        </button>
+        <button type="button" id="gate-tab-btn-admin" class="auth-gate-tab-btn" onclick="App.switchGateTab('admin')">
+          <span>👑</span>
+          <span>Super Admin Login</span>
+        </button>
+      </div>
+
+      <!-- Body / Form Panels -->
+      <div class="auth-gate-body">
+        
+        <!-- PANEL 1: FOUNDER LOGIN (MOBILE & PASSWORD) -->
+        <div id="gate-panel-startup" style="display: block;">
+          <div class="auth-notice-box">
+            <div style="font-weight: 700; color: #a5b4fc; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+              <span>📱</span> Enter 10-Digit Mobile &amp; Password (10–16 chars)
+            </div>
+            <div>Mobile: <strong>9880012345</strong> (10 digits) • Pass: <code>password123</code> (11 chars)</div>
+            <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Rule: Mobile must be 10 digits; password must be 10–16 characters only.</div>
+          </div>
+
+          <form id="form-gate-startup" onsubmit="App.handleGateStartupLogin(event)" novalidate>
+            <div class="form-group" style="margin-bottom: 12px;">
+              <label class="form-label" style="font-weight: 600; font-size: 12.5px; color: #f1f5f9;">Registered Mobile Number (10 Digits) <span class="required-star">*</span></label>
+              <div class="input-with-icon">
+                <span class="input-icon">📱</span>
+                <input type="tel" id="gate-startup-phone" class="form-control" value="9880012345" placeholder="Enter 10-digit mobile (e.g. 9880012345)" required style="background: rgba(15, 23, 42, 0.7); border-color: rgba(255, 255, 255, 0.15); color: #ffffff;">
+              </div>
+              <div style="font-size: 11px; color: #94a3b8; margin-top: 3px;">Mobile number must be strictly 10 digits. (+91 prefix accepted)</div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 12px;">
+              <label class="form-label" style="font-weight: 600; font-size: 12.5px; color: #f1f5f9;">Password (10 to 16 positions) <span class="required-star">*</span></label>
+              <div class="input-with-icon" style="position: relative;">
+                <span class="input-icon">🔒</span>
+                <input type="password" id="gate-startup-password" class="form-control" value="password123" placeholder="Enter password (10-16 positions)" required style="background: rgba(15, 23, 42, 0.7); border-color: rgba(255, 255, 255, 0.15); color: #ffffff; padding-right: 38px;">
+                <button type="button" onclick="App.togglePasswordVisibility('gate-startup-password', this)" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 14px;" title="Toggle Password Visibility">👁️</button>
+              </div>
+              <div style="font-size: 11px; color: #94a3b8; margin-top: 3px;">Password must be between 10 and 16 characters only. More than that will give an error.</div>
+            </div>
+
+            <div style="margin-bottom: 6px;">
+              <span style="font-size: 11px; font-weight: 600; color: #94a3b8;">1-Click Fill Registered Founder (10 Digits):</span>
+              <div class="auth-chips-row">
+                <button type="button" class="auth-chip" onclick="App.quickFillGateStartup('9880012345', 'password123')">⚡ XYZ Tech (9880012345)</button>
+                <button type="button" class="auth-chip" onclick="App.quickFillGateStartup('9845011234', 'password123')">🧠 NeuroPulse (9845011234)</button>
+                <button type="button" class="auth-chip" onclick="App.quickFillGateStartup('9741044921', 'password123')">🧬 BioGenic (9741044921)</button>
+                <button type="button" class="auth-chip" onclick="App.quickFillGateStartup('9980188472', 'password123')">💳 FinEdge (9980188472)</button>
+              </div>
+            </div>
+
+            <div id="gate-startup-error" class="auth-error-box" style="display: none;"></div>
+
+            <button type="submit" class="btn btn-primary auth-submit-btn">
+              Verify &amp; Enter Command Center ➔
+            </button>
+          </form>
+        </div>
+
+        <!-- PANEL 2: SUPER ADMIN LOGIN -->
+        <div id="gate-panel-admin" style="display: none;">
+          <div class="auth-notice-box" style="background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.3);">
+            <div style="font-weight: 700; color: #fbbf24; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+              <span>👑</span> Executive Command Center Access
+            </div>
+            <div>Mobile: <strong>9800011111</strong> (10 digits) • Master Password: <code>admin12345</code> (10 chars)</div>
+            <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Director Dev Sharma • Full system governance</div>
+          </div>
+
+          <form id="form-gate-admin" onsubmit="App.handleGateAdminLogin(event)" novalidate>
+            <div class="form-group" style="margin-bottom: 12px;">
+              <label class="form-label" style="font-weight: 600; font-size: 12.5px; color: #f1f5f9;">Admin 10-Digit Mobile or Email <span class="required-star">*</span></label>
+              <div class="input-with-icon">
+                <span class="input-icon">👑</span>
+                <input type="text" id="gate-admin-identifier" class="form-control" value="9800011111" placeholder="10-digit Mobile (9800011111) or dev.sharma@nexusincubation.io" required style="background: rgba(15, 23, 42, 0.7); border-color: rgba(255, 255, 255, 0.15); color: #ffffff;">
+              </div>
+              <div style="font-size: 11px; color: #94a3b8; margin-top: 3px;">Enter 10-digit mobile number or executive email.</div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 12px;">
+              <label class="form-label" style="font-weight: 600; font-size: 12.5px; color: #f1f5f9;">Master Password (10 to 16 positions) <span class="required-star">*</span></label>
+              <div class="input-with-icon" style="position: relative;">
+                <span class="input-icon">🔒</span>
+                <input type="password" id="gate-admin-password" class="form-control" value="admin12345" placeholder="Enter master password (10-16 characters)" required style="background: rgba(15, 23, 42, 0.7); border-color: rgba(255, 255, 255, 0.15); color: #ffffff; padding-right: 38px;">
+                <button type="button" onclick="App.togglePasswordVisibility('gate-admin-password', this)" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 14px;" title="Toggle Password Visibility">👁️</button>
+              </div>
+              <div style="font-size: 11px; color: #94a3b8; margin-top: 3px;">Password must be between 10 and 16 characters only. More than that will give an error.</div>
+            </div>
+
+            <div id="gate-admin-error" class="auth-error-box" style="display: none;"></div>
+
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <button type="submit" class="btn btn-primary auth-submit-btn" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); width: 100%; justify-content: center;">
+                Authenticate Super Admin 👑
+              </button>
+            </div>
+          </form>
+        </div>
+
+      </div>
+
+      <!-- Footer -->
+      <div class="auth-gate-footer">
+        <a href="index.html" class="auth-footer-link">← Public Website</a>
+        <a href="index.html#cta" class="auth-footer-link" style="color: #818cf8; font-weight: 600; text-decoration: none;">+ Apply / Register New Startup ➔</a>
+      </div>
+
     </div>
-    <style>
-      @keyframes nx-spin {
-        to {
-          transform: rotate(360deg);
-        }
-      }
-    </style>
   </div>
 
-  <!-- Pre-transpiled Native JS Bundle (Instant load, zero delay, no Babel needed) -->
-  <script src="js/meeting-rooms-bundle.js?v=20261103_02"></script>
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="app-sidebar" style="background: #FFFFFF; border-right: 1px solid #ECEEF4; width: 235px; display: flex; flex-direction: column; justify-content: flex-start; overflow-y: auto;">
+      <div class="sidebar-brand" style="padding: 14px 14px 10px 14px; display: flex; align-items: center; gap: 12px; border-bottom: none; flex-shrink: 0;">
+        <div class="brand-icon" style="width: 40px; height: 40px; border-radius: 12px; background: #111827; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(0,0,0,0.12);">
+          <svg style="width: 20px; height: 20px;" viewBox="0 0 24 24" fill="#FACC15" stroke="#FACC15" stroke-width="1.5">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+        </div>
+        <div class="brand-info" style="line-height: 1.25;">
+          <h1 style="font-size: 15px; font-weight: 900; color: #111827; margin: 0; letter-spacing: -0.01em;">NEXUS HUB</h1>
+          <span style="font-size: 11px; font-weight: 500; color: #8A90A2; text-transform: none; letter-spacing: 0;">Incubation OS</span>
+        </div>
+      </div>
 
+      <div style="height: 1px; background: #ECEEF4; margin: 6px 12px 8px 12px;"></div>
+
+      <nav class="sidebar-nav" style="padding: 2px 10px; display: flex; flex-direction: column; gap: 2px; flex: 1;">
+        <a class="nav-item" data-tab="dashboard">
+          <span class="nav-item-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="7" height="9" x="3" y="3" rx="1.5"/><rect width="7" height="5" x="14" y="3" rx="1.5"/><rect width="7" height="9" x="14" y="12" rx="1.5"/><rect width="7" height="5" x="3" y="16" rx="1.5"/>
+            </svg>
+          </span>
+          <span class="nav-item-text">Dashboard</span>
+        </a>
+
+        <a class="nav-item active" data-tab="meetingRooms" id="nav-item-meetingRooms">
+          <span class="nav-item-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/>
+            </svg>
+          </span>
+          <span class="nav-item-text">Meeting Rooms</span>
+        </a>
+
+        <a class="nav-item" data-tab="bookings" id="nav-item-bookings">
+          <span class="nav-item-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+            </svg>
+          </span>
+          <span class="nav-item-text">My Bookings</span>
+        </a>
+
+        <a class="nav-item" data-tab="billingCredits" id="nav-item-billingCredits" onclick="App.switchTab('billingCredits')">
+          <span class="nav-item-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/>
+            </svg>
+          </span>
+          <span class="nav-item-text">Billing &amp; Credits</span>
+        </a>
+
+        <a class="nav-item" data-tab="roomAnalytics" id="nav-item-roomAnalytics">
+          <span class="nav-item-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/>
+            </svg>
+          </span>
+          <span class="nav-item-text">Analytics</span>
+        </a>
+
+        <!-- Admin Only Group (visible in Super Admin mode) -->
+        <a class="nav-item admin-only-nav" data-tab="adminRooms" id="nav-item-adminRooms" style="display: none; background: rgba(245, 158, 11, 0.08); color: #b45309; font-weight: 700; border-radius: 10px;">
+          <span class="nav-item-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </span>
+          <span class="nav-item-text">Room Administration</span>
+        </a>
+
+        <!-- Divider 2 -->
+        <div style="height: 1px; background: #ECEEF4; margin: 8px 4px;"></div>
+
+        <a class="nav-item" data-tab="workspace">
+          <span class="nav-item-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/>
+            </svg>
+          </span>
+          <span class="nav-item-text">Workspace &amp; Desks</span>
+        </a>
+
+        <a class="nav-item" data-tab="contact">
+          <span class="nav-item-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </span>
+          <span class="nav-item-text">Visitors</span>
+        </a>
+
+        <a class="nav-item" data-tab="startupTables">
+          <span class="nav-item-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </span>
+          <span class="nav-item-text">Members</span>
+        </a>
+
+        <a class="nav-item admin-only-nav" data-tab="database" id="nav-item-database" style="display: none;">
+          <span class="nav-item-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>
+            </svg>
+          </span>
+          <span class="nav-item-text">Database Tables</span>
+        </a>
+
+        <!-- Divider 3 -->
+        <div style="height: 1px; background: #ECEEF4; margin: 8px 4px;"></div>
+
+        <a class="nav-item" data-tab="settings" id="nav-item-settings" onclick="App.switchTab('settings')">
+          <span class="nav-item-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+          </span>
+          <span class="nav-item-text">Settings</span>
+        </a>
+
+        <a class="nav-item" data-tab="help" id="nav-item-help" onclick="App.switchTab('help')">
+          <span class="nav-item-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>
+            </svg>
+          </span>
+          <span class="nav-item-text">Help &amp; Support</span>
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Mobile Sidebar Backdrop Overlay -->
+    <div id="sidebar-mobile-backdrop" class="sidebar-mobile-backdrop" onclick="App.toggleMobileSidebar(false)"></div>
+
+    <!-- Main Content Shell -->
+    <main class="app-main">
+      <!-- Top Application Header -->
+      <header class="app-header">
+        <div class="header-left">
+          <button class="header-mobile-toggle" id="app-sidebar-toggle" onclick="App.toggleMobileSidebar()" aria-label="Toggle navigation menu" title="Toggle Navigation Menu">
+            <span>☰</span>
+          </button>
+          <h2 class="page-title" id="header-page-title">Command Center</h2>
+
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" class="search-input" id="global-search-input" placeholder="Search rooms, amenities, or location...">
+          </div>
+        </div>
+
+        <div class="header-right">
+          <!-- Active Tenant / Startup Selector (From Reference UI) -->
+          <div class="tenant-selector-wrapper" style="display: flex; align-items: center; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 6px; background: #f8fafc; border: 1.5px solid #e2e8f0; padding: 5px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; color: #1e293b;">
+              <span style="color: #6366f1;">📍</span>
+              <select id="header-startup-select" style="background: transparent; border: none; font-size: 12px; font-weight: 700; color: #1e293b; outline: none; cursor: pointer;" onchange="if(window.MeetingRoomsModule) MeetingRoomsModule.setStartupFilter(this.value)">
+                <option value="STP-XYZ">XYZ Technologies (STP-XYZ)</option>
+                <option value="STP-01">NeuroPulse AI (STP-01)</option>
+                <option value="STP-02">BioGenic Health (STP-02)</option>
+                <option value="STP-03">FinEdge Protocol (STP-03)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Notification Bell with Interactive Dropdown Panel -->
+          <div class="notification-dropdown-wrapper" id="header-notification-wrapper" style="position: relative; display: inline-block;">
+            <button 
+              type="button"
+              class="btn-icon" 
+              id="header-notification-btn" 
+              onclick="App.toggleNotificationMenu(event)" 
+              style="position: relative; background: #ffffff; border: 1.5px solid #e2e8f0; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 1px 3px rgba(0,0,0,0.04);" 
+              title="Notifications &amp; Activity Feed"
+              aria-label="View notifications"
+              onmouseenter="this.style.borderColor='#6366f1'; this.style.boxShadow='0 2px 8px rgba(99,102,241,0.15)';"
+              onmouseleave="this.style.borderColor='#e2e8f0'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.04)';"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+              </svg>
+              <span id="notification-badge-dot" style="position: absolute; top: 6px; right: 6px; width: 8.5px; height: 8.5px; background: #ef4444; border-radius: 50%; border: 2px solid #ffffff; box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.35);"></span>
+            </button>
+
+            <!-- Dropdown Panel -->
+            <div 
+              class="notification-panel" 
+              id="notification-dropdown-panel" 
+              style="display: none; position: absolute; right: 0; top: 100%; margin-top: 10px; width: 390px; max-width: calc(100vw - 32px); background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.22), 0 0 1px 1px rgba(15, 23, 42, 0.05); z-index: 2000; overflow: hidden; text-align: left; animation: fadeIn 0.15s ease;"
+            >
+            </div>
+          </div>
+
+          <!-- User Profile Avatar Pill -->
+          <div style="display: flex; align-items: center; gap: 8px; padding-left: 4px;">
+            <div style="width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #a855f7); color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; box-shadow: 0 2px 8px rgba(99,102,241,0.25);">
+              AM
+            </div>
+            <div style="line-height: 1.2; text-align: left;" class="hide-mobile">
+              <div style="font-size: 12.5px; font-weight: 800; color: #0f172a;">Alex Morgan</div>
+              <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">Co-Founder</div>
+            </div>
+          </div>
+
+          <!-- Developer Tools Dropdown Menu (Hides dev items in production) -->
+          <div class="dev-tools-wrapper dev-only" id="header-dev-tools-wrapper" style="position: relative; display: inline-block;">
+            <button class="btn btn-outline btn-sm" id="header-dev-tools-btn" onclick="App.toggleDevToolsMenu(event)" style="font-size: 11.5px; font-weight: 700; padding: 5px 11px; gap: 5px; border-color: rgba(148, 163, 184, 0.4); color: var(--text-secondary); white-space: nowrap; border-radius: var(--radius-md); display: inline-flex; align-items: center;" title="Developer & System Management Tools">
+              <span>🛠️</span>
+              <span>Dev tools</span>
+              <span style="font-size: 10px; opacity: 0.8;">▾</span>
+            </button>
+
+            <div class="dev-tools-panel" id="dev-tools-dropdown-panel" style="display: none; position: absolute; right: 0; top: 100%; margin-top: 6px; width: 310px; background: var(--bg-surface); border: 1px solid var(--border-medium); border-radius: var(--radius-md); box-shadow: 0 14px 35px rgba(0,0,0,0.18); z-index: 1000; padding: 12px; text-align: left;">
+              <div style="font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+                <span>🛠️ Developer &amp; System Tools</span>
+                <span class="badge badge-subtle" style="font-size: 9.5px;">Sandbox Mode</span>
+              </div>
+
+              <!-- MongoDB Atlas Live Connection Pill -->
+              <div id="mongo-status-header" style="display: flex; align-items: center; justify-content: space-between; padding: 7px 10px; background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.25); border-radius: var(--radius-sm); margin-bottom: 10px;" title="Connected to MongoDB Atlas cluster h-hub.uyc1vpr.mongodb.net">
+                <div style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700; color: #16a34a;">
+                  <span style="width: 7px; height: 7px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 5px #22c55e;"></span>
+                  <span>MongoDB Atlas</span>
+                </div>
+                <span style="font-size: 10.5px; color: var(--text-muted); font-family: var(--font-mono);">Cluster Live</span>
+              </div>
+
+              <!-- Perspective Switcher -->
+              <div style="margin-bottom: 10px;">
+                <div style="font-size: 11px; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">Role Perspective:</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
+                  <button type="button" class="btn btn-outline btn-sm" onclick="App.setRole('super_admin'); App.closeDevToolsMenu();" style="font-size: 11px; justify-content: flex-start; padding: 4px 6px;">
+                    👑 Admin
+                  </button>
+                  <button type="button" class="btn btn-outline btn-sm" onclick="App.setRole('incubator_admin'); App.closeDevToolsMenu();" style="font-size: 11px; justify-content: flex-start; padding: 4px 6px;">
+                    🌱 Incubator
+                  </button>
+                  <button type="button" class="btn btn-outline btn-sm" onclick="App.setRole('finance_admin'); App.closeDevToolsMenu();" style="font-size: 11px; justify-content: flex-start; padding: 4px 6px;">
+                    💰 Finance
+                  </button>
+                  <button type="button" class="btn btn-outline btn-sm" onclick="App.setRole('startup'); App.closeDevToolsMenu();" style="font-size: 11px; justify-content: flex-start; padding: 4px 6px;">
+                    🚀 Founder
+                  </button>
+                </div>
+              </div>
+
+              <!-- Developer Action Buttons -->
+              <div style="display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--border-subtle); padding-top: 8px;">
+                <button class="btn btn-outline btn-sm" id="header-admin-login-btn" onclick="App.openAdminLoginModal(); App.closeDevToolsMenu();" style="width: 100%; justify-content: flex-start; gap: 8px; font-size: 11.5px; color: #f59e0b; border-color: rgba(245,158,11,0.3);">
+                  <span>👑</span> <span id="header-admin-login-btn-text">Super Admin Auth</span>
+                </button>
+                <button class="btn btn-outline btn-sm" id="header-startup-login-btn" onclick="App.openStartupLoginModal(); App.closeDevToolsMenu();" style="width: 100%; justify-content: flex-start; gap: 8px; font-size: 11.5px; color: var(--accent-primary); border-color: var(--border-medium);">
+                  <span>🚀</span> <span id="header-startup-login-btn-text">Startup Founder Login</span>
+                </button>
+                <button class="btn btn-outline btn-sm" id="header-rbac-btn" onclick="App.openRbacMatrixModal(); App.closeDevToolsMenu();" style="width: 100%; justify-content: flex-start; gap: 8px; font-size: 11.5px;">
+                  <span>🛡️</span> <span>RBAC Permissions Matrix</span>
+                </button>
+                <button class="btn btn-outline btn-sm" onclick="App.togglePersonaBanner(); App.closeDevToolsMenu();" style="width: 100%; justify-content: flex-start; gap: 8px; font-size: 11.5px;">
+                  <span>👤</span> <span>Toggle Persona Banner</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Theme & Accent Toggles -->
+          <button class="btn-icon" id="thub-theme-toggle-btn" onclick="App.toggleThubTheme()" title="Toggle Ember Accent Theme" aria-label="Toggle Warm Accent Theme">
+            <span>🔥</span>
+          </button>
+
+          <!-- Theme Toggle -->
+          <button class="btn-icon" id="theme-toggle-btn" title="Toggle Theme" aria-label="Toggle dark/navy theme">
+            <span id="theme-toggle-icon">🌙</span>
+          </button>
+
+          <!-- Logout / Lock Session Button -->
+          <button class="btn btn-outline btn-sm" id="header-logout-btn" onclick="App.lockSessionAndLogout()" style="font-size: 11.5px; padding: 5px 11px; gap: 5px; border-color: rgba(239, 68, 68, 0.4); color: #ef4444; font-weight: 700; white-space: nowrap; flex-shrink: 0;" title="Lock Session & Require Mobile Authentication">
+            <span>🔒</span>
+            <span>Logout</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Dynamic RBAC Persona & Scope Banner (Hidden by default in production) -->
+      <div id="dynamic-persona-banner" class="persona-banner-bar dev-only permissions-banner hidden" style="display: none !important;"></div>
+
+      <!-- Lifecycle Views Containers -->
+      <div class="view-container active" id="view-dashboard"></div>
+      <div class="view-container" id="view-onboarding"></div>
+      <div class="view-container" id="view-startupTables"></div>
+      <div class="view-container" id="view-workspace"></div>
+      <div class="view-container" id="view-meetingRooms"></div>
+      <div class="view-container" id="view-billing"></div>
+      <div class="view-container" id="view-payments"></div>
+      <div class="view-container" id="view-incubation"></div>
+      <div class="view-container" id="view-milestones"></div>
+      <div class="view-container" id="view-reports"></div>
+      <div class="view-container" id="view-contact"></div>
+      <div class="view-container" id="view-leads"></div>
+      <div class="view-container" id="view-database"></div>
+      <div class="view-container" id="view-settings"></div>
+      <div class="view-container" id="view-help"></div>
+    </main>
+  </div>
+
+  <!-- Dynamic Modal & Toast Mounts -->
+  <div id="modal-mount"></div>
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="js/formatters.js?v=20261104_38"></script>
+  <script src="js/planCatalog.js?v=20261104_38"></script>
+  <script src="js/initialData.js?v=20261104_38"></script>
+  <script src="creditService.js?v=20261104_38"></script>
+  <script src="billingService.js?v=20261104_37"></script>
+  <script src="js/store.js?v=20261104_37"></script>
+  <script src="js/modules/dashboard.js?v=20261104_37"></script>
+  <script src="js/modules/onboarding.js?v=20261104_37"></script>
+  <script src="js/modules/startupTables.js?v=20261104_37"></script>
+  <script src="cancellation.js?v=20261104_37"></script>
+  <script src="js/modules/workspace.js?v=20261104_37"></script>
+  <script src="js/modules/roomGallery.js?v=20261104_37"></script>
+  <script src="js/modules/meetingRooms.js?v=20261104_37"></script>
+  <script src="js/modules/invoice.js?v=20261104_37"></script>
+  <script src="js/modules/billing.js?v=20261104_37"></script>
+  <script src="js/modules/payments.js?v=20261104_37"></script>
+  <script src="js/modules/incubation.js?v=20261104_37"></script>
+  <script src="js/modules/milestones.js?v=20261104_37"></script>
+  <script src="js/modules/reports.js?v=20261104_37"></script>
+  <script src="js/modules/contact.js?v=20261104_38"></script>
+  <script src="js/modules/settings.js?v=20261104_38"></script>
+  <script src="js/modules/help.js?v=20261104_38"></script>
+  <script src="js/modules/leads.js?v=20261104_37"></script>
+  <script src="js/modules/database.js?v=20261104_37"></script>
+  <script src="js/authGate.js?v=20261104_37"></script>
+  <script src="js/main.js?v=20261104_37"></script>
+  <script src="js/liveReload.js?v=20261104_37"></script>
 </body>
-
 </html>
