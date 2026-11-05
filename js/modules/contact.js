@@ -177,7 +177,7 @@ const ContactModule = {
                     <td colspan="7" style="padding: 40px 20px; text-align: center; color: #8a90a2;">
                       <div style="font-size: 32px; margin-bottom: 8px;">🪪</div>
                       <div style="font-size: 14px; font-weight: 700; color: #1e293b;">No visitors matching this view</div>
-                      <div style="font-size: 12px; margin-top: 4px;">Pre-register a new guest using the button above to generate a QR pass.</div>
+                      <div style="font-size: 12px; margin-top: 4px;">Pre-register a new guest using the button above to schedule a visit.</div>
                     </td>
                   </tr>
                 ` : filteredVisitors.map(v => {
@@ -230,9 +230,6 @@ const ContactModule = {
                       </td>
                       <td style="padding: 12px 14px; text-align: right;">
                         <div style="display: inline-flex; gap: 6px; align-items: center;">
-                          <button class="btn btn-outline btn-sm" onclick="ContactModule.openQrPassModal('${v.id}')" style="font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 6px; border-color: #cbd5e1;" title="View & Print Digital QR Pass">
-                            <span>📲</span> QR Pass
-                          </button>
                           ${isPassIssued ? `
                             <button class="btn btn-primary btn-sm" onclick="ContactModule.handleCheckIn('${v.id}')" style="font-size: 11px; font-weight: 800; padding: 4px 10px; background: #16a34a; border-color: #16a34a; border-radius: 6px;" title="Confirm Gate Security Arrival">
                               Check In
@@ -258,7 +255,7 @@ const ContactModule = {
         <!-- Security & Policy Notice Box -->
         <div style="margin-top: 20px; padding: 14px 18px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; font-size: 12px; color: #64748b;">
           <div>
-            <strong>🛡️ Campus Access Protocol:</strong> All external guests must present a valid government-issued photo ID (Aadhaar, Passport, PAN, or DL) matching their digital QR pass at Gate 1 Reception.
+            <strong>🛡️ Campus Access Protocol:</strong> All external guests must present a valid government-issued photo ID (Aadhaar, Passport, PAN, or DL) at Gate 1 Reception.
           </div>
           <div style="font-weight: 700; color: #4f46e5;">
             Need help? Visit <a href="javascript:void(0)" onclick="App.switchTab('help')" style="color: #4f46e5; text-decoration: underline;">Help &amp; Support</a>
@@ -471,11 +468,6 @@ const ContactModule = {
       window.App.showToast(`✅ Gate Pass ${newVis.passNumber} generated for ${name}! Host notified.`, 'success');
     }
     this.render();
-
-    // Show generated QR pass immediately
-    setTimeout(() => {
-      this.openQrPassModal(newVis.id);
-    }, 200);
   },
 
   openQrPassModal(visitorId) {
