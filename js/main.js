@@ -850,21 +850,18 @@ const App = {
     if (headerAvatar) headerAvatar.innerText = roleInfo.icon;
     if (headerRole) headerRole.innerText = roleInfo.name;
 
-    // Update Header Super Admin Login Button
+    // Update Header Super Admin Login Button (hidden from regular users)
     const adminBtn = document.getElementById('header-admin-login-btn');
     if (adminBtn) {
       if (role === 'super_admin') {
+        adminBtn.style.display = 'inline-flex';
         adminBtn.innerHTML = `<span>👑</span> <span id="header-admin-login-btn-text">Dev Sharma (Admin)</span> <span style="font-size: 10px; opacity: 0.85;">✓</span>`;
         adminBtn.style.background = '#f59e0b';
         adminBtn.style.color = '#ffffff';
         adminBtn.style.borderColor = '#f59e0b';
         adminBtn.title = 'Authenticated as Super Admin (Platform Director). Click to view authentication details.';
       } else {
-        adminBtn.innerHTML = `<span>👑</span> <span id="header-admin-login-btn-text">Admin Login</span>`;
-        adminBtn.style.background = 'transparent';
-        adminBtn.style.color = '#f59e0b';
-        adminBtn.style.borderColor = '#f59e0b';
-        adminBtn.title = 'Super Admin Authentication Portal';
+        adminBtn.style.display = 'none';
       }
     }
 
