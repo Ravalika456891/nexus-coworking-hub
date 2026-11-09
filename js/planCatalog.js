@@ -125,6 +125,7 @@
     PLANS,
     getPlanByKey,
     getPlanForStartup,
+    resolvePlanForStartup: getPlanForStartup,
     getRenewalDate
   };
 });

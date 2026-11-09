@@ -5042,7 +5042,8 @@ const MeetingRoomsModule = {
                 ${startupsList.length === 0 ? `<tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 20px;">No startup records found.</td></tr>` :
                   startupsList.map(st => {
                     const planCatalog = window.PlanCatalog;
-                    const planInfo = planCatalog ? planCatalog.resolvePlanForStartup(st) : { name: st.subscriptionPlan || 'Startup Plan', monthlyHours: st.includedMeetingHours || 15 };
+                    const planGetter = planCatalog ? (planCatalog.getPlanForStartup || planCatalog.resolvePlanForStartup) : null;
+                    const planInfo = planGetter ? planGetter.call(planCatalog, st) : { name: st.subscriptionPlan || 'Startup Plan', monthlyHours: st.includedMeetingHours || 15 };
                     const included = Number(planInfo.monthlyHours || st.includedMeetingHours || 15);
 
                     // Collect all confirmed bookings for this startup
