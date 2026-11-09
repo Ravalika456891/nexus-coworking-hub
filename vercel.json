@@ -10,6 +10,9 @@
     { "source": "/meeting-rooms/(.*)", "destination": "/meeting-rooms.html" },
     { "source": "/app", "destination": "/app.html" },
     { "source": "/app/(.*)", "destination": "/app.html" },
-    { "source": "/", "destination": "/app.html" }
+    { "source": "/landing", "destination": "/index.html" },
+    { "source": "/public", "destination": "/index.html" },
+    { "source": "/index.html", "destination": "/index.html" },
+    { "source": "/", "destination": "/index.html" }
   ]
 }

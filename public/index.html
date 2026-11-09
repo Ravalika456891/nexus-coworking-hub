@@ -1,668 +1,940 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NEXUS | Co-Working & Startup Incubation Operating System</title>
-  <meta name="description" content="Comprehensive Co-Working & Startup Incubation Management System managing the entire lifecycle: Onboarding, Workspace Allocation, Meeting Rooms, Rent Calculation, Invoicing, Payments, Incubation Milestones, and Analytics.">
+  <title>NEXUS HUB | Where India's Boldest Founders Build</title>
+  <meta name="description" content="NEXUS HUB is a startup innovation campus connecting founders with workspaces, mentors, investors, corporates and programs to build world-class companies from India.">
+  <meta property="og:title" content="NEXUS HUB | Where India's Boldest Founders Build">
+  <meta property="og:description" content="Workspaces, mentors, capital and programs — one campus for ambitious founders.">
+  <meta property="og:type" content="website">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/design-system.css?v=20261104_35">
-  <link rel="stylesheet" href="css/components.css?v=20261104_35">
-  <link rel="stylesheet" href="css/clean-room-ui.css?v=20261104_35">
-  <link rel="stylesheet" href="css/clean-dashboard-ui.css?v=20261104_35">
-  <style>
-    /* Invoice type selector buttons */
-    .inv-type-btn {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 10px 8px;
-      border-radius: var(--radius-md);
-      background: var(--bg-surface-elevated);
-      border: 2px solid var(--border-subtle);
-      color: var(--text-secondary);
-      cursor: pointer;
-      transition: all 0.18s ease;
-      min-height: 68px;
-    }
-    .inv-type-btn:hover {
-      border-color: var(--accent-primary);
-      color: var(--accent-primary);
-      background: rgba(99, 102, 241, 0.07);
-    }
-    .inv-type-btn.active {
-      border-color: var(--accent-primary);
-      background: rgba(99, 102, 241, 0.12);
-      color: var(--accent-primary);
-    }
-    /* ==========================================================================
-       ENTERPRISE PRINT STYLESHEET (PDF & PAPER READY)
-       ========================================================================== */
-    @media print {
-      @page {
-        margin: 10mm 12mm;
-        size: auto;
-      }
-
-      html, body {
-        background: #ffffff !important;
-        color: #0f172a !important;
-        height: auto !important;
-        min-height: 0 !important;
-        overflow: visible !important;
-        font-size: 11pt !important;
-      }
-
-      /* Hide chrome, navigation, auth gate, toasts, banners, and action controls */
-      .app-sidebar,
-      .app-header,
-      .persona-banner-bar,
-      #auth-gate-overlay,
-      .toast-container,
-      .modal-close-btn,
-      .modal-header .btn,
-      .modal-header button,
-      .modal-footer,
-      .btn:not(.keep-print),
-      button:not(.keep-print),
-      .no-print {
-        display: none !important;
-      }
-
-      /* When printing a Modal (Invoice Viewer, Reservation Details, Diploma, Statement, etc.) */
-      body.printing-modal .app-shell,
-      body:has(#modal-mount .modal-overlay) .app-shell,
-      body:has(#modal-mount:not(:empty)) .app-shell,
-      body:has(.modal-overlay.active) .app-shell {
-        display: none !important;
-      }
-
-      #modal-mount {
-        display: block !important;
-        position: static !important;
-        width: 100% !important;
-        height: auto !important;
-        overflow: visible !important;
-        padding: 0 !important;
-        margin: 0 !important;
-      }
-
-      .modal-overlay,
-      .modal-overlay.active,
-      .modal-backdrop {
-        display: block !important;
-        position: static !important;
-        inset: auto !important;
-        width: 100% !important;
-        height: auto !important;
-        min-height: 0 !important;
-        background: transparent !important;
-        backdrop-filter: none !important;
-        box-shadow: none !important;
-        border: none !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        overflow: visible !important;
-      }
-
-      .modal-content,
-      .modal-wide {
-        display: block !important;
-        position: static !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        box-shadow: none !important;
-        border: none !important;
-        background: #ffffff !important;
-        color: #0f172a !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        overflow: visible !important;
-        border-radius: 0 !important;
-      }
-
-      .modal-header {
-        border-bottom: 2px solid #e2e8f0 !important;
-        padding: 0 0 12px 0 !important;
-        margin-bottom: 16px !important;
-        background: transparent !important;
-      }
-
-      .modal-body {
-        padding: 0 !important;
-        margin: 0 !important;
-        overflow: visible !important;
-      }
-
-      .invoice-view-box {
-        box-shadow: none !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        max-width: 100% !important;
-        background: #ffffff !important;
-        color: #0f172a !important;
-      }
-
-      /* When printing regular views (no modal) */
-      .app-shell {
-        display: block !important;
-        position: static !important;
-        height: auto !important;
-        overflow: visible !important;
-      }
-
-      .app-main {
-        margin-left: 0 !important;
-        padding: 0 !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        overflow: visible !important;
-      }
-
-      .view-container.active {
-        display: block !important;
-        overflow: visible !important;
-        padding: 0 !important;
-      }
-
-      .view-container:not(.active) {
-        display: none !important;
-      }
-
-      table {
-        width: 100% !important;
-        border-collapse: collapse !important;
-      }
-
-      tr, td, th {
-        page-break-inside: avoid !important;
-      }
-
-      * {
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-      }
-    }
-  </style>
-  <script>
-    // Security Gate: Check auth session before page renders to prevent flash of content
-    if (!sessionStorage.getItem('nexus_auth_session')) {
-      document.documentElement.classList.add('auth-locked');
-    }
-  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/landing.css">
 </head>
 <body>
-  <!-- Authentication Gate (Security Lock Screen) -->
-  <div id="auth-gate-overlay" class="auth-gate-overlay" style="display: none;">
-    <div class="auth-gate-card">
-      <!-- Header Banner -->
-      <div class="auth-gate-header">
-        <div class="auth-gate-logo">⚡</div>
-        <h2 class="auth-gate-title">NEXUS HUB</h2>
-        <div class="auth-gate-subtitle">Co-Working &amp; Incubation OS • Command Center Terminal</div>
-        <div class="auth-gate-badge">
-          <span>🔒</span>
-          <span>Authentication Required</span>
-        </div>
-      </div>
 
-      <!-- Tab Switcher (Super Admin hidden from users; unlocked via ?login=admin) -->
-      <div class="auth-gate-tabs" style="display: none;">
-        <button type="button" id="gate-tab-btn-startup" class="auth-gate-tab-btn active" onclick="App.switchGateTab('startup')">
-          <span>📱</span>
-          <span>Founder Login</span>
-        </button>
-        <button type="button" id="gate-tab-btn-admin" class="auth-gate-tab-btn" onclick="App.switchGateTab('admin')" style="display: none;">
-          <span>👑</span>
-          <span>Super Admin Login</span>
-        </button>
-      </div>
+  <!-- Top Reading Scroll Progress Bar -->
+  <div class="nx-progress-bar" id="nx-progress-bar" aria-hidden="true"></div>
 
-      <!-- Body / Form Panels -->
-      <div class="auth-gate-body">
-        
-        <!-- PANEL 1: FOUNDER LOGIN (MOBILE & PASSWORD) -->
-        <div id="gate-panel-startup" style="display: block;">
-          <div class="auth-notice-box">
-            <div style="font-weight: 700; color: #a5b4fc; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
-              <span>📱</span> Enter 10-Digit Mobile &amp; Password (10–16 chars)
-            </div>
-            <div>Mobile: <strong>9880012345</strong> (10 digits) • Pass: <code>password123</code> (11 chars)</div>
-            <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Rule: Mobile must be 10 digits; password must be 10–16 characters only.</div>
-          </div>
-
-          <form id="form-gate-startup" onsubmit="App.handleGateStartupLogin(event)" novalidate>
-            <div class="form-group" style="margin-bottom: 12px;">
-              <label class="form-label" style="font-weight: 600; font-size: 12.5px; color: #f1f5f9;">Registered Mobile Number (10 Digits) <span class="required-star">*</span></label>
-              <div class="input-with-icon">
-                <span class="input-icon">📱</span>
-                <input type="tel" id="gate-startup-phone" class="form-control" value="9880012345" placeholder="Enter 10-digit mobile (e.g. 9880012345)" required style="background: rgba(15, 23, 42, 0.7); border-color: rgba(255, 255, 255, 0.15); color: #ffffff;">
-              </div>
-              <div style="font-size: 11px; color: #94a3b8; margin-top: 3px;">Mobile number must be strictly 10 digits. (+91 prefix accepted)</div>
-            </div>
-
-            <div class="form-group" style="margin-bottom: 12px;">
-              <label class="form-label" style="font-weight: 600; font-size: 12.5px; color: #f1f5f9;">Password (10 to 16 positions) <span class="required-star">*</span></label>
-              <div class="input-with-icon" style="position: relative;">
-                <span class="input-icon">🔒</span>
-                <input type="password" id="gate-startup-password" class="form-control" value="password123" placeholder="Enter password (10-16 positions)" required style="background: rgba(15, 23, 42, 0.7); border-color: rgba(255, 255, 255, 0.15); color: #ffffff; padding-right: 38px;">
-                <button type="button" onclick="App.togglePasswordVisibility('gate-startup-password', this)" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 14px;" title="Toggle Password Visibility">👁️</button>
-              </div>
-              <div style="font-size: 11px; color: #94a3b8; margin-top: 3px;">Password must be between 10 and 16 characters only. More than that will give an error.</div>
-            </div>
-
-            <div style="margin-bottom: 6px;">
-              <span style="font-size: 11px; font-weight: 600; color: #94a3b8;">1-Click Fill Registered Founder (10 Digits):</span>
-              <div class="auth-chips-row">
-                <button type="button" class="auth-chip" onclick="App.quickFillGateStartup('9880012345', 'password123')">⚡ XYZ Tech (9880012345)</button>
-                <button type="button" class="auth-chip" onclick="App.quickFillGateStartup('9845011234', 'password123')">🧠 NeuroPulse (9845011234)</button>
-                <button type="button" class="auth-chip" onclick="App.quickFillGateStartup('9741044921', 'password123')">🧬 BioGenic (9741044921)</button>
-                <button type="button" class="auth-chip" onclick="App.quickFillGateStartup('9980188472', 'password123')">💳 FinEdge (9980188472)</button>
-              </div>
-            </div>
-
-            <div id="gate-startup-error" class="auth-error-box" style="display: none;"></div>
-
-            <button type="submit" class="btn btn-primary auth-submit-btn">
-              Verify &amp; Enter Command Center ➔
-            </button>
-          </form>
-        </div>
-
-        <!-- PANEL 2: SUPER ADMIN LOGIN -->
-        <div id="gate-panel-admin" style="display: none;">
-          <div class="auth-notice-box" style="background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.3);">
-            <div style="font-weight: 700; color: #fbbf24; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
-              <span>👑</span> Executive Command Center Access
-            </div>
-            <div>Mobile: <strong>9800011111</strong> (10 digits) • Master Password: <code>admin12345</code> (10 chars)</div>
-            <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Director Dev Sharma • Full system governance</div>
-          </div>
-
-          <form id="form-gate-admin" onsubmit="App.handleGateAdminLogin(event)" novalidate>
-            <div class="form-group" style="margin-bottom: 12px;">
-              <label class="form-label" style="font-weight: 600; font-size: 12.5px; color: #f1f5f9;">Admin 10-Digit Mobile or Email <span class="required-star">*</span></label>
-              <div class="input-with-icon">
-                <span class="input-icon">👑</span>
-                <input type="text" id="gate-admin-identifier" class="form-control" value="9800011111" placeholder="10-digit Mobile (9800011111) or dev.sharma@nexusincubation.io" required style="background: rgba(15, 23, 42, 0.7); border-color: rgba(255, 255, 255, 0.15); color: #ffffff;">
-              </div>
-              <div style="font-size: 11px; color: #94a3b8; margin-top: 3px;">Enter 10-digit mobile number or executive email.</div>
-            </div>
-
-            <div class="form-group" style="margin-bottom: 12px;">
-              <label class="form-label" style="font-weight: 600; font-size: 12.5px; color: #f1f5f9;">Master Password (10 to 16 positions) <span class="required-star">*</span></label>
-              <div class="input-with-icon" style="position: relative;">
-                <span class="input-icon">🔒</span>
-                <input type="password" id="gate-admin-password" class="form-control" value="admin12345" placeholder="Enter master password (10-16 characters)" required style="background: rgba(15, 23, 42, 0.7); border-color: rgba(255, 255, 255, 0.15); color: #ffffff; padding-right: 38px;">
-                <button type="button" onclick="App.togglePasswordVisibility('gate-admin-password', this)" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 14px;" title="Toggle Password Visibility">👁️</button>
-              </div>
-              <div style="font-size: 11px; color: #94a3b8; margin-top: 3px;">Password must be between 10 and 16 characters only. More than that will give an error.</div>
-            </div>
-
-            <div id="gate-admin-error" class="auth-error-box" style="display: none;"></div>
-
-            <div style="display: flex; flex-direction: column; gap: 8px;">
-              <button type="submit" class="btn btn-primary auth-submit-btn" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); width: 100%; justify-content: center;">
-                Authenticate Super Admin 👑
-              </button>
-            </div>
-          </form>
-        </div>
-
-      </div>
-
-      <!-- Footer -->
-      <div class="auth-gate-footer">
-        <a href="index.html" class="auth-footer-link">← Public Website</a>
-        <a href="index.html#cta" class="auth-footer-link" style="color: #818cf8; font-weight: 600; text-decoration: none;">+ Apply / Register New Startup ➔</a>
-      </div>
-
+  <!-- Announcement Bar -->
+  <aside class="nx-announcement" id="nx-announcement">
+    <div class="nx-container nx-announcement-inner">
+      <span class="nx-badge"><span class="pulse sm"></span> COHORT 07</span>
+      <p class="nx-announcement-text">
+        <strong>Applications Open:</strong> ₹25L non-dilutive seed grants + 12-month campus residency.
+        <a href="#cta" class="nx-announcement-link">Apply before Nov 15 <span class="arrow">→</span></a>
+      </p>
+      <button class="nx-announcement-close" id="nx-announcement-close" aria-label="Close notification">×</button>
     </div>
-  </div>
+  </aside>
 
-  <div class="app-container">
-    <!-- Sidebar Navigation -->
-    <aside class="app-sidebar" style="background: #FFFFFF; border-right: 1px solid #ECEEF4; width: 235px; display: flex; flex-direction: column; justify-content: flex-start; overflow-y: auto;">
-      <div class="sidebar-brand" style="padding: 14px 14px 10px 14px; display: flex; align-items: center; gap: 12px; border-bottom: none; flex-shrink: 0;">
-        <div class="brand-icon" style="width: 40px; height: 40px; border-radius: 12px; background: #111827; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(0,0,0,0.12);">
-          <svg style="width: 20px; height: 20px;" viewBox="0 0 24 24" fill="#FACC15" stroke="#FACC15" stroke-width="1.5">
-            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-          </svg>
+  <!-- ============ FLOATING PILL HEADER ============ -->
+  <header class="nx-header nx-header-floating" id="nx-header">
+    <div class="nx-header-pill">
+      <a href="#top" class="nx-logo" id="nav-logo" aria-label="NEXUS HUB home">
+        <span class="nx-logo-mark">N</span>
+        <span class="nx-logo-text">NEXUS<b>HUB</b></span>
+      </a>
+
+      <nav class="nx-nav" id="nx-nav" aria-label="Primary">
+        <a href="#manifesto" class="nx-nav-link" id="nav-vision" data-target="manifesto">Vision</a>
+        <a href="#founders" class="nx-nav-link" id="nav-founders" data-target="founders">Founders</a>
+        <a href="#journey" class="nx-nav-link" id="nav-journey" data-target="journey">Journey</a>
+
+        <div class="nx-nav-item has-menu">
+          <button class="nx-nav-link" id="nav-ecosystem" data-target="ecosystem">Ecosystem <span class="chev">▾</span></button>
+          <div class="nx-mega">
+            <div class="nx-container nx-mega-grid">
+              <div class="nx-mega-col">
+                <p class="nx-mega-title">Ecosystem</p>
+                <a href="#ecosystem" class="nx-mega-link"><span class="ico">🚀</span><span><b>Startups</b><small>Growth enablement &amp; pods</small></span></a>
+                <a href="#ecosystem" class="nx-mega-link"><span class="ico">🏢</span><span><b>Corporates</b><small>Open innovation &amp; pilots</small></span></a>
+                <a href="#ecosystem" class="nx-mega-link"><span class="ico">🏛️</span><span><b>Government</b><small>Public sandbox pilots</small></span></a>
+              </div>
+              <div class="nx-mega-col">
+                <p class="nx-mega-title">Network</p>
+                <a href="#network" class="nx-mega-link"><span class="ico">💰</span><span><b>Investors</b><small>Deal flow &amp; demo day</small></span></a>
+                <a href="#network" class="nx-mega-link"><span class="ico">🧭</span><span><b>Mentors</b><small>1-on-1 operator network</small></span></a>
+                <a href="#network" class="nx-mega-link"><span class="ico">🤝</span><span><b>Partners</b><small>Cloud &amp; legal credits</small></span></a>
+              </div>
+              <div class="nx-mega-col">
+                <p class="nx-mega-title">Campus &amp; Management</p>
+                <a href="#facilities" class="nx-mega-link"><span class="ico">🔬</span><span><b>Labs &amp; Arena</b><small>Prototyping &amp; 500-seat arena</small></span></a>
+                <a href="#cowork" class="nx-mega-link"><span class="ico">🪑</span><span><b>Co-Working Space</b><small>Desks, cabins &amp; suites</small></span></a>
+                <a href="app.html" class="nx-mega-link" style="background: rgba(237, 68, 27, 0.08); border: 1px solid rgba(237, 68, 27, 0.25); border-radius: 8px;"><span class="ico" style="background: var(--flame); color: #fff;">🏢</span><span><b style="color: var(--flame);">Co-Working Portal</b><small>Workspaces &amp; tenant ops</small></span></a>
+                <a href="#events" class="nx-mega-link"><span class="ico">📅</span><span><b>Events Calendar</b><small>Workshops &amp; summits</small></span></a>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="brand-info" style="line-height: 1.25;">
-          <h1 style="font-size: 15px; font-weight: 900; color: #111827; margin: 0; letter-spacing: -0.01em;">NEXUS HUB</h1>
-          <span style="font-size: 11px; font-weight: 500; color: #8A90A2; text-transform: none; letter-spacing: 0;">Incubation OS</span>
+
+        <a href="#facilities" class="nx-nav-link" id="nav-facilities" data-target="facilities">Facilities</a>
+        <a href="#programs" class="nx-nav-link" id="nav-programs" data-target="programs">Programs</a>
+        <a href="#events" class="nx-nav-link" id="nav-events" data-target="events">Events</a>
+        <a href="#faq" class="nx-nav-link" id="nav-faq" data-target="faq">FAQ</a>
+
+        <!-- Mobile Drawer Quick Actions -->
+        <div class="nx-nav-mobile-actions">
+          <a href="app.html?login=startup" class="nx-btn nx-btn-outline-light sm" style="width: 100%; justify-content: center; font-size: 13.5px; padding: 11px;">
+            📱 Founder Portal Login
+          </a>
+          <a href="app.html" class="nx-btn nx-btn-outline-flame sm" style="width: 100%; justify-content: center; font-size: 13.5px; padding: 11px;">
+            🏢 Co-Working Management OS
+          </a>
+          <a href="#cta" class="nx-btn nx-btn-flame sm" style="width: 100%; justify-content: center; font-size: 13.5px; padding: 11px;">
+            🚀 Apply for Cohort 07
+          </a>
+        </div>
+      </nav>
+
+      <div class="nx-header-actions">
+        <a href="app.html?login=startup" class="nx-btn nx-btn-outline-light sm nx-btn-founder-login" id="nav-founder-login-btn" title="Founder Mobile & Password Login">
+          <span class="btn-text-full">📱 Founder Login</span>
+          <span class="btn-text-short">📱 Login</span>
+        </a>
+        <a href="#cta" class="nx-btn nx-btn-flame sm nx-btn-apply" id="nav-apply-btn">
+          <span class="btn-text-full">Apply Now</span>
+          <span class="btn-text-short">Apply</span>
+        </a>
+        <button class="nx-burger" id="nx-burger" aria-label="Toggle navigation menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+    <!-- ============ HERO WITH PARALLAX ============ -->
+    <section class="nx-hero" id="hero">
+      <div class="nx-hero-media" id="hero-media" aria-hidden="true">
+        <img src="assets/landing/hero.jpg" id="hero-bg-img" alt="">
+      </div>
+      <div class="nx-hero-overlay"></div>
+      <div class="nx-hero-glow"></div>
+
+      <div class="nx-container nx-hero-content" id="hero-content">
+        <span class="nx-eyebrow reveal"><span class="pulse"></span> Applications open · Cohort 07</span>
+        <h1 class="nx-hero-title reveal">
+          <span class="word-rotator" aria-live="polite">
+            <span class="word active">Founders</span>
+            <span class="word">Builders</span>
+            <span class="word">Dreamers</span>
+            <span class="word">Makers</span>
+          </span>
+        </h1>
+        <p class="nx-hero-sub reveal">Your idea deserves a home.</p>
+        <p class="nx-hero-desc reveal">An innovation campus connecting ambitious founders with workspaces, seed grants, enterprise sandboxes, and capital.</p>
+        <div class="nx-hero-ctas reveal">
+          <a href="#cta" class="nx-btn nx-btn-light" id="hero-join-btn">Join NEXUS <span class="arrow">→</span></a>
+          <a href="#programs" class="nx-btn nx-btn-outline-light" id="hero-programs-btn">Explore Programs</a>
         </div>
       </div>
 
-      <div style="height: 1px; background: #ECEEF4; margin: 6px 12px 8px 12px;"></div>
+      <a href="#manifesto" class="nx-scroll-cue" aria-label="Scroll down"><span></span></a>
+    </section>
 
-      <nav class="sidebar-nav" style="padding: 2px 10px; display: flex; flex-direction: column; gap: 2px; flex: 1;">
-        <a class="nav-item" data-tab="dashboard">
-          <span class="nav-item-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <rect width="7" height="9" x="3" y="3" rx="1.5"/><rect width="7" height="5" x="14" y="3" rx="1.5"/><rect width="7" height="9" x="14" y="12" rx="1.5"/><rect width="7" height="5" x="3" y="16" rx="1.5"/>
-            </svg>
-          </span>
-          <span class="nav-item-text">Dashboard</span>
-        </a>
+    <!-- ============ SCROLL-DRIVEN MANIFESTO REVEAL ============ -->
+    <section class="nx-section nx-manifesto" id="manifesto">
+      <div class="nx-container">
+        <div class="nx-manifesto-header reveal">
+          <span class="nx-eyebrow-dark"><span class="pulse sm"></span> THE NEXUS MANIFESTO</span>
+          <span class="nx-scroll-hint">SCROLL TO UNLOCK ↓</span>
+        </div>
+        <div class="nx-manifesto-body" id="manifesto-text">
+          <p class="nx-manifesto-p">
+            <span class="m-word">Enduring</span> <span class="m-word">companies</span> <span class="m-word">aren't</span> <span class="m-word">built</span> <span class="m-word">alone.</span>
+            <span class="m-word">They're</span> <span class="m-word">forged</span> <span class="m-word">where</span> <span class="m-word">conviction</span> <span class="m-word">meets</span> <span class="m-word">patient</span> <span class="m-word">capital,</span>
+            <span class="m-word">frontier</span> <span class="m-word">tech,</span> <span class="m-word">and</span> <span class="m-word">bold</span> <span class="m-word">operators.</span>
+            <span class="m-word">Welcome</span> <span class="m-word">to</span> <span class="m-word">your</span> <span class="m-word">launchpad.</span>
+          </p>
+        </div>
+        <div class="nx-manifesto-stats reveal">
+          <div class="nx-m-stat"><span class="m-num">12 Mo</span><span class="m-label">Zero-to-Scale Incubation</span></div>
+          <div class="nx-m-stat"><span class="m-num">₹25L</span><span class="m-label">Non-Dilutive Catalyst Grant</span></div>
+          <div class="nx-m-stat"><span class="m-num">150+</span><span class="m-label">Enterprise Sandboxes</span></div>
+          <div class="nx-m-stat"><span class="m-num">82%</span><span class="m-label">Next-Round Funding Rate</span></div>
+        </div>
+      </div>
+    </section>
 
-        <a class="nav-item active" data-tab="meetingRooms" id="nav-item-meetingRooms">
-          <span class="nav-item-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/>
-            </svg>
-          </span>
-          <span class="nav-item-text">Meeting Rooms</span>
-        </a>
+    <!-- ============ FOUNDERS CAROUSEL ============ -->
+    <section class="nx-section nx-founders" id="founders">
+      <div class="nx-container">
+        <h2 class="nx-section-title reveal">Build Alongside Fellow Founders</h2>
+        <p class="nx-section-lead reveal">Founders building the next generation of category leaders on our campus.</p>
+      </div>
 
-        <a class="nav-item" data-tab="bookings" id="nav-item-bookings">
-          <span class="nav-item-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
-            </svg>
-          </span>
-          <span class="nav-item-text">My Bookings</span>
-        </a>
+      <div class="nx-founder-track-wrap reveal">
+        <div class="nx-founder-track" id="founder-track">
+          <article class="nx-founder-card">
+            <div class="nx-founder-img"><img src="assets/landing/founder-1.jpg" alt="Ananya Rao, founder of Ledgerly" loading="lazy">
+              <div class="nx-founder-info"><h3>Ananya Rao</h3><p>Founder, Ledgerly</p></div>
+            </div>
+            <p class="nx-founder-desc">Voice-first AI bookkeeping for retail merchants across 12 Indian languages.</p>
+          </article>
+          <article class="nx-founder-card">
+            <div class="nx-founder-img"><img src="assets/landing/founder-2.jpg" alt="Karthik Menon, founder of Voltaire Mobility" loading="lazy">
+              <div class="nx-founder-info"><h3>Karthik Menon</h3><p>Founder, Voltaire Mobility</p></div>
+            </div>
+            <p class="nx-founder-desc">Fast-swapping battery networks for commercial 2W and 3W EV delivery fleets.</p>
+          </article>
+          <article class="nx-founder-card">
+            <div class="nx-founder-img"><img src="assets/landing/founder-3.jpg" alt="Dr. Suresh Iyer, founder of QuantaBio" loading="lazy">
+              <div class="nx-founder-info"><h3>Dr. Suresh Iyer</h3><p>Founder, QuantaBio</p></div>
+            </div>
+            <p class="nx-founder-desc">Computational molecular modeling accelerating early-stage cancer drug discovery.</p>
+          </article>
+          <article class="nx-founder-card">
+            <div class="nx-founder-img"><img src="assets/landing/founder-4.jpg" alt="Meera Joshi, founder of Meera Robotics" loading="lazy">
+              <div class="nx-founder-info"><h3>Meera Joshi</h3><p>Founder, Meera Robotics</p></div>
+            </div>
+            <p class="nx-founder-desc">Biomimetic robotic hands engineered for precision assembly lines.</p>
+          </article>
+        </div>
+      </div>
 
-        <a class="nav-item" data-tab="billingCredits" id="nav-item-billingCredits" onclick="App.switchTab('billingCredits')">
-          <span class="nav-item-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/>
-            </svg>
-          </span>
-          <span class="nav-item-text">Billing &amp; Credits</span>
-        </a>
+      <div class="nx-carousel-controls">
+        <button class="nx-round-btn" id="founder-prev" aria-label="Previous founder">←</button>
+        <div class="nx-dots" id="founder-dots"></div>
+        <button class="nx-round-btn" id="founder-next" aria-label="Next founder">→</button>
+      </div>
+    </section>
 
-        <a class="nav-item" data-tab="roomAnalytics" id="nav-item-roomAnalytics">
-          <span class="nav-item-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/>
-            </svg>
-          </span>
-          <span class="nav-item-text">Analytics</span>
-        </a>
+    <!-- ============ NETWORK STATS ============ -->
+    <section class="nx-section nx-network" id="network">
+      <div class="nx-container">
+        <h2 class="nx-section-title light reveal">The NEXUS Network</h2>
+        <div class="nx-stats">
+          <div class="nx-stat reveal"><span class="nx-stat-num" data-count="2500">0</span><span class="plus">+</span><p>Startups</p></div>
+          <div class="nx-stat reveal"><span class="nx-stat-num" data-count="250">0</span><span class="plus">+</span><p>Mentors</p></div>
+          <div class="nx-stat reveal"><span class="nx-stat-num" data-count="180">0</span><span class="plus">+</span><p>Investors</p></div>
+          <div class="nx-stat reveal"><span class="nx-stat-num" data-count="150">0</span><span class="plus">+</span><p>Corporates</p></div>
+          <div class="nx-stat reveal"><span class="nx-stat-num" data-count="70">0</span><span class="plus">+</span><p>Value Partners</p></div>
+          <div class="nx-stat reveal"><span class="nx-stat-num" data-count="60">0</span><span class="plus">+</span><p>Innovation Partners</p></div>
+        </div>
+      </div>
+    </section>
 
-        <!-- Admin Only Group (visible in Super Admin mode) -->
-        <a class="nav-item admin-only-nav" data-tab="adminRooms" id="nav-item-adminRooms" style="display: none; background: rgba(245, 158, 11, 0.08); color: #b45309; font-weight: 700; border-radius: 10px;">
-          <span class="nav-item-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-            </svg>
-          </span>
-          <span class="nav-item-text">Room Administration</span>
-        </a>
-
-        <!-- Divider 2 -->
-        <div style="height: 1px; background: #ECEEF4; margin: 8px 4px;"></div>
-
-        <a class="nav-item" data-tab="workspace">
-          <span class="nav-item-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/>
-            </svg>
-          </span>
-          <span class="nav-item-text">Workspace &amp; Desks</span>
-        </a>
-
-        <a class="nav-item" data-tab="contact">
-          <span class="nav-item-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
-          </span>
-          <span class="nav-item-text">Visitors</span>
-        </a>
-
-        <a class="nav-item" data-tab="startupTables">
-          <span class="nav-item-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
-          </span>
-          <span class="nav-item-text">Members</span>
-        </a>
-
-        <a class="nav-item admin-only-nav" data-tab="database" id="nav-item-database" style="display: none;">
-          <span class="nav-item-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>
-            </svg>
-          </span>
-          <span class="nav-item-text">Database Tables</span>
-        </a>
-
-        <!-- Divider 3 -->
-        <div style="height: 1px; background: #ECEEF4; margin: 8px 4px;"></div>
-
-        <a class="nav-item" data-tab="settings" id="nav-item-settings" onclick="App.switchTab('settings')">
-          <span class="nav-item-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-            </svg>
-          </span>
-          <span class="nav-item-text">Settings</span>
-        </a>
-
-        <a class="nav-item" data-tab="help" id="nav-item-help" onclick="App.switchTab('help')">
-          <span class="nav-item-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>
-            </svg>
-          </span>
-          <span class="nav-item-text">Help &amp; Support</span>
-        </a>
-      </nav>
-    </aside>
-
-    <!-- Mobile Sidebar Backdrop Overlay -->
-    <div id="sidebar-mobile-backdrop" class="sidebar-mobile-backdrop" onclick="App.toggleMobileSidebar(false)"></div>
-
-    <!-- Main Content Shell -->
-    <main class="app-main">
-      <!-- Top Application Header -->
-      <header class="app-header">
-        <div class="header-left">
-          <button class="header-mobile-toggle" id="app-sidebar-toggle" onclick="App.toggleMobileSidebar()" aria-label="Toggle navigation menu" title="Toggle Navigation Menu">
-            <span>☰</span>
-          </button>
-          <h2 class="page-title" id="header-page-title">Command Center</h2>
-
-          <div class="search-box">
-            <span class="search-icon">🔍</span>
-            <input type="text" class="search-input" id="global-search-input" placeholder="Search rooms, amenities, or location...">
+    <!-- ============ PINNED HORIZONTAL FOUNDER JOURNEY ============ -->
+    <section class="nx-journey-wrap" id="journey">
+      <div class="nx-journey-sticky">
+        <div class="nx-container nx-journey-head">
+          <div class="nx-journey-meta">
+            <span class="nx-eyebrow"><span class="pulse sm"></span> ROADMAP TO SCALE</span>
+            <h2 class="nx-section-title light">The Founder Journey</h2>
+            <p class="nx-journey-sub">How an ambitious idea turns into an enduring venture at NEXUS HUB.</p>
+          </div>
+          <div class="nx-journey-progress">
+            <div class="nx-journey-steps" id="journey-steps">
+              <span class="j-step active" data-step="0"><b>01</b> Spark</span>
+              <span class="j-line"><span class="j-fill" id="j-fill-0"></span></span>
+              <span class="j-step" data-step="1"><b>02</b> Build</span>
+              <span class="j-line"><span class="j-fill" id="j-fill-1"></span></span>
+              <span class="j-step" data-step="2"><b>03</b> Team</span>
+              <span class="j-line"><span class="j-fill" id="j-fill-2"></span></span>
+              <span class="j-step" data-step="3"><b>04</b> Pilot</span>
+              <span class="j-line"><span class="j-fill" id="j-fill-3"></span></span>
+              <span class="j-step" data-step="4"><b>05</b> Scale</span>
+            </div>
+            <div class="nx-journey-counter"><span id="j-current-idx">01</span> / 05</div>
           </div>
         </div>
 
-        <div class="header-right">
-          <!-- Active Tenant / Startup Selector (From Reference UI) -->
-          <div class="tenant-selector-wrapper" style="display: flex; align-items: center; gap: 8px;">
-            <div style="display: flex; align-items: center; gap: 6px; background: #f8fafc; border: 1.5px solid #e2e8f0; padding: 5px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; color: #1e293b;">
-              <span style="color: #6366f1;">📍</span>
-              <select id="header-startup-select" style="background: transparent; border: none; font-size: 12px; font-weight: 700; color: #1e293b; outline: none; cursor: pointer;" onchange="if(window.MeetingRoomsModule) MeetingRoomsModule.setStartupFilter(this.value)">
-                <option value="STP-XYZ">XYZ Technologies (STP-XYZ)</option>
-                <option value="STP-01">NeuroPulse AI (STP-01)</option>
-                <option value="STP-02">BioGenic Health (STP-02)</option>
-                <option value="STP-03">FinEdge Protocol (STP-03)</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Notification Bell with Interactive Dropdown Panel -->
-          <div class="notification-dropdown-wrapper" id="header-notification-wrapper" style="position: relative; display: inline-block;">
-            <button 
-              type="button"
-              class="btn-icon" 
-              id="header-notification-btn" 
-              onclick="App.toggleNotificationMenu(event)" 
-              style="position: relative; background: #ffffff; border: 1.5px solid #e2e8f0; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 1px 3px rgba(0,0,0,0.04);" 
-              title="Notifications &amp; Activity Feed"
-              aria-label="View notifications"
-              onmouseenter="this.style.borderColor='#6366f1'; this.style.boxShadow='0 2px 8px rgba(99,102,241,0.15)';"
-              onmouseleave="this.style.borderColor='#e2e8f0'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.04)';"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-              </svg>
-              <span id="notification-badge-dot" style="position: absolute; top: 6px; right: 6px; width: 8.5px; height: 8.5px; background: #ef4444; border-radius: 50%; border: 2px solid #ffffff; box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.35);"></span>
-            </button>
-
-            <!-- Dropdown Panel -->
-            <div 
-              class="notification-panel" 
-              id="notification-dropdown-panel" 
-              style="display: none; position: absolute; right: 0; top: 100%; margin-top: 10px; width: 390px; max-width: calc(100vw - 32px); background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.22), 0 0 1px 1px rgba(15, 23, 42, 0.05); z-index: 2000; overflow: hidden; text-align: left; animation: fadeIn 0.15s ease;"
-            >
-            </div>
-          </div>
-
-          <!-- User Profile Avatar Pill -->
-          <div style="display: flex; align-items: center; gap: 8px; padding-left: 4px;">
-            <div style="width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #a855f7); color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; box-shadow: 0 2px 8px rgba(99,102,241,0.25);">
-              AM
-            </div>
-            <div style="line-height: 1.2; text-align: left;" class="hide-mobile">
-              <div style="font-size: 12.5px; font-weight: 800; color: #0f172a;">Alex Morgan</div>
-              <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">Co-Founder</div>
-            </div>
-          </div>
-
-          <!-- Developer Tools Dropdown Menu (Hides dev items in production) -->
-          <div class="dev-tools-wrapper dev-only" id="header-dev-tools-wrapper" style="position: relative; display: inline-block;">
-            <button class="btn btn-outline btn-sm" id="header-dev-tools-btn" onclick="App.toggleDevToolsMenu(event)" style="font-size: 11.5px; font-weight: 700; padding: 5px 11px; gap: 5px; border-color: rgba(148, 163, 184, 0.4); color: var(--text-secondary); white-space: nowrap; border-radius: var(--radius-md); display: inline-flex; align-items: center;" title="Developer & System Management Tools">
-              <span>🛠️</span>
-              <span>Dev tools</span>
-              <span style="font-size: 10px; opacity: 0.8;">▾</span>
-            </button>
-
-            <div class="dev-tools-panel" id="dev-tools-dropdown-panel" style="display: none; position: absolute; right: 0; top: 100%; margin-top: 6px; width: 310px; background: var(--bg-surface); border: 1px solid var(--border-medium); border-radius: var(--radius-md); box-shadow: 0 14px 35px rgba(0,0,0,0.18); z-index: 1000; padding: 12px; text-align: left;">
-              <div style="font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
-                <span>🛠️ Developer &amp; System Tools</span>
-                <span class="badge badge-subtle" style="font-size: 9.5px;">Sandbox Mode</span>
+        <div class="nx-journey-track-window">
+          <div class="nx-journey-track" id="journey-track">
+            <!-- Card 01 -->
+            <article class="nx-journey-card" data-step="0">
+              <div class="j-card-top">
+                <span class="j-badge">STAGE 01</span>
+                <span class="j-time">MONTHS 01 – 02</span>
               </div>
-
-              <!-- MongoDB Atlas Live Connection Pill -->
-              <div id="mongo-status-header" style="display: flex; align-items: center; justify-content: space-between; padding: 7px 10px; background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.25); border-radius: var(--radius-sm); margin-bottom: 10px;" title="Connected to MongoDB Atlas cluster h-hub.uyc1vpr.mongodb.net">
-                <div style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700; color: #16a34a;">
-                  <span style="width: 7px; height: 7px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 5px #22c55e;"></span>
-                  <span>MongoDB Atlas</span>
-                </div>
-                <span style="font-size: 10.5px; color: var(--text-muted); font-family: var(--font-mono);">Cluster Live</span>
+              <div class="j-icon">💡</div>
+              <h3>Zero-to-One Discovery</h3>
+              <p>Turn hypotheses into tested reality. Validate customer pain points with 50+ discovery sprints and EIR-guided customer interviews.</p>
+              <ul class="j-perks">
+                <li><span>✦</span> ₹5,00,000 non-dilutive validation stipend</li>
+                <li><span>✦</span> 1-on-1 weekly EIR sprint coaching</li>
+                <li><span>✦</span> Customer interview sprint pipelines</li>
+              </ul>
+              <div class="j-metric">
+                <b>50+</b>
+                <small>Interviews before line of code</small>
               </div>
+            </article>
 
-              <!-- Perspective Switcher -->
-              <div style="margin-bottom: 10px;">
-                <div style="font-size: 11px; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">Role Perspective:</div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
-                  <button type="button" class="btn btn-outline btn-sm" onclick="App.setRole('super_admin'); App.closeDevToolsMenu();" style="font-size: 11px; justify-content: flex-start; padding: 4px 6px;">
-                    👑 Admin
-                  </button>
-                  <button type="button" class="btn btn-outline btn-sm" onclick="App.setRole('incubator_admin'); App.closeDevToolsMenu();" style="font-size: 11px; justify-content: flex-start; padding: 4px 6px;">
-                    🌱 Incubator
-                  </button>
-                  <button type="button" class="btn btn-outline btn-sm" onclick="App.setRole('finance_admin'); App.closeDevToolsMenu();" style="font-size: 11px; justify-content: flex-start; padding: 4px 6px;">
-                    💰 Finance
-                  </button>
-                  <button type="button" class="btn btn-outline btn-sm" onclick="App.setRole('startup'); App.closeDevToolsMenu();" style="font-size: 11px; justify-content: flex-start; padding: 4px 6px;">
-                    🚀 Founder
-                  </button>
-                </div>
+            <!-- Card 02 -->
+            <article class="nx-journey-card" data-step="1">
+              <div class="j-card-top">
+                <span class="j-badge">STAGE 02</span>
+                <span class="j-time">MONTHS 03 – 05</span>
               </div>
+              <div class="j-icon">🔬</div>
+              <h3>DeepTech &amp; AI Foundry</h3>
+              <p>Engineer defensible moats. Access our dedicated AI server clusters, edge compute sandboxes, and hardware prototyping benches.</p>
+              <ul class="j-perks">
+                <li><span>✦</span> $150K in cloud credits (NVIDIA, AWS, Azure)</li>
+                <li><span>✦</span> On-site fast-track prototyping hardware lab</li>
+                <li><span>✦</span> IP &amp; patent filing support desk</li>
+              </ul>
+              <div class="j-metric">
+                <b>10x</b>
+                <small>Faster compute model turnaround</small>
+              </div>
+            </article>
 
-              <!-- Developer Action Buttons -->
-              <div style="display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--border-subtle); padding-top: 8px;">
-                <button class="btn btn-outline btn-sm" id="header-admin-login-btn" onclick="App.openAdminLoginModal(); App.closeDevToolsMenu();" style="display: none; width: 100%; justify-content: flex-start; gap: 8px; font-size: 11.5px; color: #f59e0b; border-color: rgba(245,158,11,0.3);">
-                  <span>👑</span> <span id="header-admin-login-btn-text">Super Admin Auth</span>
-                </button>
-                <button class="btn btn-outline btn-sm" id="header-startup-login-btn" onclick="App.openStartupLoginModal(); App.closeDevToolsMenu();" style="width: 100%; justify-content: flex-start; gap: 8px; font-size: 11.5px; color: var(--accent-primary); border-color: var(--border-medium);">
-                  <span>🚀</span> <span id="header-startup-login-btn-text">Startup Founder Login</span>
-                </button>
-                <button class="btn btn-outline btn-sm" id="header-rbac-btn" onclick="App.openRbacMatrixModal(); App.closeDevToolsMenu();" style="width: 100%; justify-content: flex-start; gap: 8px; font-size: 11.5px;">
-                  <span>🛡️</span> <span>RBAC Permissions Matrix</span>
-                </button>
-                <button class="btn btn-outline btn-sm" onclick="App.togglePersonaBanner(); App.closeDevToolsMenu();" style="width: 100%; justify-content: flex-start; gap: 8px; font-size: 11.5px;">
-                  <span>👤</span> <span>Toggle Persona Banner</span>
-                </button>
+            <!-- Card 03 -->
+            <article class="nx-journey-card" data-step="2">
+              <div class="j-card-top">
+                <span class="j-badge">STAGE 03</span>
+                <span class="j-time">MONTHS 05 – 07</span>
               </div>
-            </div>
+              <div class="j-icon">🤝</div>
+              <h3>Co-Founding &amp; Talent Pods</h3>
+              <p>A founder cannot scale alone. Meet vetted technical co-founders, founding engineers, and product operators from our talent pool.</p>
+              <ul class="j-perks">
+                <li><span>✦</span> Closed NEXUS Co-Founder Match Days</li>
+                <li><span>✦</span> 10,000+ vetted senior engineer pipeline</li>
+                <li><span>✦</span> Standardized ESOP &amp; cap table playbooks</li>
+              </ul>
+              <div class="j-metric">
+                <b>2.8 wks</b>
+                <small>Average time to core team match</small>
+              </div>
+            </article>
+
+            <!-- Card 04 -->
+            <article class="nx-journey-card" data-step="3">
+              <div class="j-card-top">
+                <span class="j-badge">STAGE 04</span>
+                <span class="j-time">MONTHS 08 – 10</span>
+              </div>
+              <div class="j-icon">🏢</div>
+              <h3>Enterprise Sandboxes &amp; Pilots</h3>
+              <p>Pitch directly to decision-makers. Deploy paid pilots across 150+ enterprise leaders, financial institutions, and government sandboxes.</p>
+              <ul class="j-perks">
+                <li><span>✦</span> Direct intros to corporate CTOs &amp; innovation heads</li>
+                <li><span>✦</span> Pre-negotiated master pilot agreements</li>
+                <li><span>✦</span> Government regulatory sandbox waivers</li>
+              </ul>
+              <div class="j-metric">
+                <b>3+</b>
+                <small>Guaranteed pilot presentations</small>
+              </div>
+            </article>
+
+            <!-- Card 05 -->
+            <article class="nx-journey-card" data-step="4">
+              <div class="j-card-top">
+                <span class="j-badge">STAGE 05</span>
+                <span class="j-time">MONTH 12 &amp; BEYOND</span>
+              </div>
+              <div class="j-icon">🚀</div>
+              <h3>Demo Day &amp; Global Capital</h3>
+              <p>Showcase before 180+ Tier-1 venture funds, institutional syndicates, and family offices. Unlock soft landings in US, Singapore &amp; Dubai.</p>
+              <ul class="j-perks">
+                <li><span>✦</span> Mainstage Demo Day pitching to 180+ investors</li>
+                <li><span>✦</span> Global Gateway soft-landing desks in 4 nations</li>
+                <li><span>✦</span> Lifelong NEXUS Alumni founder network</li>
+              </ul>
+              <div class="j-metric">
+                <b>₹14.2 Cr</b>
+                <small>Average cohort round raised</small>
+              </div>
+            </article>
           </div>
-
-          <!-- Theme & Accent Toggles -->
-          <button class="btn-icon" id="thub-theme-toggle-btn" onclick="App.toggleThubTheme()" title="Toggle Ember Accent Theme" aria-label="Toggle Warm Accent Theme">
-            <span>🔥</span>
-          </button>
-
-          <!-- Theme Toggle -->
-          <button class="btn-icon" id="theme-toggle-btn" title="Toggle Theme" aria-label="Toggle dark/navy theme">
-            <span id="theme-toggle-icon">🌙</span>
-          </button>
-
-          <!-- Logout / Lock Session Button -->
-          <button class="btn btn-outline btn-sm" id="header-logout-btn" onclick="App.lockSessionAndLogout()" style="font-size: 11.5px; padding: 5px 11px; gap: 5px; border-color: rgba(239, 68, 68, 0.4); color: #ef4444; font-weight: 700; white-space: nowrap; flex-shrink: 0;" title="Lock Session & Require Mobile Authentication">
-            <span>🔒</span>
-            <span>Logout</span>
-          </button>
         </div>
-      </header>
+      </div>
+    </section>
 
-      <!-- Dynamic RBAC Persona & Scope Banner (Hidden by default in production) -->
-      <div id="dynamic-persona-banner" class="persona-banner-bar dev-only permissions-banner hidden" style="display: none !important;"></div>
+    <!-- ============ STARTUP MARQUEE ============ -->
+    <section class="nx-section nx-logos" id="startups">
+      <div class="nx-container">
+        <h2 class="nx-section-title reveal">Startups Building at NEXUS</h2>
+      </div>
+      <div class="nx-marquee">
+        <div class="nx-marquee-track">
+          <span class="nx-wordmark">◆ Ledgerly</span><span class="nx-wordmark">▲ Voltaire</span><span class="nx-wordmark">● QuantaBio</span><span class="nx-wordmark">✦ Meera Robotics</span><span class="nx-wordmark">■ Orbitum</span><span class="nx-wordmark">◐ Krishi.ai</span><span class="nx-wordmark">⬢ Synapse Labs</span><span class="nx-wordmark">✚ Pulsewise</span><span class="nx-wordmark">◆ Terraform Green</span><span class="nx-wordmark">▲ Finvault</span>
+          <span class="nx-wordmark" aria-hidden="true">◆ Ledgerly</span><span class="nx-wordmark" aria-hidden="true">▲ Voltaire</span><span class="nx-wordmark" aria-hidden="true">● QuantaBio</span><span class="nx-wordmark" aria-hidden="true">✦ Meera Robotics</span><span class="nx-wordmark" aria-hidden="true">■ Orbitum</span><span class="nx-wordmark" aria-hidden="true">◐ Krishi.ai</span><span class="nx-wordmark" aria-hidden="true">⬢ Synapse Labs</span><span class="nx-wordmark" aria-hidden="true">✚ Pulsewise</span><span class="nx-wordmark" aria-hidden="true">◆ Terraform Green</span><span class="nx-wordmark" aria-hidden="true">▲ Finvault</span>
+        </div>
+      </div>
+      <div class="nx-marquee reverse">
+        <div class="nx-marquee-track">
+          <span class="nx-partner">Global Tech Alliance</span><span class="nx-partner">Institute of Advanced Research</span><span class="nx-partner">Horizon Ventures</span><span class="nx-partner">Metro Bank Labs</span><span class="nx-partner">CloudScale</span><span class="nx-partner">State Innovation Council</span><span class="nx-partner">Apex Motors</span><span class="nx-partner">Northstar Capital</span>
+          <span class="nx-partner" aria-hidden="true">Global Tech Alliance</span><span class="nx-partner" aria-hidden="true">Institute of Advanced Research</span><span class="nx-partner" aria-hidden="true">Horizon Ventures</span><span class="nx-partner" aria-hidden="true">Metro Bank Labs</span><span class="nx-partner" aria-hidden="true">CloudScale</span><span class="nx-partner" aria-hidden="true">State Innovation Council</span><span class="nx-partner" aria-hidden="true">Apex Motors</span><span class="nx-partner" aria-hidden="true">Northstar Capital</span>
+        </div>
+      </div>
+    </section>
 
-      <!-- Lifecycle Views Containers -->
-      <div class="view-container active" id="view-dashboard"></div>
-      <div class="view-container" id="view-onboarding"></div>
-      <div class="view-container" id="view-startupTables"></div>
-      <div class="view-container" id="view-workspace"></div>
-      <div class="view-container" id="view-meetingRooms"></div>
-      <div class="view-container" id="view-billing"></div>
-      <div class="view-container" id="view-payments"></div>
-      <div class="view-container" id="view-incubation"></div>
-      <div class="view-container" id="view-milestones"></div>
-      <div class="view-container" id="view-reports"></div>
-      <div class="view-container" id="view-contact"></div>
-      <div class="view-container" id="view-leads"></div>
-      <div class="view-container" id="view-database"></div>
-      <div class="view-container" id="view-settings"></div>
-      <div class="view-container" id="view-help"></div>
-    </main>
-  </div>
+    <!-- ============ ECOSYSTEM ============ -->
+    <section class="nx-section nx-ecosystem" id="ecosystem">
+      <div class="nx-container">
+        <h2 class="nx-section-title reveal">One Campus. Every Stakeholder.</h2>
+        <p class="nx-section-lead reveal">We bring together everyone a startup needs to go from first prototype to global scale.</p>
+        <div class="nx-eco-grid">
+          <article class="nx-eco-card reveal">
+            <div class="nx-eco-icon">🚀</div>
+            <h3>Startups</h3>
+            <p>Workspace, mentorship and market access designed around your stage of growth.</p>
+            <a href="#programs" class="nx-link-btn">Read More <span>→</span></a>
+          </article>
+          <article class="nx-eco-card reveal">
+            <div class="nx-eco-icon">🏢</div>
+            <h3>Corporates</h3>
+            <p>Scout, pilot and partner with startups solving your hardest business problems.</p>
+            <a href="#programs" class="nx-link-btn">Read More <span>→</span></a>
+          </article>
+          <article class="nx-eco-card reveal">
+            <div class="nx-eco-icon">🏛️</div>
+            <h3>Government</h3>
+            <p>Co-create policy pilots and public-sector innovation challenges with founders.</p>
+            <a href="#programs" class="nx-link-btn">Read More <span>→</span></a>
+          </article>
+          <article class="nx-eco-card reveal">
+            <div class="nx-eco-icon">💰</div>
+            <h3>Investors</h3>
+            <p>Access curated, diligence-ready deal flow across sectors and stages.</p>
+            <a href="#programs" class="nx-link-btn">Read More <span>→</span></a>
+          </article>
+          <article class="nx-eco-card reveal">
+            <div class="nx-eco-icon">🎓</div>
+            <h3>Academia</h3>
+            <p>Turn campus research into ventures with labs, grants and founder coaching.</p>
+            <a href="#programs" class="nx-link-btn">Read More <span>→</span></a>
+          </article>
+          <article class="nx-eco-card reveal">
+            <div class="nx-eco-icon">🧭</div>
+            <h3>Mentors</h3>
+            <p>Share your operating experience and shape the next generation of companies.</p>
+            <a href="#programs" class="nx-link-btn">Read More <span>→</span></a>
+          </article>
+        </div>
+      </div>
+    </section>
 
-  <!-- Dynamic Modal & Toast Mounts -->
-  <div id="modal-mount"></div>
-  <div class="toast-container" id="toast-container"></div>
+    <!-- ============ CAMPUS INFRASTRUCTURE & FACILITIES (NEW) ============ -->
+    <section class="nx-section nx-facilities" id="facilities">
+      <div class="nx-container">
+        <div class="nx-section-header-center">
+          <span class="nx-kicker">Campus Infrastructure</span>
+          <h2 class="nx-section-title reveal">Engineered for Rapid Breakthroughs</h2>
+          <p class="nx-section-lead reveal">350,000 sq.ft. of world-class infrastructure for hardware, compute, and deeptech ventures.</p>
+        </div>
 
-  <!-- Scripts -->
-  <script src="js/formatters.js?v=20261104_38"></script>
-  <script src="js/planCatalog.js?v=20261104_38"></script>
-  <script src="js/initialData.js?v=20261104_38"></script>
-  <script src="creditService.js?v=20261104_38"></script>
-  <script src="billingService.js?v=20261104_37"></script>
-  <script src="js/store.js?v=20261104_37"></script>
-  <script src="js/modules/dashboard.js?v=20261104_37"></script>
-  <script src="js/modules/onboarding.js?v=20261104_37"></script>
-  <script src="js/modules/startupTables.js?v=20261104_37"></script>
-  <script src="cancellation.js?v=20261104_37"></script>
-  <script src="js/modules/workspace.js?v=20261104_37"></script>
-  <script src="js/modules/roomGallery.js?v=20261104_37"></script>
-  <script src="js/modules/meetingRooms.js?v=20261104_37"></script>
-  <script src="js/modules/invoice.js?v=20261104_37"></script>
-  <script src="js/modules/billing.js?v=20261104_37"></script>
-  <script src="js/modules/payments.js?v=20261104_37"></script>
-  <script src="js/modules/incubation.js?v=20261104_37"></script>
-  <script src="js/modules/milestones.js?v=20261104_37"></script>
-  <script src="js/modules/reports.js?v=20261104_37"></script>
-  <script src="js/modules/contact.js?v=20261104_38"></script>
-  <script src="js/modules/settings.js?v=20261104_38"></script>
-  <script src="js/modules/help.js?v=20261104_38"></script>
-  <script src="js/modules/leads.js?v=20261104_37"></script>
-  <script src="js/modules/database.js?v=20261104_37"></script>
-  <script src="js/authGate.js?v=20261104_37"></script>
-  <script src="js/main.js?v=20261104_37"></script>
-  <script src="js/liveReload.js?v=20261104_37"></script>
+        <div class="nx-fac-showcase">
+          <!-- Main Showcase 1: Hardware Makerspace -->
+          <article class="nx-fac-card large reveal">
+            <div class="nx-fac-img">
+              <img src="assets/landing/makerspace.jpg" alt="Robotics and hardware makerspace at NEXUS HUB" loading="lazy">
+              <div class="nx-fac-overlay"></div>
+              <span class="nx-fac-tag">Prototyping Bay 04</span>
+            </div>
+            <div class="nx-fac-content">
+              <div class="nx-fac-icon">🔬</div>
+              <h3>Frontier Hardware &amp; Robotics Bay</h3>
+              <p>Turn CAD designs into working prototypes in hours. Equipped with industrial SLS 3D printers, laser cutters, 5-axis CNC machining, and automated PCB surface-mount lines.</p>
+              <div class="nx-fac-specs">
+                <span><b>24/7</b> Lab Tech Support</span>
+                <span><b>$2M+</b> Prototyping Gear</span>
+                <span><b>Zero</b> Queue Delays</span>
+              </div>
+            </div>
+          </article>
+
+          <!-- Main Showcase 2: Demo Day Arena -->
+          <article class="nx-fac-card large reverse reveal">
+            <div class="nx-fac-img">
+              <img src="assets/landing/auditorium.jpg" alt="500-seat amphitheatre auditorium demo day" loading="lazy">
+              <div class="nx-fac-overlay"></div>
+              <span class="nx-fac-tag">The Arena · 500 Seats</span>
+            </div>
+            <div class="nx-fac-content">
+              <div class="nx-fac-icon">🏛️</div>
+              <h3>Mainstage Amphitheatre &amp; Arena</h3>
+              <p>A flagship 500-seat auditorium with curved 8K MicroLED presentation walls, multi-track cameras, and acoustic tuning for global Demo Days.</p>
+              <div class="nx-fac-specs">
+                <span><b>8K</b> MicroLED Wall</span>
+                <span><b>500</b> Tiered Seats</span>
+                <span><b>Global</b> Live Broadcast</span>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <!-- 4 Grid Highlight Cards -->
+        <div class="nx-fac-grid">
+          <div class="nx-fac-mini reveal">
+            <span class="mini-icon">⚡</span>
+            <h4>NVIDIA H100 AI Server Pod</h4>
+            <p>Low-latency GPU cluster for fine-tuning LLMs, vision transformers, and autonomous agent inference.</p>
+            <span class="mini-badge">Pre-Allocated Compute</span>
+          </div>
+          <div class="nx-fac-mini reveal">
+            <span class="mini-icon">🎙️</span>
+            <h4>4K Media &amp; Podcast Studio</h4>
+            <p>Soundproof broadcast suite with broadcast mics and multi-cam live switching for founder storytelling.</p>
+            <span class="mini-badge">Production Suite</span>
+          </div>
+          <div class="nx-fac-mini reveal">
+            <span class="mini-icon">☕</span>
+            <h4>Founder Terrace &amp; Wellness Club</h4>
+            <p>Espresso bar, private focus booths, open-air green amphitheatre, and quiet recharge pods.</p>
+            <span class="mini-badge">Work-Life Balance</span>
+          </div>
+          <div class="nx-fac-mini reveal">
+            <span class="mini-icon">🛡️</span>
+            <h4>Tier-3 Biometric Security</h4>
+            <p>24/7 RFID and biometric access, enterprise NDA isolation zones, and high-security hardware lockers.</p>
+            <span class="mini-badge">Enterprise Compliant</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PROGRAMS ============ -->
+    <section class="nx-section nx-programs" id="programs">
+      <div class="nx-container">
+        <h2 class="nx-section-title reveal">Programs That Power Startups</h2>
+        <div class="nx-tabs reveal" role="tablist">
+          <button class="nx-tab active" role="tab" data-tab="flagship" id="tab-flagship">Flagship Programs</button>
+          <button class="nx-tab" role="tab" data-tab="corporate" id="tab-corporate">Corporate Programs</button>
+        </div>
+
+        <div class="nx-tab-panel active" data-panel="flagship">
+          <div class="nx-program-grid">
+            <article class="nx-program-card" style="--c1:#ED441B;--c2:#ff9a5a"><div class="nx-program-art"><span>🏗️</span></div><div class="nx-program-body"><span class="tag">12 weeks</span><h3>Launchpad</h3><p>From validated idea to first paying customers with weekly sprints and expert reviews.</p><a href="#cta" class="nx-link-btn">Read More <span>→</span></a></div></article>
+            <article class="nx-program-card" style="--c1:#6d28d9;--c2:#a78bfa"><div class="nx-program-art"><span>🧠</span></div><div class="nx-program-body"><span class="tag">AI / ML</span><h3>AI Studio Residency</h3><p>Compute credits, model experts and enterprise pilots for applied-AI teams.</p><a href="#cta" class="nx-link-btn">Read More <span>→</span></a></div></article>
+            <article class="nx-program-card" style="--c1:#0e7490;--c2:#67e8f9"><div class="nx-program-art"><span>🛰️</span></div><div class="nx-program-body"><span class="tag">DeepTech</span><h3>Frontier Foundry</h3><p>Lab access and patient capital for space, semiconductor and robotics ventures.</p><a href="#cta" class="nx-link-btn">Read More <span>→</span></a></div></article>
+            <article class="nx-program-card" style="--c1:#15803d;--c2:#86efac"><div class="nx-program-art"><span>🌱</span></div><div class="nx-program-body"><span class="tag">Climate</span><h3>GreenScale</h3><p>Helping sustainability startups reach pilots, certification and impact funding.</p><a href="#cta" class="nx-link-btn">Read More <span>→</span></a></div></article>
+          </div>
+        </div>
+
+        <div class="nx-tab-panel" data-panel="corporate">
+          <div class="nx-program-grid">
+            <article class="nx-program-card" style="--c1:#1d4ed8;--c2:#93c5fd"><div class="nx-program-art"><span>🏦</span></div><div class="nx-program-body"><span class="tag">FinTech</span><h3>Bank of Tomorrow Challenge</h3><p>Co-build next-gen payments and lending products with a leading bank partner.</p><a href="#cta" class="nx-link-btn">Read More <span>→</span></a></div></article>
+            <article class="nx-program-card" style="--c1:#b45309;--c2:#fcd34d"><div class="nx-program-art"><span>🚗</span></div><div class="nx-program-body"><span class="tag">Mobility</span><h3>Future of Mobility Sprint</h3><p>Pilot connected-vehicle and EV solutions with an automotive major.</p><a href="#cta" class="nx-link-btn">Read More <span>→</span></a></div></article>
+            <article class="nx-program-card" style="--c1:#be185d;--c2:#f9a8d4"><div class="nx-program-art"><span>🏥</span></div><div class="nx-program-body"><span class="tag">HealthTech</span><h3>Care Innovation Lab</h3><p>Deploy diagnostics and care-delivery tools across a hospital network.</p><a href="#cta" class="nx-link-btn">Read More <span>→</span></a></div></article>
+            <article class="nx-program-card" style="--c1:#334155;--c2:#cbd5e1"><div class="nx-program-art"><span>🌐</span></div><div class="nx-program-body"><span class="tag">Global</span><h3>Global Gateway</h3><p>Soft-landing support, grants and market intros for international expansion.</p><a href="#cta" class="nx-link-btn">Read More <span>→</span></a></div></article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CO-WORKING ============ -->
+    <section class="nx-section nx-cowork" id="cowork">
+      <div class="nx-container nx-cowork-grid">
+        <div class="nx-cowork-img reveal">
+          <img src="assets/landing/cowork.jpg" alt="Bright co-working floor at NEXUS HUB" loading="lazy">
+          <a href="app.html" class="nx-floating-card" id="cowork-badge-link" title="Open Co-Working Management Portal">
+            <span class="dot"></span>
+            <div><b>84% occupied</b><small>Open Management Portal →</small></div>
+          </a>
+        </div>
+        <div class="nx-cowork-text reveal">
+          <span class="nx-kicker">Co-Working</span>
+          <h2 class="nx-section-title left">Space that grows with you</h2>
+          <p>From a single hot desk to a full private suite, our managed workspaces come with everything a growing team needs.</p>
+          <ul class="nx-checklist">
+            <li>Hot desks, dedicated desks &amp; private cabins</li>
+            <li>Meeting rooms, podcast studio &amp; event arena</li>
+            <li>High-speed internet, 24/7 secure access</li>
+            <li>Transparent billing &amp; GST-ready invoices</li>
+          </ul>
+          <div style="display: flex; gap: 14px; flex-wrap: wrap; margin-top: 24px;">
+            <a href="app.html" class="nx-btn nx-btn-flame" id="cowork-portal-btn">
+              <span>🏢</span> Open Co-Working Portal <span class="arrow">→</span>
+            </a>
+            <a href="#cta" class="nx-btn nx-btn-dark" id="cowork-cta-btn">Book Workspace Tour <span class="arrow">→</span></a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ LIVE EVENTS & MASTERCLASSES (NEW) ============ -->
+    <section class="nx-section nx-events" id="events">
+      <div class="nx-container">
+        <div class="nx-events-header">
+          <div>
+            <span class="nx-kicker">Campus Calendar</span>
+            <h2 class="nx-section-title left reveal">What's Happening on Campus</h2>
+            <p class="nx-section-lead left reveal">Weekly masterclasses, closed investor roundtables, and public venture showcases.</p>
+          </div>
+          <div class="nx-event-filters reveal">
+            <button class="nx-event-pill active" data-filter="all">All Events</button>
+            <button class="nx-event-pill" data-filter="masterclass">Masterclasses</button>
+            <button class="nx-event-pill" data-filter="mixer">Investor Mixers</button>
+            <button class="nx-event-pill" data-filter="demoday">Demo Days</button>
+          </div>
+        </div>
+
+        <div class="nx-events-grid" id="events-grid">
+          <!-- Event 1 -->
+          <article class="nx-event-card reveal" data-category="masterclass">
+            <div class="event-date">
+              <span class="day">04</span>
+              <span class="month">NOV</span>
+            </div>
+            <div class="event-info">
+              <div class="event-meta">
+                <span class="event-type masterclass">Masterclass</span>
+                <span class="event-loc">📍 AI Studio Lab · 5:30 PM</span>
+              </div>
+              <h3>AI Agents in Production: From RAG to Autonomous Swarms</h3>
+              <p>Hands-on architecture review on evaluating latency, tool-calling determinism, and multi-agent coordination with live code teardowns.</p>
+              <div class="event-speaker">
+                <span class="avatar">🧠</span>
+                <div><b>Dr. Suresh Iyer</b><small>Founder, QuantaBio &amp; ex-Google Brain</small></div>
+              </div>
+            </div>
+            <button class="nx-btn nx-btn-dark sm event-rsvp-btn" data-event="AI Agents in Production">RSVP Free <span class="arrow">→</span></button>
+          </article>
+
+          <!-- Event 2 -->
+          <article class="nx-event-card reveal" data-category="mixer">
+            <div class="event-date">
+              <span class="day">12</span>
+              <span class="month">NOV</span>
+            </div>
+            <div class="event-info">
+              <div class="event-meta">
+                <span class="event-type mixer">Investor Mixer</span>
+                <span class="event-loc">📍 Rooftop Terrace · 6:00 PM</span>
+              </div>
+              <h3>Seed to Series A: Navigating Term Sheets in 2026</h3>
+              <p>Closed roundtable with 8 leading VC partners discussing dilution norms, SAFEs vs convertible notes, and bridge milestones.</p>
+              <div class="event-speaker">
+                <span class="avatar">💼</span>
+                <div><b>Rahul Kapoor &amp; 7 Guests</b><small>General Partner, Horizon Ventures</small></div>
+              </div>
+            </div>
+            <button class="nx-btn nx-btn-dark sm event-rsvp-btn" data-event="Seed to Series A Mixer">Request Invite <span class="arrow">→</span></button>
+          </article>
+
+          <!-- Event 3 -->
+          <article class="nx-event-card reveal" data-category="demoday">
+            <div class="event-date">
+              <span class="day">19</span>
+              <span class="month">NOV</span>
+            </div>
+            <div class="event-info">
+              <div class="event-meta">
+                <span class="event-type demoday">Demo Showcase</span>
+                <span class="event-loc">📍 Main Amphitheatre · 3:00 PM</span>
+              </div>
+              <h3>Enterprise Pilot Showcase: 12 B2B DeepTech Sprints</h3>
+              <p>Watch 12 startups present live pilot deployments and contract sign-offs before 50+ enterprise Chief Information &amp; Digital Officers.</p>
+              <div class="event-speaker">
+                <span class="avatar">⚡</span>
+                <div><b>12 Cohort Startups</b><small>Cohort 06 Graduation Showcase</small></div>
+              </div>
+            </div>
+            <button class="nx-btn nx-btn-dark sm event-rsvp-btn" data-event="Enterprise Pilot Showcase">Attend Demo <span class="arrow">→</span></button>
+          </article>
+
+          <!-- Event 4 -->
+          <article class="nx-event-card reveal" data-category="masterclass">
+            <div class="event-date">
+              <span class="day">26</span>
+              <span class="month">NOV</span>
+            </div>
+            <div class="event-info">
+              <div class="event-meta">
+                <span class="event-type masterclass">Fireside Chat</span>
+                <span class="event-loc">📍 Arena Stage · 6:30 PM</span>
+              </div>
+              <h3>Building Hardware from India for Global Aerospace &amp; EV</h3>
+              <p>A candid fireside talk on navigating domestic supply chains, precision tooling, and global regulatory compliance.</p>
+              <div class="event-speaker">
+                <span class="avatar">🚀</span>
+                <div><b>Meera Joshi &amp; Karthik Menon</b><small>Founders, Meera Robotics &amp; Voltaire</small></div>
+              </div>
+            </div>
+            <button class="nx-btn nx-btn-dark sm event-rsvp-btn" data-event="Hardware from India Fireside">RSVP Free <span class="arrow">→</span></button>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ VOICES ============ -->
+    <section class="nx-section nx-voices" id="voices">
+      <div class="nx-container">
+        <h2 class="nx-section-title reveal">What Our Community Says</h2>
+        <div class="nx-voice-tabs reveal" role="tablist">
+          <button class="nx-chip active" data-voice="0" id="voice-founders">Founders</button>
+          <button class="nx-chip" data-voice="1" id="voice-investors">Investors</button>
+          <button class="nx-chip" data-voice="2" id="voice-corporates">Corporates</button>
+          <button class="nx-chip" data-voice="3" id="voice-mentors">Mentors</button>
+        </div>
+        <div class="nx-voice-stage reveal">
+          <blockquote class="nx-voice active">
+            <p>“We walked in with a prototype and walked out of our first cohort with three enterprise pilots. The density of people who can help you here is unreal.”</p>
+            <footer><b>Ananya Rao</b><span>Founder, Ledgerly</span></footer>
+          </blockquote>
+          <blockquote class="nx-voice">
+            <p>“NEXUS saves us months of sourcing. The startups we meet here are prepared, coachable and genuinely ambitious.”</p>
+            <footer><b>Rahul Kapoor</b><span>Partner, Horizon Ventures</span></footer>
+          </blockquote>
+          <blockquote class="nx-voice">
+            <p>“Our innovation team ran a six-week challenge and moved two startups into production. It's the fastest pilot cycle we've ever had.”</p>
+            <footer><b>Priya Shah</b><span>Head of Innovation, Apex Motors</span></footer>
+          </blockquote>
+          <blockquote class="nx-voice">
+            <p>“Mentoring here keeps me sharp. Every week I see founders tackle problems I wish I'd had help with early in my career.”</p>
+            <footer><b>Vikram Nair</b><span>Mentor &amp; former CTO</span></footer>
+          </blockquote>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FREQUENTLY ASKED QUESTIONS (NEW) ============ -->
+    <section class="nx-section nx-faq" id="faq">
+      <div class="nx-container">
+        <div class="nx-faq-header text-center">
+          <span class="nx-kicker">Got Questions?</span>
+          <h2 class="nx-section-title reveal">Frequently Asked Questions</h2>
+          <p class="nx-section-lead reveal">Everything ambitious founders need to know about incubation, equity, grants, and residency.</p>
+        </div>
+
+        <div class="nx-faq-accordion" id="faq-accordion">
+          <!-- FAQ 1 -->
+          <div class="nx-faq-item reveal">
+            <button class="nx-faq-question" aria-expanded="false">
+              <span>What stage does my startup need to be at to apply?</span>
+              <span class="nx-faq-icon">+</span>
+            </button>
+            <div class="nx-faq-answer">
+              <div class="nx-faq-answer-inner">
+                <p>We welcome founders from early validation with deep domain insight up to revenue-stage deeptech scaling. Programs like Launchpad, AI Studio, and Frontier Foundry cater to specific growth phases.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- FAQ 2 -->
+          <div class="nx-faq-item reveal">
+            <button class="nx-faq-question" aria-expanded="false">
+              <span>Does NEXUS HUB take equity in incubated companies?</span>
+              <span class="nx-faq-icon">+</span>
+            </button>
+            <div class="nx-faq-answer">
+              <div class="nx-faq-answer-inner">
+                <p><strong>Zero equity dilution.</strong> Our incubation programs, masterclasses, and ₹25 Lakh catalyst grants are 100% non-dilutive. We operate as an open innovation institution supported by corporate and government alliances.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- FAQ 3 -->
+          <div class="nx-faq-item reveal">
+            <button class="nx-faq-question" aria-expanded="false">
+              <span>What is included in the ₹25 Lakh Catalyst Seed Grant?</span>
+              <span class="nx-faq-icon">+</span>
+            </button>
+            <div class="nx-faq-answer">
+              <div class="nx-faq-answer-inner">
+                <p>Milestone-based capital disbursement, 12 months subsidized dedicated workspace, $150K+ cloud credits (AWS, NVIDIA, GCP, Azure), prototyping lab bench access, and on-site patent legal support.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- FAQ 4 -->
+          <div class="nx-faq-item reveal">
+            <button class="nx-faq-question" aria-expanded="false">
+              <span>How does corporate and enterprise pilot matching work?</span>
+              <span class="nx-faq-icon">+</span>
+            </button>
+            <div class="nx-faq-answer">
+              <div class="nx-faq-answer-inner">
+                <p>We partner with 150+ corporate innovation heads across banking, auto, healthcare, and logistics. Our EIR team connects relevant cohort startups directly to launch pre-cleared proof-of-concept pilots.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- FAQ 5 -->
+          <div class="nx-faq-item reveal">
+            <button class="nx-faq-question" aria-expanded="false">
+              <span>Can remote or external teams book meeting rooms &amp; event arenas?</span>
+              <span class="nx-faq-icon">+</span>
+            </button>
+            <div class="nx-faq-answer">
+              <div class="nx-faq-answer-inner">
+                <p>Yes. In addition to incubated cohorts, our flexible hot desks, meeting rooms, podcast studio, and 500-seat amphitheatre can be booked on demand via our Member Portal.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- FAQ 6 -->
+          <div class="nx-faq-item reveal">
+            <button class="nx-faq-question" aria-expanded="false">
+              <span>How does Global Gateway help with international expansion?</span>
+              <span class="nx-faq-icon">+</span>
+            </button>
+            <div class="nx-faq-answer">
+              <div class="nx-faq-answer-inner">
+                <p>Cohort startups receive soft-landing desks, cross-border corporate intros, legal incorporation guidance, and investor showcases across our corridors in Dubai, Singapore, and Silicon Valley.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CTA ============ -->
+    <section class="nx-section nx-cta" id="cta">
+      <div class="nx-container">
+        <div class="nx-cta-box reveal">
+          <div class="nx-cta-glow"></div>
+          <h2>Ready to build what's next?</h2>
+          <p>Tell us about your startup and we'll match you with the right program, space and people.</p>
+          <form class="nx-cta-form" id="cta-form">
+            <input type="email" id="cta-email" placeholder="you@startup.com" required aria-label="Email address">
+            <button type="submit" class="nx-btn nx-btn-light" id="cta-submit-btn">Get Started <span class="arrow">→</span></button>
+          </form>
+          <p class="nx-cta-note" id="cta-note">No spam. We reply within 48 hours.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============ EXPANDED MEGA FOOTER ============ -->
+  <footer class="nx-footer">
+    <div class="nx-container">
+      <!-- 1. Top Newsletter & Dispatch Banner -->
+      <div class="nx-footer-newsletter reveal">
+        <div class="nx-fn-text">
+          <span class="nx-badge sm"><span class="pulse sm"></span> WEEKLY DISPATCH</span>
+          <h3>Stay ahead of India's innovation frontier</h3>
+          <p>Get weekly updates on funding rounds, enterprise pilot openings, campus masterclasses, and founder playbooks.</p>
+        </div>
+        <form class="nx-fn-form" id="newsletter-form">
+          <input type="email" id="fn-email" placeholder="Enter your work email" required aria-label="Email for newsletter">
+          <button type="submit" class="nx-btn nx-btn-flame sm" id="fn-submit-btn">Subscribe Free <span class="arrow">→</span></button>
+        </form>
+      </div>
+
+      <!-- 2. Main Mega Directory Grid -->
+      <div class="nx-footer-grid">
+        <!-- Col 1: Brand & Contact -->
+        <div class="nx-footer-brand">
+          <a href="#top" class="nx-logo"><span class="nx-logo-mark">N</span><span class="nx-logo-text">NEXUS<b>HUB</b></span></a>
+          <p>India's premier startup innovation campus connecting visionary founders with space, deep capital, enterprise sandboxes, and global markets.</p>
+          <div class="nx-footer-contact-info">
+            <p><strong>Campus Desk:</strong> +91 (80) 4920-8800</p>
+            <p><strong>Inquiries:</strong> <a href="mailto:hello@nexushub.in">hello@nexushub.in</a></p>
+          </div>
+          <div class="nx-socials">
+            <a href="#" aria-label="LinkedIn" title="LinkedIn">in</a>
+            <a href="#" aria-label="X (Twitter)" title="X">𝕏</a>
+            <a href="#" aria-label="Instagram" title="Instagram">◎</a>
+            <a href="#" aria-label="YouTube" title="YouTube">▶</a>
+            <a href="#" aria-label="GitHub" title="GitHub">⌥</a>
+          </div>
+        </div>
+
+        <!-- Col 2: Campus & Facilities -->
+        <div class="nx-footer-col">
+          <h4>Campus &amp; Labs</h4>
+          <a href="#facilities">Prototyping Bay 04</a>
+          <a href="#facilities">NVIDIA H100 AI Pod</a>
+          <a href="#facilities">500-Seat Demo Arena</a>
+          <a href="#facilities">4K Podcast Studio</a>
+          <a href="#cowork">Private Founder Cabins</a>
+          <a href="#cowork">Hot &amp; Dedicated Desks</a>
+          <a href="#cta">Book Campus Tour</a>
+        </div>
+
+        <!-- Col 3: Programs & Funding -->
+        <div class="nx-footer-col">
+          <h4>Programs</h4>
+          <a href="#programs">Launchpad (0 to 1)</a>
+          <a href="#programs">AI Studio Residency</a>
+          <a href="#programs">DeepTech Foundry</a>
+          <a href="#programs">GreenScale Climate</a>
+          <a href="#programs">Bank of Tomorrow Sprint</a>
+          <a href="#programs">Future Mobility Lab</a>
+          <a href="#journey">The Founder Journey</a>
+        </div>
+
+        <!-- Col 4: Ecosystem & Partners -->
+        <div class="nx-footer-col">
+          <h4>Ecosystem</h4>
+          <a href="#ecosystem">For Startups (Cohort 07)</a>
+          <a href="#ecosystem">For Enterprise Corporates</a>
+          <a href="#network">Investor Syndicate Network</a>
+          <a href="#network">Operator Mentors</a>
+          <a href="#ecosystem">Government Innovation</a>
+          <a href="#ecosystem">University &amp; Labs Alliance</a>
+          <a href="#faq">Frequently Asked Questions</a>
+        </div>
+
+        <!-- Col 5: Knowledge & Community -->
+        <div class="nx-footer-col">
+          <h4>Knowledge Hub</h4>
+          <a href="#manifesto">The NEXUS Manifesto</a>
+          <a href="#events">Events Calendar</a>
+          <a href="#voices">Founder Testimonials</a>
+          <a href="#cta">Grant &amp; Equity Terms</a>
+          <a href="#cta">Cap Table Playbooks</a>
+          <a href="#cta">Press &amp; Media Kit</a>
+          <a href="#cta">Annual Impact Report</a>
+        </div>
+
+      </div>
+
+      <!-- 3. Campus Physical Location Strip -->
+      <div class="nx-footer-locations reveal">
+        <div class="nx-loc-card" style="grid-column: 1 / -1; max-width: 720px; margin: 0 auto; text-align: center;">
+          <div class="loc-head" style="justify-content: center;"><span class="loc-pin">📍</span> <b>Nexus Hub Campus (Bengaluru HQ)</b></div>
+          <p>Survey No. 42, Outer Ring Road, Bellandur, Bengaluru, Karnataka 560103</p>
+          <small>Open 24/7 for Resident Founders · Staffed Support: 8 AM – 8 PM IST · Visitor Desk: 9 AM – 6 PM IST</small>
+        </div>
+      </div>
+
+      <!-- 4. Accreditations & Alliance Banner -->
+      <div class="nx-footer-alliances">
+        <span class="nx-alliance-title">ECOSYSTEM PARTNERS &amp; RECOGNITIONS:</span>
+        <div class="nx-alliance-badges">
+          <span>🏛️ Startup India Recognized</span>
+          <span>🔬 Dept. of Science &amp; Technology (DST)</span>
+          <span>🌍 Global Innovation Alliance</span>
+          <span>⚡ NVIDIA Inception Partner</span>
+          <span>☁️ AWS Activate Hub</span>
+          <span>🌿 Climate Collective India</span>
+        </div>
+      </div>
+
+      <!-- 5. Bottom Copyright & Legal Links -->
+      <div class="nx-footer-bottom">
+        <div class="nx-fb-left">
+          <span>© <span id="year"></span> NEXUS HUB Technologies Foundation. All rights reserved.</span>
+          <span class="nx-reg-badge">Section 8 Non-Profit Technology Incubator</span>
+        </div>
+        <div class="nx-fb-links">
+          <a href="app.html">Member Portal</a>
+          <a href="app.html?login=startup">Founder Login</a>
+          <a href="#faq">FAQ</a>
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms of Service</a>
+          <a href="#">Security &amp; Compliance</a>
+          <a href="#">Code of Conduct</a>
+          <a href="#">System Status</a>
+        </div>
+        <div class="nx-fb-region">
+          <span>🌐 India (English) · Global Campus</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Floating Back to Top Button with Circular Progress Ring -->
+  <button class="nx-back-to-top" id="nx-back-to-top" aria-label="Back to top">
+    <svg class="nx-progress-ring" viewBox="0 0 48 48" aria-hidden="true">
+      <circle class="nx-ring-bg" cx="24" cy="24" r="20"></circle>
+      <circle class="nx-ring-fill" id="nx-ring-fill" cx="24" cy="24" r="20"></circle>
+    </svg>
+    <span class="nx-top-arrow">↑</span>
+  </button>
+
+  <script src="js/landing.js"></script>
+  <script src="js/liveReload.js"></script>
 </body>
 </html>
