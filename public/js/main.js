@@ -850,6 +850,26 @@ const App = {
     if (headerAvatar) headerAvatar.innerText = roleInfo.icon;
     if (headerRole) headerRole.innerText = roleInfo.name;
 
+    // Update Top Right Profile Avatar Pill
+    const userAvatar = document.getElementById('header-user-avatar');
+    const userName = document.getElementById('header-user-name');
+    const userRole = document.getElementById('header-user-role');
+    if (userAvatar && userName && userRole) {
+      if (role === 'super_admin') {
+        userAvatar.innerText = '👑';
+        userAvatar.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
+        userName.innerText = 'Dev Sharma';
+        userRole.innerText = 'Super Admin';
+        userRole.style.color = '#d97706';
+      } else {
+        userAvatar.innerText = 'AM';
+        userAvatar.style.background = 'linear-gradient(135deg, #6366f1, #a855f7)';
+        userName.innerText = (roleInfo.user && roleInfo.user.name) || 'Alex Morgan';
+        userRole.innerText = 'Co-Founder';
+        userRole.style.color = '#64748b';
+      }
+    }
+
     // Update Header Super Admin Login Button (hidden from regular users)
     const adminBtn = document.getElementById('header-admin-login-btn');
     if (adminBtn) {

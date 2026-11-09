@@ -541,13 +541,13 @@
           </div>
 
           <!-- User Profile Avatar Pill -->
-          <div style="display: flex; align-items: center; gap: 8px; padding-left: 4px;">
-            <div style="width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #a855f7); color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; box-shadow: 0 2px 8px rgba(99,102,241,0.25);">
+          <div id="header-user-profile-pill" style="display: flex; align-items: center; gap: 8px; padding-left: 4px; cursor: pointer;" onclick="App.openAdminLoginModal()" title="Profile & Super Admin Authentication">
+            <div id="header-user-avatar" style="width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #a855f7); color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; box-shadow: 0 2px 8px rgba(99,102,241,0.25);">
               AM
             </div>
             <div style="line-height: 1.2; text-align: left;" class="hide-mobile">
-              <div style="font-size: 12.5px; font-weight: 800; color: #0f172a;">Alex Morgan</div>
-              <div style="font-size: 10.5px; color: #64748b; font-weight: 600;">Co-Founder</div>
+              <div id="header-user-name" style="font-size: 12.5px; font-weight: 800; color: #0f172a;">Alex Morgan</div>
+              <div id="header-user-role" style="font-size: 10.5px; color: #64748b; font-weight: 600;">Co-Founder</div>
             </div>
           </div>
 

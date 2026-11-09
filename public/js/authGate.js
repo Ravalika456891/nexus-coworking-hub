@@ -3,28 +3,60 @@
 
 const AuthGate = {
   init() {
-    this.checkAuthGate();
     try {
       const params = new URLSearchParams(window.location.search);
-      const isAdminAccess = params.get('login') === 'admin' || params.get('admin') === 'true';
-      if (isAdminAccess) {
+      const isAutoAdmin = params.get('admin') === 'true' || params.get('role') === 'admin' || params.get('role') === 'super_admin';
+      const isAdminLogin = params.get('login') === 'admin';
+
+      if (isAutoAdmin) {
+        // Direct Super Admin instant access shortcut
+        sessionStorage.removeItem('nexus_logged_out');
+        const adminSession = {
+          role: 'super_admin',
+          userId: 'USR-ADMIN-1',
+          userName: 'Dev Sharma',
+          name: 'Dev Sharma',
+          timestamp: Date.now()
+        };
+        sessionStorage.setItem('nexus_auth_session', JSON.stringify(adminSession));
+        if (window.store) window.store.setRole('super_admin');
+        const gate = document.getElementById('auth-gate-overlay');
+        if (gate) gate.style.display = 'none';
+        document.documentElement.classList.remove('auth-locked');
+        if (window.App && window.App.updateRoleIndicator) window.App.updateRoleIndicator();
+        return;
+      }
+
+      if (isAdminLogin) {
+        // Explicit request to show Admin Login screen
+        sessionStorage.removeItem('nexus_auth_session');
+        sessionStorage.setItem('nexus_logged_out', '1');
+        document.documentElement.classList.add('auth-locked');
+        const gate = document.getElementById('auth-gate-overlay');
+        if (gate) {
+          gate.style.display = 'flex';
+          gate.classList.remove('unlocking');
+        }
         const btnAdmin = document.getElementById('gate-tab-btn-admin');
         if (btnAdmin) btnAdmin.style.display = 'inline-flex';
         const tabs = document.querySelector('.auth-gate-tabs');
         if (tabs) tabs.style.display = 'flex';
         this.switchGateTab('admin');
-      } else {
-        const btnAdmin = document.getElementById('gate-tab-btn-admin');
-        if (btnAdmin) btnAdmin.style.display = 'none';
-        const tabs = document.querySelector('.auth-gate-tabs');
-        if (tabs) tabs.style.display = 'none';
-        if (params.get('login') === 'startup') {
-          this.switchGateTab('startup');
-        }
+        return;
+      }
+
+      const btnAdmin = document.getElementById('gate-tab-btn-admin');
+      if (btnAdmin) btnAdmin.style.display = 'none';
+      const tabs = document.querySelector('.auth-gate-tabs');
+      if (tabs) tabs.style.display = 'none';
+      if (params.get('login') === 'startup') {
+        this.switchGateTab('startup');
       }
     } catch (e) {
       console.warn('URL param parse error:', e);
     }
+
+    this.checkAuthGate();
   },
 
   checkAuthGate() {
