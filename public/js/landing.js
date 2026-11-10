@@ -574,4 +574,29 @@
   if (yearEl) {
     yearEl.textContent = new Date().getFullYear();
   }
+
+  /* ---------- Handle Logout Notification Toast ---------- */
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('logged_out') === '1') {
+      const toast = document.createElement('div');
+      toast.id = 'nx-logout-toast';
+      toast.innerHTML = `
+        <div style="position: fixed; bottom: 28px; right: 28px; z-index: 99999; display: flex; align-items: center; gap: 12px; background: #0f172a; color: #f8fafc; border: 1px solid rgba(255,255,255,0.18); box-shadow: 0 12px 36px rgba(0,0,0,0.4); padding: 14px 22px; border-radius: 12px; font-family: inherit; font-size: 13.5px; font-weight: 600;">
+          <span style="font-size: 18px;">🔒</span>
+          <span>You have been logged out successfully.</span>
+        </div>
+      `;
+      document.body.appendChild(toast);
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+      setTimeout(() => {
+        toast.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+        setTimeout(() => toast.remove(), 400);
+      }, 4000);
+    }
+  } catch (e) {}
 })();

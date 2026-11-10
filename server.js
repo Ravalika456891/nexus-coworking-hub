@@ -1025,6 +1025,7 @@ async function handler(req, res) {
   }
 
   if (reqUrl === '/' || reqUrl === '' || reqUrl === '/index' || reqUrl === '/landing' || reqUrl === '/public') reqUrl = '/index.html';
+  if (reqUrl === '/admin' || reqUrl === '/admin/' || reqUrl.startsWith('/admin/')) reqUrl = '/app.html';
   if (reqUrl === '/app' || reqUrl === '/app/') reqUrl = '/app.html';
   if (reqUrl === '/meeting-rooms' || reqUrl === '/meeting-rooms/') reqUrl = '/meeting-rooms.html';
 

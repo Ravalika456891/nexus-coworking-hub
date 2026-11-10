@@ -609,18 +609,30 @@ const MeetingRoomsModule = {
   },
 
   renderActiveContent(data) {
-    if (this.activeTab === 'myBookings') {
-      return this.renderMyBookingsView(data);
-    } else if (this.activeTab === 'allBookings' || this.activeTab === 'creditsBilling') {
-      return this.renderCreditsAndBillingView(data);
-    } else if (this.activeTab === 'calendar') {
-      return this.renderBookingCalendarTabView(data);
-    } else if (this.activeTab === 'analytics') {
-      return this.renderAnalyticsTabView(data);
-    } else if (this.activeTab === 'admin') {
-      return this.renderAdminManagementTabView(data);
-    } else {
-      return this.renderSchedulerView(data);
+    try {
+      if (this.activeTab === 'myBookings') {
+        return this.renderMyBookingsView(data);
+      } else if (this.activeTab === 'allBookings' || this.activeTab === 'creditsBilling') {
+        return this.renderCreditsAndBillingView(data);
+      } else if (this.activeTab === 'calendar') {
+        return this.renderBookingCalendarTabView(data);
+      } else if (this.activeTab === 'analytics') {
+        return this.renderAnalyticsTabView(data);
+      } else if (this.activeTab === 'admin') {
+        return this.renderAdminManagementTabView(data);
+      } else {
+        return this.renderSchedulerView(data);
+      }
+    } catch (err) {
+      console.error('Error rendering MeetingRooms tab:', this.activeTab, err);
+      return `
+        <div class="card" style="padding: 32px; text-align: center; margin: 24px auto; max-width: 600px; border: 1.5px solid rgba(239, 68, 68, 0.3); border-radius: 16px; background: var(--bg-surface-elevated);">
+          <div style="font-size: 36px; margin-bottom: 12px;">📈</div>
+          <h3 style="font-size: 18px; font-weight: 800; color: var(--text-primary); margin-bottom: 8px;">Meeting Room Analytics</h3>
+          <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 20px;">${(err && err.message) || 'Refreshing data models...'}</p>
+          <button type="button" class="btn btn-primary" onclick="MeetingRoomsModule.render()" style="font-weight: 700; padding: 8px 18px; border-radius: 8px;">🔄 Refresh Analytics</button>
+        </div>
+      `;
     }
   },
 

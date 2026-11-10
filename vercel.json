@@ -8,6 +8,8 @@
     { "source": "/bookings", "destination": "/app.html?tab=meetingRooms" },
     { "source": "/meeting-rooms", "destination": "/meeting-rooms.html" },
     { "source": "/meeting-rooms/(.*)", "destination": "/meeting-rooms.html" },
+    { "source": "/admin", "destination": "/app.html?admin=true" },
+    { "source": "/admin/(.*)", "destination": "/app.html?admin=true" },
     { "source": "/app", "destination": "/app.html" },
     { "source": "/app/(.*)", "destination": "/app.html" },
     { "source": "/landing", "destination": "/index.html" },

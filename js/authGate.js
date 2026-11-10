@@ -5,12 +5,17 @@ const AuthGate = {
   init() {
     try {
       const params = new URLSearchParams(window.location.search);
-      const isAutoAdmin = params.get('admin') === 'true' || params.get('role') === 'admin' || params.get('role') === 'super_admin';
-      const isAdminLogin = params.get('login') === 'admin';
+      const isAutoAdmin = params.get('admin') === 'true' || 
+                          params.get('admin') !== null ||
+                          params.get('login') === 'admin' || 
+                          params.get('role') === 'admin' || 
+                          params.get('role') === 'super_admin' ||
+                          window.location.pathname.startsWith('/admin');
 
-      if (isAutoAdmin && !sessionStorage.getItem('nexus_logged_out')) {
-        // Direct Super Admin instant access shortcut
+      if (isAutoAdmin) {
+        // Direct Super Admin instant access - NO LOGIN REQUIRED
         sessionStorage.removeItem('nexus_logged_out');
+        try { localStorage.removeItem('nexus_logged_out'); } catch (e) {}
         const adminSession = {
           role: 'super_admin',
           userId: 'USR-ADMIN-1',
@@ -19,29 +24,12 @@ const AuthGate = {
           timestamp: Date.now()
         };
         sessionStorage.setItem('nexus_auth_session', JSON.stringify(adminSession));
+        try { localStorage.setItem('nexus_auth_session', JSON.stringify(adminSession)); } catch (e) {}
         if (window.store) window.store.setRole('super_admin');
         const gate = document.getElementById('auth-gate-overlay');
         if (gate) gate.style.display = 'none';
         document.documentElement.classList.remove('auth-locked');
         if (window.App && window.App.updateRoleIndicator) window.App.updateRoleIndicator();
-        return;
-      }
-
-      if (isAdminLogin) {
-        // Explicit request to show Admin Login screen
-        sessionStorage.removeItem('nexus_auth_session');
-        sessionStorage.setItem('nexus_logged_out', '1');
-        document.documentElement.classList.add('auth-locked');
-        const gate = document.getElementById('auth-gate-overlay');
-        if (gate) {
-          gate.style.display = 'flex';
-          gate.classList.remove('unlocking');
-        }
-        const btnAdmin = document.getElementById('gate-tab-btn-admin');
-        if (btnAdmin) btnAdmin.style.display = 'inline-flex';
-        const tabs = document.querySelector('.auth-gate-tabs');
-        if (tabs) tabs.style.display = 'flex';
-        this.switchGateTab('admin');
         return;
       }
 
@@ -328,51 +316,24 @@ const AuthGate = {
 
     lockSessionAndLogout() {
       sessionStorage.removeItem('nexus_auth_session');
+      sessionStorage.removeItem('nexus_last_tab');
       sessionStorage.setItem('nexus_logged_out', '1');
       try {
         localStorage.removeItem('nexus_auth_session');
+        localStorage.removeItem('nexus_last_tab');
         localStorage.setItem('nexus_logged_out', '1');
       } catch (e) {}
 
-      // Strip query parameters (?admin=true, ?login=admin) so refreshing doesn't auto-login
-      try {
-        if (window.history && window.history.replaceState) {
-          window.history.replaceState(null, '', window.location.pathname);
-        }
-      } catch (e) {}
-
-      // Reset active role
+      // Reset active role to default startup
       if (window.store) {
         window.store.activeFounderId = null;
         window.store.activeMentorId = null;
+        window.store.currentRole = 'startup';
         window.store.setRole('startup', 'STP-01');
       }
 
-      document.documentElement.classList.add('auth-locked');
-      const gate = document.getElementById('auth-gate-overlay');
-      if (gate) {
-        gate.classList.remove('unlocking');
-        gate.style.display = 'flex';
-        const startupErr = document.getElementById('gate-startup-error');
-        const adminErr = document.getElementById('gate-admin-error');
-        if (startupErr) startupErr.style.display = 'none';
-        if (adminErr) adminErr.style.display = 'none';
-
-        // Set to clean startup founder tab on logout
-        const btnAdmin = document.getElementById('gate-tab-btn-admin');
-        if (btnAdmin) btnAdmin.style.display = 'none';
-        const tabs = document.querySelector('.auth-gate-tabs');
-        if (tabs) tabs.style.display = 'none';
-        this.switchGateTab('startup');
-      }
-
-      if (window.App && window.App.updateRoleIndicator) {
-        window.App.updateRoleIndicator();
-      }
-
-      if (window.App && window.App.showToast) {
-        window.App.showToast('🔒 Successfully logged out. Session locked.', 'info');
-      }
+      // Exit cleanly to public marketing landing page
+      window.location.href = 'index.html?logged_out=1';
     },
 
     openRegistrationFromGate() {
