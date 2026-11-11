@@ -330,21 +330,7 @@ const WorkspaceModule = {
             </button>
           </div>
 
-          <!-- Color Coding Legend (Parity with Meeting Rooms) -->
-          <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-size: 11.5px;">
-            <div style="display: inline-flex; align-items: center; gap: 5px;">
-              <span class="legend-swatch swatch-free"></span>
-              <span style="color: #15803d; font-weight: 700;">🟢 Free (Tap to book)</span>
-            </div>
-            <div style="display: inline-flex; align-items: center; gap: 5px;">
-              <span class="legend-swatch swatch-yours"></span>
-              <span style="color: #1d4ed8; font-weight: 700;">🔵 Booked by You (Tap for pass)</span>
-            </div>
-            <div style="display: inline-flex; align-items: center; gap: 5px;">
-              <span class="legend-swatch swatch-taken"></span>
-              <span style="color: #dc2626; font-weight: 700;">🔴 Taken (Waitlist)</span>
-            </div>
-          </div>
+
         </div>
 
       </div>
