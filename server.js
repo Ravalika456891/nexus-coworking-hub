@@ -1026,6 +1026,8 @@ async function handler(req, res) {
 
   if (reqUrl === '/' || reqUrl === '' || reqUrl === '/index' || reqUrl === '/landing' || reqUrl === '/public') reqUrl = '/index.html';
   if (reqUrl === '/admin' || reqUrl === '/admin/' || reqUrl.startsWith('/admin/')) reqUrl = '/admin.html';
+  if (reqUrl === '/user' || reqUrl === '/user/' || reqUrl.startsWith('/user/')) reqUrl = '/user.html';
+  if (reqUrl === '/login' || reqUrl === '/login/' || reqUrl.startsWith('/login/')) reqUrl = '/login.html';
   if (reqUrl === '/app' || reqUrl === '/app/') reqUrl = '/app.html';
   if (reqUrl === '/meeting-rooms' || reqUrl === '/meeting-rooms/') reqUrl = '/meeting-rooms.html';
 

@@ -33,13 +33,62 @@ const AuthGate = {
         return;
       }
 
+      const isAutoUser = params.get('user') === 'true' || 
+                         params.get('auto') === 'user' || 
+                         params.get('role') === 'startup' || 
+                         params.get('role') === 'founder' ||
+                         window.location.pathname.startsWith('/user');
+
+      if (isAutoUser) {
+        // Direct User / Founder instant access - NO LOGIN REQUIRED
+        sessionStorage.removeItem('nexus_logged_out');
+        try { localStorage.removeItem('nexus_logged_out'); } catch (e) {}
+        const userSession = {
+          userId: 'USR-FOUNDER-1',
+          name: 'Alex Morgan',
+          phone: '9880012345',
+          role: 'startup',
+          startupId: 'STP-01',
+          startupName: 'NeuroPulse AI',
+          founderName: 'Alex Morgan',
+          timestamp: Date.now()
+        };
+        sessionStorage.setItem('nexus_auth_session', JSON.stringify(userSession));
+        try { localStorage.setItem('nexus_auth_session', JSON.stringify(userSession)); } catch (e) {}
+        if (window.store) window.store.setRole('startup', 'STP-01');
+        const gate = document.getElementById('auth-gate-overlay');
+        if (gate) gate.style.display = 'none';
+        document.documentElement.classList.remove('auth-locked');
+        if (window.App && window.App.updateRoleIndicator) window.App.updateRoleIndicator();
+        return;
+      }
+
+      const isExplicitUserLogin = params.get('login') === 'user' || 
+                                  params.get('login') === 'startup' || 
+                                  window.location.pathname.startsWith('/login');
+
+      if (isExplicitUserLogin) {
+        // Direct User Side Login Screen
+        sessionStorage.removeItem('nexus_auth_session');
+        sessionStorage.setItem('nexus_logged_out', '1');
+        document.documentElement.classList.add('auth-locked');
+        const gate = document.getElementById('auth-gate-overlay');
+        if (gate) {
+          gate.style.display = 'flex';
+          gate.classList.remove('unlocking');
+        }
+        const btnAdmin = document.getElementById('gate-tab-btn-admin');
+        if (btnAdmin) btnAdmin.style.display = 'none';
+        const tabs = document.querySelector('.auth-gate-tabs');
+        if (tabs) tabs.style.display = 'none';
+        this.switchGateTab('startup');
+        return;
+      }
+
       const btnAdmin = document.getElementById('gate-tab-btn-admin');
       if (btnAdmin) btnAdmin.style.display = 'none';
       const tabs = document.querySelector('.auth-gate-tabs');
       if (tabs) tabs.style.display = 'none';
-      if (params.get('login') === 'startup') {
-        this.switchGateTab('startup');
-      }
     } catch (e) {
       console.warn('URL param parse error:', e);
     }
@@ -293,6 +342,25 @@ const AuthGate = {
       this.unlockGateWithSuccess('👑 Welcome, Dev Sharma! Authenticated as Super Admin.');
     },
 
+    loginAsStartupQuick() {
+      sessionStorage.removeItem('nexus_logged_out');
+      try { localStorage.removeItem('nexus_logged_out'); } catch (e) {}
+      const defaultSession = {
+        userId: 'USR-FOUNDER-1',
+        name: 'Alex Morgan',
+        phone: '9880012345',
+        role: 'startup',
+        startupId: 'STP-01',
+        startupName: 'NeuroPulse AI',
+        founderName: 'Alex Morgan',
+        timestamp: Date.now()
+      };
+      sessionStorage.setItem('nexus_auth_session', JSON.stringify(defaultSession));
+      try { localStorage.setItem('nexus_auth_session', JSON.stringify(defaultSession)); } catch (e) {}
+      if (window.store) window.store.setRole('startup', 'STP-01');
+      this.unlockGateWithSuccess('🚀 Welcome, Alex Morgan! Authenticated into NeuroPulse AI.');
+    },
+
     unlockGateWithSuccess(toastMsg) {
       sessionStorage.removeItem('nexus_logged_out');
       const gate = document.getElementById('auth-gate-overlay');
@@ -354,6 +422,7 @@ const AuthGate = {
     handleGateStartupLogin: (e) => AuthGate.handleGateStartupLogin(e),
     handleGateAdminLogin: (e) => AuthGate.handleGateAdminLogin(e),
     quickLoginGateAdmin: () => AuthGate.quickLoginGateAdmin(),
+    loginAsStartupQuick: () => AuthGate.loginAsStartupQuick(),
     lockSessionAndLogout: () => AuthGate.lockSessionAndLogout(),
     openRegistrationFromGate: () => AuthGate.openRegistrationFromGate()
   });
