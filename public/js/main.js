@@ -931,6 +931,26 @@ const App = {
       }
     });
 
+    // Control Active Tenant / Startup Selector visibility (Admins only see dropdown, Users see fixed badge)
+    const headerStartupSelect = document.getElementById('header-startup-select');
+    const userCompanyBadge = document.getElementById('header-user-company-badge');
+    if (headerStartupSelect && userCompanyBadge) {
+      if (isAdmin) {
+        headerStartupSelect.style.display = 'inline-block';
+        userCompanyBadge.style.display = 'none';
+      } else {
+        headerStartupSelect.style.display = 'none';
+        userCompanyBadge.style.display = 'inline-block';
+        const myStartup = (window.store && window.store.getActiveStartup) ? window.store.getActiveStartup() : null;
+        const myName = myStartup ? `${myStartup.name} (${myStartup.id})` : ((roleInfo.user && roleInfo.user.startupName) || 'My Startup');
+        userCompanyBadge.innerText = myName;
+        // Lock meeting rooms module back to founder's own startup
+        if (window.MeetingRoomsModule) {
+          window.MeetingRoomsModule.activeStartupFilter = null;
+        }
+      }
+    }
+
     // Hide Dev tools outside super_admin role
     const devWrapper = document.getElementById('header-dev-tools-wrapper');
     if (devWrapper) {

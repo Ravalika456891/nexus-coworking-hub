@@ -428,7 +428,7 @@ const MeetingRoomsModule = {
   },
 
   getMyStartupId() {
-    if (this.activeStartupFilter) return this.activeStartupFilter;
+    if (this.activeStartupFilter && this.isAdminUser()) return this.activeStartupFilter;
     if (window.store) {
       if (window.store.activeFounderId) return window.store.activeFounderId;
       if (window.store.state && window.store.state.activeStartupId) return window.store.state.activeStartupId;
