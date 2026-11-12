@@ -843,6 +843,8 @@ const App = {
   updateRoleIndicator() {
     const role = window.store.normalizeRole(window.store.currentRole);
     const roleInfo = window.store.getCurrentRoleInfo();
+    const isAdmin = ['super_admin', 'incubator_admin', 'finance_admin'].includes(role);
+    const isSuper = role === 'super_admin';
 
     // Update Header Role Dropdown Trigger Pill
     const headerAvatar = document.getElementById('header-role-avatar');
@@ -911,20 +913,12 @@ const App = {
       if (opt) opt.classList.toggle('active', role === rk);
     });
 
-    // Hide unauthorized administrative navigation & dev tools
-    const isSuper = role === 'super_admin';
-    const isIncubator = role === 'incubator_admin';
-    const isAdmin = isSuper || isIncubator;
+    // Hide unauthorized navigation items according to RBAC Governance Matrix
     document.querySelectorAll('.nav-item').forEach(item => {
       const tabId = item.getAttribute('data-tab');
       if (tabId) {
-        if (tabId === 'adminRooms') {
-          item.style.display = isAdmin ? 'flex' : 'none';
-        } else if (tabId === 'database') {
-          item.style.display = isSuper ? 'flex' : 'none';
-        } else {
-          item.style.display = 'flex';
-        }
+        const allowed = window.store ? window.store.isTabAllowed(tabId, role) : true;
+        item.style.display = allowed ? 'flex' : 'none';
         const badgeEl = item.querySelector('.nav-item-restricted-badge');
         if (badgeEl) badgeEl.remove();
         item.classList.remove('nav-item-restricted');

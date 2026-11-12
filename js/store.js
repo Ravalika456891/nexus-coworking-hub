@@ -1117,11 +1117,36 @@ class NexusStore {
   }
 
   isTabAllowed(tabId, role = null) {
-    if (['dashboard', 'meetingRooms', 'bookings', 'myReservations', 'calendar', 'billingCredits', 'roomAnalytics', 'workspace', 'contact', 'leads', 'database', 'startupTables', 'settings', 'help'].includes(tabId)) {
-      return true;
-    }
     const r = role ? this.normalizeRole(role) : this.normalizeRole(this.currentRole);
     if (r === 'super_admin') return true;
+
+    // Subtabs and meeting room aliases
+    if (['bookings', 'myReservations', 'calendar', 'billingCredits', 'roomAnalytics', 'adminRooms'].includes(tabId)) {
+      if (tabId === 'adminRooms') return r === 'super_admin' || r === 'incubator_admin';
+      return this.isTabAllowed('meetingRooms', r);
+    }
+
+    if (['settings', 'help', 'contact', 'leads'].includes(tabId)) {
+      return true;
+    }
+
+    if (tabId === 'database') {
+      return r === 'super_admin';
+    }
+
+    if (tabId === 'startupTables') {
+      return r === 'super_admin' || r === 'incubator_admin';
+    }
+
+    // Check directly against RBAC Governance Matrix data
+    const matrix = this.getRbacMatrixData();
+    const entry = matrix.find(m => m.key === tabId);
+    if (entry && entry.access) {
+      if (entry.access[r] !== undefined) {
+        return !!entry.access[r];
+      }
+    }
+
     const roleInfo = this.getRoles()[r];
     if (!roleInfo) return true;
     return roleInfo.allowedTabs.includes(tabId);
