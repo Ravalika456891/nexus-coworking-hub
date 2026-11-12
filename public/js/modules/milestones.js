@@ -10,10 +10,24 @@ const MilestonesModule = {
     const container = document.getElementById('view-milestones');
     if (!container) return;
 
+    if (window.store && window.store.ensureMilestonesForAllStartups) {
+      window.store.ensureMilestonesForAllStartups();
+    }
+
     const startups = window.store.getStartups();
     const mentors = window.store.getMentors();
     const currentRole = window.store.normalizeRole(window.store.currentRole);
     const roleInfo = window.store.getCurrentRoleInfo();
+    const allMilestones = window.store.getMilestones() || [];
+
+    // For startup role, automatically lock selectedStartupId to the founder's own startup!
+    if (currentRole === 'startup') {
+      const activeStartup = (window.store && window.store.getActiveStartup) ? window.store.getActiveStartup() : null;
+      const founderStartupId = (activeStartup && activeStartup.id) || (roleInfo.user && roleInfo.user.startupId) || (startups.length ? startups[0].id : 'STP-XYZ');
+      this.selectedStartupId = founderStartupId;
+    } else if (!this.selectedStartupId || (!startups.some(s => s.id === this.selectedStartupId) && this.selectedStartupId !== 'all')) {
+      this.selectedStartupId = startups.length ? startups[0].id : 'STP-XYZ';
+    }
 
     // Get current startup
     let currentStartup = null;
@@ -24,9 +38,15 @@ const MilestonesModule = {
     }
 
     // Milestones for current selection
-    let displayMilestones = this.selectedStartupId === 'all' 
+    let displayMilestones = (this.selectedStartupId === 'all') 
       ? [...allMilestones] 
       : window.store.getMilestonesByStartup(currentStartup?.id);
+
+    // If selected startup has no milestones yet, fall back to matching milestones or all
+    if ((!displayMilestones || !displayMilestones.length) && allMilestones.length) {
+      const fallback = allMilestones.filter(m => m.startupId === currentStartup?.id);
+      displayMilestones = fallback.length ? fallback : [...allMilestones];
+    }
 
     // Apply status filter
     if (this.filterStatus !== 'all') {
@@ -79,9 +99,9 @@ const MilestonesModule = {
         <!-- Role Authorization & Mode Callout -->
         <div style="margin-top: 18px; background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
           <div style="display: flex; align-items: center; gap: 10px; font-size: 12.5px;">
-            <span style="font-size: 18px;">${roleInfo.icon}</span>
+            <span style="font-size: 18px;">${roleInfo.icon || '🚀'}</span>
             <span>
-              Active Authority: <strong>${roleInfo.name}</strong> (${roleInfo.user.name})
+              Active Authority: <strong>${roleInfo.name || 'Startup'}</strong> (${(roleInfo.user && roleInfo.user.name) || 'User'})
               <span style="color: var(--text-muted);"> • ${currentRole === 'startup' ? 'Founder viewing milestones & submitting deliverables' : 'Full clearance to create, edit, verify, and approve milestones'}</span>
             </span>
           </div>
@@ -130,16 +150,24 @@ const MilestonesModule = {
           <!-- Startup Selector Dropdown -->
           <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
             <label style="font-size: 13px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
-              <span>🚀 Select Startup:</span>
+              <span>🚀 Active Startup:</span>
             </label>
-            <select class="form-control" style="width: auto; min-width: 260px; font-weight: 700; color: var(--accent-primary);" onchange="MilestonesModule.handleStartupSelect(this.value)">
-              <option value="all" ${this.selectedStartupId === 'all' ? 'selected' : ''}>🌐 All Portfolio Startups (${allMilestones.length} Milestones)</option>
-              ${startups.map(s => `
-                <option value="${s.id}" ${this.selectedStartupId === s.id ? 'selected' : ''}>
-                  ${s.logoEmoji || '⚡'} ${s.name} (${s.cohort || 'Cohort 2026-A'})
-                </option>
-              `).join('')}
-            </select>
+            ${currentRole === 'startup' ? `
+              <div style="font-size: 13.5px; font-weight: 800; color: var(--accent-primary); background: var(--bg-surface-elevated); padding: 6px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); display: inline-flex; align-items: center; gap: 6px;">
+                <span>${currentStartup ? (currentStartup.logoEmoji || '🚀') : '🚀'}</span>
+                <span>${currentStartup ? currentStartup.name : 'My Startup'}</span>
+                <span class="badge badge-info" style="font-size: 10px; margin-left: 4px;">${currentStartup ? currentStartup.id : ''}</span>
+              </div>
+            ` : `
+              <select class="form-control" style="width: auto; min-width: 260px; font-weight: 700; color: var(--accent-primary);" onchange="MilestonesModule.handleStartupSelect(this.value)">
+                <option value="all" ${this.selectedStartupId === 'all' ? 'selected' : ''}>🌐 All Portfolio Startups (${allMilestones.length} Milestones)</option>
+                ${startups.map(s => `
+                  <option value="${s.id}" ${this.selectedStartupId === s.id ? 'selected' : ''}>
+                    ${s.logoEmoji || '⚡'} ${s.name} (${s.cohort || 'Cohort 2026-A'})
+                  </option>
+                `).join('')}
+              </select>
+            `}
 
             ${currentStartup ? `
               <div style="display: flex; align-items: center; gap: 8px;">

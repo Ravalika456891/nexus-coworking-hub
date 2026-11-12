@@ -136,6 +136,9 @@ class NexusStore {
       this.state.incubationMilestones = JSON.parse(JSON.stringify(window.INITIAL_DATA.incubationMilestones));
     }
 
+    // Ensure all startups in incubator have full sequential milestones
+    this.ensureMilestonesForAllStartups();
+
     // Normalize all startups
     this.state.startups = this.state.startups.map(s => this.normalizeStartupIncubation(s));
 
@@ -4084,9 +4087,18 @@ class NexusStore {
 
   // --- Sequential Milestone Management Engine ---
   getMilestones(startupId = null) {
+    if (!this.state.incubationMilestones || this.state.incubationMilestones.length < 5) {
+      this.ensureMilestonesForAllStartups();
+    }
     let list = this.state.incubationMilestones || [];
     if (startupId) {
-      list = list.filter(m => m.startupId === startupId);
+      let filtered = list.filter(m => m.startupId === startupId);
+      if (!filtered.length) {
+        this.ensureMilestonesForAllStartups();
+        list = this.state.incubationMilestones || [];
+        filtered = list.filter(m => m.startupId === startupId);
+      }
+      return filtered.sort((a, b) => (Number(a.sequenceNumber) || 99) - (Number(b.sequenceNumber) || 99));
     }
     return list.sort((a, b) => (Number(a.sequenceNumber) || 99) - (Number(b.sequenceNumber) || 99));
   }
@@ -4229,6 +4241,91 @@ class NexusStore {
 
   addMilestone(data) {
     return this.createMilestone(data);
+  }
+
+  ensureMilestonesForAllStartups() {
+    if (!this.state) return;
+    if (!this.state.incubationMilestones) this.state.incubationMilestones = [];
+    if (!this.state.startups || !this.state.startups.length) return;
+
+    // First merge from INITIAL_DATA
+    if (window.INITIAL_DATA && window.INITIAL_DATA.incubationMilestones) {
+      window.INITIAL_DATA.incubationMilestones.forEach(seedM => {
+        if (!this.state.incubationMilestones.some(m => m.id === seedM.id)) {
+          this.state.incubationMilestones.push(JSON.parse(JSON.stringify(seedM)));
+        }
+      });
+    }
+
+    const defaultMilestoneTemplates = [
+      {
+        seq: 1,
+        title: 'Business Registration & DPIIT Incorporation',
+        status: 'Completed',
+        progress: 100,
+        kpi: 'CIN Certificate, GSTIN, and Startup India DPIIT recognition',
+        notes: 'Legal entity verified. Bank current account operational.'
+      },
+      {
+        seq: 2,
+        title: 'MVP Architecture Review & Core Prototype',
+        status: 'Completed',
+        progress: 100,
+        kpi: 'Functional prototype tested with benchmark metrics',
+        notes: 'Architecture clearance by mentor. Code repository audit cleared.'
+      },
+      {
+        seq: 3,
+        title: 'Closed Beta Launch & Enterprise Pilot Trials',
+        status: 'In Progress',
+        progress: 75,
+        kpi: 'Onboard 5+ pilot customers with telemetry tracking',
+        notes: 'Pilots active in field. Weekly user feedback sprints ongoing.'
+      },
+      {
+        seq: 4,
+        title: 'Revenue Realization & Commercial Go-To-Market',
+        status: 'Planned',
+        progress: 25,
+        kpi: 'Target: First 25 paying enterprise contracts and ₹15L ARR',
+        notes: 'Sales pipeline in progress with commercial agreements drafted.'
+      },
+      {
+        seq: 5,
+        title: 'Scale & Institutional Round Term Sheet',
+        status: 'Planned',
+        progress: 10,
+        kpi: 'Close Institutional Seed / Series A funding round',
+        notes: 'Pitch deck finalized for Incubator Investor Showcase.'
+      }
+    ];
+
+    this.state.startups.forEach(startup => {
+      const hasMilestones = this.state.incubationMilestones.some(m => m.startupId === startup.id);
+      if (!hasMilestones) {
+        const mentor = (this.state.mentors || []).find(men => men.id === startup.mentorId) || { name: startup.mentorName || 'John Smith (Mentor)' };
+        defaultMilestoneTemplates.forEach(tmpl => {
+          this.state.incubationMilestones.push({
+            id: `MLS-${startup.id}-${tmpl.seq}`,
+            startupId: startup.id,
+            startupName: startup.name,
+            sequenceNumber: tmpl.seq,
+            milestoneLabel: `Milestone ${tmpl.seq}`,
+            title: tmpl.title,
+            status: tmpl.status,
+            statusDisplay: tmpl.status === 'Completed' ? '✓ Completed' : (tmpl.status === 'In Progress' ? '⏳ In Progress' : '📅 Planned'),
+            progressPercent: tmpl.progress,
+            targetDate: '2026-11-30',
+            completedDate: tmpl.status === 'Completed' ? '2026-06-15' : null,
+            verifiedBy: mentor.name,
+            creatorRole: 'Admin',
+            creatorName: 'Nexus Incubation Ops',
+            kpiImpact: tmpl.kpi,
+            mentorNotes: tmpl.notes
+          });
+        });
+      }
+    });
   }
 
   // --- Activity Log ---
