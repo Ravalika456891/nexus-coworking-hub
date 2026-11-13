@@ -4589,21 +4589,21 @@ class NexusStore {
 
   // --- Aggregate Stats (Single Source of Truth) ---
   getDashboardStats() {
-    if (this.dashboardSummary) {
+    if (this.dashboardSummary && this.dashboardSummary.lifecycle && this.dashboardSummary.occupancy) {
       const s = this.dashboardSummary;
       return {
-        activeStartupsCount: s.lifecycle.allocated || s.lifecycle.startups,
-        totalStartupsCount: s.lifecycle.startups,
-        occupancyRate: s.occupancy.rate,
-        occupiedSpaces: s.occupancy.occupiedSeats,
-        totalSpaces: s.occupancy.totalSeats,
-        mrr: s.mrr.value,
-        totalOutstanding: s.pendingCollections.value,
-        pendingInvoicesCount: s.pendingCollections.invoiceCount,
-        overdueAmount: s.pendingCollections.overdueAmount,
-        overdueCount: s.pendingCollections.overdueCount,
-        totalCollected: s.collected.value,
-        totalRoomBookingsCount: s.lifecycle.bookings,
+        activeStartupsCount: s.lifecycle.allocated || s.lifecycle.startups || 0,
+        totalStartupsCount: s.lifecycle.startups || 0,
+        occupancyRate: s.occupancy.rate || 0,
+        occupiedSpaces: s.occupancy.occupiedSeats || 0,
+        totalSpaces: s.occupancy.totalSeats || 0,
+        mrr: (s.mrr && s.mrr.value) || 0,
+        totalOutstanding: (s.pendingCollections && s.pendingCollections.value) || 0,
+        pendingInvoicesCount: (s.pendingCollections && s.pendingCollections.invoiceCount) || 0,
+        overdueAmount: (s.pendingCollections && s.pendingCollections.overdueAmount) || 0,
+        overdueCount: (s.pendingCollections && s.pendingCollections.overdueCount) || 0,
+        totalCollected: (s.collected && s.collected.value) || 0,
+        totalRoomBookingsCount: s.lifecycle.bookings || 0,
         summary: s
       };
     }

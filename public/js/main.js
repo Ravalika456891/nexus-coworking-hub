@@ -137,6 +137,7 @@ const App = {
   switchTab(tabId) {
     this.currentTab = tabId;
     this.toggleMobileSidebar(false);
+    let containerTab = tabId;
 
     // Handle friendly redirects
     if (tabId === 'calendar') {
@@ -177,6 +178,8 @@ const App = {
       containerTab = 'meetingRooms';
     } else if (tabId === 'members') {
       containerTab = 'members';
+    } else if (['billing', 'billingCredits', 'payments'].includes(tabId)) {
+      containerTab = 'billing';
     }
 
     const activeView = document.getElementById('view-' + containerTab);

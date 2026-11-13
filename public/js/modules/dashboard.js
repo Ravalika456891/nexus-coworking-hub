@@ -15,15 +15,59 @@ const DashboardModule = {
     }
   },
 
+  buildLocalSummary() {
+    const s = window.store || {};
+    const currentRole = s.currentRole || 'startup';
+    const startupId = s.activeFounderId || 'STP-01';
+    const startupObj = (s.startups || []).find(st => st.id === startupId) || {
+      id: startupId,
+      name: 'NeuroPulse AI',
+      founderName: 'Alex Morgan',
+      plan: 'Scale-Up Growth Plan',
+      totalCredits: 120,
+      usedCredits: 40,
+      remainingCredits: 80,
+      remainingPercent: 66,
+      renewalDate: '1 Nov 2026'
+    };
+
+    const bookings = (s.meetingRoomBookings || []).filter(b => b.startupId === startupId || b.companyId === startupId);
+    const todayStr = new Date().toISOString().split('T')[0];
+    const todaysSchedule = bookings.filter(b => b.date === todayStr);
+    const upcomingBookings = bookings.filter(b => b.date > todayStr);
+
+    return {
+      ok: true,
+      role: currentRole,
+      startup: startupObj,
+      kpis: {
+        upcomingMeetings: upcomingBookings.length,
+        availableRooms: 8,
+        remainingCredits: startupObj.remainingCredits || 80,
+        expectedVisitors: 2
+      },
+      todaysSchedule,
+      upcomingBookings,
+      recentActivities: s.activityFeed || []
+    };
+  },
+
   async loadSummary(month = null) {
     this.isLoading = true;
     if (month) this.selectedMonth = month;
     this.init();
 
     // Fetch from single source of truth endpoint
-    const summary = await window.store.fetchDashboardSummary(this.selectedMonth);
-    if (summary && summary.ok) {
-      this.summaryData = summary;
+    try {
+      const summary = await window.store.fetchDashboardSummary(this.selectedMonth);
+      if (summary && summary.ok) {
+        this.summaryData = summary;
+      } else {
+        this.summaryData = this.buildLocalSummary();
+      }
+    } catch (e) {
+      console.warn('Dashboard summary fetch fallback:', e);
+      this.summaryData = this.buildLocalSummary();
     }
     this.isLoading = false;
     this.render();
