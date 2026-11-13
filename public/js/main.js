@@ -480,8 +480,7 @@ const App = {
     const isCurrentAdmin = ['super_admin', 'incubator_admin', 'finance_admin'].includes(currentRole);
 
     if (isTargetAdmin && !isCurrentAdmin) {
-      this.openAdminLoginModal();
-      this.showToast('🔐 Administrator credentials required to switch to Admin perspective.', 'warning');
+      this.showToast('🛡️ Access Denied: Administrator role requires platform administrative authorization.', 'warning');
       return;
     }
 
@@ -871,6 +870,7 @@ const App = {
     const userAvatar = document.getElementById('header-user-avatar');
     const userName = document.getElementById('header-user-name');
     const userRole = document.getElementById('header-user-role');
+    const userProfilePill = document.getElementById('header-user-profile-pill');
     if (userAvatar && userName && userRole) {
       if (role === 'super_admin') {
         userAvatar.innerText = '👑';
@@ -878,12 +878,14 @@ const App = {
         userName.innerText = 'Dev Sharma';
         userRole.innerText = 'Super Admin';
         userRole.style.color = '#d97706';
+        if (userProfilePill) userProfilePill.title = 'Super Admin Profile (Dev Sharma)';
       } else {
         userAvatar.innerText = 'AM';
         userAvatar.style.background = 'linear-gradient(135deg, #6366f1, #a855f7)';
         userName.innerText = (roleInfo.user && roleInfo.user.name) || 'Alex Morgan';
         userRole.innerText = 'Co-Founder';
         userRole.style.color = '#64748b';
+        if (userProfilePill) userProfilePill.title = 'Startup Founder Portal';
       }
     }
 
@@ -1159,6 +1161,15 @@ const App = {
     if (target && target.target && !target.target.classList.contains('modal-overlay') && !target.target.classList.contains('modal-backdrop')) return;
     const modalMount = document.getElementById('modal-mount');
     if (modalMount) modalMount.innerHTML = '';
+  },
+
+  handleUserProfileClick() {
+    const role = window.store.normalizeRole(window.store.currentRole);
+    if (role === 'super_admin' || role === 'incubator_admin' || role === 'finance_admin') {
+      this.openAdminLoginModal();
+    } else {
+      this.openStartupLoginModal();
+    }
   },
 
   openStartupLoginModal() {
@@ -1443,6 +1454,18 @@ const App = {
   openAdminLoginModal() {
     const currentRole = window.store.normalizeRole(window.store.currentRole);
     const isSuperAdmin = currentRole === 'super_admin';
+    const isExplicitAdminUrl = window.location.search.includes('admin=true') || window.location.pathname.includes('/admin');
+
+    // Super Admin Authentication Portal is reserved strictly for Platform Admin. Do not show to regular users / founders.
+    if (!isSuperAdmin && !isExplicitAdminUrl) {
+      if (typeof this.showToast === 'function') {
+        this.showToast('🛡️ Access Restricted: Platform Administration is restricted to Hub Administrators.', 'warning');
+      } else {
+        alert('Access Restricted: Platform Administration is restricted to Hub Administrators.');
+      }
+      return;
+    }
+
     const roleInfo = window.store.getCurrentRoleInfo();
 
     const modalMount = document.getElementById('modal-mount');
