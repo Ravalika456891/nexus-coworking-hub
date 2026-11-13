@@ -1451,3 +1451,105 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .reveal { opacity: 1; transform: none; }
 }
+
+/* =========================================================
+   Human-Crafted SVG Icon & Hospitality Styling
+   ========================================================= */
+.nx-svg-icon {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.ico svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+.j-icon svg, .nx-eco-icon svg, .nx-fac-icon svg, .nx-program-art svg {
+  width: 26px;
+  height: 26px;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+.mini-icon svg {
+  width: 24px;
+  height: 24px;
+  stroke: var(--flame);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+/* Human-feel Badges and Trust Bars */
+.nx-human-trust-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.75);
+  flex-wrap: wrap;
+}
+.nx-human-trust-bar strong {
+  color: #fff;
+}
+.nx-human-trust-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.nx-human-trust-item svg {
+  color: #10b981;
+}
+
+/* Real-World Hours & Location Badge */
+.nx-location-card {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 24px;
+  margin-top: 32px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+}
+.nx-location-col h4 {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--flame);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.nx-location-col p {
+  font-size: 13.5px;
+  color: var(--text);
+  line-height: 1.5;
+}
+.nx-location-col small {
+  font-size: 12px;
+  color: var(--muted);
+}

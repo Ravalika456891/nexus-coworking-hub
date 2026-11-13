@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Zap } from 'lucide-react';
+import { Calendar, Clock, Sparkles, Video } from 'lucide-react';
 
 export default function HeroBanner() {
   return (
@@ -18,7 +18,7 @@ export default function HeroBanner() {
             target.onerror = null;
             target.src = 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=1200&q=80';
           }}
-          alt="Modern Boardroom"
+          alt="Modern Boardroom at Nexus Hub"
           className="w-full h-full object-cover object-center"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-[#F4F2FF] via-transparent to-black/10" />
@@ -27,16 +27,16 @@ export default function HeroBanner() {
       {/* Left Hero Content */}
       <div className="relative z-20 p-8 max-w-[560px]">
         <div className="flex items-center gap-1.5 text-xs font-bold text-[#4F3FE0] uppercase tracking-wider mb-2">
-          <Zap className="w-3.5 h-3.5 fill-[#4F3FE0] text-[#4F3FE0]" />
-          <span>NEXUS HUB</span>
+          <Sparkles className="w-3.5 h-3.5 text-[#4F3FE0]" />
+          <span>Nexus Meeting Suites · Koramangala</span>
         </div>
 
         <h2 className="text-[34px] xl:text-[38px] font-black text-[#111827] leading-[1.12] tracking-tight">
-          Book the right space <br />for every idea
+          Quiet, tech-ready rooms <br />for your next meeting
         </h2>
 
         <p className="text-[13px] text-[#374151] font-medium mt-2 max-w-[460px]">
-          Modern meeting rooms for productive discussions, workshops and client calls.
+          Equipped with 4K display monitors, Polycom conference audio, acoustic dampening, and high-speed Wi-Fi.
         </p>
 
         {/* 4 Feature Chips */}
@@ -46,20 +46,19 @@ export default function HeroBanner() {
             Instant Booking
           </span>
           <span className="inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-sm border border-[#ECEEF4] rounded-lg px-2.5 py-1 text-[11px] font-semibold text-[#111827] shadow-sm">
-            <span className="w-2 h-2 rounded-full bg-blue-500" />
-            Real-time Availability
+            <Calendar className="w-3 h-3 text-blue-500" />
+            Live Availability
           </span>
           <span className="inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-sm border border-[#ECEEF4] rounded-lg px-2.5 py-1 text-[11px] font-semibold text-[#111827] shadow-sm">
-            <span className="w-2 h-2 rounded-full bg-amber-500" />
-            Flexible Durations
+            <Clock className="w-3 h-3 text-amber-500" />
+            From ₹450 / hour
           </span>
           <span className="inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-sm border border-[#ECEEF4] rounded-lg px-2.5 py-1 text-[11px] font-semibold text-[#111827] shadow-sm">
-            <span className="w-2 h-2 rounded-full bg-indigo-500" />
-            Integrated Calendar
+            <Video className="w-3 h-3 text-indigo-500" />
+            4K Video Conferencing
           </span>
         </div>
       </div>
     </div>
   );
 }
-
