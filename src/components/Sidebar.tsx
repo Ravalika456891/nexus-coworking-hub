@@ -45,12 +45,14 @@ export default function Sidebar({ activeNav, setActiveNav, onUpgradeClick }: Sid
       <div>
         {/* Logo */}
         <div className="flex items-center gap-3 px-2 mb-3">
-          <div className="w-10 h-10 rounded-xl bg-[#111827] flex items-center justify-center text-yellow-400 shadow-sm flex-shrink-0">
-            <Zap className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+          <div className="w-[38px] h-[38px] rounded-[11px] bg-gradient-to-br from-[#ED441B] to-[#ff7a45] flex items-center justify-center text-white font-extrabold text-lg shadow-[0_4px_14px_rgba(237,68,27,0.35)] flex-shrink-0">
+            N
           </div>
           <div className="leading-tight">
-            <h1 className="font-extrabold text-[15px] tracking-tight text-[#111827]">NEXUS HUB</h1>
-            <span className="text-[11px] font-medium text-[#8A90A2]">Coworking Space</span>
+            <h1 className="font-extrabold text-[15px] tracking-tight text-[#111827]">
+              NEXUS <span className="text-[#ED441B]">HUB</span>
+            </h1>
+            <span className="text-[11px] font-medium text-[#8A90A2]">Incubation OS</span>
           </div>
         </div>
 
