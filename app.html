@@ -587,7 +587,7 @@
           </div>
 
           <!-- Developer Tools Dropdown Menu (Hides dev items in production) -->
-          <div class="dev-tools-wrapper dev-only" id="header-dev-tools-wrapper" style="position: relative; display: inline-block;">
+          <div class="dev-tools-wrapper dev-only" id="header-dev-tools-wrapper" style="position: relative; display: none;">
             <button class="btn btn-outline btn-sm" id="header-dev-tools-btn" onclick="App.toggleDevToolsMenu(event)" style="font-size: 11.5px; font-weight: 700; padding: 5px 11px; gap: 5px; border-color: rgba(148, 163, 184, 0.4); color: var(--text-secondary); white-space: nowrap; border-radius: var(--radius-md); display: inline-flex; align-items: center;" title="Developer & System Management Tools">
               <span>🛠️</span>
               <span>Dev tools</span>
@@ -636,7 +636,7 @@
                 <button class="btn btn-outline btn-sm" id="header-startup-login-btn" onclick="App.openStartupLoginModal(); App.closeDevToolsMenu();" style="width: 100%; justify-content: flex-start; gap: 8px; font-size: 11.5px; color: var(--accent-primary); border-color: var(--border-medium);">
                   <span>🚀</span> <span id="header-startup-login-btn-text">Startup Founder Login</span>
                 </button>
-                <button class="btn btn-outline btn-sm" id="header-rbac-btn" onclick="App.openRbacMatrixModal(); App.closeDevToolsMenu();" style="width: 100%; justify-content: flex-start; gap: 8px; font-size: 11.5px;">
+                <button class="btn btn-outline btn-sm" id="header-rbac-btn" onclick="App.openRbacMatrixModal(); App.closeDevToolsMenu();" style="display: none; width: 100%; justify-content: flex-start; gap: 8px; font-size: 11.5px;">
                   <span>🛡️</span> <span>RBAC Permissions Matrix</span>
                 </button>
                 <button class="btn btn-outline btn-sm" onclick="App.togglePersonaBanner(); App.closeDevToolsMenu();" style="width: 100%; justify-content: flex-start; gap: 8px; font-size: 11.5px;">

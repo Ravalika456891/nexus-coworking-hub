@@ -298,6 +298,8 @@ const App = {
 
     const allRoles = window.store.getRoles();
     const permittedRoles = Object.values(allRoles).filter(r => r.allowedTabs.includes(tabId));
+    const activeRole = window.store.normalizeRole(window.store.currentRole);
+    const isAdmin = ['super_admin', 'incubator_admin', 'finance_admin'].includes(activeRole);
 
     return `
       <div class="rbac-gate-card">
@@ -325,12 +327,14 @@ const App = {
             Roles with authorized access to this module: <strong>${permittedRoles.map(r => `${r.icon} ${r.name}`).join(', ')}</strong>
           </div>
           <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 6px;">
+            ${isAdmin ? `
             <button class="btn btn-primary" onclick="App.setRole('${permittedRoles[0] ? permittedRoles[0].id : 'super_admin'}')">
               ⚡ Switch to ${permittedRoles[0] ? permittedRoles[0].name : 'Super Admin'}
             </button>
             <button class="btn btn-outline" onclick="App.openRbacMatrixModal()">
               🛡️ View RBAC Matrix
             </button>
+            ` : ''}
             <button class="btn btn-secondary" onclick="App.switchTab('dashboard')">
               Return to Dashboard
             </button>
@@ -470,6 +474,17 @@ const App = {
   },
 
   setRole(role) {
+    const currentRole = window.store.normalizeRole(window.store.currentRole);
+    const targetNorm = window.store.normalizeRole(role);
+    const isTargetAdmin = ['super_admin', 'incubator_admin', 'finance_admin'].includes(targetNorm);
+    const isCurrentAdmin = ['super_admin', 'incubator_admin', 'finance_admin'].includes(currentRole);
+
+    if (isTargetAdmin && !isCurrentAdmin) {
+      this.openAdminLoginModal();
+      this.showToast('🔐 Administrator credentials required to switch to Admin perspective.', 'warning');
+      return;
+    }
+
     window.store.setRole(role);
     const roleInfo = window.store.getCurrentRoleInfo();
 
@@ -951,6 +966,12 @@ const App = {
       devWrapper.style.display = isSuper ? 'inline-block' : 'none';
     }
 
+    // Hide RBAC Governance Matrix button outside super_admin role (Admins only, never regular users)
+    const rbacBtn = document.getElementById('header-rbac-btn');
+    if (rbacBtn) {
+      rbacBtn.style.display = isSuper ? 'flex' : 'none';
+    }
+
     // Remove redundant user banner under header
     const banner = document.getElementById('dynamic-persona-banner');
     if (banner) {
@@ -986,9 +1007,19 @@ const App = {
   },
 
   openRbacMatrixModal() {
+    const activeRole = window.store.normalizeRole(window.store.currentRole);
+    const isSuperOrAdmin = activeRole === 'super_admin' || activeRole === 'admin' || activeRole === 'incubator_admin' || activeRole === 'finance_admin';
+    if (!isSuperOrAdmin) {
+      if (typeof this.showToast === 'function') {
+        this.showToast('🛡️ Access Restricted: RBAC Governance Matrix is available to Platform Administrators only.', 'warning');
+      } else {
+        alert('Access Restricted: RBAC Governance Matrix is available to Platform Administrators only.');
+      }
+      return;
+    }
+
     const matrix = window.store.getRbacMatrixData();
     const roles = window.store.getRoles();
-    const activeRole = window.store.normalizeRole(window.store.currentRole);
 
     const modalMount = document.getElementById('modal-mount');
     if (!modalMount) return;
