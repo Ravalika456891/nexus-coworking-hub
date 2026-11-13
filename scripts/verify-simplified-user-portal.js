@@ -95,10 +95,10 @@ async function run() {
     await page.send('Page.enable');
     await page.send('Runtime.enable');
 
-    const localAppUrl = 'file:///C:/Users/illur/OneDrive/Desktop/Project Co-Working & Startup/app.html?role=startup';
-    console.log(`🌐 Navigating to local app (${localAppUrl})...`);
-    await page.send('Page.navigate', { url: localAppUrl });
-    await delay(3500);
+    const prodUrl = 'https://nexus-coworking-hub.vercel.app/app.html?role=startup';
+    console.log(`🌐 Navigating to production app (${prodUrl})...`);
+    await page.send('Page.navigate', { url: prodUrl });
+    await delay(5000);
 
     // Ensure session is unlocked as Founder
     await page.send('Runtime.evaluate', {
@@ -114,7 +114,7 @@ async function run() {
         }
       })()`
     });
-    await delay(1500);
+    await delay(2000);
 
     // 1. Verify Sidebar Links
     console.log('📋 Checking 8 primary navigation tabs in sidebar...');

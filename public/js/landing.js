@@ -89,7 +89,7 @@
     const ecoBtn = document.getElementById('nav-ecosystem');
     if (ecoBtn) {
       ecoBtn.addEventListener('click', (e) => {
-        if (window.innerWidth <= 991) {
+        if (window.innerWidth <= 1040) {
           e.preventDefault();
           e.stopPropagation();
           const parent = ecoBtn.closest('.nx-nav-item');
