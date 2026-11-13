@@ -1007,20 +1007,25 @@ class NexusStore {
     }
 
     // Validate password format: strictly 10 to 16 positions/characters only
-    if (password) {
-      const passLen = String(password).length;
-      if (passLen < 10) {
-        return {
-          success: false,
-          message: `⚠️ Password must be between 10 and 16 characters only. (You entered ${passLen} characters, minimum 10 required).`
-        };
-      }
-      if (passLen > 16) {
-        return {
-          success: false,
-          message: `⚠️ Password must be between 10 and 16 characters only. More than 16 characters is not allowed (you entered ${passLen} characters).`
-        };
-      }
+    const passStr = String(password || '');
+    if (!passStr) {
+      return {
+        success: false,
+        message: '⚠️ Password is required (strictly 10 to 16 positions/characters).'
+      };
+    }
+    const passLen = passStr.length;
+    if (passLen < 10) {
+      return {
+        success: false,
+        message: `⚠️ Password must be between 10 and 16 characters only. (You entered ${passLen} characters, minimum 10 required).`
+      };
+    }
+    if (passLen > 16) {
+      return {
+        success: false,
+        message: `⚠️ Password must be between 10 and 16 characters only. More than 16 characters is not allowed (you entered ${passLen} characters).`
+      };
     }
 
     const found = directIdMatch || startups.find(s => {

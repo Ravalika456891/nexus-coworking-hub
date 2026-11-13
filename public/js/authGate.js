@@ -82,6 +82,7 @@ const AuthGate = {
         const tabs = document.querySelector('.auth-gate-tabs');
         if (tabs) tabs.style.display = 'none';
         this.switchGateTab('startup');
+        this.attachValidationListeners();
         return;
       }
 
@@ -89,6 +90,7 @@ const AuthGate = {
       if (btnAdmin) btnAdmin.style.display = 'none';
       const tabs = document.querySelector('.auth-gate-tabs');
       if (tabs) tabs.style.display = 'none';
+      this.attachValidationListeners();
     } catch (e) {
       console.warn('URL param parse error:', e);
     }
@@ -120,6 +122,7 @@ const AuthGate = {
         document.documentElement.classList.add('auth-locked');
         gate.style.display = 'flex';
         gate.classList.remove('unlocking');
+        this.attachValidationListeners();
       } else {
         try {
           const session = JSON.parse(sessionRaw);
@@ -158,12 +161,83 @@ const AuthGate = {
       }
     },
 
+    attachValidationListeners() {
+      const phoneInp = document.getElementById('gate-startup-phone');
+      const passInp = document.getElementById('gate-startup-password');
+      if (phoneInp && !phoneInp._hasValidationListener) {
+        phoneInp._hasValidationListener = true;
+        phoneInp.addEventListener('input', () => this.updatePhoneValidationUI(phoneInp));
+        this.updatePhoneValidationUI(phoneInp);
+      }
+      if (passInp && !passInp._hasValidationListener) {
+        passInp._hasValidationListener = true;
+        passInp.addEventListener('input', () => this.updatePasswordValidationUI(passInp));
+        this.updatePasswordValidationUI(passInp);
+      }
+    },
+
+    updatePhoneValidationUI(input) {
+      if (!input) return;
+      // Filter out any non-digits and cap at 10 digits
+      let clean = input.value.replace(/\D/g, '').slice(0, 10);
+      if (input.value !== clean) {
+        input.value = clean;
+      }
+      const counter = document.getElementById('gate-phone-counter');
+      if (counter) {
+        if (clean.length === 10) {
+          counter.innerText = '✓ 10/10 digits';
+          counter.style.color = '#10b981';
+          input.style.borderColor = '#10b981';
+        } else if (clean.length > 0) {
+          counter.innerText = `${clean.length}/10 digits`;
+          counter.style.color = '#f59e0b';
+          input.style.borderColor = 'rgba(255, 255, 255, 0.25)';
+        } else {
+          counter.innerText = '0/10 digits';
+          counter.style.color = '#94a3b8';
+          input.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+        }
+      }
+    },
+
+    updatePasswordValidationUI(input) {
+      if (!input) return;
+      const len = input.value.length;
+      const counter = document.getElementById('gate-pass-counter');
+      if (counter) {
+        if (len >= 10 && len <= 16) {
+          counter.innerText = `✓ ${len}/16 positions (valid)`;
+          counter.style.color = '#10b981';
+          input.style.borderColor = '#10b981';
+        } else if (len > 0 && len < 10) {
+          counter.innerText = `${len}/16 (min 10 required)`;
+          counter.style.color = '#f59e0b';
+          input.style.borderColor = 'rgba(255, 255, 255, 0.25)';
+        } else if (len > 16) {
+          counter.innerText = `⚠️ ${len} (max 16 allowed)`;
+          counter.style.color = '#ef4444';
+          input.style.borderColor = '#ef4444';
+        } else {
+          counter.innerText = '0/16 positions';
+          counter.style.color = '#94a3b8';
+          input.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+        }
+      }
+    },
+
     quickFillGateStartup(phone, password = 'password123') {
       const phoneInput = document.getElementById('gate-startup-phone');
       const passInput = document.getElementById('gate-startup-password');
       const errBox = document.getElementById('gate-startup-error');
-      if (phoneInput) phoneInput.value = phone;
-      if (passInput) passInput.value = password;
+      if (phoneInput) {
+        phoneInput.value = phone;
+        this.updatePhoneValidationUI(phoneInput);
+      }
+      if (passInput) {
+        passInput.value = password;
+        this.updatePasswordValidationUI(passInput);
+      }
       if (errBox) errBox.style.display = 'none';
     },
 
