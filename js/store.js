@@ -897,7 +897,7 @@ class NexusStore {
         accentColor: '#06b6d4',
         description: 'Founder portal: Profile dossier, allocated Workspace, Room Bookings, Invoices, Online Payments, and Incubation Progress.',
         scopeSummary: 'Profile, Workspace, Bookings, Invoices, Payments, Incubation Progress',
-        allowedTabs: ['dashboard', 'onboarding', 'workspace', 'meetingRooms', 'billing', 'payments', 'incubation', 'milestones', 'contact'],
+        allowedTabs: ['dashboard', 'meetingRooms', 'bookings', 'workspace', 'contact', 'members', 'billing', 'reports', 'settings', 'help', 'onboarding', 'payments', 'incubation', 'milestones'],
         features: [
           'Profile (Startup Dossier & Founder KYC)',
           'Workspace (My Allocated Desks / Cabin)',
@@ -916,13 +916,14 @@ class NexusStore {
         badgeClass: 'badge-subtle',
         accentColor: '#3b82f6',
         description: 'Employee portal: Explore meeting rooms, check availability, book sessions, and view own reservations without access to company billing.',
-        scopeSummary: 'Meeting Rooms, My Bookings, Workspace, Contact',
-        allowedTabs: ['dashboard', 'workspace', 'meetingRooms', 'contact'],
+        scopeSummary: 'Meeting Rooms, My Bookings, Workspace, Contact, Members',
+        allowedTabs: ['dashboard', 'meetingRooms', 'bookings', 'workspace', 'contact', 'members', 'settings', 'help'],
         features: [
           'Meeting Rooms (Explore & Live Availability)',
           'Reservations (Book & Modify Own Reservations)',
           'Credits (View Remaining Allowance)',
-          'Workspace (Team Desks & Campus Map)'
+          'Workspace (Team Desks & Campus Map)',
+          'Members (Team Directory)'
         ],
         user: { name: 'Ravi Kumar', email: 'ravi@xyztechnologies.io', startupId: 'STP-XYZ', startupName: 'XYZ Technologies', roleTitle: 'Senior AI Engineer', avatar: '💻' }
       },
@@ -1134,7 +1135,7 @@ class NexusStore {
       return this.isTabAllowed('meetingRooms', r);
     }
 
-    if (['settings', 'help', 'contact', 'leads'].includes(tabId)) {
+    if (['settings', 'help', 'contact', 'leads', 'members', 'workspace'].includes(tabId)) {
       return true;
     }
 
@@ -1144,6 +1145,10 @@ class NexusStore {
 
     if (tabId === 'startupTables') {
       return r === 'super_admin' || r === 'incubator_admin';
+    }
+
+    if (tabId === 'reports' && r === 'startup') {
+      return true; // Startup Founders are authorized to view venture analytics
     }
 
     // Check directly against RBAC Governance Matrix data
@@ -1220,6 +1225,163 @@ class NexusStore {
     this.addActivity('Security', `RBAC perspective switched to: ${roleInfo.name}.`, '🛡️');
     this.save();
     this.notify();
+  }
+
+  // --- Global Startup Context Switcher (Single Shared Source of Truth) ---
+  getActiveStartup() {
+    const sId = this.activeFounderId || (this.state && this.state.activeStartupId) || 'STP-XYZ';
+    return this.getStartupById(sId) || (this.getStartups() || [])[0] || { id: 'STP-XYZ', name: 'XYZ Technologies' };
+  }
+
+  setActiveStartup(startupId) {
+    if (!startupId) return;
+    this.activeFounderId = startupId;
+    if (this.state) this.state.activeStartupId = startupId;
+    this.save();
+    this.notify();
+    if (window.MeetingRoomsModule && window.MeetingRoomsModule.setStartupFilter) {
+      window.MeetingRoomsModule.setStartupFilter(startupId);
+    }
+    if (window.DashboardModule && window.DashboardModule.loadSummary) {
+      window.DashboardModule.loadSummary();
+    }
+    if (window.App && window.App.updateRoleIndicator) {
+      window.App.updateRoleIndicator();
+    }
+    if (window.App && window.App.refreshCurrentView) {
+      window.App.refreshCurrentView();
+    }
+  }
+
+  // --- Startup Team Members Management ---
+  getStartupMembers(startupId = null) {
+    const sId = startupId || (this.getActiveStartup ? this.getActiveStartup()?.id : this.activeFounderId) || 'STP-XYZ';
+    const startup = this.getStartupById(sId);
+    if (!startup) return [];
+
+    if (Array.isArray(startup.teamMembers) && startup.teamMembers.length > 0) {
+      return startup.teamMembers;
+    }
+
+    const fName = (startup.founders && startup.founders.name) || 'Founder';
+    const fEmail = (startup.founders && startup.founders.email) || `founder@${startup.slug || 'startup'}.io`;
+    const fPhone = (startup.founders && (startup.founders.mobile || startup.founders.phone)) || '+91 98800 12345';
+    const slug = startup.slug || 'startup';
+
+    const defaultMembers = [
+      {
+        id: `MEM-${sId}-01`,
+        startupId: sId,
+        name: fName,
+        email: fEmail,
+        phone: fPhone,
+        role: 'Founder & CEO',
+        isLeader: true,
+        desk: 'Cabin 101, Desk A',
+        avatar: '⚡',
+        status: 'Active',
+        joinedDate: startup.joiningDate || '2026-01-15'
+      },
+      {
+        id: `MEM-${sId}-02`,
+        startupId: sId,
+        name: 'Ravi Kumar',
+        email: `ravi@${slug}.io`,
+        phone: '+91 98450 77890',
+        role: 'Senior AI Engineer',
+        isLeader: false,
+        desk: 'Cabin 101, Desk B',
+        avatar: '💻',
+        status: 'Active',
+        joinedDate: '2026-02-01'
+      },
+      {
+        id: `MEM-${sId}-03`,
+        startupId: sId,
+        name: 'Ananya Reddy',
+        email: `ananya@${slug}.io`,
+        phone: '+91 97310 44556',
+        role: 'Product Designer',
+        isLeader: false,
+        desk: 'Cabin 101, Desk C',
+        avatar: '🎨',
+        status: 'Active',
+        joinedDate: '2026-02-15'
+      },
+      {
+        id: `MEM-${sId}-04`,
+        startupId: sId,
+        name: 'Karthik Rao',
+        email: `karthik@${slug}.io`,
+        phone: '+91 99001 88234',
+        role: 'Full Stack Developer',
+        isLeader: false,
+        desk: 'Cabin 101, Desk D',
+        avatar: '🚀',
+        status: 'Active',
+        joinedDate: '2026-03-01'
+      }
+    ];
+
+    startup.teamMembers = defaultMembers;
+    this.save();
+    return defaultMembers;
+  }
+
+  inviteStartupMember(startupId, memberData) {
+    const sId = startupId || (this.getActiveStartup ? this.getActiveStartup()?.id : this.activeFounderId) || 'STP-XYZ';
+    const startup = this.getStartupById(sId);
+    if (!startup) return { success: false, message: 'Startup not found' };
+
+    const members = this.getStartupMembers(sId);
+    const newMember = {
+      id: `MEM-${sId}-${Date.now().toString().slice(-4)}`,
+      startupId: sId,
+      name: (memberData.name || 'Team Member').trim(),
+      email: (memberData.email || '').trim().toLowerCase(),
+      phone: memberData.phone ? memberData.phone.trim() : '+91 98000 00000',
+      role: memberData.role || 'Team Member',
+      isLeader: (memberData.role || '').includes('Founder') || (memberData.role || '').includes('CEO'),
+      desk: memberData.desk || 'Hot Desk Zone B',
+      avatar: '👤',
+      status: 'Active',
+      joinedDate: new Date().toISOString().split('T')[0]
+    };
+
+    members.push(newMember);
+    startup.teamMembers = members;
+    if (startup.teamSize) startup.teamSize = members.length;
+    this.save();
+    this.notify();
+    return { success: true, member: newMember };
+  }
+
+  updateStartupMemberRole(startupId, memberId, newRole) {
+    const sId = startupId || (this.getActiveStartup ? this.getActiveStartup()?.id : this.activeFounderId) || 'STP-XYZ';
+    const startup = this.getStartupById(sId);
+    if (!startup || !Array.isArray(startup.teamMembers)) return { success: false };
+
+    const member = startup.teamMembers.find(m => m.id === memberId);
+    if (member) {
+      member.role = newRole;
+      member.isLeader = newRole.includes('Founder') || newRole.includes('CEO') || newRole.includes('Admin');
+      this.save();
+      this.notify();
+      return { success: true, member };
+    }
+    return { success: false, message: 'Member not found' };
+  }
+
+  removeStartupMember(startupId, memberId) {
+    const sId = startupId || (this.getActiveStartup ? this.getActiveStartup()?.id : this.activeFounderId) || 'STP-XYZ';
+    const startup = this.getStartupById(sId);
+    if (!startup || !Array.isArray(startup.teamMembers)) return { success: false };
+
+    startup.teamMembers = startup.teamMembers.filter(m => m.id !== memberId);
+    if (startup.teamSize) startup.teamSize = startup.teamMembers.length;
+    this.save();
+    this.notify();
+    return { success: true };
   }
 
   // Scoped Data Access Methods for RBAC
@@ -1328,7 +1490,7 @@ class NexusStore {
         key: 'reports',
         icon: '📊',
         description: 'Revenue yield, cohort distribution, space analytics, CSV exports',
-        access: { super_admin: true, incubator_admin: true, finance_admin: true, startup: false, mentor: true }
+        access: { super_admin: true, incubator_admin: true, finance_admin: true, startup: true, mentor: true }
       }
     ];
   }

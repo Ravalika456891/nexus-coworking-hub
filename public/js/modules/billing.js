@@ -14,12 +14,29 @@ const BillingModule = {
     if (!container) return;
 
     const role = window.store.normalizeRole(window.store.currentRole);
+    const isAdmin = ['super_admin', 'incubator_admin', 'finance_admin'].includes(role);
+    if (!this.activeTab || (!isAdmin && this.activeTab === 'rentRegister')) {
+      this.activeTab = 'planCredits';
+    }
+
+    const myStartup = (window.store && window.store.getActiveStartup) ? window.store.getActiveStartup() : null;
+    const startupId = myStartup ? myStartup.id : (window.store.activeFounderId || 'STP-XYZ');
+    const allowance = (window.store && window.store.getMonthlyAllowance)
+      ? window.store.getMonthlyAllowance(startupId)
+      : { includedHours: 15, usedHours: 0, remainingHours: 15, remainingPlanCredits: 150, totalTopUpCredits: 0 };
+    const includedHours = allowance.includedHours || 15;
+    const usedHours = allowance.usedHours || 0;
+    const remainingHours = Math.max(0, allowance.remainingHours !== undefined ? allowance.remainingHours : (includedHours - usedHours));
+    const creditUnits = (allowance.remainingPlanCredits !== undefined ? allowance.remainingPlanCredits : Math.round(remainingHours * 10)) + (allowance.totalTopUpCredits || 0);
+    const planName = (myStartup && myStartup.plan) || 'Growth Cohort';
+    const planFee = (myStartup && (myStartup.monthlyRent || myStartup.planFee)) || 45000;
+
     let allRentRecords = window.store.getRentRecords();
     let allInvoices = window.store.getAccessibleInvoices();
     const payments = window.store.getAccessiblePayments();
     if (role === 'startup') {
-      allRentRecords = allRentRecords.filter(r => r.startupId === (window.store.activeFounderId || 'STP-XYZ'));
-      allInvoices = allInvoices.filter(i => i.startupId === (window.store.activeFounderId || 'STP-XYZ'));
+      allRentRecords = allRentRecords.filter(r => r.startupId === startupId);
+      allInvoices = allInvoices.filter(i => i.startupId === startupId);
     }
     const invoices = allInvoices;
 
@@ -86,158 +103,45 @@ const BillingModule = {
       <!-- Header -->
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; flex-wrap: wrap; gap: 14px;">
         <div>
-          <h2 style="font-size: 20px; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 10px;">
-            <span>💰 Rent Management & Invoicing</span>
-            <span class="badge badge-info" style="font-size: 12px;">Stage 4 & 5 of Lifecycle</span>
+          <h2 style="font-size: 20px; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 10px; margin: 0;">
+            <span>💳 Billing &amp; Credits</span>
           </h2>
-          <p style="font-size: 13px; color: var(--text-secondary); margin-top: 2px;">
-            Automated rental operations tracking: Startup ➔ Workspace ➔ Monthly Rent ➔ Due Date ➔ Invoice ➔ Payment ➔ Receipt.
+          <p style="font-size: 13px; color: var(--text-secondary); margin: 3px 0 0 0;">
+            Manage membership plan, meeting room hours, flex credits, invoices, and payment receipts.
           </p>
         </div>
 
         <div style="display: flex; gap: 10px; align-items: center;">
-          <button class="btn btn-primary" onclick="BillingModule.openGenerateInvoicesModal()" style="display: inline-flex; align-items: center; gap: 7px; font-weight: 700;">
-            <span>⚡</span> <span>Generate invoices</span>
+          <button class="btn btn-outline btn-sm" onclick="BillingModule.openTopUpModal('${startupId}')" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-radius: 8px;">
+            <span>+</span> <span>Top Up Credits</span>
           </button>
+          ${isAdmin ? `
+          <button class="btn btn-primary btn-sm" onclick="BillingModule.openGenerateInvoicesModal()" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-radius: 8px;">
+            <span>⚡</span> <span>Generate Invoices</span>
+          </button>
+          ` : ''}
         </div>
       </div>
 
-      <!-- Collapsible "How billing works" Toggle -->
-      <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
-        <button class="btn btn-sm btn-outline" onclick="BillingModule.toggleWorkflowGuide()" style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; color: var(--text-secondary); background: var(--bg-surface); padding: 5px 12px; border-radius: 999px;">
-          <span>ℹ️ How billing works</span>
-          <span style="font-size: 9px;">${this.showWorkflowGuide ? '▲' : '▼'}</span>
-        </button>
-      </div>
-
-      ${this.showWorkflowGuide ? `
-      <!-- 7-Stage Rent Lifecycle Journey Visualizer -->
-      <div class="card" style="margin-bottom: 22px; padding: 18px 22px; background: var(--bg-surface);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-          <span style="font-size: 12.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">
-            The 7-Stage Rent & Billing Lifecycle
-          </span>
-          <span style="font-size: 12px; color: var(--accent-primary); font-weight: 600;">
-            Zero-Leakage Financial Workflow
-          </span>
-        </div>
-
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; overflow-x: auto; padding-bottom: 4px;">
-          <div style="text-align: center; flex: 1; min-width: 90px; padding: 8px 6px; border-radius: var(--radius-md); background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle);">
-            <div style="font-size: 16px;">👥</div>
-            <div style="font-size: 12px; font-weight: 700; color: var(--text-primary); margin-top: 2px;">Startup</div>
-            <div style="font-size: 10px; color: var(--text-muted);">Incubated Venture</div>
-          </div>
-          <span style="color: var(--text-muted); font-size: 12px;">➔</span>
-
-          <div style="text-align: center; flex: 1; min-width: 90px; padding: 8px 6px; border-radius: var(--radius-md); background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle);">
-            <div style="font-size: 16px;">🏢</div>
-            <div style="font-size: 12px; font-weight: 700; color: var(--text-primary); margin-top: 2px;">Workspace</div>
-            <div style="font-size: 10px; color: var(--text-muted);">Cabin / Desk</div>
-          </div>
-          <span style="color: var(--text-muted); font-size: 12px;">➔</span>
-
-          <div style="text-align: center; flex: 1; min-width: 90px; padding: 8px 6px; border-radius: var(--radius-md); background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle);">
-            <div style="font-size: 16px;">💵</div>
-            <div style="font-size: 12px; font-weight: 700; color: var(--text-primary); margin-top: 2px;">Monthly Rent</div>
-            <div style="font-size: 10px; color: var(--text-muted);">Base + Addons</div>
-          </div>
-          <span style="color: var(--text-muted); font-size: 12px;">➔</span>
-
-          <div style="text-align: center; flex: 1; min-width: 90px; padding: 8px 6px; border-radius: var(--radius-md); background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle);">
-            <div style="font-size: 16px;">📅</div>
-            <div style="font-size: 12px; font-weight: 700; color: var(--text-primary); margin-top: 2px;">Due Date</div>
-            <div style="font-size: 10px; color: var(--text-muted);">5th of Month</div>
-          </div>
-          <span style="color: var(--text-muted); font-size: 12px;">➔</span>
-
-          <div style="text-align: center; flex: 1; min-width: 90px; padding: 8px 6px; border-radius: var(--radius-md); background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle);">
-            <div style="font-size: 16px;">🧾</div>
-            <div style="font-size: 12px; font-weight: 700; color: var(--text-primary); margin-top: 2px;">Invoice</div>
-            <div style="font-size: 10px; color: var(--text-muted);">GST Itemized</div>
-          </div>
-          <span style="color: var(--text-muted); font-size: 12px;">➔</span>
-
-          <div style="text-align: center; flex: 1; min-width: 90px; padding: 8px 6px; border-radius: var(--radius-md); background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle);">
-            <div style="font-size: 16px;">💳</div>
-            <div style="font-size: 12px; font-weight: 700; color: var(--text-primary); margin-top: 2px;">Payment</div>
-            <div style="font-size: 10px; color: var(--text-muted);">UPI / Card / Wire</div>
-          </div>
-          <span style="color: var(--text-muted); font-size: 12px;">➔</span>
-
-          <div style="text-align: center; flex: 1; min-width: 90px; padding: 8px 6px; border-radius: var(--radius-md); background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle);">
-            <div style="font-size: 16px;">📄</div>
-            <div style="font-size: 12px; font-weight: 700; color: var(--text-primary); margin-top: 2px;">Receipt</div>
-            <div style="font-size: 10px; color: var(--status-success); font-weight: 600;">Reconciled ✓</div>
-          </div>
-        </div>
-      </div>
-      ` : ''}
-
-      <!-- Financial Metrics Summary -->
-      <div class="kpi-grid" style="margin-bottom: 22px;">
-        <div class="kpi-card" style="padding: 16px;">
-          <div class="kpi-header">
-            <span class="kpi-title">Total Monthly Rent Roll</span>
-            <div class="kpi-icon-wrap" style="color: var(--accent-primary);">🏢</div>
-          </div>
-          <div class="kpi-value" style="font-size: 22px;">₹${totalRentRoll.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-          <div class="kpi-footer">
-            <span>Reconciled License Invoices</span>
-          </div>
-        </div>
-
-        <div class="kpi-card" style="padding: 16px;">
-          <div class="kpi-header">
-            <span class="kpi-title">Collected & Paid</span>
-            <div class="kpi-icon-wrap" style="color: var(--status-success);">💰</div>
-          </div>
-          <div class="kpi-value" style="font-size: 22px; color: var(--status-success);">₹${totalPaid.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-          <div class="kpi-footer">
-            <span class="trend-pill up">${paidInvoices.length} Settled</span>
-            <span>Via Verified Gateways</span>
-          </div>
-        </div>
-
-        <div class="kpi-card" style="padding: 16px;">
-          <div class="kpi-header">
-            <span class="kpi-title">Pending Due</span>
-            <div class="kpi-icon-wrap" style="color: var(--status-warning);">⏳</div>
-          </div>
-          <div class="kpi-value" style="font-size: 22px; color: var(--status-warning);">₹${totalPending.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-          <div class="kpi-footer">
-            <span class="trend-pill warning">${pendingInvoices.length} Pending</span>
-            <span>Awaiting Due Date</span>
-          </div>
-        </div>
-
-        <div class="kpi-card" style="padding: 16px;">
-          <div class="kpi-header">
-            <span class="kpi-title">Overdue Rent</span>
-            <div class="kpi-icon-wrap" style="color: var(--status-danger);">⚠️</div>
-          </div>
-          <div class="kpi-value" style="font-size: 22px; color: var(--status-danger);">₹${totalOverdue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-          <div class="kpi-footer">
-            <span class="trend-pill" style="background: var(--status-danger-bg); color: var(--status-danger);">
-              ${overdueInvoices.length} Overdue Account${overdueInvoices.length === 1 ? '' : 's'}
-            </span>
-            <span>21d / 8d Past Due</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- 3-Table Financial Lifecycle Real Tabs Navigator -->
+      <!-- Financial Lifecycle Real Tabs Navigator -->
       <div class="billing-tabs-nav" style="display: flex; gap: 8px; margin-bottom: 22px; border-bottom: 2px solid var(--border-subtle); padding-bottom: 10px; flex-wrap: wrap;">
+        <button class="btn btn-sm ${this.activeTab === 'planCredits' ? 'btn-primary' : 'btn-outline'}" onclick="BillingModule.setActiveTab('planCredits')" style="font-size: 12px; font-weight: 700; padding: 7px 14px; border-radius: 8px;">
+          💳 Plan &amp; Credits
+        </button>
+        <button class="btn btn-sm ${this.activeTab === 'taxInvoices' ? 'btn-primary' : 'btn-outline'}" onclick="BillingModule.setActiveTab('taxInvoices')" style="font-size: 12px; font-weight: 700; padding: 7px 14px; border-radius: 8px;">
+          🧾 Invoices (${allInvoices.length})
+        </button>
+        <button class="btn btn-sm ${this.activeTab === 'paymentHistory' ? 'btn-primary' : 'btn-outline'}" onclick="BillingModule.setActiveTab('paymentHistory')" style="font-size: 12px; font-weight: 700; padding: 7px 14px; border-radius: 8px;">
+          💳 Payments &amp; Receipts (${payments.length})
+        </button>
+        ${isAdmin ? `
         <button class="btn btn-sm ${this.activeTab === 'rentRegister' ? 'btn-primary' : 'btn-outline'}" onclick="BillingModule.setActiveTab('rentRegister')" style="font-size: 12px; font-weight: 700; padding: 7px 14px; border-radius: 8px;">
           🏢 Monthly Rent Register (${rentRecords.length})
         </button>
-        <button class="btn btn-sm ${this.activeTab === 'taxInvoices' ? 'btn-primary' : 'btn-outline'}" onclick="BillingModule.setActiveTab('taxInvoices')" style="font-size: 12px; font-weight: 700; padding: 7px 14px; border-radius: 8px;">
-          🧾 Tax Invoices Ledger (${allInvoices.length})
-        </button>
-        <button class="btn btn-sm ${this.activeTab === 'paymentHistory' ? 'btn-primary' : 'btn-outline'}" onclick="BillingModule.setActiveTab('paymentHistory')" style="font-size: 12px; font-weight: 700; padding: 7px 14px; border-radius: 8px;">
-          💳 Payment History & Receipts (${payments.length})
-        </button>
+        ` : ''}
       </div>
+
+      ${this.activeTab === 'planCredits' ? this.renderPlanCreditsTab({ myStartup, allowance, includedHours, usedHours, remainingHours, creditUnits, planName, planFee, startupId }) : ''}
 
       ${this.activeTab === 'rentRegister' ? `
       <!-- Prominent Rent Management Table -->
@@ -1741,6 +1645,181 @@ const BillingModule = {
     document.querySelectorAll('.rent-row-menu').forEach(menu => {
       menu.style.display = 'none';
     });
+  },
+
+  renderPlanCreditsTab({ myStartup, allowance, includedHours, usedHours, remainingHours, creditUnits, planName, planFee, startupId }) {
+    const pctUsed = Math.min(100, Math.round((usedHours / Math.max(1, includedHours)) * 100));
+    const allBookings = window.store.getMeetingRooms ? window.store.getMeetingRooms().flatMap(r => r.bookings || []) : [];
+    const myBookings = allBookings.filter(b => b && (b.startupId === startupId || b.startupName === 'XYZ Technologies')).slice(0, 5);
+
+    return `
+      <!-- Top 3 Resource & Plan Cards -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 22px;">
+        
+        <!-- 1. Included Booking Hours -->
+        <div class="card" style="padding: 20px; border-radius: 14px; border: 1.5px solid #e2e8f0; background: #ffffff;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+            <div>
+              <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b;">Monthly Included Hours</span>
+              <h3 style="font-size: 24px; font-weight: 800; color: #0f172a; margin: 4px 0 0 0;">${remainingHours.toFixed(1)} hrs left</h3>
+            </div>
+            <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(99, 102, 241, 0.1); color: #6366f1; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+              ⏱️
+            </div>
+          </div>
+          <div style="background: #f1f5f9; border-radius: 999px; height: 8px; width: 100%; overflow: hidden; margin-bottom: 10px;">
+            <div style="background: linear-gradient(90deg, #6366f1, #a855f7); width: ${pctUsed}%; height: 100%; border-radius: 999px;"></div>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 12px; color: #64748b;">
+            <span>Used: <strong>${usedHours.toFixed(1)} hrs</strong></span>
+            <span>Monthly quota: <strong>${includedHours} hrs</strong></span>
+          </div>
+        </div>
+
+        <!-- 2. Flexible Credit-Unit Balance -->
+        <div class="card" style="padding: 20px; border-radius: 14px; border: 1.5px solid #e2e8f0; background: #ffffff;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+            <div>
+              <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b;">Flexible Credit Balance</span>
+              <h3 style="font-size: 24px; font-weight: 800; color: #16a34a; margin: 4px 0 0 0;">${creditUnits} Credits</h3>
+            </div>
+            <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(34, 197, 94, 0.1); color: #16a34a; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+              💳
+            </div>
+          </div>
+          <p style="font-size: 12px; color: #64748b; margin: 0 0 12px 0;">
+            1 Room Hour = 10 Credits. Auto-applied for extra hours, guest amenities, or extended sessions.
+          </p>
+          <button class="btn btn-primary btn-sm" onclick="BillingModule.openTopUpModal('${startupId}')" style="font-size: 11.5px; font-weight: 700; padding: 6px 14px; border-radius: 6px;">
+            + Top Up Credits
+          </button>
+        </div>
+
+        <!-- 3. Current Membership Plan -->
+        <div class="card" style="padding: 20px; border-radius: 14px; border: 1.5px solid #e2e8f0; background: #ffffff;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+            <div>
+              <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b;">Incubation Plan</span>
+              <h3 style="font-size: 22px; font-weight: 800; color: #0f172a; margin: 4px 0 0 0;">${planName}</h3>
+            </div>
+            <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(245, 158, 11, 0.1); color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+              🚀
+            </div>
+          </div>
+          <p style="font-size: 12px; color: #64748b; margin: 0 0 12px 0;">
+            ₹${Number(planFee).toLocaleString('en-IN')}/mo • Full incubation campus access &amp; mentor network.
+          </p>
+          <button class="btn btn-outline btn-sm" onclick="BillingModule.openUpgradePlanModal()" style="font-size: 11.5px; font-weight: 700; padding: 6px 14px; border-radius: 6px; color: #6366f1; border-color: rgba(99,102,241,0.4);">
+            Change / Upgrade Plan ➔
+          </button>
+        </div>
+      </div>
+
+      <!-- Distinction Explainer Callout -->
+      <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 14px 18px; margin-bottom: 24px; display: flex; gap: 12px; align-items: flex-start;">
+        <span style="font-size: 20px;">💡</span>
+        <div style="font-size: 12.5px; color: #334155; line-height: 1.5;">
+          <strong>Understanding Meeting Hours vs. Credit Units:</strong>
+          <span style="display: block; margin-top: 4px;">
+            • <strong>Included Meeting Hours (${includedHours} hrs)</strong>: Reset monthly on the 1st. 1 hour entitles your team to 60 minutes in any standard conference or huddle room with zero extra billing.
+          </span>
+          <span style="display: block; margin-top: 2px;">
+            • <strong>Credit Units (${creditUnits} Credits)</strong>: Stored balance where 10 Credits = 1 additional room hour. Credits never expire and cover overages, weekend bookings, and VIP boardroom hospitality.
+          </span>
+        </div>
+      </div>
+
+      <!-- Recent Usage & Deductions History -->
+      <div class="card" style="padding: 20px; border-radius: 14px; border: 1px solid var(--border-subtle); background: var(--bg-surface); margin-bottom: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+          <h4 style="margin: 0; font-size: 15px; font-weight: 800; color: #0f172a;">Recent Meeting Hours &amp; Credits Consumption</h4>
+          <button class="btn btn-sm btn-outline" onclick="App.switchTab('bookings')" style="font-size: 11.5px; font-weight: 700;">
+            View All Reservations ➔
+          </button>
+        </div>
+        ${myBookings.length === 0 ? `
+          <div style="text-align: center; padding: 24px; color: #64748b; font-size: 13px;">No recent room deductions recorded this month.</div>
+        ` : `
+          <div style="overflow-x: auto;">
+            <table class="nexus-table" style="width: 100%; font-size: 12.5px;">
+              <thead>
+                <tr>
+                  <th>Session</th>
+                  <th>Date &amp; Time</th>
+                  <th>Room</th>
+                  <th>Duration</th>
+                  <th>Credits Debited</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${myBookings.map(b => {
+                  const dur = (window.MeetingRoomsModule && window.MeetingRoomsModule.calculateBookingDuration)
+                    ? window.MeetingRoomsModule.calculateBookingDuration(b.startTime, b.endTime)
+                    : 1;
+                  return `
+                    <tr>
+                      <td style="font-weight: 700; color: #0f172a;">${b.title || b.purpose || 'Session'}</td>
+                      <td>${b.date} • ${b.startTime}–${b.endTime}</td>
+                      <td>${b.roomName || 'Meeting Room'}</td>
+                      <td>${dur.toFixed(1)} hrs</td>
+                      <td><span class="badge" style="background: rgba(99,102,241,0.1); color: #6366f1; font-weight: 700;">${Math.round(dur * 10)} credits</span></td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        `}
+      </div>
+    `;
+  },
+
+  openTopUpModal(startupId) {
+    if (window.MeetingRoomsModule && window.MeetingRoomsModule.openTopUpModal) {
+      window.MeetingRoomsModule.openTopUpModal();
+    } else {
+      App.showToast('Select a credit top-up pack to continue.', 'info');
+    }
+  },
+
+  openUpgradePlanModal() {
+    const modalMount = document.getElementById('modal-mount');
+    if (!modalMount) return;
+    modalMount.innerHTML = `
+      <div class="modal-overlay active" id="modal-upgrade-plan">
+        <div class="modal-content" style="max-width: 600px; padding: 24px; border-radius: 16px;">
+          <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="margin: 0; font-size: 18px; font-weight: 800; color: #0f172a;">Upgrade Incubation Plan</h3>
+            <button class="modal-close-btn" onclick="BillingModule.closeModal('modal-upgrade-plan')" style="border: none; background: transparent; font-size: 20px; cursor: pointer;">×</button>
+          </div>
+          <div class="modal-body">
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 16px;">Select the membership tier that suits your growth pace:</p>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px;">
+              <div style="border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 14px; text-align: center;">
+                <div style="font-weight: 800; font-size: 14px; color: #0f172a;">Starter Incubate</div>
+                <div style="font-size: 18px; font-weight: 800; color: #6366f1; margin: 6px 0;">₹25,000<span style="font-size: 11px; color: #64748b;">/mo</span></div>
+                <div style="font-size: 11px; color: #64748b;">8 meeting hours • 4 flex desks</div>
+              </div>
+              <div style="border: 2px solid #6366f1; border-radius: 10px; padding: 14px; text-align: center; background: rgba(99,102,241,0.04);">
+                <span class="badge badge-primary" style="font-size: 9px; padding: 2px 6px;">CURRENT PLAN</span>
+                <div style="font-weight: 800; font-size: 14px; color: #0f172a; margin-top: 4px;">Growth Cohort</div>
+                <div style="font-size: 18px; font-weight: 800; color: #6366f1; margin: 6px 0;">₹45,000<span style="font-size: 11px; color: #64748b;">/mo</span></div>
+                <div style="font-size: 11px; color: #64748b;">15 meeting hours • Dedicated cabin</div>
+              </div>
+              <div style="border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 14px; text-align: center;">
+                <div style="font-weight: 800; font-size: 14px; color: #0f172a;">Scale Accelerator</div>
+                <div style="font-size: 18px; font-weight: 800; color: #6366f1; margin: 6px 0;">₹80,000<span style="font-size: 11px; color: #64748b;">/mo</span></div>
+                <div style="font-size: 11px; color: #64748b;">30 meeting hours • Executive wing</div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 8px;">
+            <button class="btn btn-secondary" onclick="BillingModule.closeModal('modal-upgrade-plan')">Close</button>
+            <button class="btn btn-primary" onclick="BillingModule.closeModal('modal-upgrade-plan'); App.showToast('Upgrade request submitted to Incubation Director!', 'success')">Request Upgrade ➔</button>
+          </div>
+        </div>
+      </div>
+    `;
   },
 
   closeModal(id) {

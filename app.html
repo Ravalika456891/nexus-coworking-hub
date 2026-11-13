@@ -348,37 +348,17 @@
       <div style="height: 1px; background: #ECEEF4; margin: 6px 12px 8px 12px;"></div>
 
       <nav class="sidebar-nav" style="padding: 2px 10px; display: flex; flex-direction: column; gap: 2px; flex: 1;">
-        <!-- 1. Hub Command Center -->
-        <a class="nav-item" data-tab="dashboard" id="nav-item-dashboard" onclick="App.switchTab('dashboard')">
+        <!-- 1. Dashboard -->
+        <a class="nav-item active" data-tab="dashboard" id="nav-item-dashboard" onclick="App.switchTab('dashboard')">
           <span class="nav-item-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
               <rect width="7" height="9" x="3" y="3" rx="1.5"/><rect width="7" height="5" x="14" y="3" rx="1.5"/><rect width="7" height="9" x="14" y="12" rx="1.5"/><rect width="7" height="5" x="3" y="16" rx="1.5"/>
             </svg>
           </span>
-          <span class="nav-item-text">Command Center</span>
+          <span class="nav-item-text">Dashboard</span>
         </a>
 
-        <!-- 2. Startup Applications & Onboarding -->
-        <a class="nav-item" data-tab="onboarding" id="nav-item-onboarding" onclick="App.switchTab('onboarding')">
-          <span class="nav-item-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>
-            </svg>
-          </span>
-          <span class="nav-item-text">Startup Onboarding</span>
-        </a>
-
-        <!-- 3. Workspace Floorplan & Desks -->
-        <a class="nav-item" data-tab="workspace" id="nav-item-workspace" onclick="App.switchTab('workspace')">
-          <span class="nav-item-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/>
-            </svg>
-          </span>
-          <span class="nav-item-text">Workspace &amp; Desks</span>
-        </a>
-
-        <!-- 4. Meeting Rooms & Scheduler -->
+        <!-- 2. Meeting Rooms -->
         <a class="nav-item" data-tab="meetingRooms" id="nav-item-meetingRooms" onclick="App.switchTab('meetingRooms')">
           <span class="nav-item-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -388,57 +368,7 @@
           <span class="nav-item-text">Meeting Rooms</span>
         </a>
 
-        <!-- 5. Rent Engine & Invoices -->
-        <a class="nav-item" data-tab="billing" id="nav-item-billing" onclick="App.switchTab('billing')">
-          <span class="nav-item-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
-            </svg>
-          </span>
-          <span class="nav-item-text">Rent &amp; Invoices</span>
-        </a>
-
-        <!-- 6. Payments & Receipts -->
-        <a class="nav-item" data-tab="payments" id="nav-item-payments" onclick="App.switchTab('payments')">
-          <span class="nav-item-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/>
-            </svg>
-          </span>
-          <span class="nav-item-text">Payments &amp; Receipts</span>
-        </a>
-
-        <!-- 7. Incubation Management Journey -->
-        <a class="nav-item" data-tab="incubation" id="nav-item-incubation" onclick="App.switchTab('incubation')">
-          <span class="nav-item-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4.1 5.5.8z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4.3 1-4.9 2z"/>
-            </svg>
-          </span>
-          <span class="nav-item-text">Incubation Journey</span>
-        </a>
-
-        <!-- 8. Milestone Management -->
-        <a class="nav-item" data-tab="milestones" id="nav-item-milestones" onclick="App.switchTab('milestones')">
-          <span class="nav-item-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
-            </svg>
-          </span>
-          <span class="nav-item-text">Milestones</span>
-        </a>
-
-        <!-- 9. Reports & Intelligence -->
-        <a class="nav-item" data-tab="reports" id="nav-item-reports" onclick="App.switchTab('reports')">
-          <span class="nav-item-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/>
-            </svg>
-          </span>
-          <span class="nav-item-text">Reports &amp; Intelligence</span>
-        </a>
-
-        <!-- Supporting Meeting Room Subtabs (Preserved for direct access) -->
+        <!-- 3. My Bookings (Tabs: Upcoming, Calendar, History) -->
         <a class="nav-item" data-tab="bookings" id="nav-item-bookings" onclick="App.switchTab('bookings')">
           <span class="nav-item-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -448,10 +378,17 @@
           <span class="nav-item-text">My Bookings</span>
         </a>
 
-        <!-- Divider 2 -->
-        <div style="height: 1px; background: #ECEEF4; margin: 8px 4px;"></div>
+        <!-- 4. Workspaces -->
+        <a class="nav-item" data-tab="workspace" id="nav-item-workspace" onclick="App.switchTab('workspace')">
+          <span class="nav-item-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/>
+            </svg>
+          </span>
+          <span class="nav-item-text">Workspaces</span>
+        </a>
 
-        <!-- Directory & Operations -->
+        <!-- 5. Visitors -->
         <a class="nav-item" data-tab="contact" id="nav-item-contact" onclick="App.switchTab('contact')">
           <span class="nav-item-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -461,7 +398,8 @@
           <span class="nav-item-text">Visitors</span>
         </a>
 
-        <a class="nav-item" data-tab="startupTables" id="nav-item-startupTables" onclick="App.switchTab('startupTables')">
+        <!-- 6. Members -->
+        <a class="nav-item" data-tab="members" id="nav-item-members" onclick="App.switchTab('members')">
           <span class="nav-item-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
@@ -470,17 +408,30 @@
           <span class="nav-item-text">Members</span>
         </a>
 
-        <a class="nav-item admin-only-nav" data-tab="database" id="nav-item-database" onclick="App.switchTab('database')" style="display: none;">
+        <!-- 7. Billing & Credits -->
+        <a class="nav-item" data-tab="billing" id="nav-item-billing" onclick="App.switchTab('billing')">
           <span class="nav-item-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>
+              <rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/><path d="M7 15h2"/><path d="M15 15h2"/>
             </svg>
           </span>
-          <span class="nav-item-text">Database Tables</span>
+          <span class="nav-item-text">Billing &amp; Credits</span>
         </a>
 
-        <!-- Divider 3 -->
-        <div style="height: 1px; background: #ECEEF4; margin: 8px 4px;"></div>
+        <!-- 8. Analytics (authorized roles only) -->
+        <a class="nav-item" data-tab="reports" id="nav-item-reports" onclick="App.switchTab('reports')">
+          <span class="nav-item-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/>
+            </svg>
+          </span>
+          <span class="nav-item-text">Analytics</span>
+        </a>
+
+        <!-- Account Group Section -->
+        <div style="margin-top: 14px; padding: 6px 8px 2px 8px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8;">
+          Account
+        </div>
 
         <a class="nav-item" data-tab="settings" id="nav-item-settings" onclick="App.switchTab('settings')">
           <span class="nav-item-icon">
@@ -500,15 +451,23 @@
           <span class="nav-item-text">Help &amp; Support</span>
         </a>
 
-        <!-- Link back to Public Marketing Website -->
-        <a class="nav-item" href="index.html" id="nav-item-public-site" style="margin-top: 8px; color: #4338ca; font-weight: 700; background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 8px;">
+        <!-- Database Tables (Restricted to Super Admin Only) -->
+        <a class="nav-item admin-only-nav" data-tab="database" id="nav-item-database" onclick="App.switchTab('database')" style="display: none;">
           <span class="nav-item-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#4338ca" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>
             </svg>
           </span>
-          <span class="nav-item-text">🌐 Public Website</span>
+          <span class="nav-item-text">Database Tables</span>
         </a>
+
+        <!-- Secondary Footer Link: Public Marketing Website -->
+        <div style="margin-top: auto; padding-top: 14px; border-top: 1px solid #f1f5f9;">
+          <a class="nav-item" href="index.html" id="nav-item-public-site" style="font-size: 11.5px; color: #64748b; padding: 6px 8px; border-radius: 6px;" title="Go to NEXUS HUB Public Website">
+            <span class="nav-item-icon" style="font-size: 13px;">🌐</span>
+            <span class="nav-item-text">Public Website</span>
+          </a>
+        </div>
       </nav>
     </aside>
 
@@ -536,7 +495,7 @@
           <div class="tenant-selector-wrapper" style="display: flex; align-items: center; gap: 8px;">
             <div style="display: flex; align-items: center; gap: 6px; background: #f8fafc; border: 1.5px solid #e2e8f0; padding: 5px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; color: #1e293b;">
               <span style="color: #6366f1;">📍</span>
-              <select id="header-startup-select" style="background: transparent; border: none; font-size: 12px; font-weight: 700; color: #1e293b; outline: none; cursor: pointer;" onchange="if(window.MeetingRoomsModule) MeetingRoomsModule.setStartupFilter(this.value)">
+              <select id="header-startup-select" style="background: transparent; border: none; font-size: 12px; font-weight: 700; color: #1e293b; outline: none; cursor: pointer;" onchange="if(window.store && window.store.setActiveStartup) window.store.setActiveStartup(this.value); if(window.MeetingRoomsModule) MeetingRoomsModule.setStartupFilter(this.value)">
                 <option value="STP-XYZ">XYZ Technologies (STP-XYZ)</option>
                 <option value="STP-01">NeuroPulse AI (STP-01)</option>
                 <option value="STP-02">BioGenic Health (STP-02)</option>
@@ -666,20 +625,22 @@
 
       <!-- Lifecycle Views Containers -->
       <div class="view-container active" id="view-dashboard"></div>
-      <div class="view-container" id="view-onboarding"></div>
-      <div class="view-container" id="view-startupTables"></div>
-      <div class="view-container" id="view-workspace"></div>
       <div class="view-container" id="view-meetingRooms"></div>
+      <div class="view-container" id="view-bookings"></div>
+      <div class="view-container" id="view-workspace"></div>
+      <div class="view-container" id="view-contact"></div>
+      <div class="view-container" id="view-members"></div>
+      <div class="view-container" id="view-startupTables"></div>
       <div class="view-container" id="view-billing"></div>
       <div class="view-container" id="view-payments"></div>
-      <div class="view-container" id="view-incubation"></div>
-      <div class="view-container" id="view-milestones"></div>
       <div class="view-container" id="view-reports"></div>
-      <div class="view-container" id="view-contact"></div>
-      <div class="view-container" id="view-leads"></div>
-      <div class="view-container" id="view-database"></div>
       <div class="view-container" id="view-settings"></div>
       <div class="view-container" id="view-help"></div>
+      <div class="view-container" id="view-onboarding"></div>
+      <div class="view-container" id="view-incubation"></div>
+      <div class="view-container" id="view-milestones"></div>
+      <div class="view-container" id="view-leads"></div>
+      <div class="view-container" id="view-database"></div>
     </main>
   </div>
 
@@ -696,6 +657,7 @@
   <script src="js/store.js?v=20261110_01"></script>
   <script src="js/modules/dashboard.js?v=20261110_01"></script>
   <script src="js/modules/onboarding.js?v=20261110_01"></script>
+  <script src="js/modules/members.js?v=20261110_01"></script>
   <script src="js/modules/startupTables.js?v=20261110_01"></script>
   <script src="cancellation.js?v=20261110_01"></script>
   <script src="js/modules/workspace.js?v=20261110_01"></script>

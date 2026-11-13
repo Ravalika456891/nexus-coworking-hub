@@ -347,16 +347,19 @@ const DashboardModule = {
           </div>
         </div>
 
+        <!-- Contextual Alert (Shown strictly when necessary) -->
+        ${this.renderContextualAlert(startup)}
+
         <!-- 2. Four Clean KPI Cards -->
         ${isStartupUser ? this.renderStartupKpis(this.summaryData, isEmployee) : this.renderAdminKpis(this.summaryData)}
 
         <!-- 3. Middle Two-Column Grid: Quick Actions & Unified Schedule -->
         <div class="dash-middle-grid">
           
-          <!-- Left Column: Quick Actions + Startup Credits Summary / Overview -->
+          <!-- Left Column: Quick Actions & Campus Desk Info -->
           <div style="display: flex; flex-direction: column; gap: 20px;">
             
-            <!-- Quick Actions Card -->
+            <!-- Quick Actions Card (2 Primary Actions) -->
             <div class="dash-card">
               <div class="dash-card-header">
                 <h3 class="dash-card-title">
@@ -365,7 +368,7 @@ const DashboardModule = {
                 <span style="font-size: 11px; font-weight: 700; color: #64748b;">Shortcuts</span>
               </div>
 
-              <div class="dash-quick-grid">
+              <div class="dash-quick-grid" style="grid-template-columns: repeat(2, 1fr);">
                 <button type="button" class="dash-quick-btn" onclick="App.switchTab('meetingRooms')">
                   <div class="dash-quick-icon">📅</div>
                   <div class="dash-quick-text">
@@ -374,29 +377,18 @@ const DashboardModule = {
                   </div>
                 </button>
 
-                <button type="button" class="dash-quick-btn" onclick="App.switchTab('calendar')">
-                  <div class="dash-quick-icon">📆</div>
-                  <div class="dash-quick-text">
-                    <div class="dash-quick-label">Open Calendar</div>
-                    <div class="dash-quick-desc">Schedule Timeline</div>
-                  </div>
-                </button>
-
                 <button type="button" class="dash-quick-btn" onclick="DashboardModule.openInviteGuestsModal()">
                   <div class="dash-quick-icon">👥</div>
                   <div class="dash-quick-text">
-                    <div class="dash-quick-label">Invite Guests</div>
-                    <div class="dash-quick-desc">Visitor Security Pass</div>
+                    <div class="dash-quick-label">Invite Visitor</div>
+                    <div class="dash-quick-desc">Digital Guest Gate Pass</div>
                   </div>
                 </button>
               </div>
             </div>
 
-            <!-- Credits & Allowance Summary (for Startup) -->
-            ${isStartupUser ? this.renderStartupCreditsWidget(startup, isEmployee) : this.renderAdminOperationalWidget(this.summaryData)}
-
-            <!-- Startup Overview Card (If Founder or Admin, not Employee) -->
-            ${(isStartupUser && !isEmployee) ? this.renderStartupOverviewWidget(this.summaryData) : ''}
+            <!-- Workspace & Campus Desk Info Card -->
+            ${isStartupUser ? this.renderStartupWorkspaceCard(startup) : this.renderAdminOperationalWidget(this.summaryData)}
 
           </div>
 
@@ -404,7 +396,7 @@ const DashboardModule = {
           <div class="dash-card">
             <div class="dash-card-header">
               <h3 class="dash-card-title">
-                <span>🗓️</span> Schedule &amp; Bookings
+                <span>🗓️</span> Upcoming Schedule
               </h3>
               
               <!-- Tab Switcher: Today vs Upcoming -->
@@ -431,7 +423,7 @@ const DashboardModule = {
 
         </div>
 
-        <!-- 4. Bottom Row: Recent Activity & Alerts -->
+        <!-- 4. Bottom Row: Recent Activity & Campus Community -->
         <div class="dash-bottom-grid">
           
           <!-- Recent Activity Panel -->
@@ -446,7 +438,7 @@ const DashboardModule = {
             ${this.renderActivityFeed(this.summaryData?.recentActivities || this.summaryData?.activityFeed || [])}
           </div>
 
-          <!-- Secondary Bottom Panel: Operational Focus -->
+          <!-- Secondary Bottom Panel -->
           ${isStartupUser ? this.renderStartupAssistanceCard() : this.renderNeedsAttentionPanel(this.summaryData)}
 
         </div>
@@ -457,13 +449,123 @@ const DashboardModule = {
     this.applyProductionHiding();
   },
 
+  renderContextualAlert(startup) {
+    const invoices = (window.store && window.store.getAccessibleInvoices) ? window.store.getAccessibleInvoices() : [];
+    const overdueInvoice = invoices.find(i => i.status === 'Overdue' || (i.status === 'Pending' && i.dueDate && new Date(i.dueDate) < new Date()));
+    const allowance = (window.store && window.store.getMonthlyAllowance) ? window.store.getMonthlyAllowance(startup.id) : null;
+    const isLowCredits = allowance && allowance.remainingCredits !== undefined && allowance.remainingCredits < 15;
+
+    if (overdueInvoice) {
+      return `
+        <div style="background: rgba(239, 68, 68, 0.08); border: 1.5px solid rgba(239, 68, 68, 0.25); border-radius: 12px; padding: 12px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 20px;">⚠️</span>
+            <div>
+              <div style="font-size: 13px; font-weight: 800; color: #dc2626;">Payment Notice: Invoice #${overdueInvoice.id} (${overdueInvoice.totalFormatted || '₹' + overdueInvoice.total})</div>
+              <div style="font-size: 11.5px; color: #64748b;">Due date was ${overdueInvoice.dueDate}. Settle balance to maintain uninterrupted room reservations.</div>
+            </div>
+          </div>
+          <button class="btn btn-sm btn-primary" onclick="App.switchTab('billing')" style="background: #dc2626; border-color: #b91c1c; font-size: 11.5px; font-weight: 700; padding: 5px 14px;">
+            View Invoice
+          </button>
+        </div>
+      `;
+    }
+
+    if (isLowCredits) {
+      return `
+        <div style="background: rgba(245, 158, 11, 0.08); border: 1.5px solid rgba(245, 158, 11, 0.25); border-radius: 12px; padding: 12px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 20px;">⚠️</span>
+            <div>
+              <div style="font-size: 13px; font-weight: 800; color: #d97706;">Low Credit Balance (${allowance.remainingCredits} Credits Remaining)</div>
+              <div style="font-size: 11.5px; color: #64748b;">Your monthly room booking balance is almost exhausted. Top up credits for uninterrupted booking.</div>
+            </div>
+          </div>
+          <button class="btn btn-sm btn-primary" onclick="App.switchTab('billing')" style="background: #d97706; border-color: #b45309; font-size: 11.5px; font-weight: 700; padding: 5px 14px;">
+            Top Up Credits
+          </button>
+        </div>
+      `;
+    }
+
+    return '';
+  },
+
+  renderStartupWorkspaceCard(startup) {
+    const space = startup.assignedSeats || startup.spacePreference || 'Cabin 101 (Dedicated 6 Desks)';
+    const teamMembers = (window.store && window.store.getStartupMembers) ? window.store.getStartupMembers(startup.id) : [];
+
+    return `
+      <div class="dash-card">
+        <div class="dash-card-header">
+          <h3 class="dash-card-title">
+            <span>🏢</span> Workspace &amp; Campus
+          </h3>
+          <span style="font-size: 11px; font-weight: 700; color: #64748b;">Floor 2</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px; font-size: 12.5px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f8fafc; border-radius: 8px; border: 1px solid #f1f5f9;">
+            <span style="color: #64748b; font-weight: 600;">Allocated Space:</span>
+            <strong style="color: #0f172a;">${space}</strong>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f8fafc; border-radius: 8px; border: 1px solid #f1f5f9;">
+            <span style="color: #64748b; font-weight: 600;">Active Team:</span>
+            <strong style="color: #4f46e5;">${teamMembers.length} Registered Members</strong>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f8fafc; border-radius: 8px; border: 1px solid #f1f5f9;">
+            <span style="color: #64748b; font-weight: 600;">Blue Tokai Barista:</span>
+            <span style="color: #059669; font-weight: 700;">Open (08:00 AM – 08:00 PM)</span>
+          </div>
+        </div>
+
+        <div style="margin-top: 14px; display: flex; justify-content: flex-end;">
+          <button type="button" class="btn btn-sm btn-outline" onclick="App.switchTab('workspace')" style="font-size: 11.5px; font-weight: 700;">
+            View Floorplan Map &rarr;
+          </button>
+        </div>
+      </div>
+    `;
+  },
+
   renderStartupKpis(data, isEmployee) {
-    const kpi = data?.kpi || {
-      upcomingMeetings: { count: 3, nextHint: 'Next: Today at 3:00 PM', linkTab: 'bookings' },
-      availableRooms: { count: 5, total: 6, timeBasis: 'Available right now', linkTab: 'meetingRooms' },
-      remainingCredits: { remaining: 80, total: 120, unit: 'credits', percent: 66, linkTab: 'billingCredits' },
-      pendingRequests: { count: 0, description: 'All requests approved', linkTab: 'bookings' }
-    };
+    const startup = (this.summaryData && this.summaryData.startup) || { id: 'STP-XYZ', name: 'XYZ Technologies' };
+    const myStartupId = startup.id || 'STP-XYZ';
+
+    // 1. Upcoming Meetings from MeetingRoomsModule or store
+    const myBookings = (window.MeetingRoomsModule && window.MeetingRoomsModule.getMyBookings)
+      ? window.MeetingRoomsModule.getMyBookings(false)
+      : [];
+    const upcomingCount = myBookings.filter(b => b.status === 'Confirmed').length;
+    const nextBooking = myBookings.find(b => b.status === 'Confirmed');
+    const nextHint = nextBooking ? `Next: ${nextBooking.date} at ${nextBooking.startTime}` : 'Confirmed bookings';
+
+    // 2. Available Rooms right now from store
+    const rooms = (window.store && window.store.getMeetingRooms) ? window.store.getMeetingRooms() : [];
+    const totalRooms = rooms.length || 10;
+    const freeRooms = rooms.filter(r => {
+      const status = (window.MeetingRoomsModule && window.MeetingRoomsModule.computeRoomStatus)
+        ? window.MeetingRoomsModule.computeRoomStatus(r).statusType
+        : 'free';
+      return status === 'free' || status === 'available';
+    }).length;
+
+    // 3. Remaining Credits from store allowance
+    const allowance = (window.store && window.store.getMonthlyAllowance)
+      ? window.store.getMonthlyAllowance(myStartupId)
+      : { remainingHours: 15, includedHours: 15, remainingCredits: 80, usedPercent: 34 };
+    const remCredits = allowance.remainingCredits ?? Math.round((allowance.remainingHours || 8) * 10);
+    const remPct = Math.max(0, 100 - (allowance.usedPercent || 34));
+
+    // 4. Expected Visitors from store
+    const allVisitors = (window.store && window.store.getVisitors) ? window.store.getVisitors(myStartupId) : [];
+    const todayStr = (window.MeetingRoomsModule && window.MeetingRoomsModule.getISTNow)
+      ? window.MeetingRoomsModule.getISTNow().todayStr
+      : new Date().toISOString().slice(0, 10);
+    const expectedVisitorsCount = allVisitors.filter(v => v.date === todayStr && v.status !== 'Cancelled').length;
 
     return `
       <div class="dash-kpi-grid">
@@ -474,57 +576,57 @@ const DashboardModule = {
             <span class="dash-kpi-title">Upcoming Meetings</span>
             <div class="dash-kpi-icon icon-purple">📅</div>
           </div>
-          <div class="dash-kpi-value tabular-nums">${kpi.upcomingMeetings.count}</div>
+          <div class="dash-kpi-value tabular-nums">${upcomingCount}</div>
           <div class="dash-kpi-footer" style="flex-wrap: wrap; gap: 4px;">
             <span style="font-size: 11.5px; color: #64748b; font-weight: 600;">
-              ${kpi.upcomingMeetings.nextHint || 'Confirmed bookings'}
+              ${nextHint}
             </span>
             <span class="dash-kpi-link">My Bookings &rarr;</span>
           </div>
         </div>
 
-        <!-- KPI 2: Available Meeting Rooms -->
+        <!-- KPI 2: Available Rooms -->
         <div class="dash-kpi-card" onclick="App.switchTab('meetingRooms')" title="Click to view Meeting Rooms">
           <div class="dash-kpi-header">
             <span class="dash-kpi-title">Available Rooms</span>
             <div class="dash-kpi-icon icon-green">🚪</div>
           </div>
           <div class="dash-kpi-value tabular-nums" style="color: #059669;">
-            ${kpi.availableRooms.count} <span style="font-size: 14px; font-weight: 600; color: #64748b;">/ ${kpi.availableRooms.total}</span>
+            ${freeRooms} <span style="font-size: 14px; font-weight: 600; color: #64748b;">/ ${totalRooms}</span>
           </div>
           <div class="dash-kpi-footer">
-            <span>${kpi.availableRooms.timeBasis || 'Open right now'}</span>
+            <span>Available right now</span>
             <span class="dash-kpi-link">Reserve &rarr;</span>
           </div>
         </div>
 
-        <!-- KPI 3: Remaining Booking Credits -->
-        <div class="dash-kpi-card" onclick="App.switchTab('${isEmployee ? 'meetingRooms' : 'billingCredits'}')" title="Click to view Credits &amp; Billing">
+        <!-- KPI 3: Remaining Credits -->
+        <div class="dash-kpi-card" onclick="App.switchTab('billing')" title="Click to view Billing &amp; Credits">
           <div class="dash-kpi-header">
             <span class="dash-kpi-title">Remaining Credits</span>
             <div class="dash-kpi-icon icon-blue">💳</div>
           </div>
           <div class="dash-kpi-value tabular-nums" style="color: #2563eb;">
-            ${kpi.remainingCredits.remaining} <span style="font-size: 13px; font-weight: 600; color: #64748b;">credits</span>
+            ${remCredits} <span style="font-size: 13px; font-weight: 600; color: #64748b;">credits</span>
           </div>
           <div class="dash-kpi-footer">
-            <span>${kpi.remainingCredits.percent || 0}% used • ${kpi.remainingCredits.percentLeft ?? (100 - (kpi.remainingCredits.percent || 0))}% left</span>
-            <span class="dash-kpi-link">${isEmployee ? 'Details' : 'Upgrade'} &rarr;</span>
+            <span>${remPct}% left (${allowance.remainingHours?.toFixed(1) || '8.0'} hrs)</span>
+            <span class="dash-kpi-link">${isEmployee ? 'Details' : 'Manage'} &rarr;</span>
           </div>
         </div>
 
-        <!-- KPI 4: Pending Requests -->
-        <div class="dash-kpi-card" onclick="App.switchTab('bookings')" title="Click to view requests">
+        <!-- KPI 4: Expected Visitors -->
+        <div class="dash-kpi-card" onclick="App.switchTab('contact')" title="Click to view Visitors">
           <div class="dash-kpi-header">
-            <span class="dash-kpi-title">Pending Requests</span>
-            <div class="dash-kpi-icon icon-amber">⏳</div>
+            <span class="dash-kpi-title">Expected Visitors</span>
+            <div class="dash-kpi-icon icon-amber">👥</div>
           </div>
-          <div class="dash-kpi-value tabular-nums" style="color: ${kpi.pendingRequests.count > 0 ? '#d97706' : '#0f172a'};">
-            ${kpi.pendingRequests.count}
+          <div class="dash-kpi-value tabular-nums" style="color: #d97706;">
+            ${expectedVisitorsCount}
           </div>
           <div class="dash-kpi-footer">
-            <span>${kpi.pendingRequests.description || 'All confirmed'}</span>
-            ${kpi.pendingRequests.count > 0 ? `<span class="dash-kpi-link">Review &rarr;</span>` : ''}
+            <span>Pre-registered for today</span>
+            <span class="dash-kpi-link">Guest Passes &rarr;</span>
           </div>
         </div>
 

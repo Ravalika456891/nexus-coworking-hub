@@ -1150,7 +1150,9 @@ const MeetingRoomsModule = {
     if (this.myBookingsRoomFilter && this.myBookingsRoomFilter !== 'all') {
       list = list.filter(b => b.roomId === this.myBookingsRoomFilter);
     }
-    if (this.myBookingsStatusFilter === 'past' || this.myBookingsStatusFilter === 'completed') {
+    if (this.myBookingsStatusFilter === 'history') {
+      list = list.filter(b => b.status === 'Cancelled' || b.date < todayStr || (b.date === todayStr && b.endTime <= liveTimeStr));
+    } else if (this.myBookingsStatusFilter === 'past' || this.myBookingsStatusFilter === 'completed') {
       list = list.filter(b => (b.date < todayStr || (b.date === todayStr && b.endTime <= liveTimeStr)) && b.status !== 'Cancelled');
     } else if (this.myBookingsStatusFilter === 'cancelled') {
       list = list.filter(b => b.status === 'Cancelled');
@@ -1290,6 +1292,31 @@ const MeetingRoomsModule = {
       if (this.myBookingsSortBy !== col) return ' ↕';
       return this.myBookingsSortDir === 'asc' ? ' ↑' : ' ↓';
     };
+
+    if (this.myBookingsStatusFilter === 'calendar') {
+      return `
+        <div style="margin-bottom: 22px;">
+          <!-- 3 Clean Tabs: Upcoming | Calendar | History -->
+          <div class="card" style="padding: 12px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 12px;">
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button class="btn btn-sm btn-secondary" onclick="MeetingRoomsModule.setMyBookingsStatusFilter('upcoming')" style="font-size: 12px; padding: 6px 14px; border-radius: 8px; font-weight: 700;">
+                📅 Upcoming (${upcomingList.length})
+              </button>
+              <button class="btn btn-sm btn-primary" onclick="MeetingRoomsModule.setMyBookingsStatusFilter('calendar')" style="font-size: 12px; padding: 6px 14px; border-radius: 8px; font-weight: 700;">
+                🗓️ Calendar View
+              </button>
+              <button class="btn btn-sm btn-secondary" onclick="MeetingRoomsModule.setMyBookingsStatusFilter('history')" style="font-size: 12px; padding: 6px 14px; border-radius: 8px; font-weight: 700;">
+                📜 History (${pastList.length + cancelledList.length})
+              </button>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="MeetingRoomsModule.openBookModal(null, null, '${myStartup.id}')" style="font-weight: 700; padding: 6px 16px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
+              <span>⚡</span> <span>+ Book Room</span>
+            </button>
+          </div>
+          ${this.renderBookingCalendarTabView({ rooms, myStartup, myBookingsToday: scheduledTodayList, availableSlotsCount: 0, mySlotsCount: myBookings.length, otherSlotsCount: 0 })}
+        </div>
+      `;
+    }
 
     return `
       <!-- My Booked Rooms Banner & 4 KPI Cards -->
@@ -1453,22 +1480,17 @@ const MeetingRoomsModule = {
               ` : ''}
             </div>
 
-            <!-- Tabs: Upcoming | Past | Cancelled (Default view is Upcoming) -->
-            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-              <button class="btn btn-sm ${this.myBookingsStatusFilter === 'upcoming' ? 'btn-primary' : 'btn-secondary'}" onclick="MeetingRoomsModule.setMyBookingsStatusFilter('upcoming')" style="font-size: 11.5px; padding: 5px 12px; border-radius: 6px; font-weight: 700;" aria-label="Show upcoming bookings">
-                Upcoming (${upcomingList.length})
+            <!-- 3 Clean Tabs: Upcoming | Calendar | History -->
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button class="btn btn-sm ${this.myBookingsStatusFilter === 'upcoming' ? 'btn-primary' : 'btn-secondary'}" onclick="MeetingRoomsModule.setMyBookingsStatusFilter('upcoming')" style="font-size: 12px; padding: 6px 14px; border-radius: 8px; font-weight: 700;" aria-label="Show upcoming bookings">
+                📅 Upcoming (${upcomingList.length})
               </button>
-              <button class="btn btn-sm ${this.myBookingsStatusFilter === 'past' ? 'btn-primary' : 'btn-secondary'}" onclick="MeetingRoomsModule.setMyBookingsStatusFilter('past')" style="font-size: 11.5px; padding: 5px 12px; border-radius: 6px; font-weight: 700;" aria-label="Show past bookings">
-                Past (${pastList.length})
+              <button class="btn btn-sm ${this.myBookingsStatusFilter === 'calendar' ? 'btn-primary' : 'btn-secondary'}" onclick="MeetingRoomsModule.setMyBookingsStatusFilter('calendar')" style="font-size: 12px; padding: 6px 14px; border-radius: 8px; font-weight: 700;" aria-label="Show calendar view">
+                🗓️ Calendar View
               </button>
-              <button class="btn btn-sm ${this.myBookingsStatusFilter === 'cancelled' ? 'btn-primary' : 'btn-secondary'}" onclick="MeetingRoomsModule.setMyBookingsStatusFilter('cancelled')" style="font-size: 11.5px; padding: 5px 12px; border-radius: 6px; font-weight: 700;" aria-label="Show cancelled bookings">
-                Cancelled (${cancelledList.length})
+              <button class="btn btn-sm ${(this.myBookingsStatusFilter === 'history' || this.myBookingsStatusFilter === 'past' || this.myBookingsStatusFilter === 'cancelled') ? 'btn-primary' : 'btn-secondary'}" onclick="MeetingRoomsModule.setMyBookingsStatusFilter('history')" style="font-size: 12px; padding: 6px 14px; border-radius: 8px; font-weight: 700;" aria-label="Show booking history">
+                📜 History (${pastList.length + cancelledList.length})
               </button>
-              ${this.myBookingsStatusFilter === 'all' ? `
-                <button class="btn btn-sm btn-primary" onclick="MeetingRoomsModule.setMyBookingsStatusFilter('all')" style="font-size: 11.5px; padding: 5px 12px; border-radius: 6px; font-weight: 700;" aria-label="Show all bookings">
-                  All (${myBookings.length})
-                </button>
-              ` : ''}
             </div>
           </div>
 

@@ -138,6 +138,26 @@ const App = {
     this.currentTab = tabId;
     this.toggleMobileSidebar(false);
 
+    // Handle friendly redirects
+    if (tabId === 'calendar') {
+      tabId = 'bookings';
+      containerTab = 'meetingRooms';
+      if (window.MeetingRoomsModule) {
+        window.MeetingRoomsModule.activeTab = 'myBookings';
+        window.MeetingRoomsModule.myBookingsStatusFilter = 'calendar';
+      }
+    } else if (tabId === 'payments' || tabId === 'billingCredits') {
+      const sub = tabId === 'payments' ? 'paymentHistory' : 'planCredits';
+      tabId = 'billing';
+      containerTab = 'billing';
+      if (window.BillingModule) {
+        window.BillingModule.activeTab = sub;
+      }
+    } else if (tabId === 'startupTables') {
+      tabId = 'members';
+      containerTab = 'members';
+    }
+
     // 1. Update Nav bar active states - highlight the EXACT tab clicked
     document.querySelectorAll('.nav-item').forEach(item => {
       const itemTab = item.getAttribute('data-tab');
@@ -153,9 +173,10 @@ const App = {
       view.classList.remove('active');
     });
 
-    let containerTab = tabId;
-    if (['meetingRooms', 'bookings', 'myReservations', 'calendar', 'billingCredits', 'roomAnalytics', 'adminRooms'].includes(tabId)) {
+    if (['meetingRooms', 'bookings', 'myReservations', 'roomAnalytics', 'adminRooms'].includes(tabId)) {
       containerTab = 'meetingRooms';
+    } else if (tabId === 'members') {
+      containerTab = 'members';
     }
 
     const activeView = document.getElementById('view-' + containerTab);
@@ -166,29 +187,28 @@ const App = {
     // 3. Update Header Title
     const titleEl = document.getElementById('header-page-title');
     const titles = {
-      dashboard: '⚡ Command Center',
-      meetingRooms: '📅 Meeting Rooms',
-      bookings: '📑 My Bookings & Reservations',
-      myReservations: '📑 My Bookings & Reservations',
-      calendar: '📆 Meeting Schedule Calendar',
-      billingCredits: '💳 Credits & Meeting Room Billing',
-      roomAnalytics: '📈 Meeting Room Analytics',
-      adminRooms: '🛡️ Room Administration',
-      workspace: '🏢 Workspaces & Desks',
-      contact: '👥 Visitor Gate Passes',
-      startupTables: '👥 Community Members & Startups',
-      database: '🗄️ Database Tables (10 Collections)',
-      settings: '⚙️ Settings & System Preferences',
-      help: '❓ Help & Support Center',
-      onboarding: '🚀 Startup Onboarding',
-      billing: '🧾 Invoices & Rent',
-      payments: '💳 Payments Ledger',
-      incubation: '🌱 Incubation Journey',
-      milestones: '🎯 Milestones',
-      reports: '📊 Analytics',
-      leads: '📥 Inbound Leads & Applications'
+      dashboard: 'Dashboard',
+      meetingRooms: 'Meeting Rooms',
+      bookings: 'My Bookings',
+      myReservations: 'My Bookings',
+      calendar: 'My Bookings • Calendar View',
+      billingCredits: 'Billing & Credits',
+      billing: 'Billing & Credits',
+      payments: 'Billing & Credits • Payments',
+      workspace: 'Workspaces',
+      contact: 'Visitors',
+      members: 'Members',
+      startupTables: 'Members',
+      database: 'Database Tables',
+      settings: 'Settings',
+      help: 'Help & Support',
+      reports: 'Analytics',
+      onboarding: 'Startup Onboarding',
+      incubation: 'Incubation Journey',
+      milestones: 'Milestones',
+      leads: 'Inbound Leads'
     };
-    if (titleEl) titleEl.innerText = titles[tabId] || 'Command Center';
+    if (titleEl) titleEl.innerText = titles[tabId] || 'Dashboard';
 
     // Contextual Header Search Placeholder
     const searchInput = document.getElementById('global-search-input');
@@ -202,6 +222,7 @@ const App = {
         billing: 'Search invoices, credit notes, or receipts...',
         workspace: 'Search desks, cabins, or units...',
         contact: 'Search visitors, companies, or pass IDs...',
+        members: 'Search members, roles, or email...',
         startupTables: 'Search startups, founders, or sector...',
         help: 'Search FAQs, guides, or tickets...',
         settings: 'Search settings, 2FA, or preferences...'
@@ -386,6 +407,19 @@ const App = {
         break;
       case 'leads':
         LeadsModule.render();
+        break;
+      case 'members':
+        if (typeof MembersModule !== 'undefined' && MembersModule.render) {
+          MembersModule.render();
+        } else if (typeof StartupTablesModule !== 'undefined' && StartupTablesModule.render) {
+          StartupTablesModule.render();
+        }
+        break;
+      case 'bookings':
+      case 'myReservations':
+        if (window.MeetingRoomsModule) {
+          window.MeetingRoomsModule.switchTab('myBookings');
+        }
         break;
       case 'startupTables':
         if (typeof StartupTablesModule !== 'undefined' && StartupTablesModule.render) {
