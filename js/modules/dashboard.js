@@ -374,14 +374,6 @@ const DashboardModule = {
                   </div>
                 </button>
 
-                <button type="button" class="dash-quick-btn" onclick="App.switchTab('bookings')">
-                  <div class="dash-quick-icon">📑</div>
-                  <div class="dash-quick-text">
-                    <div class="dash-quick-label">My Bookings</div>
-                    <div class="dash-quick-desc">Active Reservations</div>
-                  </div>
-                </button>
-
                 <button type="button" class="dash-quick-btn" onclick="App.switchTab('calendar')">
                   <div class="dash-quick-icon">📆</div>
                   <div class="dash-quick-text">
